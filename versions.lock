@@ -1,0 +1,10 @@
+# Populated from preflight and deployment steps. No secrets belong here.
+os: CachyOS rolling
+kernel: 7.2.8-1-cachyos
+zfs: 2.4.4-1
+git: 2.56.0
+python: 3.14.7
+podman: not-installed
+nvidia_driver: not-detected
+pennyroyal: not-installed
+model: not-downloaded

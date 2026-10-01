@@ -1,0 +1,9 @@
+state/
+.env
+*.secret
+__pycache__/
+.venv/
+*.pyc
+site/
+.cache/
+
