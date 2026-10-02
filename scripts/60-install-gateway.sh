@@ -16,7 +16,7 @@ ContainerName=litellm
 PublishPort=127.0.0.1:$LITELLM_PORT:4000
 EnvironmentFile=%h/.config/llm-infra/gateway.env
 Environment=LITELLM_CONFIG=/etc/litellm/config.yaml
-Volume=$root/config/litellm.yaml:/etc/litellm/config.yaml:ro
+Volume=@CONFIG_ROOT@/config/litellm.yaml:/etc/litellm/config.yaml:ro
 Exec=--config /etc/litellm/config.yaml --port 4000 --host 0.0.0.0
 [Service]
 Restart=on-failure

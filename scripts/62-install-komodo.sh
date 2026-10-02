@@ -10,7 +10,7 @@ After=network-online.target
 [Container]
 Image=$KOMODO_IMAGE
 ContainerName=komodo-periphery
-PublishPort=8120:8120
+PublishPort=127.0.0.1:8120:8120
 EnvironmentFile=%h/.config/llm-infra/komodo.env
 Environment=PERIPHERY_SERVER=$KOMODO_SERVER_URL
 Environment=PERIPHERY_HOST=$KOMODO_PERIPHERY_NAME
