@@ -6,6 +6,7 @@ Stand: 2026-10-02
 
 - Host-Preflight erfasst CachyOS, Kernel, NVIDIA, Podman, CDI und ZFS.
 - Vorhandenes Dataset `zpcachyos/llm/models` unter `/srv/llm/models` geprüft: `compression=zstd-9`, `recordsize=1M`, `atime=off`.
+- Qwen3.8-Flash-Next-NVFP4 vollständig auf ZFS geladen und mit Index-/Safetensor-Prüfung verifiziert; die Hub-Revision steht in `versions.lock`.
 - NVIDIA CDI und rootless Podman GPU-Smoke-Test erfolgreich ausgeführt.
 - Pennyroyal, LiteLLM, PostgreSQL, Monitoring, Logging, Autossh und Komodo als versionierte Quadlet-Generatoren vorbereitet.
 - `llmctl`, Healthcheck, Benchmark, Backup und Deployment-Orchestrierung vorhanden.
@@ -14,12 +15,12 @@ Stand: 2026-10-02
 
 ## Runtime status
 
-Der Hugging-Face-Download wurde gestartet und ist resumierbar. Der Runtime-Container, PostgreSQL, Gateway und Observability wurden noch nicht gestartet. Deshalb sind API-, Grafana- und Prometheus-End-to-End-Checks noch offen.
+Der Runtime-Container, PostgreSQL, Gateway und Observability wurden noch nicht gestartet. Deshalb sind API-, Grafana- und Prometheus-End-to-End-Checks noch offen.
 
 ## Todo
 
-1. Modelldownload vollständig abschließen und mit `make model-verify` prüfen; danach Revision/Dateiprüfung in `versions.lock` eintragen.
-2. Pennyroyal-Image-Digest erfassen, Quadlet erzeugen und Baseline-Requests prüfen.
+1. Pennyroyal-Image-Digest erfassen, Quadlet erzeugen und Baseline-Requests prüfen.
+2. ZFS-Snapshot für die verifizierte Modellrevision erstellen.
 3. PostgreSQL/LiteLLM-Virtual-Key-Konfiguration mit lokalen Secrets testen.
 4. Exporter, Prometheus Targets, Grafana Dashboards und Loki-Ingestion gegen den laufenden Stack verifizieren.
 5. `make deploy-all`, `make healthcheck`, Benchmark und Reboot-Autostart testen.

@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Added model download, pinned Pennyroyal image/Quadlet generation, rootless deployment, healthcheck, and configuration backup scripts.
+- Completed the resumable Qwen model download and added indexed safetensor verification with Hub revision locking.
 - Added current status and installation documentation with explicit done/todo tracking.
 
 - Added the initial repository quality checks and reproducible host preflight.
