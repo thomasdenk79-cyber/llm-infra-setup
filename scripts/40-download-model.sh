@@ -10,6 +10,7 @@ if command -v hf >/dev/null 2>&1; then hf_cmd=(hf download); hf_opts=(); elif co
 sudo install -d -m 0755 "${LLM_MODELS_DIR}"
 target="${LLM_MODELS_DIR}/$(basename "${MODEL_ID}")"
 if [[ ! -d "${target}" ]]; then sudo install -d -m 0755 -o "$(id -u)" -g "$(id -g)" "${target}"; fi
-if [[ -f "${target}/config.json" ]]; then log "Model already present: ${target}"; exit 0; fi
+if [[ -f "${target}/config.json" ]] && ! find "${target}" -type f -name "*.incomplete" -print -quit | grep -q .; then log "Model already present: ${target}"; exit 0; fi
+if find "${target}" -type f -name "*.incomplete" -print -quit | grep -q .; then log "Resuming incomplete model download: ${target}"; fi
 "${hf_cmd[@]}" "${MODEL_ID}" --local-dir "${target}" "${hf_opts[@]}"
 log "Model downloaded to ${target}"
