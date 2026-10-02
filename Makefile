@@ -1,10 +1,12 @@
-.PHONY: preflight install nvidia-driver podman zfs model pennyroyal deploy healthcheck backup validate status
+.PHONY: preflight install nvidia-driver kwin-egpu podman zfs model pennyroyal deploy healthcheck backup validate status
 preflight:
 	./scripts/00-preflight.sh
 install:
 	./scripts/10-install-packages.sh
 nvidia-driver:
 	./scripts/35-install-nvidia-driver.sh
+kwin-egpu:
+	./scripts/45-configure-kwin-egpu.sh
 podman:
 	./scripts/30-nvidia-podman.sh
 zfs:

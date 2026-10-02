@@ -39,3 +39,7 @@ make healthcheck
 ```
 
 `state/`, lokale `.env`-Dateien und Geheimnisse sind von Git ausgeschlossen. Niemals Tokens in `versions.lock` oder Konfigurationsdateien committen.
+
+### ThinkPad L15 Gen 2 mit Blackwell-eGPU
+
+Auf dem L15 Gen 2 (20X4) hängt der externe Monitor an der Blackwell über Thunderbolt, während das interne Panel an der Intel-iGPU hängt. `make kwin-egpu` setzt `KWIN_DRM_DEVICES=/dev/dri/card0:/dev/dri/card1`, damit KWin die Blackwell als primäre DRM-GPU nutzt und den ineffizienten Multi-GPU-Compositingpfad vermeidet. Nach der Installation ist eine neue Plasma-Sitzung erforderlich.
