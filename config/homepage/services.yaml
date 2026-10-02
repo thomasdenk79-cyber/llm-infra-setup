@@ -1,0 +1,35 @@
+- Chat & RAG:
+    - Open WebUI:
+        icon: open-webui.png
+        href: http://127.0.0.1:3001
+        description: Chat, Dateien und RAG
+    - LiteLLM:
+        icon: litellm.png
+        href: http://127.0.0.1:4000
+        description: OpenAI-kompatibles Gateway
+- Verwaltung:
+    - Komodo:
+        icon: komodo.png
+        href: https://komodo.example.net
+        description: Host- und Containerverwaltung
+    - Dozzle:
+        icon: dozzle.png
+        href: http://127.0.0.1:8080
+        description: Live-Containerlogs
+    - Repository:
+        icon: github.png
+        href: https://github.com/thomasdenk79-cyber/llm-infra-setup
+        description: Source of Truth
+- Monitoring:
+    - Grafana:
+        icon: grafana.png
+        href: http://127.0.0.1:3000
+        description: Dashboards
+    - Prometheus:
+        icon: prometheus.png
+        href: http://127.0.0.1:9090
+        description: Metriken und Targets
+    - Loki:
+        icon: loki.png
+        href: http://127.0.0.1:3100
+        description: Logs und Abfragen

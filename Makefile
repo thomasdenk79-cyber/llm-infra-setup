@@ -1,4 +1,4 @@
-.PHONY: docs docs-build pre-commit-install preflight install nvidia-driver kwin-egpu podman zfs model model-verify pennyroyal gateway litellm autossh komodo postgres deploy deploy-all deploy-non-gpu deploy-ready healthcheck backup benchmark validate status
+.PHONY: docs docs-build pre-commit-install preflight install nvidia-driver kwin-egpu podman zfs model model-verify pennyroyal gateway litellm open-webui autossh komodo postgres deploy deploy-all deploy-non-gpu deploy-ready homepage portal healthcheck backup benchmark validate status
 preflight:
 	./scripts/00-preflight.sh
 install:
@@ -51,6 +51,12 @@ benchmark:
 
 litellm:
 	./scripts/70-litellm.sh
+open-webui:
+	./scripts/60-install-open-webui.sh
+homepage:
+	./scripts/60-install-homepage.sh
+portal:
+	./scripts/start-portal.sh
 deploy-all:
 	./scripts/deploy-all.sh
 deploy-non-gpu:

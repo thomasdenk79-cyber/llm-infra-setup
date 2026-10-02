@@ -22,5 +22,7 @@ grafana: 12.1.1
 loki: 3.5.2
 alloy: 1.10.2
 dozzle: 8.14.7
+open_webui: v0.11.4
+homepage: v2.4.0
 model_id: RadixArk/Qwen3.8-Flash-Next-NVFP4
 model_revision: 7b719225242aacd3dbd3f9407468c2ee9a9d2594

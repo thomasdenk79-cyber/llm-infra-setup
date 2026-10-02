@@ -23,7 +23,8 @@ Die vollständigen Arbeitsregeln, Skriptkarte und Ausführungsreihenfolge stehen
 - Pennyroyal-Release und Modellkompatibilität gegen die aktuelle Upstream-Quelle prüfen, bevor ein Upgrade von v2.5.3 erfolgt.
 - Hugging-Face-Zugang (falls erforderlich) außerhalb von Git konfigurieren und Modell mit `make model` laden.
 - Runtime nach Reboot auf dem Zielhost starten und mit `make healthcheck` prüfen.
-- LiteLLM-Gateway, Prometheus/Grafana, Loki/Alloy, Dozzle, Komodo, Autossh und `llmctl` als weitere versionierte Dienste ergänzen.
+- Homepage als zentrale Einstiegsseite sowie Open WebUI für Chat, Datei-Upload und RAG ergänzt.
+- LiteLLM-Gateway, Prometheus/Grafana, Loki/Alloy, Dozzle, Komodo und Autossh als versionierte Dienste vorbereitet.
 - Backup/Restore, Lasttest und Sicherheits-Härtung nach erfolgreichem Einzel-GPU-Betrieb dokumentieren.
 
 ## Schnellstart
@@ -38,9 +39,25 @@ make zfs              # bestehende Pools werden nicht zerstört
 make nvidia-driver    # reboot danach erforderlich
 make podman
 make pennyroyal       # Image pullen und Quadlet erzeugen
-make monitoring       # Prometheus/Grafana/Loki/Alloy/Dozzle-Units installieren
-make deploy
+make deploy-non-gpu   # Portal, Open WebUI, Gateway und Monitoring ohne GPU starten
+make portal            # zentrale Verwaltungsseite im Browser öffnen
+make deploy-ready     # nach GPU-Reconnect/Reboot den vollständigen Stack starten
 make healthcheck
+```
+
+Die zentrale Einstiegsseite läuft unter `http://127.0.0.1:3002`. Open WebUI für Chat und RAG ist unter `http://127.0.0.1:3001` erreichbar. `make portal` startet die Homepage-Unit und öffnet den Browser. Ohne GPU sind Oberfläche, Gateway, Monitoring und Verwaltung verfügbar; Antworten benötigen den gestarteten Pennyroyal-Runtime-Container.
+
+Im geschützten Heimnetz verwendet der lokale Stack bewusst einfache Standardzugänge: Grafana `admin`/`admin`, LiteLLM-Schlüssel `sk-llm-infra-local` und PostgreSQL `litellm`/`llm-infra`. Die Werte liegen nur in `~/.config/llm-infra/` beziehungsweise als Podman-Secret.
+
+Nach dem Reboot mit wieder angeschlossener GPU:
+
+```bash
+cd /home/z000g9hu/work/llm-infra-setup
+make preflight
+make podman
+make deploy-ready
+make healthcheck
+make portal
 ```
 
 `state/`, lokale `.env`-Dateien und Geheimnisse sind von Git ausgeschlossen. Niemals Tokens in `versions.lock` oder Konfigurationsdateien committen.
