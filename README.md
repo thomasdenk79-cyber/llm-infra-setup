@@ -49,6 +49,8 @@ make zfs              # bestehende Pools werden nicht zerstört
 make nvidia-driver    # reboot danach erforderlich
 make podman
 make pennyroyal       # Image pullen und Quadlet erzeugen
+make ple-nvme         # ext4-PLE-Image mounten und Overlay vorbereiten
+./setup.sh            # idempotenter Gesamtaufbau und API-Smoke-Test
 make deploy-non-gpu   # Portal, Open WebUI, Gateway und Monitoring ohne GPU starten
 make portal            # zentrale Verwaltungsseite im Browser öffnen
 make deploy-ready     # nach GPU-Reconnect/Reboot den vollständigen Stack starten

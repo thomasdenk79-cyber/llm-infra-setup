@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Added idempotent ext4-backed NVMe-PLE storage, persistent nofail mounting, a 16-GiB ZFS ARC cap, and the Quadlet io_uring/seccomp compatibility setting. Verified Pennyroyal startup and HTTP 200 on the local chat API.
+- Made OpenCode installation idempotent and exposed it through `~/.local/bin` with persistent Bash PATH setup.
 
 - Set model and `/srv` service datasets to the broadly compatible ZFS `lz4` compression profile.
 - Added model download, pinned Pennyroyal image/Quadlet generation, rootless deployment, healthcheck, and configuration backup scripts.

@@ -26,6 +26,16 @@ Stand: 2026-10-02
 Der Runtime-Container läuft auf dem 64-GB-L15 mit vorbereitetem NVMe-PLE-Overlay auf einem ext4-Loop-Image (`/srv/llm/ple-ext4/Qwen3.8-Flash-Next-PLE-NVME`, etwa 48 GB), `PENNY_PLE_BACKEND=nvme` und `PENNY_HICACHE_SIZE_GB=0`. Der ZFS-Pfad lieferte beim SSD-Reader `OSError: Function not implemented (os error 38)`; der ext4-Testpfad mit `PodmanArgs=--security-opt=seccomp=unconfined` startet erfolgreich. Am 2026-10-02 meldete Pennyroyal `Application startup complete`, `The server is fired up and ready to roll!` und die Smoke-Anfrage erhielt HTTP 200. Der Start benötigt etwa 15 Minuten, davon 154 s Gewichte laden und danach Autotuning/CUDA-Graph-Aufwärmung. Das Setup erzeugt das Overlay idempotent und überspringt es bei vorhandenem Index/PLE-Tisch.
 - Der ZFS ARC wird über `ZFS_ARC_MAX_GB=16` begrenzt, damit der Host bei der Modellinitialisierung nicht durch ARC-Cache verdrängt wird. Das ext4-Image wird von `scripts/47-setup-ple-storage.sh` als `nofail`-Loop-Mount in `/etc/fstab` eingetragen.
 
+### Warum der erste Start lange dauerte
+
+1. Das Modell wird aus 197 NVFP4-Shards geladen und zusätzlich in CUDA-Strukturen überführt; gemessen wurden 154 Sekunden für den Gewichts-Ladevorgang.
+2. Danach laufen FlashInfer-Autotuning, TileLang-Kompilierung und CUDA-Graph-Captures. Diese Caches liegen persistent unter `/srv/llm/cache` und werden bei Folgestarts wiederverwendet.
+3. Der ursprüngliche RAM-HiCache reservierte auf dem 64-GB-Host zu viel Speicher und verursachte Abbrüche bzw. Swap-Druck. Er ist mit `PENNY_HICACHE_SIZE_GB=0` deaktiviert.
+4. Der ZFS-NVMe-PLE-Test scheiterte beim SSD-Reader mit `io_uring`/`os error 38`. Der reproduzierbare Pfad nutzt deshalb ext4-Loop-Storage und `PodmanArgs=--security-opt=seccomp=unconfined`.
+5. OpenCode lag zunächst unter `~/.opencode/bin`, das nicht im interaktiven PATH lag. `scripts/15-install-tools.sh` legt nun zusätzlich `~/.local/bin/opencode` an und ergänzt `.profile` sowie `.bashrc` idempotent.
+
+Der nächste Aufruf von `./setup.sh` erkennt vorhandenes Modell, Image, PLE-Overlay und Caches, überspringt fertige Schritte und setzt fehlende Konfiguration nach. Ein Kaltstart kann wegen Modellprüfung und Warmup weiterhin mehrere Minuten dauern.
+
 ## Todo
 
 ### Später: professionelle Verwaltung
