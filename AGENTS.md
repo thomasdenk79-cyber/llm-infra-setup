@@ -18,6 +18,7 @@ Keine destruktiven ZFS-Befehle (`zpool create/destroy`, `zfs destroy`) hinzufüg
 4. Statische Prüfungen ausführen: `bash -n scripts/*.sh lib/*.sh`, `make validate`, `git diff --check`.
 5. `docs/STATUS.md`, `README.md` und `CHANGELOG.md` aktualisieren: Done und Todo klar trennen.
 6. Commit mit präziser Nachricht erstellen.
+7. Nach jeder abgeschlossenen Änderung Dokumentation, Commit und Push ausführen; vor dem Push nur die zugehörigen Dateien stagen und fremde uncommittete Änderungen unangetastet lassen.
 
 ## Skript-Map
 
