@@ -7,6 +7,9 @@
 - Pinned the Pennyroyal image digest and restricted its generated API binding to localhost.
 - Adapted the Pennyroyal Quadlet to the installed Podman CDI device key.
 - Made Quadlet deployment start generated services correctly and documented the missing eGPU diagnostic.
+- Added a GPU-independent observability deployment path with an external Grafana secret.
+- Fixed rootless ownership for persistent observability volumes.
+- Added GPU-independent PostgreSQL preparation and startup.
 - Added current status and installation documentation with explicit done/todo tracking.
 
 - Added the initial repository quality checks and reproducible host preflight.

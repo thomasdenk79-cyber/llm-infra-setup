@@ -6,7 +6,7 @@ After=llm-observability-network.service
 Image=docker.io/grafana/loki:3.5.2
 Network=llm-observability.network
 PublishPort=127.0.0.1:3100:3100
-Volume=%h/.local/share/llm-infra/loki:/loki:Z
+Volume=%h/.local/share/llm-infra/loki:/loki:Z,U
 Volume=@CONFIG_ROOT@/config/monitoring/loki.yml:/etc/loki/config.yml:ro,Z
 Exec=-config.file=/etc/loki/config.yml
 

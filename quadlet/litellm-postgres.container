@@ -1,0 +1,12 @@
+[Unit]
+Description=PostgreSQL for LiteLLM virtual keys
+[Container]
+Image=docker.io/library/postgres:16.4
+ContainerName=litellm-postgres
+PublishPort=127.0.0.1:5432:5432
+EnvironmentFile=%h/.config/llm-infra/postgres.env
+Volume=%h/.local/share/llm-infra/postgres:/var/lib/postgresql/data:Z
+[Service]
+Restart=on-failure
+[Install]
+WantedBy=default.target
