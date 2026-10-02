@@ -10,10 +10,13 @@ Network=llm-inference.network
 PublishPort=127.0.0.1:8001:8001
 AddDevice=nvidia.com/gpu=all
 Volume=/srv/llm/models:/models:ro
-Volume=/srv/llm/cache/pennyroyal:/cache:Z
-Volume=/srv/llm/nixl:/nixl:Z
+Volume=/srv/llm/cache/pennyroyal:/cache:U,Z
+Volume=/srv/llm/nixl:/nixl:U,Z
 Environment=HF_HOME=/cache/huggingface
-Exec=python3 -m sglang.launch_server --model-path /models/Qwen3.8-Flash-Next-NVFP4 --host 0.0.0.0 --port 8001 --served-model-name qwen3.8-flash-next --context-length 524288
+Environment=TARGET_MODEL=/models/Qwen3.8-Flash-Next-NVFP4
+Environment=CACHE_BASE=/cache
+Environment=NIXL_STORAGE_BASE=/nixl
+Exec=next
 
 [Service]
 Restart=on-failure
