@@ -18,3 +18,7 @@ make komodo
 ```
 
 Die Befehle erzeugen bzw. installieren Quadlet-Dateien. Zugangsdaten, SSH-Ziele und Grafana-Secrets müssen vorher lokal in den jeweiligen untracked Konfigurationsdateien eingerichtet werden.
+
+## Documentation
+
+Install the pinned documentation dependencies from `docs/requirements.txt`, then use `make docs` for a local server or `make docs-build` for a strict build.
