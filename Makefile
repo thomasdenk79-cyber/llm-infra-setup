@@ -6,6 +6,8 @@ preflight:
 	./scripts/00-preflight.sh
 install:
 	./scripts/10-install-packages.sh
+tools:
+	./scripts/15-install-tools.sh
 nvidia-driver:
 	./scripts/35-install-nvidia-driver.sh
 kwin-egpu:

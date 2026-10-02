@@ -40,6 +40,7 @@ status 'zfs'; run make zfs
 if [[ "${INSTALL_PACKAGES}" == 1 ]] && ! command -v podman >/dev/null 2>&1; then
   status 'packages'; retry make install
 fi
+status 'operator-tools'; retry make tools
 
 if ! nvidia-smi -L >/dev/null 2>&1; then
   status 'nvidia-driver'; retry make nvidia-driver
