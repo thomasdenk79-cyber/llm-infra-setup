@@ -9,6 +9,8 @@ source "${root}/lib/common.sh"
 : "${LLM_MODELS_DIR:=/srv/llm/models}"
 : "${LLM_CACHE_DIR:=/srv/llm/cache}"
 : "${LLM_NIXL_DIR:=/srv/llm/nixl}"
+# Zero disables the host RAM HiCache tier; this is useful on 64-GB hosts
+# where the model loader's temporary CPU peak leaves no reservation margin.
 : "${PENNY_HICACHE_SIZE_GB:=8}"
 command -v podman >/dev/null || { log 'podman is required'; exit 1; }
 retry podman pull "${PENNYROYAL_IMAGE}"
