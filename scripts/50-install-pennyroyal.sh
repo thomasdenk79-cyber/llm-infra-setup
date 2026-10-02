@@ -9,6 +9,7 @@ source "${root}/lib/common.sh"
 : "${LLM_MODELS_DIR:=/srv/llm/models}"
 : "${LLM_CACHE_DIR:=/srv/llm/cache}"
 : "${LLM_NIXL_DIR:=/srv/llm/nixl}"
+: "${PENNY_HICACHE_SIZE_GB:=8}"
 command -v podman >/dev/null || { log 'podman is required'; exit 1; }
 retry podman pull "${PENNYROYAL_IMAGE}"
 digest="$(podman image inspect "${PENNYROYAL_IMAGE}" --format '{{.Digest}}')"
@@ -38,6 +39,7 @@ Environment=HF_HOME=/cache/huggingface
 Environment=TARGET_MODEL=/models/Qwen3.8-Flash-Next-NVFP4
 Environment=CACHE_BASE=/cache
 Environment=NIXL_STORAGE_BASE=/nixl
+Environment=PENNY_HICACHE_SIZE_GB=${PENNY_HICACHE_SIZE_GB}
 Exec=next
 
 [Service]
