@@ -2,6 +2,10 @@
 
 Reproduzierbare lokale LLM-Infrastruktur für CachyOS/Arch Linux mit NVIDIA RTX PRO 6000, ZFS, Podman und Pennyroyal/SGLang.
 
+## Für weitere Agenten
+
+Die vollständigen Arbeitsregeln, Skriptkarte und Ausführungsreihenfolge stehen in [AGENTS.md](AGENTS.md). Agenten bauen das Framework und führen keine Hoständerungen aus; Betreiber führen die Skripte später bewusst aus.
+
 ## Aktueller Stand (2026-10-02)
 
 ### Erledigt und im Repository versioniert
