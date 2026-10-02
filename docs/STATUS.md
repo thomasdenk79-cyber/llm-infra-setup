@@ -46,3 +46,7 @@ LiteLLM, Autossh und Komodo-Periphery-Units sind generatorisch vorbereitet; Akti
 ## Version review
 
 Am 2026-10-02 wurden die externen Images geprüft und die beweglichen `latest`/`main-stable` Referenzen entfernt: LiteLLM `v1.101.0`, Komodo Periphery `2.3.3`. Pennyroyal bleibt auf dem dokumentierten RTX-PRO-6000-Referenzstand `v2.5.3`, bis die SM120-Kompatibilität eines neueren Releases separat geprüft ist.
+
+## Ausführungsstatus
+
+Das Repository und alle Betreiber-Skripte sind erstellt und statisch validiert. Die Hostausführung (Pakete, NVIDIA-Treiber, Reboot, Modell-/Image-Pull, Containerstart) ist bewusst noch nicht erfolgt; sie bleibt eine explizite Betreiberaktion gemäß `AGENTS.md`.
