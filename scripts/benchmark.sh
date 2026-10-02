@@ -3,7 +3,7 @@ set -Eeuo pipefail
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"; mkdir -p "$root/state/benchmarks"
 profile="${1:-quick}"; concurrency="${2:-1}"; port="${PENNYROYAL_PORT:-8001}"; url="http://127.0.0.1:${port}/v1/chat/completions"
 case "$profile" in quick) prompt='Explain ZFS in one sentence.'; max=256;; normal) prompt="$(printf 'Summarize this infrastructure design. %.0s' {1..500})"; max=1024;; long) prompt="$(printf 'Provide a detailed technical analysis. %.0s' {1..5000})"; max=1024;; *) echo 'usage: benchmark.sh [quick|normal|long] [concurrency]' >&2; exit 2;; esac
-model="${MODEL_ID:-RadixArk/Qwen3.8-Flash-Next-NVFP4}"; ts="$(date -u +%Y%m%dT%H%M%SZ)"; json="$root/state/benchmarks/$ts.json"; md="$root/state/benchmarks/$ts.md"; start=$(date +%s%3N)
+model="${BENCHMARK_MODEL:-qwen3.8-flash-next}"; ts="$(date -u +%Y%m%dT%H%M%SZ)"; json="$root/state/benchmarks/$ts.json"; md="$root/state/benchmarks/$ts.md"; start=$(date +%s%3N)
 payload=$(python3 -c 'import json,sys; print(json.dumps({"model":sys.argv[1],"messages":[{"role":"user","content":sys.argv[2]}],"max_tokens":int(sys.argv[3]),"stream":False}))' "$model" "$prompt" "$max")
 errs=0; total=0; response="{}"
 for i in $(seq 1 "$concurrency"); do out=$(curl --fail --silent --show-error --max-time 300 -H 'Content-Type: application/json' -d "$payload" "$url" 2>&1) || { errs=$((errs+1)); continue; }; total=$((total+1)); [[ "$i" == 1 ]] && response="$out"; done

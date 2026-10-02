@@ -5,7 +5,10 @@ ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def run(name,*args): return subprocess.run([os.path.join(ROOT,'scripts',name),*args],check=False).returncode
 def status():
  print('llmctl status'); print('repo:',ROOT)
- subprocess.run(['systemctl','--user','--no-pager','status','pennyroyal.service'],check=False)
+ services = ('pennyroyal','litellm-postgres','litellm','prometheus','grafana','loki','alloy','dozzle')
+ for service in services:
+  result = subprocess.run(['systemctl','--user','--no-pager','is-active',service+'.service'], capture_output=True, text=True, check=False)
+  print(f'{service}: {result.stdout.strip() or "unknown"}')
 def health(): return run('healthcheck.sh')
 def main():
  p=argparse.ArgumentParser(prog='llmctl'); s=p.add_subparsers(dest='cmd')
@@ -21,7 +24,13 @@ def main():
  if c=='benchmark': return run('benchmark.sh')
  if c=='model': return run('40-download-model.sh')
  if c=='update': return subprocess.run(['git','pull','--ff-only'],cwd=ROOT,check=False).returncode
- if c=='urls': print('Pennyroyal: http://127.0.0.1:%s' % os.getenv('PENNYROYAL_PORT','8001')); return 0
+ if c=='urls':
+  print('Pennyroyal: http://127.0.0.1:%s' % os.getenv('PENNYROYAL_PORT','8001'))
+  print('LiteLLM: http://127.0.0.1:%s' % os.getenv('LITELLM_PORT','4000'))
+  print('Grafana: http://127.0.0.1:3000')
+  print('Prometheus: http://127.0.0.1:9090')
+  print('Dozzle: http://127.0.0.1:8080')
+  return 0
  if c=='tunnel': print('Tunnel is disabled by default; configure AUTOSSH_* before enabling.'); return 0
  return 0
 if __name__=='__main__': sys.exit(main() or 0)

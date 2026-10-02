@@ -18,3 +18,5 @@ make deploy-non-gpu
 ```
 
 Das startet PostgreSQL sowie das Observability-Netz, Loki, Prometheus, Grafana, Alloy und Dozzle. Das Grafana-Adminpasswort und das PostgreSQL-Passwort werden außerhalb des Repositories erzeugt. Gateway, Autossh und Pennyroyal bleiben bis zur Runtime-Validierung bewusst getrennt.
+
+`llmctl status` zeigt den Zustand aller vorbereiteten User-Units; `llmctl urls` listet die lokalen Endpunkte. Das Benchmark-Skript verwendet standardmäßig den servierten Alias `qwen3.8-flash-next`.
