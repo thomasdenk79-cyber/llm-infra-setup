@@ -1,4 +1,4 @@
-.PHONY: preflight install nvidia-driver podman zfs validate status
+.PHONY: preflight install nvidia-driver podman zfs model pennyroyal deploy healthcheck backup validate status
 preflight:
 	./scripts/00-preflight.sh
 install:
@@ -13,3 +13,14 @@ validate:
 	./scripts/validate.sh
 status:
 	git status --short --branch
+
+model:
+	./scripts/40-download-model.sh
+pennyroyal:
+	./scripts/50-install-pennyroyal.sh
+deploy:
+	./scripts/deploy.sh
+healthcheck:
+	./scripts/healthcheck.sh
+backup:
+	./scripts/backup-config.sh
