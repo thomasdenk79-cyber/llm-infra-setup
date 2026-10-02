@@ -32,7 +32,7 @@ Die vollständigen Arbeitsregeln, Skriptkarte und Ausführungsreihenfolge stehen
 Für eine neue Installation genügt nach dem Kopieren der lokalen Konfiguration:
 
 ```bash
-./scripts/setup-qwen-pennyroyal.sh
+./setup.sh
 ```
 
 Das Skript ist idempotent. Wenn der NVIDIA-Kernel zuerst einen Neustart braucht,

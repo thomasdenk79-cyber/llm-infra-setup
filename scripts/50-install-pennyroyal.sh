@@ -10,7 +10,7 @@ source "${root}/lib/common.sh"
 : "${LLM_CACHE_DIR:=/srv/llm/cache}"
 : "${LLM_NIXL_DIR:=/srv/llm/nixl}"
 command -v podman >/dev/null || { log 'podman is required'; exit 1; }
-podman pull "${PENNYROYAL_IMAGE}"
+retry podman pull "${PENNYROYAL_IMAGE}"
 digest="$(podman image inspect "${PENNYROYAL_IMAGE}" --format '{{.Digest}}')"
 [[ "${digest}" == sha256:* ]] || { log "Could not determine image digest for ${PENNYROYAL_IMAGE}"; exit 1; }
 if [[ "${PENNYROYAL_IMAGE}" == *@* ]]; then
