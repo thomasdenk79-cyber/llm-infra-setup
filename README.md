@@ -38,6 +38,7 @@ make zfs              # bestehende Pools werden nicht zerstört
 make nvidia-driver    # reboot danach erforderlich
 make podman
 make pennyroyal       # Image pullen und Quadlet erzeugen
+make monitoring       # Prometheus/Grafana/Loki/Alloy/Dozzle-Units installieren
 make deploy
 make healthcheck
 ```

@@ -1,11 +1,12 @@
-# Operations
+# Betrieb
+
+Optionale Dienste reproduzierbar erzeugen:
 
 ```bash
-make status
-systemctl --user status pennyroyal.service
-podman ps --all
-make healthcheck
-journalctl --user -u pennyroyal.service -n 100 --no-pager
+cp config/gateway.env.example config/gateway.env
+cp config/autossh.env.example config/autossh.env
+cp config/komodo.env.example config/komodo.env
+make gateway autossh komodo
 ```
 
-Use `make backup` before changing configuration. Keep tokens in an external environment file or secret store. A runtime upgrade requires updating `versions.lock`, reviewing release notes, pulling the image, and recording the healthcheck result.
+Lokale Env-Dateien enthalten Zugangsdaten und sind nicht versioniert. Die Generatoren schreiben Quadlet-Dateien nach `quadlet/`; Units erst nach Prüfung der Zielhosts und Secrets aktivieren.

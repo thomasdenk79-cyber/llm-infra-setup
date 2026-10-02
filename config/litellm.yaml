@@ -1,0 +1,8 @@
+model_list:
+  - model_name: qwen3.8-flash-next
+    litellm_params:
+      model: openai/qwen3.8-flash-next
+      api_base: http://127.0.0.1:8001/v1
+      api_key: "os.environ/LITELLM_MASTER_KEY"
+general_settings:
+  master_key: "os.environ/LITELLM_MASTER_KEY"

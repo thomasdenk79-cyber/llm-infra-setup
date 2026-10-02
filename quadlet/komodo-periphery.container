@@ -1,0 +1,15 @@
+[Unit]
+Description=Komodo Periphery agent
+After=network-online.target
+[Container]
+Image=docker.io/moghtech/komodo-periphery:latest
+ContainerName=komodo-periphery
+PublishPort=8120:8120
+EnvironmentFile=%h/.config/llm-infra/komodo.env
+Environment=PERIPHERY_SERVER=https://komodo.example.net
+Environment=PERIPHERY_HOST=llm-host
+Volume=%h/.local/share/komodo:/etc/komodo:Z
+[Service]
+Restart=on-failure
+[Install]
+WantedBy=default.target

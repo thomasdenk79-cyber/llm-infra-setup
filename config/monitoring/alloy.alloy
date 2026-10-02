@@ -1,0 +1,11 @@
+loki.source.docker "containers" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = [{__address__ = "localhost"}]
+  labels     = {job = "containerlogs"}
+  forward_to = [loki.write.local.receiver]
+}
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

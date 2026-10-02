@@ -1,0 +1,15 @@
+[Unit]
+Description=Dozzle container log viewer
+After=llm-observability-network.service
+
+[Container]
+Image=docker.io/amir20/dozzle:v8.14.7
+Network=llm-observability.network
+PublishPort=9999:8080
+Volume=%t/podman/podman.sock:/var/run/docker.sock:ro
+
+[Service]
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
