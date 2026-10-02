@@ -44,6 +44,10 @@ if zfs list -H -o name "${pool}/srv" >/dev/null 2>&1; then
   sudo zfs set compression=lz4 "${pool}/srv"
 fi
 sudo zfs set compression=lz4 "${dataset}"
+# Model weights are read once through mmap during startup and should not evict
+# application pages from the ZFS ARC. Keep metadata cached, but bypass payload
+# data in the primary ARC; the OS/page cache and SGLang own the hot pages.
+sudo zfs set primarycache=metadata "${dataset}"
 sudo zfs mount "${dataset}" 2>/dev/null || true
 sudo install -d -m 0755 -o "$(id -u)" -g "$(id -g)" /srv/llm/cache/pennyroyal /srv/llm/nixl
 # Convenience link for interactive users; data remains on the ZFS dataset.
