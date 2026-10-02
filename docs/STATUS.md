@@ -23,7 +23,8 @@ Stand: 2026-10-02
 
 ## Runtime status
 
-Der Runtime-Container läuft auf dem 64-GB-L15 mit vorbereitetem NVMe-PLE-Overlay (`/srv/llm/ple-nvme/Qwen3.8-Flash-Next-PLE-NVME`, etwa 48 GB), `PENNY_PLE_BACKEND=nvme` und `PENNY_HICACHE_SIZE_GB=0`. Der Start hat die NVMe-Integritätsprüfung bestanden und lädt aktuell die Gewichte; Health/API bleiben bis zum Server-ready-Log offen. Das Setup erzeugt das Overlay idempotent und überspringt es bei vorhandenem Index und PLE-Tisch.
+Der Runtime-Container läuft auf dem 64-GB-L15 mit vorbereitetem NVMe-PLE-Overlay auf einem ext4-Loop-Image (`/srv/llm/ple-ext4/Qwen3.8-Flash-Next-PLE-NVME`, etwa 48 GB), `PENNY_PLE_BACKEND=nvme` und `PENNY_HICACHE_SIZE_GB=0`. Der ZFS-Pfad lieferte beim SSD-Reader `OSError: Function not implemented (os error 38)`; der ext4-Testpfad mit `PodmanArgs=--security-opt=seccomp=unconfined` startet erfolgreich. Am 2026-10-02 meldete Pennyroyal `Application startup complete`, `The server is fired up and ready to roll!` und die Smoke-Anfrage erhielt HTTP 200. Der Start benötigt etwa 15 Minuten, davon 154 s Gewichte laden und danach Autotuning/CUDA-Graph-Aufwärmung. Das Setup erzeugt das Overlay idempotent und überspringt es bei vorhandenem Index/PLE-Tisch.
+- Der ZFS ARC wird über `ZFS_ARC_MAX_GB=16` begrenzt, damit der Host bei der Modellinitialisierung nicht durch ARC-Cache verdrängt wird. Das ext4-Image wird von `scripts/47-setup-ple-storage.sh` als `nofail`-Loop-Mount in `/etc/fstab` eingetragen.
 
 ## Todo
 
@@ -41,7 +42,7 @@ Der Runtime-Container läuft auf dem 64-GB-L15 mit vorbereitetem NVMe-PLE-Overla
 5. Exporter, Prometheus Targets, Grafana Dashboards und Loki-Ingestion gegen den laufenden Stack verifizieren.
 6. `make deploy-all`, `make healthcheck`, Benchmark und Reboot-Autostart testen.
 7. KVM/libvirt als getrennte spätere Phase ergänzen.
-8. NVMe-PLE vorbereiten und testen: vollständige ca. 100-GB-PLE-Tabelle auf `/srv`, `ssd_stream`-Plugin, Speicher-/Durchsatzvergleich gegen RAM-PLE. Upstream dokumentiert dabei rund 47.7 GiB RAM-Ersparnis bei zusätzlicher SSD-I/O-Latenz.
+8. NVMe-PLE auf einer echten dedizierten ext4/NVMe-Partition testen und den Loop-Image-Overhead messen. Danach Speicher-/Durchsatzvergleich gegen RAM-PLE; Upstream dokumentiert rund 47.7 GiB RAM-Ersparnis bei zusätzlicher SSD-I/O-Latenz.
 
 ## Ein-Befehl-Setup
 

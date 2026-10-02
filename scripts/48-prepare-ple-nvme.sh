@@ -5,7 +5,7 @@ source "${root}/lib/common.sh"
 [[ -f "${root}/config/host.env" ]] && source "${root}/config/host.env"
 : "${LLM_MODELS_DIR:=/srv/llm/models}"
 : "${PENNYROYAL_IMAGE:=ghcr.io/jpezzulli/sglang-rtxpro6000:v2.5.3}"
-: "${PENNY_PLE_NVME_MODEL:=/srv/llm/ple-nvme/Qwen3.8-Flash-Next-PLE-NVME}"
+: "${PENNY_PLE_NVME_MODEL:=/srv/llm/ple-ext4/Qwen3.8-Flash-Next-PLE-NVME}"
 source_dir="${LLM_MODELS_DIR}/Qwen3.8-Flash-Next-NVFP4"
 parent_dir="$(dirname -- "${PENNY_PLE_NVME_MODEL}")"
 command -v podman >/dev/null || { log 'podman is required'; exit 1; }

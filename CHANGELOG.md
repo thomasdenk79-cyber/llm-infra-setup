@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added idempotent ext4-backed NVMe-PLE storage, persistent nofail mounting, a 16-GiB ZFS ARC cap, and the Quadlet io_uring/seccomp compatibility setting. Verified Pennyroyal startup and HTTP 200 on the local chat API.
+
 - Set model and `/srv` service datasets to the broadly compatible ZFS `lz4` compression profile.
 - Added model download, pinned Pennyroyal image/Quadlet generation, rootless deployment, healthcheck, and configuration backup scripts.
 - Completed the resumable Qwen model download and added indexed safetensor verification with Hub revision locking.

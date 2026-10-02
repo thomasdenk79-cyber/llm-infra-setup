@@ -10,7 +10,11 @@ source "${root}/lib/common.sh"
 : "${LLM_CACHE_DIR:=/srv/llm/cache}"
 : "${LLM_NIXL_DIR:=/srv/llm/nixl}"
 : "${PENNY_PLE_BACKEND:=nvme}"
-: "${PENNY_PLE_NVME_MODEL:=/srv/llm/ple-nvme/Qwen3.8-Flash-Next-PLE-NVME}"
+: "${PENNY_PLE_NVME_MODEL:=/srv/llm/ple-ext4/Qwen3.8-Flash-Next-PLE-NVME}"
+# The SSD PLE reader uses io_uring.  Podman's default seccomp profile blocks
+# the required io_uring setup syscall on this host, so keep this explicit and
+# configurable for the generated Quadlet.
+: "${PENNY_SECURITY_OPT:=seccomp=unconfined}"
 # Zero disables the host RAM HiCache tier; this is useful on 64-GB hosts
 # where the model loader's temporary CPU peak leaves no reservation margin.
 : "${PENNY_HICACHE_SIZE_GB:=8}"
@@ -36,6 +40,7 @@ ContainerName=pennyroyal
 Network=llm-inference.network
 PublishPort=127.0.0.1:${PENNYROYAL_PORT}:8001
 AddDevice=nvidia.com/gpu=all
+PodmanArgs=--security-opt=${PENNY_SECURITY_OPT}
 Volume=${LLM_MODELS_DIR}:/models:ro
 Volume=${LLM_CACHE_DIR}/pennyroyal:/cache:U,Z
 Volume=${LLM_NIXL_DIR}:/nixl:U,Z

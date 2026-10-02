@@ -9,15 +9,19 @@ ContainerName=pennyroyal
 Network=llm-inference.network
 PublishPort=127.0.0.1:8001:8001
 AddDevice=nvidia.com/gpu=all
+PodmanArgs=--security-opt=seccomp=unconfined
 Volume=/srv/llm/models:/models:ro
 Volume=/srv/llm/cache/pennyroyal:/cache:U,Z
 Volume=/srv/llm/nixl:/nixl:U,Z
+Volume=/srv/llm/ple-ext4:/ple:ro,Z
 Volume=/home/z000g9hu/work/llm-infra-setup/config/pennyroyal/serve-flash-next-frspec.sh:/opt/pennyroyal/configs/pennyroyal/serve-flash-next-frspec.sh:ro,Z
 Environment=HF_HOME=/cache/huggingface
 Environment=TARGET_MODEL=/models/Qwen3.8-Flash-Next-NVFP4
 Environment=CACHE_BASE=/cache
 Environment=NIXL_STORAGE_BASE=/nixl
 Environment=PENNY_HICACHE_SIZE_GB=0
+Environment=PENNY_PLE_BACKEND=nvme
+Environment=PENNY_PLE_NVME_MODEL=/ple/Qwen3.8-Flash-Next-PLE-NVME
 Exec=next
 
 [Service]
