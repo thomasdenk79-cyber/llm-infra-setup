@@ -10,6 +10,15 @@ Agenten arbeiten vollständig autonom. Nach einem read-only Preflight dürfen si
 
 Keine destruktiven ZFS-Befehle (`zpool create/destroy`, `zfs destroy`) hinzufügen. Keine Tokens, Passwörter, SSH-Keys oder Hugging-Face-Secrets committen.
 
+Das Root-Skript `./setup.sh` ist der bevorzugte autonome Einstiegspunkt. Es darf
+generierte Quadlets, lokale Laufzeitkonfigurationen und Statusdateien bei jedem
+Lauf idempotent neu schreiben, wenn dadurch keine Nutzdaten, ZFS-Datasets oder
+Secrets gelöscht werden. Bereits vorhandene Downloads und Images müssen erkannt
+und übersprungen bzw. resumiert werden. Netzwerkphasen brauchen Retries mit
+Backoff, Locking und nachvollziehbare Logs. Unabhängige Phasen wie Modell- und
+Image-Downloads dürfen parallel laufen; der Master muss ihre Jobs überwachen und
+bei Fehlern mit einem erneuten Aufruf fortsetzbar bleiben.
+
 ## Ablauf
 
 1. Bestehenden Zustand lesen: `README.md`, `docs/STATUS.md`, `versions.lock`, `Makefile`, relevante Skripte.

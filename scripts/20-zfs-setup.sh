@@ -45,7 +45,7 @@ if zfs list -H -o name "${pool}/srv" >/dev/null 2>&1; then
 fi
 sudo zfs set compression=lz4 "${dataset}"
 sudo zfs mount "${dataset}" 2>/dev/null || true
-sudo install -d -m 0755 /srv/llm/cache/pennyroyal /srv/llm/nixl
+sudo install -d -m 0755 -o "$(id -u)" -g "$(id -g)" /srv/llm/cache/pennyroyal /srv/llm/nixl
 # Convenience link for interactive users; data remains on the ZFS dataset.
 install -d -m 0755 "${HOME}/llm"
 ln -sfn /srv/llm/models "${HOME}/llm/models"
