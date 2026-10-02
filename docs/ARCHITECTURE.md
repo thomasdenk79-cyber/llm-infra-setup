@@ -8,3 +8,7 @@ Observability is composed of Prometheus, Grafana, Loki/Alloy, node/GPU/ZFS expor
 ## Model storage
 
 `/srv/llm/models` is the canonical path because it is the mountpoint of the dedicated ZFS dataset (`zstd-9`, 1 MiB recordsize, atime off). Rootless Podman bind-mounts this path read-only as `/models`. The setup creates `~/llm/models` as a convenience symlink; it does not duplicate data or change the canonical path.
+
+## KVM roadmap
+
+Virtual machines will be added as a separate layer. The first implementation should validate CPU virtualization, IOMMU groups, libvirt networking and OVMF without binding the LLM GPU to VFIO. Passthrough is an explicit later change because it would remove the GPU from the host runtime.

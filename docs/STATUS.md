@@ -50,3 +50,7 @@ Am 2026-10-02 wurden die externen Images geprüft und die beweglichen `latest`/`
 ## Ausführungsstatus
 
 Das Repository und alle Betreiber-Skripte sind erstellt und statisch validiert. Die Hostausführung (Pakete, NVIDIA-Treiber, Reboot, Modell-/Image-Pull, Containerstart) ist bewusst noch nicht erfolgt; sie bleibt eine explizite Betreiberaktion gemäß `AGENTS.md`.
+
+## Nächste Ausbaustufe: KVM
+
+Geplant sind libvirt/virt-manager, OVMF, virtio sowie eine dokumentierte IOMMU/VFIO-Prüfung. GPU-Passthrough wird erst nach Prüfung der PCIe-IOMMU-Gruppen und eines Rückfallpfads für den nativen LLM-Betrieb aktiviert; die RTX PRO 6000 bleibt bis dahin dem Host zugeordnet.
