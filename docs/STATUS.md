@@ -27,6 +27,13 @@ Der Runtime-Container wurde noch nicht erfolgreich gestartet: Beim Baseline-Vers
 
 ## Todo
 
+### Später: professionelle Verwaltung
+
+- Cockpit oder Podman Desktop als WebGUI bewerten.
+- Komodo als GitOps-Steuerung aktivieren.
+- Rollen, Deployments, Monitoring und Serviceübersicht wie bei einer kleinen
+  OpenShift-ähnlichen Plattform ergänzen.
+
 1. Host neu starten und prüfen, dass eGPU, `/dev/nvidia*` und NVIDIA-CDI wieder sichtbar sind.
 2. Pennyroyal-Quadlet deployen und Baseline-Requests prüfen, sobald die GPU wieder sichtbar ist.
 3. ZFS-Snapshot für die verifizierte Modellrevision erstellen.
