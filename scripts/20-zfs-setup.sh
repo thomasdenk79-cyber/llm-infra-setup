@@ -21,5 +21,8 @@ else
 fi
 sudo zfs mount "${dataset}" 2>/dev/null || true
 sudo install -d -m 0755 /srv/llm/cache/pennyroyal /srv/llm/nixl
+# Convenience link for interactive users; data remains on the ZFS dataset.
+install -d -m 0755 "${HOME}/llm"
+ln -sfn /srv/llm/models "${HOME}/llm/models"
 zfs get -H -o property,value mountpoint,compression,atime,recordsize "${dataset}"
 log "Model dataset ready at /srv/llm/models"
