@@ -7,3 +7,14 @@
 5. Mit `make healthcheck` und `systemctl --user status pennyroyal.service` prüfen.
 
 Für Hugging Face wird ein separat verwaltetes Login/Token benötigt; es darf nicht im Repository landen.
+
+Optionale Erweiterungen werden danach ausschließlich als Framework vorbereitet:
+
+```bash
+make gateway
+make monitoring
+make autossh
+make komodo
+```
+
+Die Befehle erzeugen bzw. installieren Quadlet-Dateien. Zugangsdaten, SSH-Ziele und Grafana-Secrets müssen vorher lokal in den jeweiligen untracked Konfigurationsdateien eingerichtet werden.

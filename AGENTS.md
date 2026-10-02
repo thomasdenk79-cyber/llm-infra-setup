@@ -31,6 +31,11 @@ Keine destruktiven ZFS-Befehle (`zpool create/destroy`, `zfs destroy`) hinzufüg
 | `scripts/35-install-nvidia-driver.sh` | NVIDIA Open DKMS, Module und Initramfs vorbereiten |
 | `scripts/40-download-model.sh` | Gepinntes Hugging-Face-Modell in ZFS laden |
 | `scripts/50-install-pennyroyal.sh` | Gepinntes Image ziehen und Quadlet-Unit erzeugen |
+| `scripts/45-configure-kwin-egpu.sh` | Optionale KWin-DRM-Auswahl als versionierte Hostkonfiguration |
+| `scripts/60-install-gateway.sh` | LiteLLM-Konfiguration und Quadlet erzeugen |
+| `scripts/60-install-monitoring.sh` | Prometheus/Grafana/Loki/Alloy/Dozzle-Quadlets installieren |
+| `scripts/61-install-autossh.sh` | Optionalen abgesicherten Reverse-Tunnel vorbereiten |
+| `scripts/62-install-komodo.sh` | Komodo-Periphery-Quadlet vorbereiten |
 | `scripts/deploy.sh` | Quadlet in User-Konfiguration installieren und aktivieren |
 | `scripts/healthcheck.sh` | Lokalen Runtime-Health-Endpunkt prüfen |
 | `scripts/benchmark.sh` | Erreichbarkeit als Benchmark-Voraussetzung prüfen |
