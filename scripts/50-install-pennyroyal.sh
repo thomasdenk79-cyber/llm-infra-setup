@@ -37,6 +37,7 @@ AddDevice=nvidia.com/gpu=all
 Volume=${LLM_MODELS_DIR}:/models:ro
 Volume=${LLM_CACHE_DIR}/pennyroyal:/cache:U,Z
 Volume=${LLM_NIXL_DIR}:/nixl:U,Z
+Volume=${root}/config/pennyroyal/serve-flash-next-frspec.sh:/opt/pennyroyal/configs/pennyroyal/serve-flash-next-frspec.sh:ro,Z
 Environment=HF_HOME=/cache/huggingface
 Environment=TARGET_MODEL=/models/Qwen3.8-Flash-Next-NVFP4
 Environment=CACHE_BASE=/cache

@@ -23,7 +23,7 @@ Stand: 2026-10-02
 
 ## Runtime status
 
-Der Runtime-Container wurde noch nicht erfolgreich gestartet: Beim Baseline-Versuch war die eGPU aus `lspci` verschwunden, sodass `/dev/nvidia*` fehlte und CDI den Start korrekt ablehnte. PostgreSQL, LiteLLM, Open WebUI, Homepage und Observability können ohne GPU laufen; Modellanfragen und Pennyroyal-Metrikchecks bleiben bis zum GPU-Reconnect offen.
+Der Runtime-Container benötigt auf dem 64-GB-L15 noch einen erfolgreichen GPU-only-Start. Der Pennyroyal-Loader erreicht beim Modellstart einen temporären Host-RAM-Peak von etwa 52 GB; selbst 8 GB HiCache scheitern danach an der Hostpool-Prüfung. `PENNY_HICACHE_SIZE_GB=0` ist als L15-Test vorgesehen, muss aber im gemounteten FR-Spec-Wrapper noch vollständig aktiviert werden. Der aktuelle RAM-PLE-Pfad bleibt bis dahin bewusst unverändert.
 
 ## Todo
 
@@ -41,6 +41,7 @@ Der Runtime-Container wurde noch nicht erfolgreich gestartet: Beim Baseline-Vers
 5. Exporter, Prometheus Targets, Grafana Dashboards und Loki-Ingestion gegen den laufenden Stack verifizieren.
 6. `make deploy-all`, `make healthcheck`, Benchmark und Reboot-Autostart testen.
 7. KVM/libvirt als getrennte spätere Phase ergänzen.
+8. NVMe-PLE vorbereiten und testen: vollständige ca. 100-GB-PLE-Tabelle auf `/srv`, `ssd_stream`-Plugin, Speicher-/Durchsatzvergleich gegen RAM-PLE. Upstream dokumentiert dabei rund 47.7 GiB RAM-Ersparnis bei zusätzlicher SSD-I/O-Latenz.
 
 ## Ein-Befehl-Setup
 
