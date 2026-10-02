@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"; source "$root/lib/common.sh"
 [[ -f "$root/config/komodo.env" ]] && source "$root/config/komodo.env" || true
-: "${KOMODO_IMAGE:=docker.io/moghtech/komodo-periphery:latest}"; : "${KOMODO_SERVER_URL:=https://komodo.example.net}"; : "${KOMODO_PERIPHERY_NAME:=llm-host}"
+: "${KOMODO_IMAGE:=ghcr.io/moghtech/komodo-periphery:2.3.3}"; : "${KOMODO_SERVER_URL:=https://komodo.example.net}"; : "${KOMODO_PERIPHERY_NAME:=llm-host}"
 install -d "$root/quadlet"; cat > "$root/quadlet/komodo-periphery.container" <<UNIT
 [Unit]
 Description=Komodo Periphery agent

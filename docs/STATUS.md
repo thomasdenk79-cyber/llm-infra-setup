@@ -42,3 +42,7 @@ Die KWin-Wayland-GPU-Auswahl für den ThinkPad L15 Gen 2 (20X4) mit Blackwell-eG
 - Image-Tags regelmäßig gegen Upstream prüfen und danach in den Quadlets pinnen/aktualisieren.
 
 LiteLLM, Autossh und Komodo-Periphery-Units sind generatorisch vorbereitet; Aktivierung und Zugangsdaten bleiben hostabhängig.
+
+## Version review
+
+Am 2026-10-02 wurden die externen Images geprüft und die beweglichen `latest`/`main-stable` Referenzen entfernt: LiteLLM `v1.101.0`, Komodo Periphery `2.3.3`. Pennyroyal bleibt auf dem dokumentierten RTX-PRO-6000-Referenzstand `v2.5.3`, bis die SM120-Kompatibilität eines neueren Releases separat geprüft ist.

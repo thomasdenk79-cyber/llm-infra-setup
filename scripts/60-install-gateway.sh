@@ -4,7 +4,7 @@ root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"; source "$root/lib
 [[ -f "$root/config/host.env" ]] && source "$root/config/host.env"
 [[ -f "$root/config/model.env" ]] && source "$root/config/model.env"
 [[ -f "$root/config/gateway.env" ]] && source "$root/config/gateway.env"
-: "${LITELLM_IMAGE:=ghcr.io/berriai/litellm:main-stable}"; : "${LITELLM_PORT:=4000}"; : "${PENNYROYAL_BASE_URL:=http://127.0.0.1:8001/v1}"
+: "${LITELLM_IMAGE:=ghcr.io/berriai/litellm:v1.101.0}"; : "${LITELLM_PORT:=4000}"; : "${PENNYROYAL_BASE_URL:=http://127.0.0.1:8001/v1}"
 install -d "$root/quadlet"
 cat > "$root/quadlet/litellm.container" <<UNIT
 [Unit]

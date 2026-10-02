@@ -13,3 +13,5 @@ nvidia_gpu: RTX PRO 6000 Blackwell Workstation Edition
 nvidia_gpu_uuid: GPU-780d3589-9811-40ec-db66-93a9146697f3
 pennyroyal: not-installed
 model: not-downloaded
+litellm: v1.101.0
+komodo_periphery: v2.3.3
