@@ -6,7 +6,7 @@ Dieses Repository ist die versionierte Quelle der Wahrheit für eine lokale LLM-
 
 ## Arbeitsmodus
 
-Agenten bauen und ändern primär Dateien im Repository. Sie führen **keine** Installationen, Downloads, Reboots, Containerstarts, systemd-Aktivierungen, ZFS-Mutationen oder Änderungen am Host aus. Erlaubt sind nur lesende Inspektion und statische Prüfungen (z. B. `bash -n`, `make validate`, `git diff --check`). Die erzeugten Skripte werden später vom Betreiber bewusst ausgeführt.
+Agenten arbeiten vollständig autonom. Nach einem read-only Preflight dürfen sie Installationen, Downloads, Reboots, Containerstarts, systemd-Aktivierungen und nicht destruktive Hoständerungen selbst ausführen. Jeder dauerhafte Schritt muss zuerst als idempotentes Repository-Skript oder versionierte Konfiguration abgebildet, danach ausgeführt, getestet, dokumentiert, committed und gepusht werden.
 
 Keine destruktiven ZFS-Befehle (`zpool create/destroy`, `zfs destroy`) hinzufügen. Keine Tokens, Passwörter, SSH-Keys oder Hugging-Face-Secrets committen.
 
