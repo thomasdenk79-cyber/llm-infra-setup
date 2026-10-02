@@ -29,9 +29,8 @@ fi
 dataset="${pool}/llm/models"
 parent="${pool}/llm"
 # Keep model and service data on the broadly compatible lz4 compressor. This
-# and avoids requiring an optional pool compression feature when rebuilding a
-# host from the repository.
-compression="lz4"
+# avoids requiring an optional pool compression feature when rebuilding a host
+# from the repository.
 if ! zfs list -H -o name "${parent}" >/dev/null 2>&1; then
   sudo zfs create -o mountpoint=none "${parent}"
 fi

@@ -16,8 +16,15 @@ if ! pacman -Q linux-cachyos-headers >/dev/null 2>&1; then
   exit 1
 fi
 
-# RTX PRO 6000 Blackwell (GB202) supports NVIDIA's open kernel modules.
-sudo pacman -S --needed --noconfirm dkms nvidia-open-dkms nvidia-utils nvidia-settings
+# RTX PRO 6000 Blackwell (GB202) supports NVIDIA's open kernel modules. CachyOS
+# may provide a kernel-matched module package already; that conflicts with the
+# DKMS variant, so keep the existing packaged module when present.
+if pacman -Q linux-cachyos-nvidia-open >/dev/null 2>&1; then
+  log 'Using the installed linux-cachyos-nvidia-open kernel module package.'
+  sudo pacman -S --needed --noconfirm nvidia-utils nvidia-settings
+else
+  sudo pacman -S --needed --noconfirm dkms nvidia-open-dkms nvidia-utils nvidia-settings
+fi
 sudo install -d -m 0755 /etc/modules-load.d
 sudo install -m 0644 "${root}/config/nvidia/modules-load.conf" /etc/modules-load.d/llm-infra-nvidia.conf
 sudo install -d -m 0755 /etc/modprobe.d
