@@ -12,6 +12,8 @@ import json,sys,datetime
 p,profile,conc,ms,ok,errors,response=sys.argv[1:]; d={"timestamp":datetime.datetime.now(datetime.timezone.utc).isoformat(),"profile":profile,"concurrency":int(conc),"elapsed_ms":int(ms),"successful_requests":int(ok),"errors":int(errors)}
 try:
  x=json.loads(response); u=x.get('usage',{}); d.update({"prompt_tokens":u.get('prompt_tokens'),"completion_tokens":u.get('completion_tokens'),"total_tokens":u.get('total_tokens')})
+ if u.get('completion_tokens') and int(ms) > 0:
+  d["tokens_per_second"] = round(u["completion_tokens"] / (int(ms) / 1000), 2)
 except Exception: pass
 open(p,'w').write(json.dumps(d,indent=2)+"\n")
 PY
@@ -22,6 +24,7 @@ cat > "$md" <<EOF2
 - Concurrency: **$concurrency**
 - Elapsed: **${elapsed}ms**
 - Successful: **$total**; errors: **$errs**
+- Tokens per second are recorded in the JSON result when the API returns completion usage.
 
 Raw machine-readable result: $(basename "$json")
 EOF2
