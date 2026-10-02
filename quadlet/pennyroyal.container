@@ -6,7 +6,7 @@ After=network-online.target
 Image=ghcr.io/jpezzulli/sglang-rtxpro6000:v2.5.3@sha256:c36a326dcb6a99e12ffdc89ae2f2ca0365a02fb3c72ed8b18f88d63cdc7f5a8c
 ContainerName=pennyroyal
 PublishPort=127.0.0.1:8001:8001
-Device=nvidia.com/gpu=all
+AddDevice=nvidia.com/gpu=all
 Volume=/srv/llm/models:/models:ro
 Volume=/srv/llm/cache/pennyroyal:/cache:Z
 Volume=/srv/llm/nixl:/nixl:Z

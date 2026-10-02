@@ -28,7 +28,7 @@ After=network-online.target
 Image=${image_ref}
 ContainerName=pennyroyal
 PublishPort=127.0.0.1:${PENNYROYAL_PORT}:8001
-Device=nvidia.com/gpu=all
+AddDevice=nvidia.com/gpu=all
 Volume=${LLM_MODELS_DIR}:/models:ro
 Volume=${LLM_CACHE_DIR}/pennyroyal:/cache:Z
 Volume=${LLM_NIXL_DIR}:/nixl:Z
