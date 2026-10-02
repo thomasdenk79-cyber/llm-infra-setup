@@ -29,6 +29,16 @@ Die vollständigen Arbeitsregeln, Skriptkarte und Ausführungsreihenfolge stehen
 
 ## Schnellstart
 
+Für eine neue Installation genügt nach dem Kopieren der lokalen Konfiguration:
+
+```bash
+./scripts/setup-qwen-pennyroyal.sh
+```
+
+Das Skript ist idempotent. Wenn der NVIDIA-Kernel zuerst einen Neustart braucht,
+startet es danach mit demselben Befehl weiter. Modell, Quadlet und API werden
+auf dem in `config/host.env` gesetzten `/srv`-Pool eingerichtet.
+
 ```bash
 cp config/host.env.example config/host.env
 cp config/model.env.example config/model.env

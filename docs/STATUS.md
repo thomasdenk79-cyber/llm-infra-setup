@@ -35,6 +35,13 @@ Der Runtime-Container wurde noch nicht erfolgreich gestartet: Beim Baseline-Vers
 6. `make deploy-all`, `make healthcheck`, Benchmark und Reboot-Autostart testen.
 7. KVM/libvirt als getrennte spätere Phase ergänzen.
 
+## Ein-Befehl-Setup
+
+`./scripts/setup-qwen-pennyroyal.sh` bündelt ZFS-Pfad, Paket-/GPU-Prüfung,
+Modell-Download, Pennyroyal-Quadlet, Deployment und Healthcheck. Variablen wie
+`ZFS_POOL`, `AUTO_REBOOT`, `DOWNLOAD_MODEL` und `START_RUNTIME` können vor dem
+Aufruf gesetzt werden.
+
 ## Betriebsregeln
 
 - Keine ZFS-Pools erstellen, zerstören oder umstrukturieren.

@@ -1,4 +1,7 @@
 .PHONY: docs docs-build pre-commit-install preflight install nvidia-driver kwin-egpu podman zfs model model-verify pennyroyal gateway litellm open-webui autossh komodo postgres deploy deploy-all deploy-non-gpu deploy-ready homepage portal healthcheck backup benchmark validate status
+setup:
+	./scripts/setup-qwen-pennyroyal.sh
+
 preflight:
 	./scripts/00-preflight.sh
 install:
