@@ -6,9 +6,10 @@ source "${root}/lib/common.sh"
 [[ -f "${root}/config/model.env" ]] && source "${root}/config/model.env"
 : "${LLM_MODELS_DIR:=/srv/llm/models}"
 : "${MODEL_ID:=RadixArk/Qwen3.8-Flash-Next-NVFP4}"
-command -v huggingface-cli >/dev/null 2>&1 || { log 'huggingface-cli is missing; install huggingface_hub and authenticate separately.'; exit 1; }
-mkdir -p "${LLM_MODELS_DIR}"
+if command -v hf >/dev/null 2>&1; then hf_cmd=(hf download); hf_opts=(); elif command -v huggingface-cli >/dev/null 2>&1; then hf_cmd=(huggingface-cli download); hf_opts=(--local-dir-use-symlinks False); else log 'hf CLI is missing; install huggingface_hub and authenticate separately.'; exit 1; fi
+sudo install -d -m 0755 "${LLM_MODELS_DIR}"
 target="${LLM_MODELS_DIR}/$(basename "${MODEL_ID}")"
+if [[ ! -d "${target}" ]]; then sudo install -d -m 0755 -o "$(id -u)" -g "$(id -g)" "${target}"; fi
 if [[ -f "${target}/config.json" ]]; then log "Model already present: ${target}"; exit 0; fi
-huggingface-cli download "${MODEL_ID}" --local-dir "${target}" --local-dir-use-symlinks False
+"${hf_cmd[@]}" "${MODEL_ID}" --local-dir "${target}" "${hf_opts[@]}"
 log "Model downloaded to ${target}"

@@ -1,0 +1,33 @@
+site_name: LLM Infrastructure Setup
+site_description: Reproducible local Qwen infrastructure on CachyOS
+site_url: https://example.invalid/llm-infra-setup
+theme:
+  name: material
+  language: de
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - search.suggest
+    - toc.integrate
+plugins:
+  - search
+markdown_extensions:
+  - admonition
+  - attr_list
+  - pymdownx.details
+  - pymdownx.superfences
+  - toc:
+      permalink: true
+nav:
+  - Start: index.md
+  - Architektur: architecture.md
+  - Installation: install.md
+  - Betrieb: operations.md
+  - Monitoring: monitoring.md
+  - Fehleranalyse: troubleshooting.md
+  - Sicherheit: security.md
+  - Wiederherstellung: disaster-recovery.md
+  - Status: status.md
+  - English:
+      - Overview: en/index.md
+      - Operations: en/operations.md

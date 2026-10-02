@@ -5,7 +5,7 @@ After=llm-observability-network.service
 [Container]
 Image=docker.io/prom/prometheus:v3.5.0
 Network=llm-observability.network
-PublishPort=9090:9090
+PublishPort=127.0.0.1:9090:9090
 Volume=%h/.local/share/llm-infra/prometheus:/prometheus:Z
 Volume=@CONFIG_ROOT@/config/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro,Z
 Exec=--config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus

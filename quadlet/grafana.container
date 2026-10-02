@@ -5,7 +5,7 @@ After=llm-observability-network.service prometheus.service loki.service
 [Container]
 Image=docker.io/grafana/grafana:12.1.1
 Network=llm-observability.network
-PublishPort=3000:3000
+PublishPort=127.0.0.1:3000:3000
 Volume=%h/.local/share/llm-infra/grafana:/var/lib/grafana:Z
 Volume=@CONFIG_ROOT@/config/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro,Z
 Environment=GF_AUTH_ANONYMOUS_ENABLED=false
