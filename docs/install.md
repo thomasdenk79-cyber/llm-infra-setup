@@ -6,6 +6,8 @@
 4. Nach dem Reboot `make podman`, anschließend `make model`, `make pennyroyal`, `make deploy`.
 5. Mit `make healthcheck` und `systemctl --user status pennyroyal.service` prüfen.
 
+Nach GPU-Reconnect und Reboot startet `make deploy-ready` den vollständigen Stack; danach `make healthcheck` ausführen.
+
 Für Hugging Face wird ein separat verwaltetes Login/Token benötigt; es darf nicht im Repository landen.
 
 Optionale Erweiterungen werden danach ausschließlich als Framework vorbereitet:

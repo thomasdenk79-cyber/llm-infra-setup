@@ -1,10 +1,12 @@
 [Unit]
 Description=Pennyroyal SGLang RTX PRO 6000 runtime
 After=network-online.target
+Wants=llm-inference-network.service
 
 [Container]
 Image=ghcr.io/jpezzulli/sglang-rtxpro6000:v2.5.3@sha256:c36a326dcb6a99e12ffdc89ae2f2ca0365a02fb3c72ed8b18f88d63cdc7f5a8c
 ContainerName=pennyroyal
+Network=llm-inference.network
 PublishPort=127.0.0.1:8001:8001
 AddDevice=nvidia.com/gpu=all
 Volume=/srv/llm/models:/models:ro

@@ -23,10 +23,12 @@ cat > "${root}/quadlet/pennyroyal.container" <<UNIT
 [Unit]
 Description=Pennyroyal SGLang RTX PRO 6000 runtime
 After=network-online.target
+Wants=llm-inference-network.service
 
 [Container]
 Image=${image_ref}
 ContainerName=pennyroyal
+Network=llm-inference.network
 PublishPort=127.0.0.1:${PENNYROYAL_PORT}:8001
 AddDevice=nvidia.com/gpu=all
 Volume=${LLM_MODELS_DIR}:/models:ro

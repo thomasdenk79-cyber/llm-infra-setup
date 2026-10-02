@@ -1,9 +1,11 @@
 [Unit]
 Description=LiteLLM API gateway
 After=pennyroyal.service
+Wants=llm-inference-network.service
 [Container]
 Image=ghcr.io/berriai/litellm:v1.101.0
 ContainerName=litellm
+Network=llm-inference.network
 PublishPort=127.0.0.1:4000:4000
 EnvironmentFile=%h/.config/llm-infra/gateway.env
 Environment=LITELLM_CONFIG=/etc/litellm/config.yaml

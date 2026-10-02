@@ -1,4 +1,4 @@
-.PHONY: docs docs-build pre-commit-install preflight install nvidia-driver kwin-egpu podman zfs model model-verify pennyroyal gateway litellm autossh komodo postgres deploy deploy-all deploy-non-gpu healthcheck backup benchmark validate status
+.PHONY: docs docs-build pre-commit-install preflight install nvidia-driver kwin-egpu podman zfs model model-verify pennyroyal gateway litellm autossh komodo postgres deploy deploy-all deploy-non-gpu deploy-ready healthcheck backup benchmark validate status
 preflight:
 	./scripts/00-preflight.sh
 install:
@@ -55,6 +55,8 @@ deploy-all:
 	./scripts/deploy-all.sh
 deploy-non-gpu:
 	./scripts/deploy-non-gpu.sh
+deploy-ready:
+	./scripts/deploy-ready.sh
 
 postgres:
 	./scripts/63-install-postgres.sh

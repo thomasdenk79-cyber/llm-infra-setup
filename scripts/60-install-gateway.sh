@@ -4,15 +4,17 @@ root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"; source "$root/lib
 [[ -f "$root/config/host.env" ]] && source "$root/config/host.env"
 [[ -f "$root/config/model.env" ]] && source "$root/config/model.env"
 [[ -f "$root/config/gateway.env" ]] && source "$root/config/gateway.env"
-: "${LITELLM_IMAGE:=ghcr.io/berriai/litellm:v1.101.0}"; : "${LITELLM_PORT:=4000}"; : "${PENNYROYAL_BASE_URL:=http://127.0.0.1:8001/v1}"
+: "${LITELLM_IMAGE:=ghcr.io/berriai/litellm:v1.101.0}"; : "${LITELLM_PORT:=4000}"; : "${PENNYROYAL_BASE_URL:=http://pennyroyal:8001/v1}"
 install -d "$root/quadlet"
 cat > "$root/quadlet/litellm.container" <<UNIT
 [Unit]
 Description=LiteLLM API gateway
 After=pennyroyal.service
+Wants=llm-inference-network.service
 [Container]
 Image=$LITELLM_IMAGE
 ContainerName=litellm
+Network=llm-inference.network
 PublishPort=127.0.0.1:$LITELLM_PORT:4000
 EnvironmentFile=%h/.config/llm-infra/gateway.env
 Environment=LITELLM_CONFIG=/etc/litellm/config.yaml
@@ -32,5 +34,6 @@ model_list:
       api_key: "os.environ/LITELLM_MASTER_KEY"
 general_settings:
   master_key: "os.environ/LITELLM_MASTER_KEY"
+  database_url: "os.environ/DATABASE_URL"
 YAML
 log 'LiteLLM Quadlet and config generated.'

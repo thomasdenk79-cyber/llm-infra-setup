@@ -12,6 +12,7 @@ Stand: 2026-10-02
 - GPU-unabhängige Observability-Units können mit `make deploy-non-gpu` gestartet werden; Grafana erhält dabei ein externes rootless Podman-Secret.
 - Rootless-Datenvolumes für Loki, Prometheus und Grafana werden mit `:U` für die jeweiligen Container-UIDs vorbereitet.
 - PostgreSQL für LiteLLM wird mit `make deploy-non-gpu` samt lokalem 0600-Env-File und persistentem Volume gestartet.
+- `make deploy-ready` ist als vollständiger Startpfad nach GPU-Reconnect/Reboot eingerichtet; Gateway, PostgreSQL und Pennyroyal teilen ein internes `llm-inference`-Netz.
 - NVIDIA CDI und rootless Podman GPU-Smoke-Test erfolgreich ausgeführt.
 - Pennyroyal, LiteLLM, PostgreSQL, Monitoring, Logging, Autossh und Komodo als versionierte Quadlet-Generatoren vorbereitet.
 - `llmctl`, Healthcheck, Benchmark, Backup und Deployment-Orchestrierung vorhanden.

@@ -12,6 +12,7 @@
 - Added GPU-independent PostgreSQL preparation and startup.
 - Added a provisioned Grafana LLM overview dashboard.
 - Improved `llmctl` service visibility and aligned benchmarks with the served model alias.
+- Added a one-command full-stack deployment path with internal inference networking and external local secrets.
 - Added current status and installation documentation with explicit done/todo tracking.
 
 - Added the initial repository quality checks and reproducible host preflight.

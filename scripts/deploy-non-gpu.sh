@@ -49,11 +49,12 @@ install -d -m 0755 "${HOME}/.local/share/llm-infra"/{loki,prometheus,grafana}
 "${root}/scripts/63-install-postgres.sh"
 ensure_postgres_env
 install_unit litellm-postgres.container
-for unit in llm-observability.network loki.container prometheus.container grafana.container alloy.container dozzle.container; do
+for unit in llm-inference.network llm-observability.network loki.container prometheus.container grafana.container alloy.container dozzle.container; do
   install_unit "${unit}"
 done
 systemctl --user daemon-reload
-systemctl --user start litellm-postgres.service
+systemctl --user start llm-inference-network.service
+systemctl --user restart litellm-postgres.service
 systemctl --user start llm-observability-network.service
 for unit in loki prometheus grafana alloy dozzle; do
   systemctl --user start "${unit}.service"

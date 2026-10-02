@@ -6,6 +6,15 @@
 4. Nach dem Reboot `make podman`, anschließend `make model`, `make pennyroyal`, `make deploy`.
 5. Mit `make healthcheck` und `systemctl --user status pennyroyal.service` prüfen.
 
+Nach GPU-Reconnect und Reboot reicht für den vollständigen Start:
+
+```bash
+make deploy-ready
+make healthcheck
+```
+
+Der Befehl prüft GPU/CDI und das Modell, erzeugt lokale Gateway-/PostgreSQL-Secrets außerhalb von Git, verbindet Runtime, Gateway und Datenbank über interne Netzwerke und startet die Observability-Dienste.
+
 Für Hugging Face wird ein separat verwaltetes Login/Token benötigt; es darf nicht im Repository landen.
 
 Optionale Erweiterungen werden danach ausschließlich als Framework vorbereitet:
