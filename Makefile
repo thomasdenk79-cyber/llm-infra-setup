@@ -1,4 +1,4 @@
-.PHONY: docs docs-build pre-commit-install preflight install nvidia-driver kwin-egpu podman zfs model pennyroyal gateway litellm autossh komodo postgres deploy deploy-all healthcheck backup benchmark validate status
+.PHONY: docs docs-build pre-commit-install preflight install nvidia-driver kwin-egpu podman zfs model model-verify pennyroyal gateway litellm autossh komodo postgres deploy deploy-all healthcheck backup benchmark validate status
 preflight:
 	./scripts/00-preflight.sh
 install:
@@ -64,3 +64,6 @@ docs-build:
 
 pre-commit-install:
 	pre-commit install
+
+model-verify:
+	./scripts/42-verify-model.sh

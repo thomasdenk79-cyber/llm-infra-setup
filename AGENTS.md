@@ -30,6 +30,7 @@ Keine destruktiven ZFS-Befehle (`zpool create/destroy`, `zfs destroy`) hinzufüg
 | `scripts/30-nvidia-podman.sh` | Rootless Podman, Linger, NVIDIA CDI und GPU-Test vorbereiten |
 | `scripts/35-install-nvidia-driver.sh` | NVIDIA Open DKMS, Module und Initramfs vorbereiten |
 | `scripts/40-download-model.sh` | Gepinntes Hugging-Face-Modell in ZFS laden |
+| `scripts/42-verify-model.sh` | Vollständigkeit und Safetensoren des Modelldownloads prüfen |
 | `scripts/50-install-pennyroyal.sh` | Gepinntes Image ziehen und Quadlet-Unit erzeugen |
 | `scripts/45-configure-kwin-egpu.sh` | Optionale KWin-DRM-Auswahl als versionierte Hostkonfiguration |
 | `scripts/60-install-gateway.sh` | LiteLLM-Konfiguration und Quadlet erzeugen |

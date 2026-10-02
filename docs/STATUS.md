@@ -18,7 +18,7 @@ Der Hugging-Face-Download wurde gestartet und ist resumierbar. Der Runtime-Conta
 
 ## Todo
 
-1. Modelldownload vollständig abschließen und Revision/Dateiprüfung in `versions.lock` eintragen.
+1. Modelldownload vollständig abschließen und mit `make model-verify` prüfen; danach Revision/Dateiprüfung in `versions.lock` eintragen.
 2. Pennyroyal-Image-Digest erfassen, Quadlet erzeugen und Baseline-Requests prüfen.
 3. PostgreSQL/LiteLLM-Virtual-Key-Konfiguration mit lokalen Secrets testen.
 4. Exporter, Prometheus Targets, Grafana Dashboards und Loki-Ingestion gegen den laufenden Stack verifizieren.
