@@ -1,4 +1,4 @@
-.PHONY: preflight install nvidia-driver kwin-egpu podman zfs model pennyroyal gateway autossh komodo deploy healthcheck backup benchmark validate status
+.PHONY: preflight install nvidia-driver kwin-egpu podman zfs model pennyroyal gateway litellm autossh komodo deploy deploy-all healthcheck backup benchmark validate status
 preflight:
 	./scripts/00-preflight.sh
 install:
@@ -48,3 +48,8 @@ logs:
 	./tui/llmctl.py logs
 benchmark:
 	./scripts/benchmark.sh
+
+litellm:
+	./scripts/70-litellm.sh
+deploy-all:
+	./scripts/deploy-all.sh

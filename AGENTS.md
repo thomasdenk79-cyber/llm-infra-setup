@@ -36,6 +36,8 @@ Keine destruktiven ZFS-Befehle (`zpool create/destroy`, `zfs destroy`) hinzufüg
 | `scripts/60-install-monitoring.sh` | Prometheus/Grafana/Loki/Alloy/Dozzle-Quadlets installieren |
 | `scripts/61-install-autossh.sh` | Optionalen abgesicherten Reverse-Tunnel vorbereiten |
 | `scripts/62-install-komodo.sh` | Komodo-Periphery-Quadlet vorbereiten |
+| `scripts/70-litellm.sh`, `80-komodo.sh`, `90-autossh.sh` | Masterprompt-kompatible Phasenwrapper |
+| `scripts/deploy-all.sh` | Vorbereitete User-Units gesammelt aktivieren (Betreiberaktion) |
 | `scripts/deploy.sh` | Quadlet in User-Konfiguration installieren und aktivieren |
 | `scripts/healthcheck.sh` | Lokalen Runtime-Health-Endpunkt prüfen |
 | `scripts/benchmark.sh` | Erreichbarkeit als Benchmark-Voraussetzung prüfen |
