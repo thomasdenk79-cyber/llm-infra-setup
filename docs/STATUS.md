@@ -23,7 +23,7 @@ Stand: 2026-10-02
 
 ## Runtime status
 
-Der Runtime-Container benötigt auf dem 64-GB-L15 noch einen erfolgreichen GPU-only-Start. Der Pennyroyal-Loader erreicht beim Modellstart einen temporären Host-RAM-Peak von etwa 52 GB; selbst 8 GB HiCache scheitern danach an der Hostpool-Prüfung. `PENNY_HICACHE_SIZE_GB=0` ist als L15-Test vorgesehen, muss aber im gemounteten FR-Spec-Wrapper noch vollständig aktiviert werden. Der aktuelle RAM-PLE-Pfad bleibt bis dahin bewusst unverändert.
+Der Runtime-Container läuft auf dem 64-GB-L15 mit vorbereitetem NVMe-PLE-Overlay (`/srv/llm/ple-nvme/Qwen3.8-Flash-Next-PLE-NVME`, etwa 48 GB), `PENNY_PLE_BACKEND=nvme` und `PENNY_HICACHE_SIZE_GB=0`. Der Start hat die NVMe-Integritätsprüfung bestanden und lädt aktuell die Gewichte; Health/API bleiben bis zum Server-ready-Log offen. Das Setup erzeugt das Overlay idempotent und überspringt es bei vorhandenem Index und PLE-Tisch.
 
 ## Todo
 

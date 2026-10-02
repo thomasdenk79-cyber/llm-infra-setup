@@ -75,6 +75,7 @@ if [[ -n "${image_job}" ]]; then
 fi
 
 if [[ "${START_RUNTIME}" == 1 ]]; then
+  status 'ple-nvme'; retry make ple-nvme
   status 'deploy'; retry make deploy
   if [[ "${API_TEST}" == 1 ]]; then
     status 'api-wait'

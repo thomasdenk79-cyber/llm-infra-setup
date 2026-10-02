@@ -9,6 +9,8 @@ source "${root}/lib/common.sh"
 : "${LLM_MODELS_DIR:=/srv/llm/models}"
 : "${LLM_CACHE_DIR:=/srv/llm/cache}"
 : "${LLM_NIXL_DIR:=/srv/llm/nixl}"
+: "${PENNY_PLE_BACKEND:=nvme}"
+: "${PENNY_PLE_NVME_MODEL:=/srv/llm/ple-nvme/Qwen3.8-Flash-Next-PLE-NVME}"
 # Zero disables the host RAM HiCache tier; this is useful on 64-GB hosts
 # where the model loader's temporary CPU peak leaves no reservation margin.
 : "${PENNY_HICACHE_SIZE_GB:=8}"
@@ -37,12 +39,15 @@ AddDevice=nvidia.com/gpu=all
 Volume=${LLM_MODELS_DIR}:/models:ro
 Volume=${LLM_CACHE_DIR}/pennyroyal:/cache:U,Z
 Volume=${LLM_NIXL_DIR}:/nixl:U,Z
+Volume=$(dirname "${PENNY_PLE_NVME_MODEL}"):/ple:ro,Z
 Volume=${root}/config/pennyroyal/serve-flash-next-frspec.sh:/opt/pennyroyal/configs/pennyroyal/serve-flash-next-frspec.sh:ro,Z
 Environment=HF_HOME=/cache/huggingface
 Environment=TARGET_MODEL=/models/Qwen3.8-Flash-Next-NVFP4
 Environment=CACHE_BASE=/cache
 Environment=NIXL_STORAGE_BASE=/nixl
 Environment=PENNY_HICACHE_SIZE_GB=${PENNY_HICACHE_SIZE_GB}
+Environment=PENNY_PLE_BACKEND=${PENNY_PLE_BACKEND}
+Environment=PENNY_PLE_NVME_MODEL=/ple/$(basename "${PENNY_PLE_NVME_MODEL}")
 Exec=next
 
 [Service]

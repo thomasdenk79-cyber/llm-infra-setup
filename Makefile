@@ -25,6 +25,8 @@ model:
 	./scripts/40-download-model.sh
 pennyroyal:
 	./scripts/50-install-pennyroyal.sh
+ple-nvme:
+	./scripts/48-prepare-ple-nvme.sh
 gateway:
 	./scripts/60-install-gateway.sh
 autossh:
