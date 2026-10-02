@@ -2,7 +2,7 @@
 Description=Komodo Periphery agent
 After=network-online.target
 [Container]
-Image=docker.io/moghtech/komodo-periphery:latest
+Image=ghcr.io/moghtech/komodo-periphery:2.3.3
 ContainerName=komodo-periphery
 PublishPort=8120:8120
 EnvironmentFile=%h/.config/llm-infra/komodo.env
