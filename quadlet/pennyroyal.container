@@ -1,0 +1,20 @@
+[Unit]
+Description=Pennyroyal SGLang RTX PRO 6000 runtime
+After=network-online.target
+
+[Container]
+Image=ghcr.io/jpezzulli/sglang-rtxpro6000:v2.5.3@sha256:c36a326dcb6a99e12ffdc89ae2f2ca0365a02fb3c72ed8b18f88d63cdc7f5a8c
+ContainerName=pennyroyal
+PublishPort=127.0.0.1:8001:8001
+Device=nvidia.com/gpu=all
+Volume=/srv/llm/models:/models:ro
+Volume=/srv/llm/cache/pennyroyal:/cache:Z
+Volume=/srv/llm/nixl:/nixl:Z
+Environment=HF_HOME=/cache/huggingface
+Exec=python3 -m sglang.launch_server --model-path /models/Qwen3.8-Flash-Next-NVFP4 --host 0.0.0.0 --port 8001 --served-model-name qwen3.8-flash-next --context-length 524288
+
+[Service]
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

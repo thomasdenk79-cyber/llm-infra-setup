@@ -11,7 +11,8 @@ nvidia_cuda_umd: 13.4
 nvidia_container_toolkit: 1.20.0-1.1
 nvidia_gpu: RTX PRO 6000 Blackwell Workstation Edition
 nvidia_gpu_uuid: GPU-780d3589-9811-40ec-db66-93a9146697f3
-pennyroyal: not-installed
+pennyroyal: v2.5.3
+pennyroyal_image_digest: sha256:c36a326dcb6a99e12ffdc89ae2f2ca0365a02fb3c72ed8b18f88d63cdc7f5a8c
 model: downloaded
 litellm: v1.101.0
 komodo_periphery: v2.3.3
