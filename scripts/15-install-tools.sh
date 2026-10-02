@@ -29,6 +29,11 @@ if [[ -x "${opencode_bin}" ]]; then
     grep -Fqx 'export PATH="$HOME/.local/bin:$PATH"' "${profile}" ||
       printf '\n# User-installed CLI tools\nexport PATH="$HOME/.local/bin:$PATH"\n' >>"${profile}"
   done
+  fish_config="${HOME}/.config/fish/config.fish"
+  install -d -m 0755 "$(dirname -- "${fish_config}")"
+  touch "${fish_config}"
+  grep -Fqx 'fish_add_path --prepend "$HOME/.local/bin"' "${fish_config}" ||
+    printf '\n# User-installed CLI tools\nfish_add_path --prepend "$HOME/.local/bin"\n' >>"${fish_config}"
   export PATH="${user_bin}:${PATH}"
   log "OpenCode available at ${user_bin}/opencode ($("${user_bin}/opencode" --version 2>/dev/null || true))"
 fi
