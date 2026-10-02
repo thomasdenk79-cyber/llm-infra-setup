@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Set model and `/srv` service datasets to the broadly compatible ZFS `lz4` compression profile.
 - Added model download, pinned Pennyroyal image/Quadlet generation, rootless deployment, healthcheck, and configuration backup scripts.
 - Completed the resumable Qwen model download and added indexed safetensor verification with Hub revision locking.
 - Pinned the Pennyroyal image digest and restricted its generated API binding to localhost.

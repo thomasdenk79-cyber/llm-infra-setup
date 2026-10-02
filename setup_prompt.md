@@ -356,7 +356,7 @@ Mountpoint bevorzugt:
 
 Eigenschaften:
 
-- compression=zstd-9
+- compression=lz4
 - atime=off
 - recordsize=1M
 - xattr=sa, sofern mit bestehender Poolkonfiguration kompatibel
@@ -377,7 +377,7 @@ Beispielname:
 
 WICHTIG:
 
-Das NIXL-Persistenzverzeichnis NICHT automatisch auf dasselbe zstd-9-Dataset legen.
+Das NIXL-Persistenzverzeichnis NICHT automatisch auf dasselbe lz4-Dataset legen.
 
 Pennyroyal/NIXL benötigt einen Datenträger bzw. ein Dateisystem, das die benötigten O_DIRECT/io_uring-Zugriffe sauber unterstützt.
 
@@ -389,7 +389,7 @@ Bevorzugter Pfad:
 
 Wenn ZFS hierfür benutzt werden soll, erst O_DIRECT/io_uring testen.
 
-Kein zstd-9 für latency-kritische NIXL-Daten.
+Kein separates Modell-Kompressionsprofil für latency-kritische NIXL-Daten voraussetzen; NIXL bleibt zunächst unter `/srv/llm/nixl` und wird separat getestet.
 
 # 8. Modell herunterladen
 
@@ -1643,7 +1643,7 @@ Die Aufgabe gilt erst als erfolgreich abgeschlossen, wenn folgende Tests bestand
 1. Nach Reboot starten die gewünschten Dienste automatisch.
 2. `nvidia-smi` funktioniert auf dem Host.
 3. GPU funktioniert aus dem Pennyroyal Podman Container.
-4. Modell liegt auf ZFS mit `compression=zstd-9`.
+4. Modell liegt auf ZFS mit `compression=lz4`.
 5. Qwen3.8 Flash-Next antwortet.
 6. OpenAI-kompatible API funktioniert.
 7. LiteLLM erreicht Pennyroyal.
@@ -2185,7 +2185,6 @@ Wenn nach Abschluss irgendeine wichtige Systemeinstellung nur deshalb funktionie
 # MkDocs
 
 Achte generell auf eine saubere, vollständige und fortlaufend gepflegte Dokumentation mit Markdown-Dateien im Repository. Die Dokumentation ist Bestandteil der Implementierung und muss bei relevanten Änderungen immer mit aktualisiert und gemeinsam mit dem Code committed werden. Erstelle mit **MkDocs** eine übersichtliche, moderne Dokumentationsseite in **Deutsch und Englisch**, mit klarer Navigation, Suchfunktion, Inhaltsverzeichnissen, Codebeispielen, Architekturdiagrammen, Screenshots und anschaulichen **animierten GIFs** für typische Abläufe wie Installation, Deployment, `llmctl`, Komodo, Grafana und Fehleranalyse. Bilder, Diagramme und GIFs müssen ebenfalls strukturiert im Repository versioniert werden. Die MkDocs-Konfiguration, Themes, Plugins und Abhängigkeiten müssen reproduzierbar im Repository definiert und versioniert sein. Die Dokumentation soll lokal mit einem einfachen Kommando wie `make docs` oder `mkdocs serve` startbar und mit `make docs-build` vollständig validierbar/buildbar sein. Vermeide Dokumentation, die nur beschreibt, *was* existiert; dokumentiere auch **warum Entscheidungen getroffen wurden, wie Komponenten zusammenarbeiten, wie typische Betriebsaufgaben durchgeführt werden und wie Fehler behoben werden**.
-
 
 
 

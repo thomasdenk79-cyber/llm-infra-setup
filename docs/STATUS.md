@@ -5,7 +5,7 @@ Stand: 2026-10-02
 ## Done
 
 - Host-Preflight erfasst CachyOS, Kernel, NVIDIA, Podman, CDI und ZFS.
-- Vorhandenes Dataset `zpcachyos/llm/models` unter `/srv/llm/models` geprüft: `compression=zstd-9`, `recordsize=1M`, `atime=off`.
+- Das Modell-Dataset unter `/srv/llm/models` wird mit `compression=lz4`, `recordsize=1M` und `atime=off` betrieben. Das Dataset liegt auf dem vorhandenen `/srv`-Pool; Pools werden nicht automatisch erstellt oder verändert.
 - Qwen3.8-Flash-Next-NVFP4 vollständig auf ZFS geladen und mit Index-/Safetensor-Prüfung verifiziert; die Hub-Revision steht in `versions.lock`.
 - Pennyroyal v2.5.3 wurde für AMD64 gepullt; der Image-Digest ist in `versions.lock` gesperrt und die Quadlet bindet den API-Port nur an localhost.
 - Die lokale Podman-Quadlet-Syntax wurde für CDI-Geräte auf `AddDevice=nvidia.com/gpu=all` angepasst.
