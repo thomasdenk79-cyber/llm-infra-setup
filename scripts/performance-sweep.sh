@@ -32,8 +32,17 @@ fi
 for profile in "${profiles[@]}"; do
   wait_ready
   echo "=== Profil $profile ==="
-  ./scripts/apply-tuning.sh --profil "$profile" --ohnemessung
-  ./scripts/session-checkpoint.sh "Performance-Sweep: Profil $profile gestartet"
+  # The current profile may already be active. Avoid a pointless cold restart
+  # (and its conservative RAM preflight) when host.env already matches it.
+  if [[ "$profile" == sweet ]] \
+     && grep -q '^PENNY_MAX_RUNNING_REQUESTS=4$' config/host.env \
+     && grep -q '^PENNY_MAX_MAMBA_CACHE_SIZE=16$' config/host.env \
+     && grep -q '^PENNY_ONLINE_FP8=false$' config/host.env; then
+    echo 'Profil sweet ist bereits aktiv; kein zusaetzlicher Neustart.'
+  else
+    ./scripts/apply-tuning.sh --profil "$profile" --ohnemessung
+    ./scripts/session-checkpoint.sh "Performance-Sweep: Profil $profile gestartet"
+  fi
   wait_ready
   case "$profile" in
     maxkv) concurrencies=(1 2) ;;

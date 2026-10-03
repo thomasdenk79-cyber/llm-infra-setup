@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T09:57:49+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T10:00:21+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -214,3 +214,7 @@ Systemoptimierungs-Matrix erweitert: Linux-VM, ZFS-ARC, Page-Cache, NVMe, CPU un
 ## Notiz 2026-10-03T09:57:49+02:00
 
 Kernel-, Scheduler-, ZFS-ARC-, VM- und I/O-Testarme samt Ableitungsregeln dokumentiert
+
+## Notiz 2026-10-03T10:00:21+02:00
+
+Sweep startet aktives sweet-Profil ohne unnoetigen Neustart erneut
