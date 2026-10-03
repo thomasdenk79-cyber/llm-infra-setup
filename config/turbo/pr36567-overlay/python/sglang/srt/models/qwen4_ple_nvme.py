@@ -538,8 +538,10 @@ class NVMePLEEmbedding(nn.Module):
         self._io_executor = ThreadPoolExecutor(
             max_workers=1, thread_name_prefix="ple-prefetch"
         )
-        self._stage: torch.Tensor | None = None
-        self._stage_event: torch.cuda.Event | None = None
+        self._stage_slots = 2
+        self._stages: list[torch.Tensor | None] = [None] * self._stage_slots
+        self._stage_events: list[torch.cuda.Event | None] = [None] * self._stage_slots
+        self._stage_next = 0
         self._calls = 0
         self._rows = 0
         self._read_seconds = 0.0
@@ -564,14 +566,25 @@ class NVMePLEEmbedding(nn.Module):
             )
         raise ValueError(f"unsupported SGLANG_QWEN4_PLE_NVME_BACKEND={backend!r}")
 
-    def _stage_buffer(self, nbytes: int) -> torch.Tensor:
-        if self._stage_event is not None:
-            self._stage_event.synchronize()
-        if self._stage is None or self._stage.numel() < nbytes:
-            self._stage = torch.empty(
+    def _stage_buffer(self, nbytes: int) -> tuple[torch.Tensor, int]:
+        """Return a pinned staging buffer and its slot, rotating round robin.
+
+        With two slots the CPU copy of this gather no longer waits for the
+        previous gather's H2D copy: only the slot reused from two gathers
+        ago must have its event completed.
+        """
+        slot = self._stage_next
+        self._stage_next = (slot + 1) % self._stage_slots
+        event = self._stage_events[slot]
+        if event is not None:
+            event.synchronize()
+        stage = self._stages[slot]
+        if stage is None or stage.numel() < nbytes:
+            stage = torch.empty(
                 nbytes, dtype=torch.uint8, device="cpu", pin_memory=True
             )
-        return self._stage[:nbytes]
+            self._stages[slot] = stage
+        return stage[:nbytes], slot
 
     def allocate_output(
         self, shape: Sequence[int], device: torch.device
@@ -661,7 +674,7 @@ class NVMePLEEmbedding(nn.Module):
                 f"NVMe PLE read returned {len(raw)} bytes; expected {expected_bytes}"
             )
         if raw:
-            stage = self._stage_buffer(len(raw))
+            stage, slot = self._stage_buffer(len(raw))
             ctypes.memmove(stage.data_ptr(), raw, len(raw))
             stream_context = (
                 torch.cuda.stream(stream) if stream is not None else nullcontext()
@@ -670,11 +683,13 @@ class NVMePLEEmbedding(nn.Module):
                 device_bytes = stage.to(device=device, non_blocking=True)
                 decoded = device_bytes.view(torch.float8_e4m3fn).to(torch.bfloat16)
                 output.copy_(decoded.view(expected_shape))
-                if self._stage_event is None:
-                    self._stage_event = torch.cuda.Event()
-                self._stage_event.record()
+                event = self._stage_events[slot]
+                if event is None:
+                    event = torch.cuda.Event()
+                    self._stage_events[slot] = event
+                event.record()
             if is_in_breakable_cuda_graph():
-                self._stage_event.synchronize()
+                self._stage_events[slot].synchronize()
         return output
 
     def reduce(self, output: torch.Tensor) -> torch.Tensor:
