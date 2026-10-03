@@ -29,7 +29,8 @@ Fehler aus systemd, Podman und Loki.
   Allocator kompatibel.
 * `c6-fp8-ram`: offizieller Leistungspfad: Online-FP8, RAM-PLE, sechs Requests,
   36 Mamba-Slots, 1.048.576 angefordertes KV und Graphen bis Batch 6.
-* `maxkv`: zwei Sitzungen, kleine Graphen, maximale gemeinsame KV-Flaeche.
+* `maxkv`: vorlaeufig eine Sitzung, Graph-Maximum 1 und grosse VRAM-Reserve;
+  erst nach einem stabilen Lauf wieder auf mehrere Sitzungen erweitern.
 * `aggressiv`: acht Sitzungen als Lastprofil.
 * `c16`: Grenztest mit 16 Requests; nicht als produktiver Sweet Spot annehmen.
 

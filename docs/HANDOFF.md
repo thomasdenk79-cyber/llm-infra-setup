@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T12:47:30+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T13:05:26+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -59,7 +59,7 @@ Der Neustart ist der einzige Schritt, der Sessions trennt. Ablauf:
 ./scripts/apply-tuning.sh --nur-plan                    # anzeigen
 ./scripts/apply-tuning.sh --profil sweet --nur-plan     # empfohlen: 4 Anfragen, 16 Plaetze
 ./scripts/apply-tuning.sh --profil aggressiv            # 8 Anfragen, 5/1/8, HiCache 16
-./scripts/apply-tuning.sh --profil maxkv                # 2 Anfragen, mehr KV-Speicher
+./scripts/apply-tuning.sh --profil maxkv                # 1 Anfrage, graph-reservensicher
 ./scripts/apply-tuning.sh --profil c16                 # Belastung: 16 Anfragen, 64 Zustandsplaetze
 ./scripts/apply-tuning.sh --zurueck                     # zur letzten Sicherung
 ./scripts/session-checkpoint.sh                         # Ergebnis sichern
@@ -249,8 +249,13 @@ Long-Context-Test auf, nachdem die Runtime mit nur etwa 0,1 GiB freiem VRAM und
 12,35 GiB privaten CUDA-Graph-Pools gestartet war. Die Auswertung verwirft diesen
 Block. Pennyroyal wurde danach erneut ueber `apply-runtime-unit.sh` gestartet.
 
-Das Profil `maxkv` (2 Requests, 12 Mamba-Slots, Graph-Maximum 2, KV-Ziel 1.0M)
-konnte waehrend des Kaltstarts zunaechst nicht angewendet werden, weil
+Das Profil `maxkv` ist nach dem beobachteten OOM vorlaeufig auf 1 Request,
+4 Mamba-Slots, Graph-Maximum 1, `mem_fraction=0.975` und KV-Ziel 524.288
+gesetzt. Der vorherige Lauf mit 4 Requests, 16 Slots und Graph-Maximum 4
+erreichte zwar `/health`, starb aber bei der ersten kurzen Folgeanfrage: nur
+8 MiB frei, 12,35 GiB private CUDA-Graph-Pools, lazy Triton-Kernel benoetigten
+weitere 80 MiB. Das ist ein echter VRAM-Reservefehler, kein Long-Context-Test.
+Das Profil konnte waehrend des Kaltstarts zunaechst nicht angewendet werden, weil
 `apply-tuning.sh` einen temporaeren Curl-Exit 56 unter `set -e -o pipefail`
 als Fehler behandelte. Dieser Guard ist in Commit `f948499` repariert. Nach
 `healthy` erneut ausfuehren:
@@ -327,3 +332,7 @@ Startup-Wartepruefung auf echte Aktivitaet umgestellt: Container, Journal, CPU, 
 ## Notiz 2026-10-03T12:47:30+02:00
 
 Startup-Wartepruefung auf echte Aktivitaet umgestellt: Container, Journal, CPU, GPU und VRAM; bei Fortschritt ueber 40 Minuten hinaus warten
+
+## Notiz 2026-10-03T13:05:26+02:00
+
+CUDA-OOM nach gesundem Start dokumentiert: 12.35 GiB Graph-Pools und lazy Triton-Kernel; maxkv vorlaeufig auf Single-Request mit Graph 1 und 0.975 Reserve gesetzt

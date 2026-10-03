@@ -89,8 +89,8 @@ case "${profile}" in
     # kleinere mitgezeichnete Batchgroessen machen Speicher fuer den
     # Zeichenspeicher frei. MAX_TOTAL_TOKENS ist nur eine Obergrenze - was
     # wirklich herauskommt, steht nach dem Start in sglang:max_total_num_tokens.
-    new_hicache=16; new_mem='0.992'; new_steps=3; new_draft=4; new_sleep=0; new_chunk=8192
-    new_running=2; new_mamba=12; new_graph=2; new_saver=1; new_total=1048576 ;;
+    new_hicache=16; new_mem='0.975'; new_steps=3; new_draft=4; new_sleep=0; new_chunk=4096
+    new_running=1; new_mamba=4; new_graph=1; new_saver=1; new_total=524288 ;;
   c16)
     # Belastungsprofil: 16 Anfragen und vier gemessene Mamba-Zustaende je Anfrage.
     new_hicache=16; new_mem='0.981'; new_steps=3; new_draft=4; new_sleep=0; new_chunk=8192

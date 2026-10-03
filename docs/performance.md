@@ -346,7 +346,7 @@ Und weil `--mem-fraction-static` die statische Gesamtgroesse festlegt (98,1 % vo
 | `mem-fraction-static` hoher | etwas mehr Pool, weniger Reserve fuer Aktivierungen |
 
 Praktische Folgen fuer diesen Rechner (drei bis vier grosse Sitzungen):
-`maxkv` = 2 Anfragen / 12 Plaetze / Ziel 1.048.576 Token;
+`maxkv` = 1 Anfrage / 4 Plaetze / Graph-Maximum 1 / Ziel 524.288 Token;
 `sweet` = 4 Anfragen / 16 Plaetze / Ziel 1.048.576 Token;
 `aggressiv` = 8 Anfragen / 32 Plaetze (Zeichenspeicher wird dadurch kleiner).
 Nach jedem Start nachsehen:
