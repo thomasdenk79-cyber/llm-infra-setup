@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T20:54:45+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T23:57:28+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -612,3 +612,7 @@ TTFT/steady/aggregat, Rueckbau, Checkpoints) liegt in
 Produktionsdienst `sglang-turbo-c6` (Port 8002, `--disable-cuda-graph`,
 PLE mmap) laeuft unveraendert weiter; Pennyroyal bleibt Fallback.
 
+
+## Notiz 2026-10-03T23:57:28+02:00
+
+Doku: Rangfolge ohne Benchmark unbekannt, ple-preload.sh qualifiziert
