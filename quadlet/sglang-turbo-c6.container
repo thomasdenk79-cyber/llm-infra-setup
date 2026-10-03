@@ -5,18 +5,19 @@ After=network-online.target
 Wants=llm-inference-network.service
 
 [Container]
-Image=localhost/sglang-qwen38fn-sm120-turbo:r24
+Image=localhost/sglang-qwen38fn-sm120-turbo:r24-pr36567
 ContainerName=sglang-turbo-c6
 Network=llm-inference.network
 PublishPort=127.0.0.1:8002:8001
 AddDevice=nvidia.com/gpu=all
-PodmanArgs=--ipc=host --security-opt=seccomp=unconfined
+PodmanArgs=--ipc=host --security-opt=seccomp=/home/z000g9hu/work/llm-infra-setup/config/turbo/seccomp-io-uring.json
 Volume=/srv/llm/models:/models:ro
 Volume=/srv/llm/cache/sglang-turbo:/cache:U,Z
-Volume=/srv/llm/ple-native/Qwen3.8-Flash-Next-PLE-NVME:/ple-table:ro,Z
 Volume=/home/z000g9hu/work/llm-infra-setup/config/turbo/serve-qwen38-flash-next-c6.sh:/opt/turbo/serve-c6.sh:ro,Z
 Environment=TARGET_MODEL=/models/Qwen3.8-Flash-Next-NVFP4
-Environment=PLE_DIR=/ple-table
+Environment=SGLANG_QWEN4_PLE_NVME_PATH=/models/Qwen3.8-Flash-Next-NVFP4
+Environment=SGLANG_QWEN4_PLE_NVME_BACKEND=io_uring
+Environment=SGLANG_RUST_BUILD_MODE=auto
 Environment=SGLANG_PORT=8001
 Environment=SGLANG_SM120_ONLINE_MXFP8=true
 Environment=SGLANG_MM_PREPROCESS_DEVICE=cpu
