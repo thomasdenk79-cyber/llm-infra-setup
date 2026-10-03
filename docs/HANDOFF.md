@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T08:10:07+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T08:11:47+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -57,6 +57,7 @@ Der Neustart ist der einzige Schritt, der Sessions trennt. Ablauf:
 
 ```bash
 ./scripts/apply-tuning.sh --nur-plan                    # anzeigen
+./scripts/apply-tuning.sh --profil sweet --nur-plan     # empfohlen: 4 Anfragen, 16 Plaetze
 ./scripts/apply-tuning.sh --profil aggressiv            # 8 Anfragen, 5/1/8, HiCache 16
 ./scripts/apply-tuning.sh --profil maxkv                # 2 Anfragen, mehr KV-Speicher
 ./scripts/apply-tuning.sh --zurueck                     # zur letzten Sicherung
@@ -74,6 +75,10 @@ Der Neustart ist der einzige Schritt, der Sessions trennt. Ablauf:
 
 ## 4. Noch offen
 
+0. Gemessener Zusammenhang: vier Zustandsplaetze je Anfrage (Log `mamba num: 4`),
+   24 Plaetze gesamt bei Bild-Standard, 2262 MiB VRAM frei. Das Startskript bricht
+   ab, wenn `MAX_MAMBA_CACHE_SIZE < 4 x MAX_RUNNING_REQUESTS`. Erklaerung und
+   Zahlen in `docs/performance.md`.
 1. Nach dem Tuning: `make quality-lang` (Merk-Aufgaben bis 300.000 Prompt) und
    `make quality-vergleich`; DCGM-Exporter gegen nvidia-smi vergleichen.
 2. Neustarttest: fahren alle Units nach Reboot hoch? fstab-Loop und -zvol prüfen.
@@ -112,3 +117,7 @@ Der Neustart ist der einzige Schritt, der Sessions trennt. Ablauf:
 ## Notiz 2026-10-03T08:09:39+02:00
 
 Kurz vor der heissen Phase: Kartentrennung, KV-Knospen, Qualitaetspruefung und Sicherungsmechanik sind drin.
+
+## Notiz 2026-10-03T08:11:47+02:00
+
+Zustandsplaetze je Anfrage gemessen (4); Profile sweet/aggressiv/maxkv neu dimensioniert; Guard im Rezept

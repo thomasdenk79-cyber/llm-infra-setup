@@ -318,3 +318,43 @@ Container-Lauf und nimmt die Regel bei Erfolglosigkeit selbst zurueck.
 Angeschlossene Bildschirme an der externen Karte fuehren zum Abbruch - auf diesem
 Rechner haengen interne Anzeige und HDMI an der Intel-Grafik, die Ausgaenge der
 externen Karte sind leer.
+
+## Anfragen, Zustandsslots und Zeichenspeicher streiten um denselben Speicher
+
+Messbefund aus dem Protokoll der laufenden Instanz (eine einzige Anfrage):
+
+```
+Decode batch, #running-req: 1, ... mamba num: 4, mamba usage: 0.17 ...
+```
+
+* `mamba num: 4` bei einer Anfrage = **vier Zustandsplaetze pro Anfrage**.
+* `mamba usage: 0.17` dazu passt auf 24 Plaetze gesamt (`MAX_MAMBA_CACHE_SIZE` = 24).
+* Folge: `MAX_RUNNING_REQUESTS` auf 8 zu setzen bringt nichts, solange die Plaetze
+  bei 24 bleiben (8 x 4 = 32 noetig). Das Startskript bricht in so einem Fall ab,
+  statt teuer zu starten (`PENNY_MAMBA_SLOTS_PER_REQUEST`, Standard 4).
+
+Und weil `--mem-fraction-static` die statische Gesamtgroesse festlegt (98,1 % von
+97.887 MiB, gemessen noch 2262 MiB frei), gilt:
+
+| erhoehen | folgt daraus |
+|---|---|
+| `MAX_RUNNING_REQUESTS` | mehr Anfragen, aber ohne mehr Plaetze wirkungslos |
+| `MAX_MAMBA_CACHE_SIZE` | kostet Speicher, `max_total_num_tokens` sinkt |
+| `MAX_TOTAL_TOKENS` | Obergrenze; mehr geht nur, wenn Slots/Graphen weniger kosten |
+| `PENNY_CUDA_GRAPH_MAX_BS` kleiner | gibt Zeichen-Speicher fuer KV frei |
+| `PENNY_ENABLE_MEMORY_SAVER=1` | holt ungenutzten Aktivierungsspeicher zurueck |
+| `mem-fraction-static` hoher | etwas mehr Pool, weniger Reserve fuer Aktivierungen |
+
+Praktische Folgen fuer diesen Rechner (drei bis vier grosse Sitzungen):
+`maxkv` = 2 Anfragen / 12 Plaetze / Ziel 1.048.576 Token;
+`sweet` = 4 Anfragen / 16 Plaetze / Ziel 1.048.576 Token;
+`aggressiv` = 8 Anfragen / 32 Plaetze (Zeichenspeicher wird dadurch kleiner).
+Nach jedem Start nachsehen:
+
+```bash
+curl -s http://127.0.0.1:8001/metrics | grep -E 'max_total_num_tokens|num_pages'
+nvidia-smi --query-gpu=memory.used,memory.free --format=csv,noheader
+```
+
+Der Wert `max_total_num_tokens` ist das, was zaehlt: er sagt, wie viele Token
+alle gleichzeitigen Sitzungen zusammen belegt haben duerfen, bevor verdraengt wird.

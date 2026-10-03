@@ -73,17 +73,22 @@ fi
 case "${profile}" in
   aggressiv)
     new_hicache=16; new_mem='0.99'; new_steps=5; new_draft=8; new_sleep=0; new_chunk=8192
-    new_running=8; new_mamba=48; new_graph=''; new_saver=''; new_total='' ;;
+    new_running=8; new_mamba=32; new_graph=8; new_saver=''; new_total='' ;;
   konservativ)
     new_hicache=16; new_mem='0.981'; new_steps=3; new_draft=4; new_sleep=1; new_chunk=4096
     new_running=4; new_mamba=24; new_graph=''; new_saver=''; new_total='' ;;
+  sweet)
+    # Zielthises Rechners: zwei bis drei grosse opencode-Sitzungen gleichzeitig,
+    # jede mit moeglichst langem Kontext. 4 Anfragen brauchen 16 Zustandsplaetze.
+    new_hicache=16; new_mem='0.992'; new_steps=3; new_draft=4; new_sleep=0; new_chunk=8192
+    new_running=4; new_mamba=16; new_graph=4; new_saver=1; new_total=1048576 ;;
   maxkv)
     # Zwei grosse Sitzungen statt vieler kleiner: weniger Zustandsslots und
     # kleinere mitgezeichnete Batchgroessen machen Speicher fuer den
     # Zeichenspeicher frei. MAX_TOTAL_TOKENS ist nur eine Obergrenze - was
     # wirklich herauskommt, steht nach dem Start in sglang:max_total_num_tokens.
     new_hicache=16; new_mem='0.992'; new_steps=3; new_draft=4; new_sleep=0; new_chunk=8192
-    new_running=2; new_mamba=6; new_graph=2; new_saver=1; new_total=1048576 ;;
+    new_running=2; new_mamba=12; new_graph=2; new_saver=1; new_total=1048576 ;;
   *) echo "--profil muss aggressiv oder konservativ sein" >&2; exit 2 ;;
 esac
 new_ple="${PLE_NATIVE_MOUNT}/${ple_name}"
