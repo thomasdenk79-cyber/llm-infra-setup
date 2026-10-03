@@ -53,7 +53,6 @@ args=(
   --enable-hierarchical-cache --hicache-size "$HICACHE_SIZE_GB"
   --hicache-write-policy write_through
   --enable-metrics --enable-cache-report --enable-request-time-stats-logging
-  --disable-cuda-graph
   --sleep-on-idle
 )
 

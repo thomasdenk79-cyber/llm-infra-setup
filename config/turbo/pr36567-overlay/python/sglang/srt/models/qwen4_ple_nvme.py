@@ -542,6 +542,11 @@ class NVMePLEEmbedding(nn.Module):
 
     @eager_on_graph(True, capture_stub=_capture_start_gather)
     def start_gather(self, input_ids: torch.Tensor) -> PendingGather:
+        # The regular CUDA-graph capture path does not go through the
+        # breakable-graph decorator.  Avoid a CPU copy while it is capturing;
+        # the stub is replaced by the real asynchronous SSD read afterwards.
+        if torch.cuda.is_available() and torch.cuda.is_current_stream_capturing():
+            return _capture_start_gather(self, input_ids)
         row_ids = (
             input_ids.detach().reshape(-1).to(device="cpu", dtype=torch.int64).tolist()
         )

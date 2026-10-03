@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T19:43:02+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T19:47:22+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -542,3 +542,7 @@ Gateway fuer Turbo umgestellt, damit OpenCode nicht mehr auf den gestoppten Penn
 ## Notiz 2026-10-03T19:43:02+02:00
 
 OpenCode auf LiteLLM 4000 mit aktuellem Turbo-Modell konfiguriert; vorhandene Datei gesichert
+
+## Notiz 2026-10-03T19:47:22+02:00
+
+Zu niedriger Turbo-Durchsatz diagnostiziert: CUDA-Graphen wegen NVMe-Capture-Transfer aus; Capture-Stub im Reader ergaenzt
