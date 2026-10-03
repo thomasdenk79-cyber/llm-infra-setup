@@ -71,3 +71,13 @@ nicht als PR-Snapshot ausgegeben. Gelesen wird TP1 mit `io_uring`, `O_DIRECT`
 und begrenztem pinned staging; die Tabelle wird nicht in Host-RAM geladen.
 Der Container nutzt ein versioniertes Profil `config/turbo/seccomp-io-uring.json`
 mit nur den drei benoetigten io_uring-Syscalls zusaetzlich zum Podman-Standard.
+
+### Bewusste Konfliktauflösung
+
+PR #36567 ließ sich nicht als Ganzes auf Turbo anwenden, weil Turbo r24 bereits
+Qwen4-PLE-Datei- und NVFP4-Packed-Hooks enthält. Die Overlay-Datei behält diese
+Turbo-Pfade für den Normalbetrieb bei und schaltet nur bei gesetztem
+`SGLANG_QWEN4_PLE_NVME_PATH` auf `NVMePLEEmbedding`. Prefetch-Zustand und
+`load_qwen4_exp_ple_shard` wurden dafür erweitert; die Turbo-NVFP4-Dequantisierung,
+SM120-QSA-Kernels und RecoverSSM/MTP-Logik wurden nicht ersetzt. Der PR-eigene
+SM121-QSA-Commit wurde nicht portiert.

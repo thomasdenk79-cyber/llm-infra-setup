@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T17:54:51+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T17:56:30+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -445,3 +445,7 @@ PR36567 Overlay gebaut und validiert; Manifest 128 Shards/51.2GB; Rust io_uring 
 ## Notiz 2026-10-03T17:54:51+02:00
 
 PR36567 io_uring Row-Smoke erfolgreich (3 Zeilen); GPU-Smoke bewusst ausgesetzt wegen nvidia-smi No devices found
+
+## Notiz 2026-10-03T17:56:30+02:00
+
+Konfliktaufloesung PR36567 gegen vorhandene Turbo-PLE/NVFP4-Hooks explizit dokumentiert
