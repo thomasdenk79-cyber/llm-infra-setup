@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T18:53:08+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T19:04:30+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -509,3 +509,7 @@ Turbo-Test isoliert: paralleler Pennyroyal-GPU-Besitz als Ursache des zweiten St
 ## Notiz 2026-10-03T18:53:08+02:00
 
 NVMe-PLE-Overlay bis CUDA-Graph-Warmup validiert; TP1-API-Vertragsmethode ergaenzt
+
+## Notiz 2026-10-03T19:04:30+02:00
+
+Turbo-NVMe-Reader erreicht CUDA-Graph-Capture; SSD-Pfad deaktiviert Graphen gezielt fuer stabile TP1-Ausfuehrung
