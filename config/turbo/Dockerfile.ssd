@@ -1,0 +1,5 @@
+# Turbo r24 plus the separately ported Penny/Garner NVMe SSD-Stream adapter.
+# The adapter is installed as a plugin; Turbo's compute tree remains unchanged.
+FROM localhost/sglang-qwen38fn-sm120-turbo:r24
+COPY vendor/sglang-ssd-stream /opt/sglang-ssd-stream
+RUN cd /opt/sglang-ssd-stream && python3 -m pip install --break-system-packages --no-cache-dir .

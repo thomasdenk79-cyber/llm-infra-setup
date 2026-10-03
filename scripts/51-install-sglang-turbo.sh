@@ -9,7 +9,7 @@ source "$root/lib/common.sh"
 : "${LLM_CACHE_DIR:=/srv/llm/cache}"
 : "${LLM_PLE_DIR:=/srv/llm/ple-native/Qwen3.8-Flash-Next-PLE-NVME}"
 : "${TURBO_SOURCE_DIR:=/srv/llm/cache/sglang-qwen38fn-sm120-turbo-r24}"
-: "${TURBO_IMAGE:=localhost/sglang-qwen38fn-sm120-turbo:r24}"
+: "${TURBO_IMAGE:=localhost/sglang-qwen38fn-sm120-turbo:r24-nvme}"
 : "${TURBO_REVISION:=c6cd5062669625fdbaf08032931f10b6661f8f6f}"
 : "${TURBO_PORT:=8002}"
 : "${TURBO_CONTAINER_NAME:=sglang-turbo-c6}"
@@ -34,6 +34,8 @@ fi
 
 log "Baue $TURBO_IMAGE aus Turbo-Revision $TURBO_REVISION"
 podman build --pull=missing -t "$TURBO_IMAGE" "$TURBO_SOURCE_DIR"
+log "Baue NVMe-SSD-Stream-Overlay aus dem versionierten Adapter"
+podman build --pull=never -f "$root/config/turbo/Dockerfile.ssd" -t "$TURBO_IMAGE" "$root"
 digest="$(podman image inspect "$TURBO_IMAGE" --format '{{.Id}}')"
 [[ -n "$digest" ]] || { log 'Turbo-Image konnte nicht inspiziert werden'; exit 1; }
 
@@ -61,6 +63,10 @@ Environment=PLE_DIR=/ple-table
 Environment=SGLANG_PORT=8001
 Environment=SGLANG_SM120_ONLINE_MXFP8=true
 Environment=SGLANG_MM_PREPROCESS_DEVICE=cpu
+Environment=PENNY_PLE_BACKEND=nvme
+Environment=SGLANG_PLUGINS=ssd_stream
+Environment=SGLANG_SSD_STREAM_MANIFEST=/ple-table/ssd-stream.json
+Environment=PYTHONPATH=/opt/sglang-ssd-stream/src
 Environment=MAX_RUNNING_REQUESTS=6
 Environment=MAX_MAMBA_CACHE_SIZE=27
 Environment=MAX_TOTAL_TOKENS=1048576

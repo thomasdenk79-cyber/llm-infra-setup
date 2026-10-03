@@ -5,7 +5,7 @@ After=network-online.target
 Wants=llm-inference-network.service
 
 [Container]
-Image=localhost/sglang-qwen38fn-sm120-turbo:r24
+Image=localhost/sglang-qwen38fn-sm120-turbo:r24-nvme
 ContainerName=sglang-turbo-c6
 Network=llm-inference.network
 PublishPort=127.0.0.1:8002:8001
@@ -20,6 +20,10 @@ Environment=PLE_DIR=/ple-table
 Environment=SGLANG_PORT=8001
 Environment=SGLANG_SM120_ONLINE_MXFP8=true
 Environment=SGLANG_MM_PREPROCESS_DEVICE=cpu
+Environment=PENNY_PLE_BACKEND=nvme
+Environment=SGLANG_PLUGINS=ssd_stream
+Environment=SGLANG_SSD_STREAM_MANIFEST=/ple-table/ssd-stream.json
+Environment=PYTHONPATH=/opt/sglang-ssd-stream/src
 Environment=MAX_RUNNING_REQUESTS=6
 Environment=MAX_MAMBA_CACHE_SIZE=27
 Environment=MAX_TOTAL_TOKENS=1048576

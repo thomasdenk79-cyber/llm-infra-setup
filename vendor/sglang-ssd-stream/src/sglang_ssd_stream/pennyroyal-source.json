@@ -1,0 +1,16 @@
+{
+  "source": "turbo-r24",
+  "modules": {
+    "sglang.srt.layers.attention.qsa.kernel": "7e369f09293fb9b0872c21f0010247ec1e3a696b5ad4809f04d9a730b1031095",
+    "sglang.srt.layers.attention.qsa.sparse_attn": "c7052125569f3c0fa9a0a4d62d2f57433faec636ad82a1d99c3b39e267b7904c",
+    "sglang.srt.layers.attention.qwen_sparse_attn_backend": "eac0e2c3d0d02f34846c16144929c37001d7f9b10e1c4733e0f320d66cd61712",
+    "sglang.srt.models.qwen4_exp": "ea2a2cbcda123316489f27569ea21be93144bb1e97fe4640f730f770a9330e91",
+    "sglang.srt.models.qwen3_5": "f7e52f647d8e3dd8c980ae170569585ee118c782df055b21b1e93bbc28b1f9e8",
+    "sglang.srt.model_executor.runner.decode_cuda_graph_runner": "3554b172d18be110e32b6140ac97154025962daceca454f417dde4e15862b74d",
+    "sglang.srt.server_args": "f02da521ea7ed68ae92ba1b1e0f9b17a8d7497de4a705d47575379164b83aaaa",
+    "sglang.srt.utils.offloader": "1d89240584d56990174e22f31f1dd89d8585075607e14f6491a943dbd44aabed",
+    "sglang.srt.utils.common": "d656850e662374ff8405b2b71db1617bd8721803d9ff07e50c4bab708357eb24",
+    "sglang.srt.plugins.hook_registry": "fe214acac324cb2f019aa1dffe1ddcb6e4691862fdd1b6a0ad5033d8167e31e9",
+    "sglang.srt.plugins": "3a975a73f1a7887e68c81ea7a2530250597ac8ae978efc0b0f70f038a99a3164"
+  }
+}

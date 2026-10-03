@@ -19,6 +19,10 @@ MAX_MAMBA_CACHE_SIZE="${MAX_MAMBA_CACHE_SIZE:-27}"
 
 export SGLANG_SM120_ONLINE_MXFP8="${SGLANG_SM120_ONLINE_MXFP8:-true}"
 export SGLANG_MM_PREPROCESS_DEVICE="${SGLANG_MM_PREPROCESS_DEVICE:-cpu}"
+export PENNY_PLE_BACKEND=nvme
+export SGLANG_PLUGINS=ssd_stream
+export SGLANG_SSD_STREAM_MANIFEST="${SGLANG_SSD_STREAM_MANIFEST:-/ple-table/ssd-stream.json}"
+export PYTHONPATH="/opt/sglang-ssd-stream/src${PYTHONPATH:+:$PYTHONPATH}"
 export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
 export SAFETENSORS_FAST_GPU=1
 export SGLANG_ENABLE_HEALTH_ENDPOINT_GENERATION=1
@@ -34,7 +38,6 @@ args=(
   --model-path "$MODEL_PATH"
   --reasoning-parser auto --tool-call-parser auto
   --warmups sm120_turbo_structured_output
-  --ple-offload-embedding --ple-offload-backend file --ple-offload-dir "$PLE_DIR"
   --linear-attn-prefill-backend flashinfer --linear-attn-decode-backend flashinfer
   --moe-runner-backend flashinfer_cutlass
   --max-mamba-cache-size "$MAX_MAMBA_CACHE_SIZE"

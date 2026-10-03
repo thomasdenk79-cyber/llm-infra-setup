@@ -17,9 +17,9 @@ Port 8001 erhalten; Turbo verwendet Port 8002 und den Container
   gepinntes RAM-PLE
 
 Das Turbo-Image enthält seine eigenen SM120-, Online-FP8-, RecoverSSM- und
-MTP-Patches. Die NVMe-PLE-Anbindung nutzt ausschließlich die vorhandene
-Datei-Backend-Schnittstelle (`--ple-offload-backend file`); Pennyroyal-Patches
-werden nicht in den Compute-Stack kopiert.
+MTP-Patches. Die NVMe-PLE-Anbindung nutzt den separat portierten SSD-Stream-Plugin
+mit begrenzten Staging-Puffern; der inkompatible Upstream-Datei-PLE-Pfad wird
+nicht verwendet.
 
 ## Bauen und Smoke-Test
 
@@ -38,19 +38,13 @@ ausgeführt. Für den Smoke-Test sind sechs kurze parallele Requests zulässig;
 bei CUDA-OOM, Swap-Nutzung oder fehlendem Health-Status bleibt Pennyroyal der
 Rückfall.
 
-## Smoke-Ergebnis 2026-10-03
+## Portierung und Smoke-Ergebnis 2026-10-03
 
-Der Turbo-Start hat Modell und Laufzeitparameter korrekt erkannt (TP1, C6, 27
-Mamba-Slots, Online-MXFP8, FP8-KV, NEXTN/MTP, 8 GiB HiCache). Der Start stoppt
-jedoch beim NVMe-PLE: Turbo r24s `--ple-offload-backend file` verweigert die
-RTX PRO 6000, weil diese GPU keine pageable Host-Table-Zugriffe ueber Unified
-Memory unterstuetzt. Der Fehler ist somit eine dokumentierte Runtime-Grenze,
-kein CUDA-OOM. Das Service bleibt gestoppt, damit kein Restart-Loop entsteht.
-
-Die vorhandene Pennyroyal-NVMe-Implementierung ist ein separater, versions- und
-Hash-gepruefter SSD-Stream-Hook. Sie kann nicht ohne weitere Portierung in Turbo
-r24 geladen werden; ein blindes Deaktivieren der Hash-Pruefung wuerde Turbo- und
-Penny-PLE-Patches doppelt bzw. unqualifiziert kombinieren. Fuer den gewuenschten
-Sweet-Spot muss daher entweder der SSD-Stream-Hook gegen Turbo r24 portiert und
-qualifiziert werden oder Turbo voruebergehend mit gepinntem RAM-PLE auf einem Host
-mit ausreichend RAM laufen.
+Der Adapter wurde gegen die exakten r24-Modul-Hashes neu verankert und im Image
+gebaut. Registrierung sowie die CPU-seitigen Config-, Graph- und Offload-Tests
+bestanden (8 Tests). Der Live-Start konnte danach nicht abgeschlossen werden,
+weil der Host waehrend des Smoke-Versuchs keinen NVIDIA-CUDA-Device mehr meldete
+(`nvidia-smi: No devices found`, wiederholte `nvidia-modeset`-GPU-progress-
+Timeouts). Das ist ein Host-/Treiberzustand, kein SSD-Stream- oder CUDA-OOM-
+Befund. Der Dienst bleibt gestoppt; sechs Requests und die finale VRAM/KV-
+Pruefung folgen nach Wiederherstellung des NVIDIA-Devices.

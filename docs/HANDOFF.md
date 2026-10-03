@@ -421,3 +421,15 @@ unqualifiziert aktiviert werden.
 ## Notiz 2026-10-03T15:03:02+02:00
 
 Turbo r24 separat gebaut; Smoke zeigte harte Inkompatibilitaet von Datei-PLE auf RTX PRO 6000; Dienst gestoppt, Pennyroyal Fallback
+
+
+## Notiz 2026-10-03T17:15:00+02:00
+
+Penny/Garner SSD-Stream-Adapter als eigenes Turbo-Overlay portiert: Modul-Hashes
+auf r24 aktualisiert, Plugin kompiliert und im Image installiert. Der Launcher
+verwendet keinen `--ple-offload-backend file`-Pfad mehr; das Plugin liest das
+NVMe-Manifest ueber begrenzte Staging-Puffer. Plugin-Registrierung und acht
+CPU-seitige Adaptertests bestanden. Live-Smoke ist noch offen, weil der Host
+waehrend des Starts `nvidia-smi: No devices found` und wiederholte
+`nvidia-modeset`-GPU-progress-Timeouts meldete; Turbo-Dienst gestoppt, Pennyroyal
+unveraendert. CDI-Datei nach Diagnose auf den vorherigen Zustand zurueckgesetzt.
