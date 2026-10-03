@@ -23,7 +23,11 @@ snapshot() {
   printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' "$(date -u +%FT%TZ)" "$profile" "$context" "$concurrency" "$phase" "${max_tokens:-}" "${kv_used:-}" "${kv_avail:-}" "${pages:-}" "${gpu_util:-}" "${gpu_mem:-}" "${gpu_free:-}" "${gpu_power:-}" >> state/benchmarks/sweep/metrics.csv
 }
 
-[[ -f state/benchmarks/sweep/metrics.csv ]] || echo 'timestamp,profile,target_context_tokens,concurrency,phase,max_total_num_tokens,kv_used_tokens,kv_available_tokens,num_pages,gpu_util_percent,gpu_memory_used_mib,gpu_memory_free_mib,gpu_power_watts' > state/benchmarks/sweep/metrics.csv
+metrics_header='timestamp,profile,target_context_tokens,concurrency,phase,max_total_num_tokens,kv_used_tokens,kv_available_tokens,num_pages,gpu_util_percent,gpu_memory_used_mib,gpu_memory_free_mib,gpu_power_watts'
+if [[ -f state/benchmarks/sweep/metrics.csv ]] && [[ "$(head -1 state/benchmarks/sweep/metrics.csv)" != "$metrics_header" ]]; then
+  mv state/benchmarks/sweep/metrics.csv "state/benchmarks/sweep/metrics-legacy-$(date -u +%Y%m%dT%H%M%SZ).csv"
+fi
+[[ -f state/benchmarks/sweep/metrics.csv ]] || echo "$metrics_header" > state/benchmarks/sweep/metrics.csv
 
 for profile in "${profiles[@]}"; do
   wait_ready

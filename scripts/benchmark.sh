@@ -74,8 +74,11 @@ trap 'rm -rf "${workdir}"' EXIT
 printf 'Starte %s Anfrage(n) im Profil %s ...\n' "${concurrency}" "${profile}"
 wall_start="$(date +%s%3N)"
 for i in $(seq 1 "${concurrency}"); do
+  # Keep prompt length equivalent while preventing shared-prefix/KV reuse from
+  # making a parallel run look faster than independent requests.
+  request_prompt="${prompt} [benchmark-request-${i}]"
   "${root}/scripts/benchmark_probe.py" --base-url "${base_url}" --model "${BENCHMARK_MODEL}" \
-    --prompt "${prompt}" --prompt-repeat "${repeat}" --max-tokens "${max_tokens}" --sample-metrics \
+    --prompt "${request_prompt}" --prompt-repeat "${repeat}" --max-tokens "${max_tokens}" --sample-metrics \
     > "${workdir}/${i}.json" 2>"${workdir}/${i}.err" &
 done
 errors=0

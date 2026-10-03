@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T09:02:28+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T09:03:48+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -173,3 +173,7 @@ Mehrstuendigen Performance-Sweep fuer Profile, Kontextgroessen und Parallelitaet
 ## Notiz 2026-10-03T09:02:28+02:00
 
 Benchmark-Einzelmessung und Sweep-Metrikformat nach Architektur-Review repariert
+
+## Notiz 2026-10-03T09:03:48+02:00
+
+Parallel-Benchmarks gegen Prefix-Cache-Artefakte abgesichert; Sweep-CSV-Schema versioniert
