@@ -5,6 +5,10 @@
 pennyroyal: v2.5.3
 pennyroyal_image: ghcr.io/jpezzulli/sglang-rtxpro6000:v2.5.3
 pennyroyal_image_digest: sha256:c36a326dcb6a99e12ffdc89ae2f2ca0365a02fb3c72ed8b18f88d63cdc7f5a8c
+turbo_repo: https://github.com/mratsim/sglang-qwen38fn-sm120-turbo
+turbo_revision: c6cd5062669625fdbaf08032931f10b6661f8f6f
+turbo_image: localhost/sglang-qwen38fn-sm120-turbo:r24
+turbo_container: sglang-turbo-c6 (host port 8002)
 model_id: RadixArk/Qwen3.8-Flash-Next-NVFP4
 model_revision: 7b719225242aacd3dbd3f9407468c2ee9a9d2594
 model_context_length: 524288

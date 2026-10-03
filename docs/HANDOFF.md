@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T14:21:08+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T14:42:05+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -392,3 +392,16 @@ Vorschlag gegen diese Unit und das bestehende PLE-/NIXL-Layout vergleichen.
 ## Notiz 2026-10-03T14:21:08+02:00
 
 C6-Start auf Nutzerwunsch vor Ready gestoppt; generierte Unit mit Online-FP8/6/36/1M dokumentiert, keine Benchmarkdaten
+
+## Notiz 2026-10-03T14:30:00+02:00
+
+Separater Branch `turbo-c6-production` angelegt. Er verwendet Turbo r24 als
+Compute-Basis, C6/27 Mamba-Slots, Online-MXFP8, FP8-KV, NEXTN/MTP und 8 GiB
+HiCache. NVMe-PLE wird aus dem vorhandenen Overlay per Datei-Backend gelesen;
+Pennyroyal bleibt unveraendert als Fallback auf Port 8001. Imagebau und Smoke-
+Start erfolgen mit `make turbo-c6-install` und `make turbo-c6`; noch keine
+Live-Anwendung oder Smoke-Daten in diesem Stand.
+
+## Notiz 2026-10-03T14:42:05+02:00
+
+Separater Turbo-C6-Branch vorbereitet: r24, eigenes Image/Quadlet, C6 mit 27 Mamba-Slots und NVMe-PLE; Pennyroyal bleibt Fallback

@@ -6,7 +6,7 @@
 #
 # Alle Ablaeufe sind Skripte im Ordner scripts/ - nichts muss von Hand getippt
 # werden. Details in README.md und docs/.
-.PHONY: help setup setup-check preflight install tools nvidia-driver kwin-egpu podman zfs model model-verify pennyroyal ple-nvme verify-ple gateway litellm open-webui homepage portal autossh komodo postgres monitoring gpu-exporter collector watchdog watchdog-off gitops gitops-auto gitops-off tune tune-plan tune-conservative tune-sweet tune-sweet-an tune-c6 tune-c6-an tune-maxkv tune-maxkv-an tune-c16 tune-c16-an tune-rollback ple-native ple-copy ple-check ple-cache ple-warm gpu-frei gpu-frei-an gpu-frei-aus quality quality-lang quality-vergleich deploy deploy-all deploy-non-gpu deploy-ready apply-units wait healthcheck health backup restore doctor bench bench-normal bench-long validate drift ci status docs docs-build pre-commit-install checkpoint ungesichert tui rotate-secrets show-credentials
+.PHONY: help setup setup-check preflight install tools nvidia-driver kwin-egpu podman zfs model model-verify pennyroyal turbo-c6-install turbo-c6 ple-nvme verify-ple gateway litellm open-webui homepage portal autossh komodo postgres monitoring gpu-exporter collector watchdog watchdog-off gitops gitops-auto gitops-off tune tune-plan tune-conservative tune-sweet tune-sweet-an tune-c6 tune-c6-an tune-maxkv tune-maxkv-an tune-c16 tune-c16-an tune-rollback ple-native ple-copy ple-check ple-cache ple-warm gpu-frei gpu-frei-an gpu-frei-aus quality quality-lang quality-vergleich deploy deploy-all deploy-non-gpu deploy-ready apply-units wait healthcheck health backup restore doctor bench bench-normal bench-long validate drift ci status docs docs-build pre-commit-install checkpoint ungesichert tui rotate-secrets show-credentials
 
 help:
 	@echo 'llm-infra-setup - verfuegbare Befehle'
@@ -23,6 +23,8 @@ help:
 	@echo '  make model             Modell herunterladen (fortsetzbar)'
 	@echo '  make model-verify      Modell vollstaendigkeit pruefen'
 	@echo '  make pennyroyal        Image ziehen und Runtime-Unit erzeugen'
+	@echo '  make turbo-c6-install  separates SM120-Turbo-Image und C6-Unit bauen'
+	@echo '  make turbo-c6          Turbo-C6-Unit anwenden und starten'
 	@echo '  make ple-nvme          SSD-Speicher fuer Einbettungen vorbereiten'
 	@echo '  make deploy            nur die GPU-Runtime starten'
 	@echo '  make deploy-non-gpu    Portal, Chat, Gateway, Beobachtung (ohne GPU)'
@@ -97,6 +99,11 @@ model-verify:
 	./scripts/42-verify-model.sh
 pennyroyal:
 	./scripts/50-install-pennyroyal.sh
+turbo-c6-install:
+	./scripts/51-install-sglang-turbo.sh
+turbo-c6:
+	./scripts/51-install-sglang-turbo.sh
+	./scripts/apply-turbo-c6.sh
 ple-nvme:
 	./scripts/47-setup-ple-storage.sh
 	./scripts/48-prepare-ple-nvme.sh
