@@ -16,21 +16,21 @@ source "${root}/lib/common.sh"
 : "${LLM_NIXL_DIR:=/srv/llm/nixl}"
 : "${PENNY_PLE_BACKEND:=nvme}"
 : "${MODEL_ID:=RadixArk/Qwen3.8-Flash-Next-NVFP4}"
-: "${PENNY_PLE_NVME_MODEL:=/srv/llm/ple-ext4/Qwen3.8-Flash-Next-PLE-NVME}"
+: "${PENNY_PLE_NVME_MODEL:=/srv/llm/ple-native/Qwen3.8-Flash-Next-PLE-NVME}"
 # The SSD PLE reader uses io_uring.  Podman's default seccomp profile blocks the
 # required io_uring setup syscall on this host, so keep this explicit. A tighter
 # custom profile is tracked as an open item in docs/security.md.
 : "${PENNY_SECURITY_OPT:=seccomp=unconfined}"
 # Zero disables the host RAM HiCache tier; useful on 64-GB hosts where the model
 # loader's temporary CPU peak leaves no reservation margin.
-: "${PENNY_HICACHE_SIZE_GB:=8}"
+: "${PENNY_HICACHE_SIZE_GB:=16}"
 : "${PENNY_HEALTH_START_SECONDS:=1800}"
 # Online-FP8 fuer FP4-Pruefpunkte (MXFP8 fuer die noch in BF16 laufenden
 # Projektionen; die NVFP4-Experten bleiben unberuehrt). Standert aus: der
 # Upstream-Hinweis lautet "read the FP8 guide before switching this on".
 # Achtung: der Wert fliest in die NIXL-Cache-Identitaet ein - beim Umschalten
 # ist der Zeichenspeicher-Cache neu aufzubauen (erklaerung in docs/performance.md).
-: "${PENNY_ONLINE_FP8:=false}"
+: "${PENNY_ONLINE_FP8:=true}"
 case "${PENNY_ONLINE_FP8}" in true|false) : ;; *) log 'PENNY_ONLINE_FP8 muss true oder false sein.'; exit 1 ;; esac
 # Aufnahmefaehigkeit der Laufzeit. Die Bild-Defaults sind MAX_RUNNING_REQUESTS=4 und
 # MAX_MAMBA_CACHE_SIZE=24; beide sind hier uebersteuerbar (read request-capacity.sh
@@ -38,6 +38,13 @@ case "${PENNY_ONLINE_FP8}" in true|false) : ;; *) log 'PENNY_ONLINE_FP8 muss tru
 # bedeuten hoeheren Gesamtdurchsatz, aber niedrigere Rate pro Anfrage und mehr
 # Zustandsspeicher. Deshalb: aendern, messen, ggf. zurueck (apply-tuning.sh).
 CAP_ENV=''
+# Keep the qualified C6 defaults explicit so a clean checkout regenerates the
+# same high-throughput profile as the committed unit.
+: "${PENNY_MAX_RUNNING_REQUESTS:=6}"
+: "${PENNY_MAX_MAMBA_CACHE_SIZE:=36}"
+: "${PENNY_MAX_TOTAL_TOKENS:=1048576}"
+: "${PENNY_CUDA_GRAPH_MAX_BS:=6}"
+: "${PENNY_ENABLE_MEMORY_SAVER:=1}"
 # a) Aufnahmefaehigkeit: das Bild liest diese Namen ohne PENNY_-Vorsatz
 for name in MAX_RUNNING_REQUESTS MAX_MAMBA_CACHE_SIZE MAX_TOTAL_TOKENS; do
   value_var="PENNY_${name}"
