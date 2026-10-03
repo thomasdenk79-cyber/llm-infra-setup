@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T08:52:42+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T09:02:28+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -169,3 +169,7 @@ Ergebnis der heissen Phase (Profil sweet)
 ## Notiz 2026-10-03T08:52:42+02:00
 
 Mehrstuendigen Performance-Sweep fuer Profile, Kontextgroessen und Parallelitaet hinzugefuegt
+
+## Notiz 2026-10-03T09:02:28+02:00
+
+Benchmark-Einzelmessung und Sweep-Metrikformat nach Architektur-Review repariert

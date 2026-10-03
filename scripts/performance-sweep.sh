@@ -13,17 +13,17 @@ profiles=(sweet maxkv aggressiv c16)
 wait_ready() { echo 'Warte auf Runtime...'; ./scripts/wait-for-runtime.sh; }
 
 snapshot() {
-  local profile="$1" context="$2" concurrency="$3" body max_tokens kv_used kv_avail pages gpu
+  local profile="$1" context="$2" concurrency="$3" phase="$4" body max_tokens kv_used kv_avail pages gpu_util gpu_mem gpu_free gpu_power
   body="$(curl -fsS --max-time 8 http://127.0.0.1:8001/metrics || true)"
   max_tokens="$(awk '/^sglang:max_total_num_tokens(\{| )/ {print $2; exit}' <<<"$body")"
   kv_used="$(awk '/^sglang:kv_used_tokens(\{| )/ {print $2; exit}' <<<"$body")"
   kv_avail="$(awk '/^sglang:kv_available_tokens(\{| )/ {print $2; exit}' <<<"$body")"
   pages="$(awk '/^sglang:num_pages(\{| )/ {print $2; exit}' <<<"$body")"
-  gpu="$(nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.free,power.draw --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d ' ' || true)"
-  printf '%s,%s,%s,%s,%s,%s,%s,%s,%s\n' "$(date -u +%FT%TZ)" "$profile" "$context" "$concurrency" "${max_tokens:-}" "${kv_used:-}" "${kv_avail:-}" "${pages:-}" "${gpu:-}" >> state/benchmarks/sweep/metrics.csv
+  IFS=',' read -r gpu_util gpu_mem gpu_free gpu_power <<< "$(nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.free,power.draw --format=csv,noheader,nounits 2>/dev/null | head -1 || true)"
+  printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' "$(date -u +%FT%TZ)" "$profile" "$context" "$concurrency" "$phase" "${max_tokens:-}" "${kv_used:-}" "${kv_avail:-}" "${pages:-}" "${gpu_util:-}" "${gpu_mem:-}" "${gpu_free:-}" "${gpu_power:-}" >> state/benchmarks/sweep/metrics.csv
 }
 
-[[ -f state/benchmarks/sweep/metrics.csv ]] || echo 'timestamp,profile,target_context_tokens,concurrency,max_total_num_tokens,kv_used_tokens,kv_available_tokens,num_pages,gpu' > state/benchmarks/sweep/metrics.csv
+[[ -f state/benchmarks/sweep/metrics.csv ]] || echo 'timestamp,profile,target_context_tokens,concurrency,phase,max_total_num_tokens,kv_used_tokens,kv_available_tokens,num_pages,gpu_util_percent,gpu_memory_used_mib,gpu_memory_free_mib,gpu_power_watts' > state/benchmarks/sweep/metrics.csv
 
 for profile in "${profiles[@]}"; do
   wait_ready
@@ -40,9 +40,9 @@ for profile in "${profiles[@]}"; do
   for context in "${contexts[@]}"; do
     for concurrency in "${concurrencies[@]}"; do
       echo "=== $profile context=${context} concurrency=${concurrency} ==="
-      snapshot "$profile" "$context" "$concurrency"
+      snapshot "$profile" "$context" "$concurrency" before
       if ./scripts/benchmark.sh normal "$concurrency" "$context"; then
-        snapshot "$profile" "$context" "$concurrency"
+        snapshot "$profile" "$context" "$concurrency" after
       else
         echo 'WARNUNG: Benchmark fehlgeschlagen; naechsten Punkt versuchen.'
       fi

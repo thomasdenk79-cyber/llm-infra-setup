@@ -95,6 +95,8 @@ ok = [r for r in runs if r.get('ok')]
 def q(vals, frac):
     if not vals:
         return None
+    if len(vals) == 1:
+        return round(vals[0], 3)
     return round(statistics.quantiles(vals, n=100, method='inclusive')[min(99, int(frac * 100))], 3)
 tokens = sum(r.get('completion_tokens') or 0 for r in ok)
 doc = {
