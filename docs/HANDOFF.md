@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T11:51:05+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T12:37:47+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -270,3 +270,19 @@ Handoff fuer den anderen Agenten aktualisiert: OOM, Sweep-Stopp, maxkv-Guard und
 ## Notiz 2026-10-03T11:51:05+02:00
 
 Handoff fuer den anderen Agenten aktualisiert: OOM, Sweep-Stopp, maxkv-Guard und naechster Schritt
+
+## Notiz 2026-10-03T12:35:00+02:00
+
+Der erste `maxkv`-Anlauf hat den neuen NVMe-PLE-Start korrekt bis zum
+Gewichteladen gebracht (47,68 GiB Stream, ca. 83,5 GiB VRAM, Ladezeit ca.
+19 Minuten), wurde aber vom Warte-Gatter nach 1200 Sekunden beendet. Ursache:
+`apply-tuning.sh` setzte `RUNTIME_WAIT_SECONDS=2400` nicht exportiert; das
+Kindskript fiel dadurch auf seinen alten Default 1200 zurueck. Der Container
+wurde mit Status 137 beendet und der Rueckfall gestartet. `wait-for-runtime.sh`
+hat jetzt Default 2400 und `apply-tuning.sh` exportiert den Wert. Vor dem
+naechsten Profilwechsel zuerst `healthy` abwarten; der Lauf selbst ist kein
+Benchmark-Ergebnis.
+
+## Notiz 2026-10-03T12:37:47+02:00
+
+Kaltstart-Gatter repariert: RUNTIME_WAIT_SECONDS exportiert und Default auf 2400; maxkv-Lauf wegen altem 1200s-Timeout verworfen

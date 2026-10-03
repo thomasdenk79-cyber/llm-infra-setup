@@ -28,6 +28,7 @@ source "${root}/lib/units.sh"
 
 : "${PENNYROYAL_PORT:=8001}"
 : "${RUNTIME_WAIT_SECONDS:=2400}"
+export RUNTIME_WAIT_SECONDS
 profile=aggressiv
 plan_only=0; rollback=0; skip_bench=0; online_fp8=false; isolate_gpu=true
 while [[ $# -gt 0 ]]; do

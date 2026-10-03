@@ -9,7 +9,9 @@ root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 source "${root}/lib/common.sh"
 [[ -f "${root}/config/host.env" ]] && source "${root}/config/host.env"
 : "${PENNYROYAL_PORT:=8001}"
-: "${RUNTIME_WAIT_SECONDS:=1200}"
+# Ein Kaltstart mit NVMe-PLE und CUDA-Profiling kann auf diesem Host ueber
+# 20 Minuten dauern. Der Aufrufer kann den Wert weiterhin ueberschreiben.
+: "${RUNTIME_WAIT_SECONDS:=2400}"
 : "${RUNTIME_POLL_SECONDS:=10}"
 url="http://127.0.0.1:${PENNYROYAL_PORT}/health"
 deadline=$(( $(date +%s) + RUNTIME_WAIT_SECONDS ))
