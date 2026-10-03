@@ -603,9 +603,9 @@ Bild-Tag, Port; keine davon getestet, kein Bild gebaut, nichts gestartet):
 | C | `pennyroyal-plugin-variant` | `~/work/llm-infra-setup-pennyroyal` | 8001 | offizielles Pennyroyal-`ssd_stream`-Plugin (Bild), nur Konfiguration |
 | D | `variant-d-staging-double-buffer` | `~/work/llm-infra-setup-variant-d` | 8005 | wie B + Double-Buffer-Pinned-Staging |
 
-Empfehlung: **A zuerst** (beweist Capture-Korrektur), dann **B**
-(voraussichtlich schnellste Turbo-Variante), dann **D**; **C** als
-Referenz. Der complete Testauftrag (Build, Start, C1/C6-Messung mit
+Empfehlung: Rangfolge ohne Benchmark unbekannt; **C** strukturell
+vielversprechend, **B** möglicher Cache-Gewinn, **D** möglicher
+Staging-Gewinn, **A** Capture-Referenz. Der complete Testauftrag (Build, Start, C1/C6-Messung mit
 TTFT/steady/aggregat, Rueckbau, Checkpoints) liegt in
 `docs/variant-test-prompt.md`; die Vergleichstabelle in
 `docs/variant-comparison.md` (je Variantenzweig committet). Der
