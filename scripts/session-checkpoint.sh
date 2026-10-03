@@ -58,7 +58,7 @@ git add -A
 if git diff --cached --quiet; then
   echo 'Nichts zu sichern (Arbeitsverzeichnis wie im letzten Commit).'
 else
-  git commit -q -m "stand: $(date +%Y-%m-%d\\ %H:%M) gesichert ($(git diff --cached --name-only | wc -l) Dateien)"
+  git commit -q -m "stand: $(date +%FT%H:%M) gesichert ($(git diff --cached --name-only | wc -l) Dateien)"
 fi
 if git push 2>&1 | tail -2; then
   echo "Stand gesichert und gepusht: $(git log -1 --format='%h %s')"
