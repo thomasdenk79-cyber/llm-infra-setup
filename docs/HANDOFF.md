@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T12:43:47+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T12:46:54+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -279,8 +279,10 @@ Gewichteladen gebracht (47,68 GiB Stream, ca. 83,5 GiB VRAM, Ladezeit ca.
 `apply-tuning.sh` setzte `RUNTIME_WAIT_SECONDS=2400` nicht exportiert; das
 Kindskript fiel dadurch auf seinen alten Default 1200 zurueck. Der Container
 wurde mit Status 137 beendet und der Rueckfall gestartet. `wait-for-runtime.sh`
-hat jetzt Default 2400 Sekunden: Warnung nach 30 Minuten, harte Obergrenze
-nach 40 Minuten; `apply-tuning.sh` exportiert den Wert. Vor dem
+hat jetzt Default 2400 Sekunden: Warnung nach 30 Minuten. Nach 40 Minuten
+bricht sie nur ab, wenn seit zehn Minuten weder Journalfortschritt noch CPU-
+oder GPU-Aktivitaet messbar ist; bei Aktivitaet verlaengert sie die Pruefung
+in Fuenf-Minuten-Schritten. `apply-tuning.sh` exportiert den Wert. Vor dem
 naechsten Profilwechsel zuerst `healthy` abwarten; der Lauf selbst ist kein
 Benchmark-Ergebnis.
 
@@ -304,4 +306,20 @@ Transfer kein erwartbarer Haupthebel.
 
 ## Notiz 2026-10-03T12:43:47+02:00
 
-Runtime-Wartefenster: Warnung nach 30 Minuten, Abbruch nach 40 Minuten; Handoff zu Multi-Thread-Starttests ergänzt
+Runtime-Wartefenster: Warnung nach 30 Minuten, bei Inaktivitaet Abbruch ab 40 Minuten; Handoff zu Multi-Thread-Starttests ergänzt
+
+## Notiz 2026-10-03T12:50:00+02:00
+
+Wartepruefung folgt jetzt dem Betreiberkriterium Prozessfortschritt statt
+starrer Zeit: alle 60 Sekunden werden letzter Journalzeitpunkt, Containerstatus,
+Container-CPU, GPU-Auslastung und belegter GPU-Speicher ausgegeben. Der
+Containerabbruch wird sofort gemeldet. Ab 40 Minuten fuehrt erkennbare
+CPU-/GPU-Aktivitaet oder ein frischer Logeintrag zu weiteren Pruefungen in
+Fuenf-Minuten-Schritten; Timeout gibt es erst bei zehn Minuten kompletter
+Inaktivitaet. Damit wird ein langsamer, aber weiterarbeitender Modellstart nicht
+abgeschnitten. NVMe-I/O wird derzeit noch nicht direkt als eigener Fortschritts-
+indikator gemessen.
+
+## Notiz 2026-10-03T12:46:54+02:00
+
+Startup-Wartepruefung auf echte Aktivitaet umgestellt: Container, Journal, CPU, GPU und VRAM; bei Fortschritt ueber 40 Minuten hinaus warten
