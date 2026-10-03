@@ -434,10 +434,30 @@ def _capture_start_gather(embedding: Any, input_ids: torch.Tensor) -> PendingGat
     return PendingGather(future, tuple(input_ids.shape))
 
 
-def _capture_active() -> bool:
-    """Return true for both native and SGLang breakable graph capture."""
-    return is_in_breakable_cuda_graph() or (
-        torch.cuda.is_available() and torch.cuda.is_current_stream_capturing()
+_capture_notice_logged = False
+
+
+def _native_capture_active() -> bool:
+    """True only while a native CUDA graph capture runs on this stream.
+
+    Breakable-graph capture is handled by the eager_on_graph capture stubs,
+    and breakable replay runs the real bodies eagerly on purpose.  Keying on
+    is_in_breakable_cuda_graph() here would replace the real gather with the
+    zero stub during replay and freeze the PLE output at zeros.
+    """
+    return torch.cuda.is_available() and torch.cuda.is_current_stream_capturing()
+
+
+def _note_capture_stub() -> None:
+    """Warn once that a captured graph carries the zero stub, not SSD rows."""
+    global _capture_notice_logged
+    if _capture_notice_logged or not _native_capture_active():
+        return
+    _capture_notice_logged = True
+    logger.warning(
+        "Qwen4 PLE NVMe: native graph capture recorded the zero stub for PLE; "
+        "full decode graphs replay without real PLE rows. Use "
+        "--cuda-graph-backend-decode=breakable for the NVMe PLE path."
     )
 
 
@@ -452,6 +472,7 @@ def _capture_finish_gather(
     output = (
         out if out is not None else embedding.allocate_output(expected_shape, device)
     )
+    _note_capture_stub()
     output.zero_()
     return output
 
@@ -552,7 +573,7 @@ class NVMePLEEmbedding(nn.Module):
         # The regular CUDA-graph capture path does not go through the
         # breakable-graph decorator.  Avoid a CPU copy while it is capturing;
         # the stub is replaced by the real asynchronous SSD read afterwards.
-        if _capture_active():
+        if _native_capture_active():
             return _capture_start_gather(self, input_ids)
         row_ids = (
             input_ids.detach().reshape(-1).to(device="cpu", dtype=torch.int64).tolist()
@@ -586,7 +607,7 @@ class NVMePLEEmbedding(nn.Module):
         out: torch.Tensor | None = None,
         stream: torch.cuda.Stream | None = None,
     ) -> torch.Tensor:
-        if _capture_active():
+        if _native_capture_active():
             return _capture_finish_gather(self, pending, device, out=out, stream=stream)
         rows = pending.future.result()
         expected_shape = (*pending.input_shape, self.embedding_dim)

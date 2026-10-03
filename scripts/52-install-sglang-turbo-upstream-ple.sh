@@ -9,7 +9,8 @@ source "$root/lib/common.sh"
 : "${LLM_MODELS_DIR:=/srv/llm/models}"
 : "${LLM_CACHE_DIR:=/srv/llm/cache}"
 : "${TURBO_SOURCE_DIR:=/srv/llm/cache/sglang-qwen38fn-sm120-turbo-r24}"
-: "${TURBO_IMAGE:=localhost/sglang-qwen38fn-sm120-turbo:r24-pr36567}"
+: "${TURBO_BASE_IMAGE:=localhost/sglang-qwen38fn-sm120-turbo:r24}"
+: "${TURBO_IMAGE:=localhost/sglang-qwen38fn-sm120-turbo:r24-pr36567-variant-a}"
 : "${TURBO_MODEL_DIR:=Qwen3.8-Flash-Next-NVFP4}"
 : "${TURBO_UPSTREAM_PORT:=8003}"
 : "${TURBO_UPSTREAM_CONTAINER_NAME:=sglang-turbo-upstream-ple}"
@@ -18,7 +19,14 @@ have podman || { log 'FEHLT: podman'; exit 1; }
 [[ -d "$LLM_MODELS_DIR/$TURBO_MODEL_DIR" ]] || { log "Modell fehlt: $LLM_MODELS_DIR/$TURBO_MODEL_DIR"; exit 1; }
 [[ -d "$TURBO_SOURCE_DIR/.git" ]] || { log "Turbo-Quelle fehlt: $TURBO_SOURCE_DIR (zuerst make turbo-c6-install)"; exit 1; }
 [[ "$(git -C "$TURBO_SOURCE_DIR" rev-parse HEAD)" == c6cd5062669625fdbaf08032931f10b6661f8f6f ]] || { log 'Turbo-Revision ist nicht r24 c6cd506; Abbruch'; exit 1; }
-[[ -n "$(podman image inspect "$TURBO_IMAGE" --format '{{.Id}}' 2>/dev/null)" ]] || { log "Image fehlt: $TURBO_IMAGE (zuerst make turbo-c6-install)"; exit 1; }
+[[ -n "$(podman image inspect "$TURBO_BASE_IMAGE" --format '{{.Id}}' 2>/dev/null)" ]] || { log "Basis-Image fehlt: $TURBO_BASE_IMAGE (zuerst make turbo-c6-install)"; exit 1; }
+
+# Das Overlay-Image wird immer aus dem Branch-Baum gebaut (Layer-Cache macht den
+# Wiederholungslauf billig). Eigenes Tag: das Produktionsbild r24-pr36567 bleibt
+# davon unangetastet.
+log "Baue Overlay-Image $TURBO_IMAGE aus config/turbo (Branch-Stand)"
+podman build --pull=never --build-arg BASE_IMAGE="$TURBO_BASE_IMAGE" \
+  -t "$TURBO_IMAGE" -f "$root/config/turbo/Dockerfile.pr36567" "$root/config/turbo"
 
 unit="$root/quadlet/sglang-turbo-upstream-ple.container"
 cat > "$unit" <<UNIT

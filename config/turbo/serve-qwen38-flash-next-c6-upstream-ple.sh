@@ -28,6 +28,30 @@ export XDG_CACHE_HOME="${XDG_CACHE_HOME:-/cache}"
 export SGLANG_CACHE_DIR="${SGLANG_CACHE_DIR:-/cache/sglang-generated}"
 export TRANSFORMERS_OFFLINE=1 HF_HUB_OFFLINE=1
 
+# CUDA-Graphs: on = breakbare Decode-Graphen (einziger Pfad, der die echten
+# NVMe-PLE-Zeilen im Replay laeuft), off = reine Eager-Ausfuehrung wie vorher.
+TURBO_CUDA_GRAPH="${TURBO_CUDA_GRAPH:-on}"
+TURBO_CUDA_GRAPH_BACKEND_DECODE="${TURBO_CUDA_GRAPH_BACKEND_DECODE:-breakable}"
+# sleep-on-idle nutzt Torch-Memory-Saver; der breakbare Backend verbietet die
+# Memory-Saver-Kombination. Bei "NotImplementedError: Breakable CUDA graph is
+# not compatible with memory saver mode" hier auf off stellen.
+TURBO_SLEEP_ON_IDLE="${TURBO_SLEEP_ON_IDLE:-on}"
+case "$TURBO_CUDA_GRAPH" in
+  on)
+    case "$TURBO_CUDA_GRAPH_BACKEND_DECODE" in
+      breakable|full) graph_args=(--cuda-graph-backend-decode "$TURBO_CUDA_GRAPH_BACKEND_DECODE") ;;
+      *) echo "TURBO_CUDA_GRAPH_BACKEND_DECODE muss breakable oder full sein" >&2; exit 2 ;;
+    esac
+    ;;
+  off) graph_args=(--disable-cuda-graph) ;;
+  *) echo "TURBO_CUDA_GRAPH muss on oder off sein" >&2; exit 2 ;;
+esac
+case "$TURBO_SLEEP_ON_IDLE" in
+  on)  sleep_args=(--sleep-on-idle) ;;
+  off) sleep_args=() ;;
+  *) echo "TURBO_SLEEP_ON_IDLE muss on oder off sein" >&2; exit 2 ;;
+esac
+
 args=(
   serve
   --host 0.0.0.0 --port "$PORT"
@@ -53,10 +77,11 @@ args=(
   --enable-hierarchical-cache --hicache-size "$HICACHE_SIZE_GB"
   --hicache-write-policy write_through
   --enable-metrics --enable-cache-report --enable-request-time-stats-logging
-  --sleep-on-idle
+  "${graph_args[@]}"
+  "${sleep_args[@]}"
 )
 
-printf 'turbo-upstream-ple: model=%s context=%s mem_fraction=%s C%s mamba=%s hicache=%sGB ple=file:%s backend=%s online_mxfp8=%s kv=fp8_e4m3\n' \
+printf 'turbo-upstream-ple: model=%s context=%s mem_fraction=%s C%s mamba=%s hicache=%sGB ple=file:%s backend=%s cuda_graph=%s/%s sleep_idle=%s online_mxfp8=%s kv=fp8_e4m3\n' \
   "$MODEL_PATH" "$CONTEXT_LENGTH" "$MEM_FRACTION_STATIC" "$MAX_RUNNING_REQUESTS" \
-  "$MAX_MAMBA_CACHE_SIZE" "$HICACHE_SIZE_GB" "$SGLANG_QWEN4_PLE_NVME_PATH" "$SGLANG_QWEN4_PLE_NVME_BACKEND" "$SGLANG_SM120_ONLINE_MXFP8" >&2
+  "$MAX_MAMBA_CACHE_SIZE" "$HICACHE_SIZE_GB" "$SGLANG_QWEN4_PLE_NVME_PATH" "$SGLANG_QWEN4_PLE_NVME_BACKEND" "$TURBO_CUDA_GRAPH" "$TURBO_CUDA_GRAPH_BACKEND_DECODE" "$TURBO_SLEEP_ON_IDLE" "$SGLANG_SM120_ONLINE_MXFP8" >&2
 exec sglang "${args[@]}"

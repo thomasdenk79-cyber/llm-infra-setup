@@ -1333,7 +1333,12 @@ class Qwen4ExpPLELayer(nn.Module):
                 out=output_view,
                 stream=self._prefetch_stream,
             )
-        torch.cuda.current_stream().wait_stream(self._prefetch_stream)
+        if pending_nvme is None or not torch.cuda.is_current_stream_capturing():
+            # During a native graph capture the NVMe path only ran its zero
+            # stub, so the prefetch stream never joined the capture.  Joining
+            # it now would wait on uncaptured warmup copies and abort with
+            # cudaErrorStreamCaptureIsolation.
+            torch.cuda.current_stream().wait_stream(self._prefetch_stream)
         embeddings = self.ple_embedding.ngram_embedding.reduce(embeddings)
         embeddings = embeddings * self.ple_embedding.ngram_embedding.weight_scale
         embeddings = self.ple_embedding._finish_embedding_lookup(
