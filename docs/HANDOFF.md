@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T12:37:47+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T12:43:47+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -279,10 +279,29 @@ Gewichteladen gebracht (47,68 GiB Stream, ca. 83,5 GiB VRAM, Ladezeit ca.
 `apply-tuning.sh` setzte `RUNTIME_WAIT_SECONDS=2400` nicht exportiert; das
 Kindskript fiel dadurch auf seinen alten Default 1200 zurueck. Der Container
 wurde mit Status 137 beendet und der Rueckfall gestartet. `wait-for-runtime.sh`
-hat jetzt Default 2400 und `apply-tuning.sh` exportiert den Wert. Vor dem
+hat jetzt Default 2400 Sekunden: Warnung nach 30 Minuten, harte Obergrenze
+nach 40 Minuten; `apply-tuning.sh` exportiert den Wert. Vor dem
 naechsten Profilwechsel zuerst `healthy` abwarten; der Lauf selbst ist kein
 Benchmark-Ergebnis.
 
 ## Notiz 2026-10-03T12:37:47+02:00
 
-Kaltstart-Gatter repariert: RUNTIME_WAIT_SECONDS exportiert und Default auf 2400; maxkv-Lauf wegen altem 1200s-Timeout verworfen
+Kaltstart-Gatter repariert: `RUNTIME_WAIT_SECONDS` exportiert und Default auf
+2400 Sekunden gesetzt (Warnung nach 1800); maxkv-Lauf wegen altem
+1200s-Timeout verworfen.
+
+## Notiz 2026-10-03T12:42:00+02:00
+
+Die NVMe liefert laut Hostmessung bis etwa 3 GB/s; die Ladezeit besteht daher
+nicht nur aus sequentiellem Lesen. CPU-seitige Initialisierung, PLE-Streaming,
+Hash-/Formatpruefung und Triton/FlashInfer/CUDA-Graph-Kompilierung laufen
+teilweise parallel, teilweise serialisiert. Das Rezept setzt derzeit
+`OMP_NUM_THREADS=4` und `MKL_NUM_THREADS=4` (konfigurierbar). Ein 8-Thread-Test
+ist ein eigener Messarm: Startzeit, GPU-Auslastung und Serving-Durchsatz messen;
+mehr Threads koennen den Start verkuerzen, aber waehrend des laufenden Modells
+auch CPU-Konkurrenz erzeugen. 3D-V-Cache allein ist fuer diesen NVMe-/GPU-
+Transfer kein erwartbarer Haupthebel.
+
+## Notiz 2026-10-03T12:43:47+02:00
+
+Runtime-Wartefenster: Warnung nach 30 Minuten, Abbruch nach 40 Minuten; Handoff zu Multi-Thread-Starttests ergänzt

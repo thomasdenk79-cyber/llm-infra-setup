@@ -27,6 +27,7 @@ source "${root}/lib/common.sh"
 source "${root}/lib/units.sh"
 
 : "${PENNYROYAL_PORT:=8001}"
+# Warnung nach 30 Minuten, harte Obergrenze nach 40 Minuten.
 : "${RUNTIME_WAIT_SECONDS:=2400}"
 export RUNTIME_WAIT_SECONDS
 profile=aggressiv
