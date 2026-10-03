@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T10:03:59+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T10:22:30+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -232,3 +232,7 @@ gegen dieselbe Runtime senden.
 ## Notiz 2026-10-03T10:03:59+02:00
 
 470k-Token-Session als Messstoerung und CUDA-OOM mit Graph-Pool-Belegung dokumentiert
+
+## Notiz 2026-10-03T10:22:30+02:00
+
+Performance-Sweep: Profil sweet abgeschlossen
