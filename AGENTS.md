@@ -1,68 +1,123 @@
-# Agentenleitfaden für `llm-infra-setup`
+# Agentenleitfaden fuer dieses Repository
 
 ## Zweck
 
-Dieses Repository ist die versionierte Quelle der Wahrheit für eine lokale LLM-Infrastruktur auf CachyOS/Arch Linux mit ZFS, NVIDIA RTX PRO 6000, rootless Podman, Pennyroyal/SGLang und später LiteLLM/Observability.
+Versionierte Quelle der Wahrheit fuer die lokale LLM-Infrastruktur: CachyOS/Arch,
+rootless Podman, ZFS, NVIDIA RTX PRO 6000, Pennyroyal/SGLang, LiteLLM, Open WebUI
+und die Beobachtungsstapel (Prometheus, Grafana, Loki, Alloy, Dozzle).
 
-## Arbeitsmodus
+## Grundregeln
 
-Agenten arbeiten vollständig autonom. Nach einem read-only Preflight dürfen sie Installationen, Downloads, Reboots, Containerstarts, systemd-Aktivierungen und nicht destruktive Hoständerungen selbst ausführen. Jeder dauerhafte Schritt muss zuerst als idempotentes Repository-Skript oder versionierte Konfiguration abgebildet, danach ausgeführt, getestet, dokumentiert, committed und gepusht werden.
+1. **Alles als Skript.** Dauerhafte Aenderungen entstehen zuerst als idempotentes
+   Skript, Quadlet oder versionierte Konfiguration - danach ausfuehren, pruefen,
+   dokumentieren, committen, pushen. Kein manueller Einzelbefehl ohne Skript.
+2. **Die Grafikkarte gehoert dem Modell.** Kein zweiter Container, keine VM, kein
+   Training mit GPU-Zugriff, `TP_SIZE` bleibt 1. Siehe `docs/adr/0013-*.md`.
+3. **Nichts zerstoeren.** Keine `zpool create/destroy`, kein `zfs destroy`, kein
+   `mkfs` auf vorhandenen Geraeten, kein Umschreiben von Benutzerdateien, die der
+   Betreiber geaendert haben koennte (z. B. `~/.config/opencode/opencode.json`).
+   Ein Skript, das eine vorhandene Datei ersetzen will, legt eine Vorlage daneben
+   und erklaert den Unterschied.
+4. **Laufende Anfragen nicht werfen.** Ein Neustart der Runtime kostet ~15
+   Minuten. Aenderungen an Units ueber `scripts/apply-runtime-unit.sh` anwenden
+   (bricht bei laufenden Anfragen ab); ein Neustart ist ein eigener, ausdruecklicher
+   Schritt.
+5. **Keine Geheimnisse im Git.** Zugangswerte werden erzeugt und liegen unter
+   `~/.config/llm-infra/` (0600) oder als Podman-Secret. Beispiele enthalten nur
+   Platzhalter. `make validate` prueft auf Standard-Passwoerter und Schluesselmuster.
+6. **Deutsch fuer Menschen, Englisch fuer Logs.** Kommentare und Ausgabe fuer
+   Betreiber sind Deutsch; maschinenlesbare Zeilen (`log`, Kennzahlen) Englisch.
+7. **Einsteiger zuerst.** Jeder Pfad endet mit einer Ausgabe, die sagt, welcher
+   Befehl als naechstes hilft. Faengt ein Skript mit einer Fehlermeldung auf,
+   nennt sie den Befehl, nicht nur den Grund.
 
-Keine destruktiven ZFS-Befehle (`zpool create/destroy`, `zfs destroy`) hinzufügen. Keine Tokens, Passwörter, SSH-Keys oder Hugging-Face-Secrets committen.
+## Ablauf fuer jede Aenderung
 
-Das Root-Skript `./setup.sh` ist der bevorzugte autonome Einstiegspunkt. Es darf
-generierte Quadlets, lokale Laufzeitkonfigurationen und Statusdateien bei jedem
-Lauf idempotent neu schreiben, wenn dadurch keine Nutzdaten, ZFS-Datasets oder
-Secrets gelöscht werden. Bereits vorhandene Downloads und Images müssen erkannt
-und übersprungen bzw. resumiert werden. Netzwerkphasen brauchen Retries mit
-Backoff, Locking und nachvollziehbare Logs. Unabhängige Phasen wie Modell- und
-Image-Downloads dürfen parallel laufen; der Master muss ihre Jobs überwachen und
-bei Fehlern mit einem erneuten Aufruf fortsetzbar bleiben.
-
-## Ablauf
-
-1. Bestehenden Zustand lesen: `README.md`, `docs/STATUS.md`, `versions.lock`, `Makefile`, relevante Skripte.
-2. Neue dauerhafte Konfiguration als idempotentes Skript, Beispielkonfiguration, Quadlet oder Dokumentation hinzufügen.
-3. Secrets ausschließlich über externe `.env`-/Secret-Dateien referenzieren; Beispiele enthalten Platzhalter.
-4. Statische Prüfungen ausführen: `bash -n scripts/*.sh lib/*.sh`, `make validate`, `git diff --check`.
-5. `docs/STATUS.md`, `README.md` und `CHANGELOG.md` aktualisieren: Done und Todo klar trennen.
-6. Commit mit präziser Nachricht erstellen.
-7. Nach jeder abgeschlossenen Änderung Dokumentation, Commit und Push ausführen; vor dem Push nur die zugehörigen Dateien stagen und fremde uncommittete Änderungen unangetastet lassen.
+1. Stand lesen: `README.md`, `docs/status.md`, `versions.lock`, betroffene Skripte.
+2. Aenderung umsetzen (Skript, Quadlet, Konfiguration, Doku).
+3. Statische Pruefung: `make validate`.
+4. Wenn Units betroffen sind: `make drift` (Generatoren muessen die committeten
+   Dateien exakt erzeugen).
+5. Live-Anwendung, soweit ohne Runtime-Neustart moeglich:
+   `./scripts/doctor.sh`, `./scripts/healthcheck.sh`, ggf. `./scripts/benchmark.sh quick`.
+6. Doku nachziehen: betroffene `docs/*.md`, `CHANGELOG.md`, `docs/status.md`.
+7. Commit mit praeziser Nachricht, nur zugehoerige Dateien stagen, dann pushen.
 
 ## Skript-Map
 
 | Datei | Aufgabe |
 |---|---|
-| `scripts/00-preflight.sh` | Read-only Hostaufnahme in `state/preflight-report.txt` |
-| `scripts/10-install-packages.sh` | Fehlende Arch-Pakete deklarativ installieren (Betreiber führt aus) |
-| `scripts/20-zfs-setup.sh` | Vorhandenes ZFS prüfen und Dataset für Modelle anlegen |
-| `scripts/30-nvidia-podman.sh` | Rootless Podman, Linger, NVIDIA CDI und GPU-Test vorbereiten |
-| `scripts/35-install-nvidia-driver.sh` | NVIDIA Open DKMS, Module und Initramfs vorbereiten |
-| `scripts/40-download-model.sh` | Gepinntes Hugging-Face-Modell in ZFS laden |
-| `scripts/42-verify-model.sh` | Vollständigkeit und Safetensoren des Modelldownloads prüfen |
-| `scripts/50-install-pennyroyal.sh` | Gepinntes Image ziehen und Quadlet-Unit erzeugen |
-| `scripts/45-configure-kwin-egpu.sh` | Optionale KWin-DRM-Auswahl als versionierte Hostkonfiguration |
-| `scripts/60-install-gateway.sh` | LiteLLM-Konfiguration und Quadlet erzeugen |
-| `scripts/60-install-monitoring.sh` | Prometheus/Grafana/Loki/Alloy/Dozzle-Quadlets installieren |
-| `scripts/61-install-autossh.sh` | Optionalen abgesicherten Reverse-Tunnel vorbereiten |
-| `scripts/62-install-komodo.sh` | Komodo-Periphery-Quadlet vorbereiten |
-| `scripts/63-install-postgres.sh` | PostgreSQL-Quadlet für LiteLLM-Virtual-Keys vorbereiten |
-| `scripts/70-litellm.sh`, `80-komodo.sh`, `90-autossh.sh` | Masterprompt-kompatible Phasenwrapper |
-| `scripts/deploy-all.sh` | Vorbereitete User-Units gesammelt aktivieren (Betreiberaktion) |
-| `scripts/deploy.sh` | Quadlet in User-Konfiguration installieren und aktivieren |
-| `scripts/healthcheck.sh` | Lokalen Runtime-Health-Endpunkt prüfen |
-| `scripts/benchmark.sh` | Erreichbarkeit als Benchmark-Voraussetzung prüfen |
-| `scripts/backup-config.sh` | Nicht geheime Repo-Konfiguration archivieren |
-| `scripts/validate.sh` | Shell/JSON/Diff-Qualitätsprüfungen |
+| `setup.sh` | Einstieg, reicht weiter an `scripts/setup-qwen-pennyroyal.sh` |
+| `scripts/setup-qwen-pennyroyal.sh` | Phasen 1-8 mit Statusdatei, Neustart-Pause, `--dry-run`, `--check` |
+| `scripts/00-preflight.sh` | Read-only Hostaufnahme -> `state/preflight-report.txt`, `state/host-facts.txt` |
+| `scripts/10-install-packages.sh` | fehlende Pakete installieren |
+| `scripts/15-install-tools.sh` | Zusatzwerkzeuge, OpenCode, PATH fuer Bash/Fish |
+| `scripts/20-zfs-setup.sh` | Dataset und ARC-Deckel, keine Zerstoerung |
+| `scripts/30-nvidia-podman.sh` | rootless Podman, Linger, CDI (neu erzeugt), GPU-Test |
+| `scripts/35-install-nvidia-driver.sh` | open DKMS, Nouveau-Ausschluss, Initramfs |
+| `scripts/40-download-model.sh` | Modell laden, fortsetzbar |
+| `scripts/42-verify-model.sh` | Index- und Shard-Pruefung, Revision in `versions.lock` |
+| `scripts/45-configure-kwin-egpu.sh` | KWin-Grafikauswahl L15 (prueft Geraetename) |
+| `scripts/47-setup-ple-storage.sh` | ext4-Loop oder echte Partition, `--verify` prueft fstab |
+| `scripts/48-prepare-ple-nvme.sh` | PLE-Tabelle erzeugen (atomar, tmp-Ordner) |
+| `scripts/50-install-pennyroyal.sh` | Bild ziehen, Digest pinnen, Runtime-Unit erzeugen |
+| `scripts/60-install-gateway.sh` | LiteLLM-Konfiguration und Unit |
+| `scripts/60-install-open-webui.sh` | Chat-Unit |
+| `scripts/60-install-homepage.sh` | Portal-Unit |
+| `scripts/60-install-monitoring.sh` | ganze Beobachtungsstufe inkl. Timer, `--check` |
+| `scripts/61-install-autossh.sh` | optionaler Wartungstunnel, nur ein Schluessel, kein `apk add` zur Laufzeit |
+| `scripts/62-install-komodo.sh` | optionale Periphery, bricht ohne echten Server ab |
+| `scripts/63-install-postgres.sh` | Datenbank-Unit |
+| `scripts/65-install-gpu-exporter.sh` | GPU-Metriken (nvidia-smi oder dcgm) |
+| `scripts/collect-host-facts.sh` | Host-Kennzahlen als Textdatei fuer den node_exporter |
+| `scripts/runtime-watchdog.sh` | wacht ueber die Runtime, `--install`/`--uninstall` |
+| `scripts/wait-for-runtime.sh` | auf die API warten, Zeit als Umgebungsvariable |
+| `scripts/deploy.sh` | nur Runtime |
+| `scripts/deploy-non-gpu.sh` | ohne GPU: Portal, Chat, Gateway, Beobachtung |
+| `scripts/deploy-ready.sh` | Vollstaendiger Einstieg nach Neustart, prueft Voraussetzungen |
+| `scripts/deploy-all.sh` | Wrapper ueber mehrere Units (Betreiberaktion) |
+| `scripts/apply-runtime-unit.sh` | Unit-Aenderungen sicher anwenden, `--list`, `--dry-run`, `--restart-only` |
+| `scripts/doctor.sh` | gefuehrte Diagnose; Ausgabe endet mit dem naechsten Befehl |
+| `scripts/healthcheck.sh` | Kurzpruefung; Langform ist `doctor.sh` |
+| `scripts/benchmark.sh` + `benchmark_probe.py` | Messung von Vorlaufzeit und Schreibrate |
+| `scripts/backup.sh` / `scripts/restore.sh` | Sicherung und Rueckgabe inkl. Pruefsummentest |
+| `scripts/ensure-credentials.sh` / `show-credentials.sh` / `rotate-secrets.sh` | Zugangswerte |
+| `scripts/check-drift.sh` | committete Units gegen Generatoren pruefen |
+| `scripts/validate.sh` | Syntax, YAML/JSON, Quadlet, Geheimnisse, Pflichtdateien |
+| `scripts/backup-config.sh` | alt, ruft nur noch `backup.sh` auf |
+| `tui/llmctl.py` | Terminal-Zugriff auf dieselben Skripte |
 
-## Konfiguration und Reihenfolge
+## Einheiten und Netze
 
-- `config/host.env.example`: Pfade und Ports; lokale Kopie bleibt untracked.
-- `config/model.env.example`: Modell-ID, Image-Tag, Profil und Kontext.
-- `versions.lock`: beobachtete Hostversionen und gepinnte Referenzen, niemals Geheimnisse.
-- Empfohlene Betreiberreihenfolge: `preflight` → Pakete → ZFS → NVIDIA/Reboot → Podman/CDI → Modell → Pennyroyal-Unit → Deploy → Healthcheck.
-- Netzwerkdienste sollen später über LiteLLM (`:4000`) gehen; SGLang (`:8001`) nicht öffentlich exponieren.
+* `llm-inference`: Runtime, Gateway, Datenbank, Chat.
+* `llm-observability`: Prometheus, Grafana, Loki, Alloy, Dozzle, Portal, Exporter.
+* Prometheus haengt an beiden Netzen, die Runtime nur an einem
+  (`docs/adr/0009-scrape-across-networks.md`).
+* Unit-Dateien kommen aus `quadlet/`; generierte Dateien tragen einen Header
+  `GENERIERT von ...`. Aendern im Generator, nicht in der Datei.
 
-## Erweiterungen
+## Qualitaetspruefungen
 
-Neue Dienste gehören als versionierte Quadlet-/systemd-Datei plus Beispielkonfiguration und Dokumentation ins Repo. Für jedes Feature müssen Voraussetzungen, Ausführung, Rollback/Fehlerdiagnose und Status dokumentiert werden. Upstream-Versionen vor Aktualisierung prüfen und in `versions.lock` begründen.
+```bash
+make validate   # Syntax, YAML/JSON, Quadlet-Sektionen, Geheimnismuster, Pflichtdateien
+make drift      # Generatoren erzeugen exakt die committeten Units
+make docs-build # mkdocs --strict, kaputte Querverweise fallen auf
+make ci         # alle drei
+```
+
+## Erweitern
+
+Neue Dienste als Quadlet plus Generator-Skript plus Beispielkonfiguration plus
+Doku-Abschnitt. Voraussetzungen, Ausführung, Fehlerdiagnose und Status
+dokumentieren. Upstream-Versionen pruefen und in `versions.lock` festhalten.
+Bei jedem neuen Dienst direkt mitdenken: Port nur auf `127.0.0.1`, Datenvolume
+unter `~/.local/share/llm-infra`, Metrikziel in Prometheus, Diagnosefall in
+`scripts/doctor.sh`.
+
+## Bekannte offene Punkte
+
+* Eigenes Seccomp-Profil statt `unconfined` fuer die Runtime.
+* HTTPS und Firewallbetrachtung, falls das Netz jemals grosser wird.
+* PLE auf echter NVMe-Partition gemessen gegen Loop-Datei (Anleitung in
+  `docs/performance.md`).
+* KVM/libvirt als spaetere, getrennte Phase (ohne GPU-Durchreichung).

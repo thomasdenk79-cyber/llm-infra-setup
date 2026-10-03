@@ -1,79 +1,111 @@
 # llm-infra-setup
 
-Reproduzierbare lokale LLM-Infrastruktur für CachyOS/Arch Linux mit NVIDIA RTX PRO 6000, ZFS, Podman und Pennyroyal/SGLang.
+Lokale, reproduzierbare LLM-Infrastruktur: CachyOS/Arch, NVIDIA RTX PRO 6000,
+ZFS, rootless Podman, Pennyroyal/SGLang mit `Qwen3.8-Flash-Next-NVFP4`.
 
-## Für weitere Agenten
+Alles ist Skript. Ein Neubau des Rechners braucht `git clone` und `./setup.sh`.
 
-Die vollständigen Arbeitsregeln, Skriptkarte und Ausführungsreihenfolge stehen in [AGENTS.md](AGENTS.md). Agenten bauen das Framework und führen keine Hoständerungen aus; Betreiber führen die Skripte später bewusst aus.
-
-## Aktueller Stand (2026-10-02)
-
-### Erledigt und im Repository versioniert
-
-- Host-Preflight mit Bericht unter `state/preflight-report.txt` (OS, Kernel, GPU, CUDA, PCIe, ZFS, Container- und Netzwerkstatus).
-- Paket- und NVIDIA-Open-DKMS-Setup einschließlich Module, Nouveau-Blacklist und CDI-Erzeugung.
-- Idempotentes ZFS-Dataset-Setup für `/srv/llm/models`, Cache- und NIXL-Verzeichnisse.
-- Rootless-Podman-Vorbereitung und GPU-Smoke-Test.
-- Gepinnte Runtime-Referenz: `ghcr.io/jpezzulli/sglang-rtxpro6000:v2.5.3`; Modell: `RadixArk/Qwen3.8-Flash-Next-NVFP4`.
-- Reproduzierbare Skripte für Modell-Download, Quadlet-Erzeugung, Deployment, Healthcheck und Konfigurationsbackup.
-- `versions.lock` dokumentiert den zuletzt erfassten Hoststand und enthält keine Zugangsdaten.
-
-### Noch offen
-
-- Pennyroyal-Release und Modellkompatibilität gegen die aktuelle Upstream-Quelle prüfen, bevor ein Upgrade von v2.5.3 erfolgt.
-- Hugging-Face-Zugang (falls erforderlich) außerhalb von Git konfigurieren und Modell mit `make model` laden.
-- Runtime nach Reboot auf dem Zielhost starten und mit `make healthcheck` prüfen.
-- Homepage als zentrale Einstiegsseite sowie Open WebUI für Chat, Datei-Upload und RAG ergänzt.
-- LiteLLM-Gateway, Prometheus/Grafana, Loki/Alloy, Dozzle, Komodo und Autossh als versionierte Dienste vorbereitet.
-- Backup/Restore, Lasttest und Sicherheits-Härtung nach erfolgreichem Einzel-GPU-Betrieb dokumentieren.
-
-## Schnellstart
-
-Für eine neue Installation genügt nach dem Kopieren der lokalen Konfiguration:
+## Neu hier? Zwei Befehle
 
 ```bash
-./setup.sh
+./setup.sh          # richtet alles ein; bei Bedarf mehrfach ausfuehren
+./scripts/doctor.sh # zeigt, was nicht passt, und nennt den passenden Befehl
 ```
 
-Das Skript ist idempotent. Wenn der NVIDIA-Kernel zuerst einen Neustart braucht,
-startet es danach mit demselben Befehl weiter. Modell, Quadlet und API werden
-auf dem in `config/host.env` gesetzten `/srv`-Pool eingerichtet.
+`./setup.sh` bricht nicht mit einer kryptischen Meldung ab, sondern sagt am Ende,
+was noch offen ist. Nach einem Abbruch (Netzwerk, Neustart, abgesteckte GPU)
+einfach denselben Befehl erneut ausfuehren - Fertiges wird erkannt und
+uebersprungen.
+
+## Schnellstart von Hand
 
 ```bash
 cp config/host.env.example config/host.env
-cp config/model.env.example config/model.env
-make preflight
-make validate
-make install          # falls Pakete fehlen
-make zfs              # bestehende Pools werden nicht zerstört
-make nvidia-driver    # reboot danach erforderlich
-make podman
-make pennyroyal       # Image pullen und Quadlet erzeugen
-make ple-nvme         # ext4-PLE-Image mounten und Overlay vorbereiten
-./setup.sh            # idempotenter Gesamtaufbau und API-Smoke-Test
-make deploy-non-gpu   # Portal, Open WebUI, Gateway und Monitoring ohne GPU starten
-make portal            # zentrale Verwaltungsseite im Browser öffnen
-make deploy-ready     # nach GPU-Reconnect/Reboot den vollständigen Stack starten
+make preflight            # Host-Zustand erfassen
+make validate             # Repo-Pruefung
+make install              # Pakete (braucht sudo)
+make zfs                  # Dataset anlegen; vorhandene Pools bleiben unangetastet
+make nvidia-driver        # Treiber; danach Neustart und erneut ./setup.sh
+make podman               # rootless Podman, CDI, GPU-Test
+make model                # Modell laden (fortsetzbar)
+make pennyroyal           # Bild ziehen, Runtime-Unit erzeugen
+make ple-nvme             # SSD-Auslagerung der Einbettungen vorbereiten
+make deploy-non-gpu       # Portal, Chat, Gateway, Beobachtung (ohne GPU)
+make deploy-ready         # kompletter Stack, wenn die GPU da ist
 make healthcheck
 ```
 
-Die zentrale Einstiegsseite läuft unter `http://127.0.0.1:3002`. Open WebUI für Chat und RAG ist unter `http://127.0.0.1:3001` erreichbar. `make portal` startet die Homepage-Unit und öffnet den Browser. Ohne GPU sind Oberfläche, Gateway, Monitoring und Verwaltung verfügbar; Antworten benötigen den gestarteten Pennyroyal-Runtime-Container.
+`make` ohne Argument zeigt alle Befehle mit Erklaerung.
 
-Im geschützten Heimnetz verwendet der lokale Stack bewusst einfache Standardzugänge: Grafana `admin`/`admin`, LiteLLM-Schlüssel `sk-llm-infra-local` und PostgreSQL `litellm`/`llm-infra`. Die Werte liegen nur in `~/.config/llm-infra/` beziehungsweise als Podman-Secret.
+## Was dann läuft (alle Ports nur auf 127.0.0.1)
 
-Nach dem Reboot mit wieder angeschlossener GPU:
+| Adresse | Dienst | Wofuer |
+|---|---|---|
+| http://127.0.0.1:3002 | Homepage | Einstiegseite fuer den Betreiber |
+| http://127.0.0.1:3001 | Open WebUI | Chat, Dateien, RAG |
+| http://127.0.0.1:4000 | LiteLLM | ein Gateway, ein Schluessel |
+| http://127.0.0.1:8001 | Pennyroyal | Runtime direkt (nur Diagnose) |
+| http://127.0.0.1:3000 | Grafana | vier Dashboards |
+| http://127.0.0.1:9090 | Prometheus | Metriken und Alarmregeln |
+| http://127.0.0.1:8080 | Dozzle | Live-Protokolle |
+
+Zugangsdaten werden bei der ersten Einrichtung erzeugt und liegen **nicht** im
+Repository, sondern unter `~/.config/llm-infra/` (Modus 0600) und als
+Podman-Secret:
 
 ```bash
-cd /home/z000g9hu/work/llm-infra-setup
-make preflight
-make podman
-make deploy-ready
-make healthcheck
-make portal
+./scripts/show-credentials.sh
 ```
 
-`state/`, lokale `.env`-Dateien und Geheimnisse sind von Git ausgeschlossen. Niemals Tokens in `versions.lock` oder Konfigurationsdateien committen.
+## Geschwindigkeit
 
-### ThinkPad L15 Gen 2 mit Blackwell-eGPU
+Gemessen am 2026-10-02 mit Pennyroyal v2.5.3: 157,88 Token/s bei einem normalen
+Prompt, 119,01 Token/s bei langem Prompt, 242 Token/s insgesamt bei vier
+gleichzeitigen Anfragen. Die Einzelanfrage bleibt bei etwa 160 Token/s stehen,
+weil die externe Grafikkarte ueber Thunderbolt nur vier PCIe-Leitungen bei
+16 GT/s aushandelt (moeglich waren 16 Leitungen bei 32 GT/s). Die GPU ist dabei
+nur zu 61 % ausgelastet - sie wartet auf Daten, nicht auf Rechenzeit.
 
-Auf dem L15 Gen 2 (20X4) hängt der externe Monitor an der Blackwell über Thunderbolt, während das interne Panel an der Intel-iGPU hängt. `make kwin-egpu` setzt `KWIN_DRM_DEVICES=/dev/dri/card0:/dev/dri/card1`, damit KWin die Blackwell als primäre DRM-GPU nutzt und den ineffizienten Multi-GPU-Compositingpfad vermeidet. Nach der Installation ist eine neue Plasma-Sitzung erforderlich.
+```bash
+./scripts/benchmark.sh normal 4     # messen
+cat docs/performance.md             # Einordnung und Hebel
+```
+
+## Grundregel: die Grafikkarte gehoert dem Modell
+
+Kein zweiter Container, keine VM und kein Trainingslauf bekommt GPU-Zugriff; die
+Inferenz nutzt einen Kern (TP1). Begründung: `docs/adr/0013-*.md`.
+
+## Wichtige Dateien
+
+```
+setup.sh                     Einstieg von Hand
+scripts/doctor.sh            Diagnose mit naechsten Befehlen
+scripts/*.sh                 ein Schritt pro Datei, nummeriert, alle wiederholbar
+lib/common.sh                Protokoll, Wiederholungen, Geheimnis-Helfer
+lib/units.sh                 eine Quadlet-Installationsregel fuer alle Pfade
+lib/secrets.sh               Zugangsdaten ausserhalb von Git
+quadlet/                     Dienste (teilweise generiert, Header sagt es)
+config/                      Vorlagen; generierte Dateien haben einen Header
+systemd/                     Timer: Host-Kennzahlen, Runtime-Waechter
+state/                       Laufzeitstaende, Protokolle, Messungen (nicht in Git)
+versions.lock                gepinnte Versionen (Hoststand: state/host-facts.txt)
+docs/                        Doku; mkdocs serve
+```
+
+## Sicherheit in einem Absatz
+
+Alle Dienste binden an `127.0.0.1`, laufen rootless, Modellgewichte sind
+read-only einghaengt, Passwoerter sind Zufallswerte ausserhalb von Git, und
+`make validate` prueft auf Muster wie `hf_…`, `sk-…` und private Schluessel.
+Der einzige bewusste Kompromiss ist das Seccomp-Profil des Inferenz-Containers
+(io_uring fuer den SSD-Vorleser). Details und offene Aufgaben: `docs/security.md`.
+
+## Doku
+
+```bash
+make docs        # lokal unter http://127.0.0.1:8000
+```
+
+Architektur, Betrieb, Fehlerbilder, Sicherheit, Geschwindigkeit,
+Sicherung/Rueckgabe und 13 Entscheidungsprotokolle (ADRs) unter `docs/`.

@@ -23,11 +23,28 @@ nav:
   - Architektur: architecture.md
   - Installation: install.md
   - Betrieb: operations.md
-  - Monitoring: monitoring.md
-  - Fehleranalyse: troubleshooting.md
+  - Geschwindigkeit: performance.md
+  - Beobachtung: monitoring.md
   - Sicherheit: security.md
-  - Wiederherstellung: disaster-recovery.md
+  - Sicherung und Rueckgabe: backup-restore.md
+  - Fehlerbilder: troubleshooting.md
   - Status: status.md
+  - Pflichtabgleich: COMPLIANCE.md
+  - Entscheidungen:
+      - Rootless Podman: adr/0001-use-rootless-podman.md
+      - Pennyroyal: adr/0002-use-pennyroyal.md
+      - LiteLLM: adr/0003-use-litellm.md
+      - Quadlet: adr/0004-use-quadlet.md
+      - Komodo: adr/0005-use-komodo.md
+      - Modellager: adr/0006-separate-model-storage.md
+      - Beobachtungsstapel: adr/0007-observability-stack.md
+      - MkDocs: adr/0008-use-mkdocs.md
+      - Netze und Metrikabruf: adr/0009-scrape-across-networks.md
+      - Host-Kennzahlen: adr/0010-host-metrics-im-container-statt-nativ.md
+      - PLE-Flaeche: adr/0011-ple-ext4-loop-statt-zfs.md
+      - Uebergabe: HANDOFF.md
+      - Schreibrate-Grenze: adr/0012-grenze-der-schreibrate-liegt-nicht-an-thunderbolt.md
+      - Exklusive GPU: adr/0013-grundregel-exklusive-grafikkarte.md
   - English:
       - Overview: en/index.md
       - Operations: en/operations.md

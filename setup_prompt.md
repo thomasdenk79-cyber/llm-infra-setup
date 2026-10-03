@@ -2188,3 +2188,71 @@ Achte generell auf eine saubere, vollständige und fortlaufend gepflegte Dokumen
 
 
 
+
+# 43. Nachtrag aus dem Review vom 2026-10-02 (ebenso verbindlich)
+
+Die folgenden Punkte haben sich im Betrieb als notwendig erwiesen und gelten
+zusätzlich zu den Abschnitten 1 bis 42. Sie sind bereits umgesetzt; diese
+Aufzählung dient späteren Agenten als Maßstab.
+
+## 43.1 Die Grafikkarte gehört dem Modell (Grundregel E1)
+
+* Inferenz läuft mit genau einem GPU-Kern (`TP_SIZE=1`). Eine Aufteilung der Karte
+  über zwei Kerne oder zwei Prozesse ist **nicht** erlaubt, auch nicht zum Messen.
+* Kein zweiter Container, keine VM und kein Trainings-/Entwicklungsprozess erhält
+  GPU-Zugriff. Der einzige zusätzliche Nutzer der Karte ist der Metrik-Exporter,
+  und er liest ausschließlich über NVML (kein DCGM im Standardpfad).
+* Begründung und Folgen: `docs/adr/0013-grundregel-exklusive-grafikkarte.md`.
+
+## 43.2 Vorlaufzeit und Schreibrate sind zwei verschiedene Messgrößen
+
+* Eine Messung, die beide vermischt, ist unbrauchbar. Benchmark und Dashboards
+  führen deshalb `time_to_first_token_*` und `steady_tokens_per_second` getrennt.
+* Es zählt `usage.completion_tokens` der API. Das Zählen von SSE-Chunks ist falsch,
+  weil bei spekulative Ausführung mehrere Token in einem Chunk stecken.
+* Jede Messung enthält einen Aufwärm-Lauf, der nicht in die Werte eingeht.
+
+## 43.3 Hostzustand gehört in das Repository, nicht ins Terminal-Gedächtnis
+
+Prüfbare Regel: Wenn nach einem Neustart etwas nicht mehr funktioniert, das nicht
+aus dem Repository wiederhergestellt wird, ist die Arbeit nicht fertig. Konkret
+überwacht durch:
+
+* fstab-Eintrag für den PLE-Speicher (`llm_ple_in_fstab` als Metrik, Alarm bei 0)
+* committete Units müssen mit ihren Generatoren übereinstimmen (`make drift`)
+* Diagnosepfad `scripts/doctor.sh` prüft beides und nennt den Reparaturbefehl
+
+## 43.4 Bedienerführung statt Fehlermeldungen
+
+* Jeder Benutzerweg endet mit dem nächsten Befehl, nicht mit einem Logauszug.
+* Es gibt vier bewusste Einstiegspfade: `./setup.sh`, `make deploy`,
+  `make deploy-non-gpu`, `make deploy-ready` - plus `./scripts/doctor.sh` als
+  Diagnostik. Neue Abläufe brauchen einen dieser Wege.
+* Zerstörerische Handlungen (Formatieren, Löschen, Überschreiben von
+  Benutzerkonfiguration) sind in Skripten verboten; sie werden ausgegeben und
+  vom Betreiber selbst ausgeführt.
+
+## 43.5 Laufende Anfragen sind Schutzgut
+
+* Ein Neustart der Runtime kostet ~15 Minuten und verwirft laufende Anfragen.
+  Aenderungen an Units werden über `scripts/apply-runtime-unit.sh` eingespielt,
+  das bei laufenden Anfragen abbricht, und `PENNYROYAL_PROTECT=1` sperrt den
+  Neustart komplett.
+* Der Runtime-Wächter startet standardmäßig nicht neu (nur Warnung), sondern nur
+  nach drei Fehlversuchen und nur, wenn keine Anfragen laufen.
+
+## 43.6 Zugangsdaten
+
+* Es gibt keine festen Standardpasswörter im Repository. Werte werden erzeugt,
+  sind 0600, liegen außerhalb von Git und werden über `show-credentials.sh`
+  lesbar. `make validate` prüft auf die ehemaligen Standardwerte.
+* Der LiteLLM-Salt-Schlüssel wird bei Rotationen nicht geändert (Sonst sind
+  gespeicherte virtuelle Schlüssel unlesbar).
+
+## 43.7 Belegpflicht pro Phase
+
+Zusätzlich zu Abschnitt 42.15 gehört in jeden Abschlussbericht einer Phase:
+
+* welcher Befehl die Prüfung war und was er ausgegeben hat
+* welche Metrik oder welche Datei das Ergebnis dauerhaft belegt
+* welcher Punkt dadurch auf der Todo-Liste verschwunden ist
