@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T10:22:30+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T11:47:51+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -236,3 +236,7 @@ gegen dieselbe Runtime senden.
 ## Notiz 2026-10-03T10:22:30+02:00
 
 Performance-Sweep: Profil sweet abgeschlossen
+
+## Notiz 2026-10-03T11:47:51+02:00
+
+Tuning-Guard toleriert API-Aussetzer waehrend Kaltstart; maxkv kann danach sicher angewendet werden

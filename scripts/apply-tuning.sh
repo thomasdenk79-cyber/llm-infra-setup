@@ -143,7 +143,7 @@ if ! mountpoint -q "${PLE_NATIVE_MOUNT}"; then
 fi
 
 running="$(curl -fsS --max-time 5 "http://127.0.0.1:${PENNYROYAL_PORT}/metrics" 2>/dev/null \
-  | awk '/^sglang:num_running_reqs\{/ {print $2; found=1} END{if(!found) print 0}')"
+  | awk '/^sglang:num_running_reqs\{/ {print $2; found=1} END{if(!found) print 0}' || true)"
 if [[ "${running%.*}" != 0 ]]; then
   echo "ACHTUNG: ${running} Anfragen laufen gerade - die Sitzung(en) fallen beim Neustart ab." >&2
   if [[ "${plan_only}" == 1 ]]; then
@@ -154,7 +154,7 @@ if [[ "${running%.*}" != 0 ]]; then
   if [[ "${answer}" == J || "${answer}" == j ]]; then
     for _ in $(seq 1 30); do
       sleep 10
-      running="$(curl -fsS --max-time 5 "http://127.0.0.1:${PENNYROYAL_PORT}/metrics" 2>/dev/null | awk '/^sglang:num_running_reqs\{/ {print $2; exit}')"
+      running="$(curl -fsS --max-time 5 "http://127.0.0.1:${PENNYROYAL_PORT}/metrics" 2>/dev/null | awk '/^sglang:num_running_reqs\{/ {print $2; exit}' || true)"
       [[ "${running:-0}" == "0" || "${running:-0}" == "0.0" ]] && break
     done
   fi
