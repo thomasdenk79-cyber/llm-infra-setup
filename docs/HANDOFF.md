@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T09:16:58+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T09:44:11+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -181,3 +181,7 @@ Parallel-Benchmarks gegen Prefix-Cache-Artefakte abgesichert; Sweep-CSV-Schema v
 ## Notiz 2026-10-03T09:16:58+02:00
 
 Runtime-Fix validiert: Memory-Saver ohne expandable_segments; Logsammler shellcheck-sauber
+
+## Notiz 2026-10-03T09:44:11+02:00
+
+Performance-Messmatrix mit Stabilitaets-, Kontext-, KV-, PLE- und Online-FP8-Achsen dokumentiert
