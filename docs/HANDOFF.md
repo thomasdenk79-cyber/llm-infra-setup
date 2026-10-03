@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T14:14:50+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T14:21:08+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -378,3 +378,17 @@ Sicherheitsprofilstart diagnostiziert: mamba_ratio=5, vier Slots ergaben max_num
 ## Notiz 2026-10-03T14:14:50+02:00
 
 C6-Produktionsprofil vorbereitet: Online-FP8, 6 Requests, 36 Mamba-Slots, 1M KV, HiCache 16, NVMe-PLE; mem_fraction-Override wird fuer offiziellen Default entfernt
+
+## Notiz 2026-10-03T14:20:00+02:00
+
+C6-Start auf Nutzerwunsch vor Ready abgebrochen, damit ein alternativer
+Agentenvorschlag geprueft werden kann. Die generierte Unit enthielt bereits
+Online-FP8, 6 Requests, 36 Mamba-Slots, Graph-Maximum 6 und 1M KV; es gab noch
+keine Benchmarkdaten. Der Stop lief in SIGKILL/Status 137 aus, nachdem der
+Kaltstart nur wenige Minuten alt war; daraus darf kein OOM-Urteil ueber C6
+abgeleitet werden. Aktueller Pod ist gestoppt. Vor dem naechsten Start neuen
+Vorschlag gegen diese Unit und das bestehende PLE-/NIXL-Layout vergleichen.
+
+## Notiz 2026-10-03T14:21:08+02:00
+
+C6-Start auf Nutzerwunsch vor Ready gestoppt; generierte Unit mit Online-FP8/6/36/1M dokumentiert, keine Benchmarkdaten

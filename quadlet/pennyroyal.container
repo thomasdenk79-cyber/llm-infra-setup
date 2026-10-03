@@ -27,12 +27,12 @@ Environment=CACHE_BASE=/cache
 Environment=NIXL_STORAGE_BASE=/nixl
 Environment=PENNY_HICACHE_SIZE_GB=16
 Environment=PENNY_PLE_BACKEND=nvme
-Environment=SGLANG_SM120_ONLINE_MXFP8=false
+Environment=SGLANG_SM120_ONLINE_MXFP8=true
 Environment=PENNY_PLE_NVME_MODEL=/ple/Qwen3.8-Flash-Next-PLE-NVME
-Environment=MAX_RUNNING_REQUESTS=4
-Environment=MAX_MAMBA_CACHE_SIZE=16
+Environment=MAX_RUNNING_REQUESTS=6
+Environment=MAX_MAMBA_CACHE_SIZE=36
 Environment=MAX_TOTAL_TOKENS=1048576
-Environment=PENNY_CUDA_GRAPH_MAX_BS=4
+Environment=PENNY_CUDA_GRAPH_MAX_BS=6
 Environment=PENNY_ENABLE_MEMORY_SAVER=1
 # python3 exists in the runtime image; curl is not guaranteed.
 HealthCmd=python3 -c "import sys,urllib.request;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8001/health',timeout=8).status==200 else 1)"
