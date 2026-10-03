@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T08:21:27+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T08:23:11+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -125,3 +125,24 @@ Zustandsplaetze je Anfrage gemessen (4); Profile sweet/aggressiv/maxkv neu dimen
 ## Notiz 2026-10-03T08:21:27+02:00
 
 PREFILL_CHUNK_SIZE-Unbound-Fehler im Runtime-Rezept behoben; Default und Host-Override frueh definiert
+
+## Notiz 2026-10-03T08:22:00+02:00
+
+Der erste Neustart scheiterte wiederholt, weil `set -u` in
+`config/pennyroyal/serve-flash-next-frspec.sh` den Fallback
+`${PREFILL_CHUNK_SIZE}` auswertete, bevor die Variable definiert war. Der
+Fallback ist jetzt frueh `PENNY_CHUNKED_PREFILL_SIZE` oder `4096`; der spaetere
+Hardcode wurde entfernt. Commit `879072c` ist gepusht. Danach wurde die Unit
+automatisch neu gestartet; aktuell ist `pennyroyal.service` aktiv und der
+Container `pennyroyal` laeuft im Kaltstart (PLE-Pruefung/Modellstart), daher kann
+Port 8001 noch kurzzeitig resetten. Pruefen mit:
+
+```bash
+systemctl --user is-active pennyroyal.service
+podman ps --filter name=pennyroyal
+curl -fsS http://127.0.0.1:8001/health
+```
+
+## Notiz 2026-10-03T08:23:11+02:00
+
+Runtime-Rezeptfehler dokumentiert; Pennyroyal nach Fix im Kaltstart und PLE-Check
