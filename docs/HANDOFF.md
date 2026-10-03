@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T18:38:13+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T18:53:08+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -505,3 +505,7 @@ Turbo-Startfehler behoben: Rust-Cargo wird im stabilen Offline-Toolchain des Ima
 ## Notiz 2026-10-03T18:38:13+02:00
 
 Turbo-Test isoliert: paralleler Pennyroyal-GPU-Besitz als Ursache des zweiten Starts dokumentiert
+
+## Notiz 2026-10-03T18:53:08+02:00
+
+NVMe-PLE-Overlay bis CUDA-Graph-Warmup validiert; TP1-API-Vertragsmethode ergaenzt

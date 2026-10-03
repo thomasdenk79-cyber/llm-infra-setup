@@ -529,6 +529,10 @@ class NVMePLEEmbedding(nn.Module):
     ) -> torch.Tensor:
         return torch.empty(tuple(shape), dtype=torch.bfloat16, device=device)
 
+    def reject_scattered_tp2(self) -> None:
+        """Keep the shared PLE-layer contract; this reader is TP1-only."""
+        return None
+
     def gather(
         self, input_ids: torch.Tensor, out: torch.Tensor | None = None
     ) -> torch.Tensor:
