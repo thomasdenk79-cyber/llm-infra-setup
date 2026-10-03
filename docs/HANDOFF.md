@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T13:29:45+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T13:30:27+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -359,5 +359,9 @@ CUDA-OOM nach gesundem Start dokumentiert: 12.35 GiB Graph-Pools und lazy Triton
 Pennyroyal-Zielprofile recherchiert und dokumentiert: offizielles C6/1.039M KV, Online-FP8 VRAM-Gewinn, Community C4/C8; Messleiter nach stabilem C1
 
 ## Notiz 2026-10-03T13:29:45+02:00
+
+Sicherheitsprofilstart diagnostiziert: mamba_ratio=5, vier Slots ergaben max_num_reqs=0; Guard auf 5 und C1 maxkv auf 8 Slots korrigiert
+
+## Notiz 2026-10-03T13:30:27+02:00
 
 Sicherheitsprofilstart diagnostiziert: mamba_ratio=5, vier Slots ergaben max_num_reqs=0; Guard auf 5 und C1 maxkv auf 8 Slots korrigiert
