@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T18:13:03+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T18:23:17+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -489,3 +489,7 @@ neue Port-8002-Unit anwenden.
 ## Notiz 2026-10-03T18:13:03+02:00
 
 GPU/PCIe-Ausfall und CDI-Recovery fuer den naechsten Agenten dokumentiert
+
+## Notiz 2026-10-03T18:23:17+02:00
+
+GPU nach Neustart wieder da, CDI neu erzeugt und Podman-GPU-Smoke bestanden
