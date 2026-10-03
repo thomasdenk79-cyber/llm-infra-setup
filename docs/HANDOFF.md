@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T19:17:24+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T19:39:57+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -534,3 +534,7 @@ Turbo-NVMe-Reader erreicht CUDA-Graph-Capture; SSD-Pfad deaktiviert Graphen gezi
 ## Notiz 2026-10-03T19:17:24+02:00
 
 Turbo-SSD-Stream nach GPU-Recovery gesund; Doku, Rust-Cache und exklusiver GPU-Betrieb gesichert
+
+## Notiz 2026-10-03T19:39:57+02:00
+
+Gateway fuer Turbo umgestellt, damit OpenCode nicht mehr auf den gestoppten Penny-Port zeigt
