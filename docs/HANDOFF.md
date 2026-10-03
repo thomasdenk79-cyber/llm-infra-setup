@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T08:30:08+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T08:34:56+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -153,3 +153,7 @@ Runtime-Rezeptfehler dokumentiert; Pennyroyal nach Fix im Kaltstart und PLE-Chec
 ## Notiz 2026-10-03T08:30:08+02:00
 
 c16 Belastungsprofil fuer 16 parallele Anfragen und Benchmark-Sweep dokumentiert
+
+## Notiz 2026-10-03T08:34:56+02:00
+
+Performance-Review: CUDA-Graph-, Memory-Saver- und Sleep-Optionen tatsaechlich an SGLang uebergeben

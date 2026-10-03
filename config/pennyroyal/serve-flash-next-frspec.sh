@@ -256,6 +256,10 @@ if (( HICACHE_SIZE_GB > 0 )); then
     --hicache-storage-backend nixl --hicache-storage-prefetch-policy timeout \
     --hicache-storage-backend-extra-config "@$NIXL_CONFIG")
 fi
+# These arrays are built above from the operator's tuning knobs. Keep them in
+# the actual command line; previously they were only validated and printed,
+# so graph limiting, memory saver, and idle sleep had no runtime effect.
+launch_args+=("${CUDA_GRAPH_ARGS[@]}" "${SLEEP_ARGS[@]}" "${MFU_ARGS[@]}")
 source "$SCRIPT_DIR/startup-summary.sh"
 pennyroyal_startup_summary "${launch_args[@]}"
 exec "$SGLANG_EXE" "${launch_args[@]}"
