@@ -6,7 +6,7 @@
 #
 # Alle Ablaeufe sind Skripte im Ordner scripts/ - nichts muss von Hand getippt
 # werden. Details in README.md und docs/.
-.PHONY: help setup setup-check preflight install tools nvidia-driver kwin-egpu podman zfs model model-verify pennyroyal ple-nvme verify-ple gateway litellm open-webui homepage portal autossh komodo postgres monitoring gpu-exporter collector watchdog watchdog-off gitops gitops-auto gitops-off tune tune-plan tune-conservative tune-sweet tune-sweet-an tune-maxkv tune-maxkv-an tune-rollback ple-native ple-copy ple-check ple-cache ple-warm gpu-frei gpu-frei-an gpu-frei-aus quality quality-lang quality-vergleich deploy deploy-all deploy-non-gpu deploy-ready apply-units wait healthcheck health backup restore doctor bench bench-normal bench-long validate drift ci status docs docs-build pre-commit-install checkpoint ungesichert tui rotate-secrets show-credentials
+.PHONY: help setup setup-check preflight install tools nvidia-driver kwin-egpu podman zfs model model-verify pennyroyal ple-nvme verify-ple gateway litellm open-webui homepage portal autossh komodo postgres monitoring gpu-exporter collector watchdog watchdog-off gitops gitops-auto gitops-off tune tune-plan tune-conservative tune-sweet tune-sweet-an tune-maxkv tune-maxkv-an tune-c16 tune-c16-an tune-rollback ple-native ple-copy ple-check ple-cache ple-warm gpu-frei gpu-frei-an gpu-frei-aus quality quality-lang quality-vergleich deploy deploy-all deploy-non-gpu deploy-ready apply-units wait healthcheck health backup restore doctor bench bench-normal bench-long validate drift ci status docs docs-build pre-commit-install checkpoint ungesichert tui rotate-secrets show-credentials
 
 help:
 	@echo 'llm-infra-setup - verfuegbare Befehle'
@@ -143,6 +143,10 @@ tune-maxkv:
 	./scripts/apply-tuning.sh --profil maxkv --nur-plan
 tune-maxkv-an:
 	./scripts/apply-tuning.sh --profil maxkv
+tune-c16:
+	./scripts/apply-tuning.sh --profil c16 --nur-plan
+tune-c16-an:
+	./scripts/apply-tuning.sh --profil c16
 tune-rollback:
 	./scripts/apply-tuning.sh --zurueck
 ple-native:

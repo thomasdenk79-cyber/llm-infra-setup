@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T08:23:11+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T08:30:08+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -60,6 +60,7 @@ Der Neustart ist der einzige Schritt, der Sessions trennt. Ablauf:
 ./scripts/apply-tuning.sh --profil sweet --nur-plan     # empfohlen: 4 Anfragen, 16 Plaetze
 ./scripts/apply-tuning.sh --profil aggressiv            # 8 Anfragen, 5/1/8, HiCache 16
 ./scripts/apply-tuning.sh --profil maxkv                # 2 Anfragen, mehr KV-Speicher
+./scripts/apply-tuning.sh --profil c16                 # Belastung: 16 Anfragen, 64 Zustandsplaetze
 ./scripts/apply-tuning.sh --zurueck                     # zur letzten Sicherung
 ./scripts/session-checkpoint.sh                         # Ergebnis sichern
 ```
@@ -74,6 +75,8 @@ Der Neustart ist der einzige Schritt, der Sessions trennt. Ablauf:
   (`sglang:max_total_num_tokens`).
 
 ## 4. Noch offen
+
+Fuer die Skalierungsmessung gibt es das Profil `c16`: 16 aufgenommene Anfragen, 64 Mamba-Slots (vier je Anfrage), CUDA-Graph-Maximum 8 und `chunked-prefill=8192`. Nach dem aktuellen Kaltstart zuerst `scripts/benchmark.sh normal 1`, `2`, `3`, `4`, `6` und `8` ausfuehren; danach mit `make tune-c16-an` neu starten und `scripts/benchmark.sh normal 16` messen. Jeder Profilwechsel startet die Runtime neu.
 
 0. Gemessener Zusammenhang: vier Zustandsplaetze je Anfrage (Log `mamba num: 4`),
    24 Plaetze gesamt bei Bild-Standard, 2262 MiB VRAM frei. Das Startskript bricht
@@ -146,3 +149,7 @@ curl -fsS http://127.0.0.1:8001/health
 ## Notiz 2026-10-03T08:23:11+02:00
 
 Runtime-Rezeptfehler dokumentiert; Pennyroyal nach Fix im Kaltstart und PLE-Check
+
+## Notiz 2026-10-03T08:30:08+02:00
+
+c16 Belastungsprofil fuer 16 parallele Anfragen und Benchmark-Sweep dokumentiert
