@@ -1,81 +1,114 @@
-# Handoff 2026-10-03 (Zustand vor dem naechsten Schritt)
+Zuletzt gesichert: 2026-10-03T08:09:39+02:00 durch `scripts/session-checkpoint.sh`
 
-Dieser Stand ist wichtig, wenn eine Sitzung abbricht, der Rechner neu startet oder
-ein anderer Agent weiterarbeiten muss. Alles hier ist bereits im Repository; diese
-Seite sammelt nur die Fadenenden.
+# Arbeitsstand und Uebergabe
 
-## Wo das System steht (gemessen 2026-10-03, 07:15)
+**Diese Seite ist der Fortsetzungsanker.** Wenn eine Sitzung abreisst, der Rechner
+neu startet oder ein anderer Agent uebernimmt: hier steht, was gilt. Regel aus
+`AGENTS.md`: Nach jedem abgeschlossenen Schritt `./scripts/session-checkpoint.sh`
+(a ktualisiert diese Seite, committet, pusht). Das Repository ist das Backup.
 
-* Runtime Pennyroyal v2.5.3 laeuft, API gesund, VRAM 94,9 / 97,9 GiB.
-* Kapazität der Laufzeit (wichtig fuer mehrere opencode-Sitzungen):
-  * `sglang:context_len` = **524288** Token maximal pro Anfrage
-  * `sglang:max_total_num_tokens` = **824384** Token gemeinsamer Speicher fuer ALLE
-    gleichzeitigen Anfragen
-  * gemessen: `kv_used_tokens` 522496 bei 2 laufenden Anfragen, `kv_available_tokens` 448,
-    `kv_evictable_tokens` 301440, `mamba_used` 8 / `mamba_available` 2
-  * Bedeutung: zwei Sitzungen mit je 250-300k Kontext fuellen den Pool fast;
-    ab der dritten wird verdraengt (Verdraengung = Vorlesen wiederholen = langsam).
-  * Empfehlung an den Betreiber: ab etwa 300k Kontext pro Sitzung `compact` benutzen
-    oder den Kontext im Client begrenzen (siehe `opencode.json.llm-infra`).
-* Messwerte Schreibrate (Vorlaufzeit getrennt): 157,9 / 119,0 Token/s pro Anfrage,
-  242,5 Token/s gesamt bei vier gleichzeitigen Anfragen.
-
-## Laeuft gerade (nicht abbrechen!)
-
-* Umzug der PLE-Tabelle auf das neue native Volumen:
-  Log `state/ple-migrate.log`, Fortschritt auch mit `df -h /srv/llm/ple-native`.
-  Dauer: 48 GiB, etwa 15-25 Minuten.
-* Pruefen nach Abschluss: `./scripts/49-migrate-ple.sh --nur-pruefen`
-* Status des Seitenspeichers: `./scripts/ple-preload.sh --status`
-
-## Was neu eingerichtet ist
-
-* **Native Flaeche fuer PLE**: ZFS-Volumen `zpcachyossrv/srv/ple-vol` (80 GiB duenn,
-  volblocksize 4K), ext4 mit 4K-Blöcken, eingehaengt auf `/srv/llm/ple-native`,
-  `noatime,nodiratime` und `nofail` in `/etc/fstab`.
-  Angelegt von `scripts/46-create-ple-volume.sh` (formatiert NACH ausdruecklicher
-  Freigabe durch den Betreiber).
-* Grund fuer ein Volumen statt einer echten Partition: Die Scheibe ist ein
-  einziges 512-GiB-Laufwerk, aufgeteilt in zwei ZFS-Pools. ZFS-Vdevs lassen sich
-  NICHT verkleinern, eine neue Partition gaebe es nur nach Neuinstallation oder
-  mit einer zweiten SSD. Siehe `docs/adr/0011-*.md` (Stand 2026-10-03).
-* Page-Cache-Analyse: `scripts/lib/page_cache_status.py` (mincore), damit sichtbar
-  ist, wie viel der Tabelle wirklich im RAM liegt.
-
-## Noch offen (Reihenfolge)
-
-1. Umzug abschliessen und pruefen (Punkt oben).
-3. `./scripts/apply-tuning.sh` - das autonome Skript fuer die heisse Phase
-   (Vorher/Nachher-Messung, automatischer Rückfaller, Protokoll in `state/tuning/`).
-   Es startet die Runtime neu; laeuft das, stirbt diese Sitzung.
-4. Doku-Korrekturen, die auf Fakten beruhen:
-   * `docs/adr/0012-*.md`, `docs/performance.md` und der Doctor-Hinweis behaupteten,
-     die Thunderbolt-Anbindung sei die Durchsatzgrenze. **Nachgemessen falsch**:
-     waehrend der Schreibphase fließen ueber die Strecke nur 3-25 MB/s
-     (`nvidia-smi dmon -s t`). Die Karte ist zu 61 % ausgelastet, Temperatur okay,
-     Leistungsverbrauch 275 W von 600 W Limit. Die Grenze liegt in den
-     Rechen-/Cache-Pfaden der Laufzeitumgebung, nicht in der Strecke.
-5. `docs/COMPLIANCE.md` liegt bei; nach dem Umzug die Tabelle dort aktualisieren
-   (PLE auf nativem Volumen, HiCache 16 GiB).
-6. Später: eigenes Seccomp-Profil, DCGM-Vergleich, Komodo/Tunnel mit echten
-   Zugangsdaten, Neustart-Test der Autostarts.
-
-## Befehle, die der naechste Leser braucht
+## 1. Sofortlage (Kurzfassung fuer den naechsten Leser)
 
 ```bash
-./scripts/doctor.sh                    # gefuehrte Diagnose
-tail -3 state/ple-migrate.log          # Umzug-Fortschritt
-./scripts/49-migrate-ple.sh --nur-pruefen
-./scripts/ple-preload.sh --status      # liegt die Tabelle im RAM?
-./scripts/apply-runtime-unit.sh --list # Repo gegen Laeufer
-make validate && make drift            # Repo-Pruefungen
-MIN_TOKENS=150 ./scripts/benchmark.sh normal
+cd ~/work/llm-infra-setup
+./scripts/doctor.sh          # gefuehrte Diagnose, nennt den naechsten Befehl
+./scripts/session-checkpoint.sh --status    # was ist noch ungesichert?
 ```
 
-## Grundregeln (nicht verhandelbar)
+* Runtime laeuft auf Pennyroyal v2.5.3, Modell `Qwen3.8-Flash-Next-NVFP4`,
+  Bild-Digest in `versions.lock` gesperrt.
+* Ports nur auf `127.0.0.1`: Runtime 8001, Gateway 4000, Chat 3001, Portal 3002,
+  Grafana 3000, Prometheus 9090, Dozzle 8080, node_exporter 9100, GPU-Exporter 9835.
+* Zugangsdaten: `./scripts/show-credentials.sh` (Datei `~/.config/llm-infra/credentials.txt`).
+* Beobachtung ist vollstaendig in Betrieb: 5 Prometheus-Ziele `up`, 4 Dashboards,
+  22 Alarmregeln, Loki-Logs je Container.
 
-* Die Grafikkarte gehoert dem Modell: TP1, kein zweiter GPU-Nehmer (`ADR 0013`).
-* Laeuft die Runtime, ist ein Neustart ein ausdruecklicher Schritt
-  (`PENNYROYAL_PROTECT=1` als Sperre, `apply-tuning.sh` wartet auf leere Warteschlange).
-* Vorhandene Nutzerdateien werden nicht ueberschrieben; Vorlagen liegen daneben.
-* Keine `zfs destroy`/`zpool`-Eingriffe, kein Formatieren ohne Bestaetigung.
+## 2. Was in dieser Runde fertig wurde (Auswahl)
+
+* PLE-Speicher hat jetzt einen echten `nofail`-fstab-Eintrag (vorher: Start nach
+  Neustart kaputt) und ist zusätzlich auf ein **natives ZFS-Volumen** umgezogen:
+  `zpcachyossrv/srv/ple-vol` (80 GiB, volblocksize 4K) → ext4 (4K, `noatime`) →
+  `/srv/llm/ple-native`. Tabelle 47,68 GiB kopiert und stichprobengeprüft.
+* Prometheus haengt an beiden Netzen und sieht `pennyroyal:8001` (vorher dauerhaft down).
+* Grafana-Secret, Zufalls-Passwoerter, `rotate-secrets.sh`; `doctor.sh`;
+  `apply-runtime-unit.sh` mit Schutz laufender Anfragen; Runtime-Waechter.
+* node_exporter mit Hostsicht, GPU-Exporter 1.4.0, SMART, PCIe-Breite,
+  eigene `llm_*`-Kennzahlen inkl. `llm_ple_in_fstab`.
+* Benchmark misst Vorlaufzeit und Schreibrate getrennt (`state/benchmarks/history.csv`).
+* Backup/Rueckgabe mit Pruefsummen und `pg_dump`; GitOps-Pfad; `make drift`.
+* Doku: Duplikate entfernt, mkdocs strict laeuft, ADRs 0009-0013,
+  `docs/COMPLIANCE.md` (Abgleich mit `setup_prompt.md`).
+* **Richtigstellung:** Thunderbolt ist *nicht* die Schreibraten-Grenze
+  (gemessen 3-25 MB/s bei 61 % Auslastung, 275 W von 600 W). Siehe ADR 0012.
+* Online-FP8 erklaert und als Schalter angelegt: es **ersetzt kein NVFP4**, es
+  quantisiert nur die verbliebenen BF16-Projektionen (`PENNY_ONLINE_FP8`).
+* Stellgroessen der Laufzeit sind jetzt ueber `config/host.env` erreichbar
+  (aufgenommene Anfragen - Bild-Standard war 4! - Zustandsslots,
+  Obergrenze Zeichenspeicher, gezeichnete Batchgroesse, Aktivierungsspeicher,
+  Speulationstiefe, sleep-on-idle, mem-fraction).
+* Freigabe der Rechenkarte fuer das Modell: `45-configure-kwin-egpu.sh --modus llm`
+  (Desktop auf Intel) und `44-isolate-blackwell.sh` (udev, Anzeigepfad zu, CUDA an,
+  mit Selbsttest und Selbst-Rucknahme).
+* Qualitaetspruefung `scripts/quality_check.py`; Baseline 4/4 bestanden.
+
+## 3. Heisse Phase (Neustart der Laufzeit)
+
+Der Neustart ist der einzige Schritt, der Sessions trennt. Ablauf:
+
+```bash
+./scripts/apply-tuning.sh --nur-plan                    # anzeigen
+./scripts/apply-tuning.sh --profil aggressiv            # 8 Anfragen, 5/1/8, HiCache 16
+./scripts/apply-tuning.sh --profil maxkv                # 2 Anfragen, mehr KV-Speicher
+./scripts/apply-tuning.sh --zurueck                     # zur letzten Sicherung
+./scripts/session-checkpoint.sh                         # Ergebnis sichern
+```
+
+* Vorher laeuft `benchmark.sh normal 1` als Baseline, nachher dieselbe Messung;
+  faellt sie unter 90 %, stellt das Skript selbststaendig zurueck.
+* Protokoll: `state/tuning/<stempel>/report.txt`, gesicherte Dateien daneben.
+* Erwartung (redlich): eine Anfrage 160-200 Token/s, Summe der Schreibraten bei
+  vier Anfragen etwa 370 statt 158, Gesamtdurchsatz des Skripts (mit Vorlaufzeit)
+  rund 250-300. `maxkv` kann den gemeinsamen Zeichenspeicher von 824.384 auf
+  etwa 1.000.000 Token heben - exakt erst nach dem Start sichtbar
+  (`sglang:max_total_num_tokens`).
+
+## 4. Noch offen
+
+1. Nach dem Tuning: `make quality-lang` (Merk-Aufgaben bis 300.000 Prompt) und
+   `make quality-vergleich`; DCGM-Exporter gegen nvidia-smi vergleichen.
+2. Neustarttest: fahren alle Units nach Reboot hoch? fstab-Loop und -zvol prüfen.
+3. `backup.sh`: Tarntel fuer `~/.local/share/llm-infra/grafana` scheitert an
+   Rechten ( png/pdf ) und ZFS-Snapshot braucht Berechtigung - loesen.
+4. Eigenes Seccomp-Profil statt `unconfined` fuer den Inferenz-Container.
+5. Komodo und Wartungstunnel erst mit echten Zielangaben aktivieren
+   (`make komodo`, `make autossh`).
+6. Virtueller Gateway-Schluessel pro Agent + Test (Auftragstext Abschnitt 22/40-8).
+7. spaeter: zweites Modell, Azure-Fallback, KVM - siehe `AGENTS.md`.
+
+## 5. Wo was liegt
+
+| Inhalt | Ort |
+|---|---|
+| Diagnose | `scripts/doctor.sh`, Kurzform `scripts/healthcheck.sh` |
+| Tuning und Rueckfaller | `scripts/apply-tuning.sh`, `state/tuning/` |
+| Umgebungsvariablen | `config/host.env.example` (erklaert), `config/host.env` (lokal) |
+| Laufzeit-Rezept mit Stellgroessen | `config/pennyroyal/serve-flash-next-frspec.sh` |
+| Messreihen | `state/benchmarks/*.json`, `history.csv` |
+| Qualitaetspruefungen | `state/quality/` |
+| PLE-Umzug | `scripts/46-create-ple-volume.sh`, `scripts/49-migrate-ple.sh` |
+| Kartentrennung | `scripts/44-isolate-blackwell.sh`, `scripts/45-configure-kwin-egpu.sh` |
+| Sichern/Pushen | `scripts/session-checkpoint.sh` |
+| Abgleich mit dem Auftrag | `docs/COMPLIANCE.md`, Auftragstext `setup_prompt.md` (Abschnitt 43) |
+
+## 6. Grundregeln (gelten weiter)
+
+* Die Grafikkarte gehoert dem Modell: TP1, keine weiteren GPU-Nehmer (ADR 0013).
+* Laufende Anfragen sind Schutzgut: Unit-Aenderungen nur ueber
+  `apply-runtime-unit.sh`; Neustart ist ein ausdruecklicher Schritt.
+* Nutzerdateien nicht ueberschreiben; Vorlagen legen sich daneben.
+* Keine `zfs destroy`-, `zpool`- oder Formatier-Befehle ohne Bestaetigung.
+* Keine Geheimnisse im Git; Beispiele bleiben Platzhalter.
+
+## Notiz 2026-10-03T08:09:39+02:00
+
+Kurz vor der heissen Phase: Kartentrennung, KV-Knospen, Qualitaetspruefung und Sicherungsmechanik sind drin.

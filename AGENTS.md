@@ -6,6 +6,27 @@ Versionierte Quelle der Wahrheit fuer die lokale LLM-Infrastruktur: CachyOS/Arch
 rootless Podman, ZFS, NVIDIA RTX PRO 6000, Pennyroyal/SGLang, LiteLLM, Open WebUI
 und die Beobachtungsstapel (Prometheus, Grafana, Loki, Alloy, Dozzle).
 
+## Grundregel 0: Arbeitsstand ist gesichert, bevor etwas anderes passiert
+
+Das Repository ist das einzige Backup dieser Arbeit. Deshalb gilt fuer jeden Schritt:
+
+```bash
+./scripts/session-checkpoint.sh "kurze Notiz"     # pruefen, committen, pushen
+```
+
+* **Wann:** nach jedem abgeschlossenen Schritt, vor jedem riskanten Eingriff
+  (Neustart der Laufzeit, Speicherveraenderungen, Unit-Aenderungen), und bevor
+  eine Sitzung mit grossem Kontext fortgesetzt wird.
+* Die Seite `docs/HANDOFF.md` ist der Fortsetzungsanker: Was gilt jetzt, was ist
+  offen, welche Befehle braucht der naechste Leser. Das Skript aktualisiert deren
+  Zeitstempel; inhaltliche Aenderungen gehoeren von Hand nachgepflegt.
+* `state/` ist bewusst nicht in Git (Laufzeitkram). Arbeitsstaende, Messreihen und
+  Protokolle, die jemand brauchen koennte, deshalb nach `docs/` oder als Auszug in
+  `docs/HANDOFF.md` sichern - nie nur in `state/`.
+* `./scripts/session-checkpoint.sh --status` zeigt, was noch ungesichert ist.
+* Ein fehlgeschlagener Push (Netz, Rechner) bedeutet: nur lokal sicher. Dann erneut versuchen und
+  im naechsten Schritt darauf hinweisen.
+
 ## Grundregeln
 
 1. **Alles als Skript.** Dauerhafte Aenderungen entstehen zuerst als idempotentes

@@ -63,6 +63,17 @@ if (( SPEC_NUM_DRAFT_TOKENS < SPEC_NUM_STEPS + 1 )); then
   echo "PENNY_SPEC_NUM_DRAFT_TOKENS (${SPEC_NUM_DRAFT_TOKENS}) muss mindestens PENNY_SPEC_NUM_STEPS + 1 sein" >&2
   exit 1
 fi
+# Zeichnen fuer kleine Batchgroessen kostet Speicher, der dann dem
+# Zeichenspeicher (KV) fehlt. PENNY_CUDA_GRAPH_MAX_BS verkleinert die mitgezeichneten
+# Batchgroessen; PENNY_ENABLE_MEMORY_SAVER gibt ungenutzten Aktivierungsspeicher frei.
+CUDA_GRAPH_ARGS=()
+if [[ -n "${PENNY_CUDA_GRAPH_MAX_BS:-}" ]]; then
+  if [[ ! "${PENNY_CUDA_GRAPH_MAX_BS}" =~ ^[1-9][0-9]*$ ]]; then
+    echo "PENNY_CUDA_GRAPH_MAX_BS muss eine positive Zahl sein" >&2; exit 1
+  fi
+  CUDA_GRAPH_ARGS+=(--cuda-graph-max-bs "${PENNY_CUDA_GRAPH_MAX_BS}")
+fi
+if [[ "${PENNY_ENABLE_MEMORY_SAVER:-0}" == 1 ]]; then CUDA_GRAPH_ARGS+=(--enable-memory-saver); fi
 SLEEP_ARGS=()
 if [[ "${SLEEP_ON_IDLE}" == 1 ]]; then SLEEP_ARGS+=(--sleep-on-idle); fi
 MFU_ARGS=()
@@ -143,7 +154,7 @@ configure_max_total_tokens "${MAX_TOTAL_TOKENS:-824384}"
 TARGET_OVERRIDES='{"text_config":{"rope_parameters":{"mrope_interleaved":true,"mrope_section":[11,11,10],"rope_type":"yarn","rope_theta":10000000,"partial_rotary_factor":0.25,"factor":2.0,"original_max_position_embeddings":262144}}}'
 printf 'Pennyroyal profile: Flash-Next FR-Spec\n  runtime: %s\n  target: %s\n  token map: %s\n  cache root: %s\n  NIXL root: %s\n' \
   "$SGLANG_EXE" "$TARGET_MODEL" "$TOKEN_MAP" "$CACHE_BASE" "$NIXL_STORAGE_BASE"
-echo "Stellgroessen: mem_fraction=${MEM_FRACTION_STATIC} chunked_prefill=${CHUNKED_PREFILL_SIZE} spec=${SPEC_NUM_STEPS}/${SPEC_EAGLE_TOPK}/${SPEC_NUM_DRAFT_TOKENS} sleep_on_idle=${SLEEP_ON_IDLE} mfu=${ENABLE_MFU_METRICS} hicache=${HICACHE_SIZE_GB} ple=${PENNY_PLE_BACKEND:-auto}"
+echo "Stellgroessen: mem_fraction=${MEM_FRACTION_STATIC} chunked_prefill=${CHUNKED_PREFILL_SIZE} spec=${SPEC_NUM_STEPS}/${SPEC_EAGLE_TOPK}/${SPEC_NUM_DRAFT_TOKENS} sleep_on_idle=${SLEEP_ON_IDLE} mfu=${ENABLE_MFU_METRICS} graph_max_bs=${PENNY_CUDA_GRAPH_MAX_BS:-Standard} memory_saver=${PENNY_ENABLE_MEMORY_SAVER:-0} hicache=${HICACHE_SIZE_GB} ple=${PENNY_PLE_BACKEND:-auto}"
 echo "Verifying the pinned FR-Spec map and tokenizer..."
 read -r TOKEN_MAP_SHA _ < <(sha256sum "$TOKEN_MAP")
 [[ "$TOKEN_MAP_SHA" == becfa41d394b86c26c632bea8f3c6ea64bbb76d7b238d8673c06afae21269f25 ]] || {

@@ -29,7 +29,7 @@ source "${root}/lib/units.sh"
 : "${PENNYROYAL_PORT:=8001}"
 : "${RUNTIME_WAIT_SECONDS:=2400}"
 profile=aggressiv
-plan_only=0; rollback=0; skip_bench=0; online_fp8=false
+plan_only=0; rollback=0; skip_bench=0; online_fp8=false; isolate_gpu=true
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --nur-plan) plan_only=1; shift ;;
@@ -37,6 +37,7 @@ while [[ $# -gt 0 ]]; do
     --zurueck) rollback=1; shift ;;
     --ohnemessung) skip_bench=1; shift ;;
     --online-fp8) online_fp8=true; shift ;;
+    --mit-desktop) isolate_gpu=false; shift ;;
     -h|--help) sed -n '2,26p' "$0"; exit 0 ;;
     *) echo 'unbekanntes Argument (hilfe: ./scripts/apply-tuning.sh --help)' >&2; exit 2 ;;
   esac
@@ -72,10 +73,17 @@ fi
 case "${profile}" in
   aggressiv)
     new_hicache=16; new_mem='0.99'; new_steps=5; new_draft=8; new_sleep=0; new_chunk=8192
-    new_running=8; new_mamba=48 ;;
+    new_running=8; new_mamba=48; new_graph=''; new_saver=''; new_total='' ;;
   konservativ)
     new_hicache=16; new_mem='0.981'; new_steps=3; new_draft=4; new_sleep=1; new_chunk=4096
-    new_running=4; new_mamba=24 ;;
+    new_running=4; new_mamba=24; new_graph=''; new_saver=''; new_total='' ;;
+  maxkv)
+    # Zwei grosse Sitzungen statt vieler kleiner: weniger Zustandsslots und
+    # kleinere mitgezeichnete Batchgroessen machen Speicher fuer den
+    # Zeichenspeicher frei. MAX_TOTAL_TOKENS ist nur eine Obergrenze - was
+    # wirklich herauskommt, steht nach dem Start in sglang:max_total_num_tokens.
+    new_hicache=16; new_mem='0.992'; new_steps=3; new_draft=4; new_sleep=0; new_chunk=8192
+    new_running=2; new_mamba=6; new_graph=2; new_saver=1; new_total=1048576 ;;
   *) echo "--profil muss aggressiv oder konservativ sein" >&2; exit 2 ;;
 esac
 new_ple="${PLE_NATIVE_MOUNT}/${ple_name}"
@@ -85,10 +93,17 @@ printf '  PLE-Flaeche      : %s\n' "${new_ple}"
 printf '  HiCache (RAM)    : %s -> %s GiB\n' "${PENNY_HICACHE_SIZE_GB:-?}" "${new_hicache}"
 printf '  mem-fraction     : %s -> %s\n' '0.981' "${new_mem}"
 printf '  aufgenommene Anfragen: 4 -> %s (Zustandsplaetze %s)\n' "${new_running}" "${new_mamba}"
+printf '  gezeichnete Batchgroesse: %s   Aktivierungsspeicher zurueck: %s\n' "${new_graph:-Standard}" "${new_saver:-0}"
+printf '  Zeichenspeicher-Obergrenze: %s\n' "${new_total:-Standard 824384}"
 printf '  Spekulation      : 3/1/4 -> %s/1/%s\n' "${new_steps}" "${new_draft}"
 printf '  sleep-on-idle    : 1 -> %s\n' "${new_sleep}"
 printf '  chunked-prefill  : 4096 -> %s\n' "${new_chunk}"
 printf '  Online-FP8       : %s\n' "${online_fp8}"
+if [[ "${isolate_gpu}" == true ]]; then
+  printf '  Desktop umziehen : Intel uebernehmen, Blackwell nur fuer CUDA\n'
+else
+  printf '  Desktop umziehen : aus (--mit-desktop)\n'
+fi
 
 # --- Vorbedingungen ---------------------------------------------------------
 problems=0
@@ -126,7 +141,7 @@ if [[ "${running%.*}" != 0 ]]; then
     echo '   (Trockenlauf: Frage wird nicht gestellt.)'
   else
   echo 'Warten bis zu 5 Minuten? [J/N]'
-  read -r answer
+  answer=""; read -r answer || answer=""
   if [[ "${answer}" == J || "${answer}" == j ]]; then
     for _ in $(seq 1 30); do
       sleep 10
@@ -185,11 +200,26 @@ set_or_add PENNY_SLEEP_ON_IDLE "${new_sleep}"
 set_or_add PENNY_CHUNKED_PREFILL_SIZE "${new_chunk}"
 set_or_add PENNY_MAX_RUNNING_REQUESTS "${new_running}"
 set_or_add PENNY_MAX_MAMBA_CACHE_SIZE "${new_mamba}"
+if [[ -n "${new_total}" ]]; then set_or_add PENNY_MAX_TOTAL_TOKENS "${new_total}"; fi
+if [[ -n "${new_graph}" ]]; then set_or_add PENNY_CUDA_GRAPH_MAX_BS "${new_graph}"; fi
+if [[ -n "${new_saver}" ]]; then set_or_add PENNY_ENABLE_MEMORY_SAVER "${new_saver}"; fi
 set_or_add PENNY_ONLINE_FP8 "${online_fp8}"
 set_or_add PENNY_MAX_RUNNING_REQUESTS "${new_running}"
 set_or_add PENNY_MAX_MAMBA_CACHE_SIZE "${new_mamba}"
+if [[ -n "${new_total}" ]]; then set_or_add PENNY_MAX_TOTAL_TOKENS "${new_total}"; fi
+if [[ -n "${new_graph}" ]]; then set_or_add PENNY_CUDA_GRAPH_MAX_BS "${new_graph}"; fi
+if [[ -n "${new_saver}" ]]; then set_or_add PENNY_ENABLE_MEMORY_SAVER "${new_saver}"; fi
 set_or_add PENNY_ONLINE_FP8 "${online_fp8}"
 echo 'Neue Werte in config/host.env geschrieben.'
+
+# Desktop von der Rechenkarte nehmen und Dauerbetrieb der Karte einsalten.
+# Beides ist ohne Modellneustart ungefaehrlich und wird vor dem Neustart erledigt,
+# damit der Kaltstart nicht mit einem mitmalenden Compositor konkurriert.
+if [[ "${isolate_gpu}" == true ]]; then
+  run ./scripts/45-configure-kwin-egpu.sh --modus llm || echo 'Hinweis: Desktop-Umzug nicht moeglich (Bildschirm haengt an der eGPU?).' >&2
+  run ./scripts/44-isolate-blackwell.sh || echo 'Hinweis: Anzeigesperre nicht gesetzt.' >&2
+fi
+sudo nvidia-smi -pm 1 >/dev/null 2>&1 || log 'Dauerbetrieb (persistence mode) konnte nicht gesetzt werden.'
 
 run ./scripts/50-install-pennyroyal.sh
 bash -c "cd '${root}'; source lib/common.sh; source lib/units.sh; render_unit pennyroyal.container; systemd_reload"
@@ -228,6 +258,7 @@ fi
 report="${run_dir}/report.txt"
 {
   echo "Tuning-Lauf ${ts} Profil ${profile}"
+  echo "Aktive Anfragen vor dem Neustart: ${running}"
   echo "HiCache ${new_hicache} GiB, mem ${new_mem}, spec ${new_steps}/1/${new_draft}, sleep ${new_sleep}, prefill ${new_chunk}"
 } > "${report}"
 if [[ "${skip_bench}" == 1 ]]; then
@@ -235,8 +266,10 @@ if [[ "${skip_bench}" == 1 ]]; then
   cat "${report}"; exit 0
 fi
 
-BENCHMARK_ALLOW_BUSY=1 ./scripts/benchmark.sh normal 1 | tee -a "${report}" || true
+# Reihenfolge ist Absicht: der Vergleich unten nimmt die neueste Datei, und die
+# soll dasselbe Profil haben wie die Baseline (eine Anfrage).
 BENCHMARK_ALLOW_BUSY=1 ./scripts/benchmark.sh normal 4 | tee -a "${report}" || true
+BENCHMARK_ALLOW_BUSY=1 ./scripts/benchmark.sh normal 1 | tee -a "${report}" || true
 after="$(ls -1t "${STATE_DIR}/benchmarks"/*.json | head -1)"
 
 decision="$(python3 - "${latest_baseline:-}" "${after}" <<'PY'

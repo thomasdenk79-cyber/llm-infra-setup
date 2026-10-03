@@ -259,3 +259,62 @@ Die Metriken der Runtime liefern dieselbe Groesse kontinuierlich:
 | Zaehlung ueber Stream-Chunks | `usage.completion_tokens` der API | Chunk != Token bei spekulativer Ausfuehrung |
 | "concurrency" war eine Schleife | echte parallele Anfragen | Vergleichbarkeit |
 | kein Aufwaermtest | erster Lauf zaehlt nicht | JIT/Warmup verfaelschte erste Messung |
+
+## Einordnung der eigenen Zahlen (warum "200" und "400" beide stimmen koennen)
+
+Vergleich c1 gegen c4 aus `state/benchmarks/history.csv`:
+
+| Messart | 1 Anfrage | 4 Anfragen |
+|---|---|---|
+| Schreibrate pro Anfrage (Median) | 157,88 | 91,73 |
+| Summe der Schreibraten (4 x 91,73) | 157,88 | **366,92** |
+| Gesamtdurchsatz des Skripts (Vorlaufzeit mit drin) | 121,88 | **242,47** |
+
+Die dritte Zeile ist die strengste: sie zaehlt die Wartezeit bis zum ersten Token
+mit. Die zweite Zeile ist die, die meist mit "400 Token/s bei vier Anfragen"
+gemeint ist - sie ist richtig, wenn man nur das Schreiben zaehlt. Beides ist
+derselbe Lauf; es ist nur die Frage, ob Vorlesen mitbezahlt wird.
+
+Hochrechnung fuer 8 Anfragen: die Summe der Schreibraten steigt von 157 auf etwa
+370 (Faktor 2,3), nicht auf 630 (Faktor 4). Der Grund ist der Vorhersagezyklus -
+pro Rechendurchgang fallen feste Kosten an, und die akzeptierte Laenge sinkt bei
+Last (gemessen 3,3 im Leerlauf, 2,2 bis 2,6 unter Last). Weitere Anfragen bis 8
+bringen deshalb vor allem Warteschlangen-Abbau, nicht mehr Tempo.
+
+## Qualitaet: was die Tuning-Punkte kosten
+
+| Änderung | Qualitaetseffekt |
+|---|---|
+| PLE von Loop-Datei auf natives Volumen | keiner (andere Speicherpfade, gleiche Daten) |
+| HiCache 16 GiB | keiner (exakter Zwischenspeicher, keine Zahlveraenderung) |
+| 8 statt 4 aufgenommene Anfragen, 48 Zustandsslots | keiner |
+| `sleep-on-idle` aus, Dauerbetrieb an | keiner |
+| Vorhersage 5/1/8 statt 3/1/4 | keiner - die Entwuerfe werden geprueft, ausgegeben wird nur Bestaetigtes |
+| `mem-fraction` 0.981 -> 0.99 | keiner, aber weniger Reserve fuer Aktivierungsspeicher |
+| Desktop von der Karte nehmen | keiner |
+| **Online-FP8 (MXFP8 fuer BF16-Projektionen)** | **kleines, messbares Risiko** - deshalb Standard aus |
+| NVFP4-Gewichte und fp8-KV-Zeichenspeicher | bereits in Gebrauch; der eigentliche Qualitaetshebel ist die fp8-KV bei sehr langen Kontexten |
+
+Schritt für Schritt messbar mit `./scripts/quality_check.py` (vier kurze
+Aufgaben plus Merk-Aufgaben bei 20.000, 100.000 und 300.000 Token Prompt) und
+`./scripts/quality_check.py --vergleich` danach. Achtung beim Messen: diese
+Bauart antwortet mit Denkkette; wer nur `content` liest, haelt eine
+abgeschnittene Denkkette fuer einen Qualitaetsverlust. Das Skript liest deshalb beide
+Felder und vergroessert die Antwortgrenze.
+
+## Freigabe der Rechenkarte fuer das Modell
+
+```bash
+./scripts/45-configure-kwin-egpu.sh --plan     # was wuerde geaendert?
+./scripts/45-configure-kwin-egpu.sh --modus llm
+./scripts/44-isolate-blackwell.sh --zeige-nutzer
+./scripts/44-isolate-blackwell.sh
+```
+
+Der erste Befehl schreibt die Compositor-Reihenfolge (Intel zuerst), der zweite
+verweigert den Anzeigepfad der Rechenkarte per udev-Regel. CUDA ist davon nicht
+beruehrt (eigener Geraetepfad); das Skript prueft das mit einem eigenen
+Container-Lauf und nimmt die Regel bei Erfolglosigkeit selbst zurueck.
+Angeschlossene Bildschirme an der externen Karte fuehren zum Abbruch - auf diesem
+Rechner haengen interne Anzeige und HDMI an der Intel-Grafik, die Ausgaenge der
+externen Karte sind leer.

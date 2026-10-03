@@ -6,7 +6,7 @@
 #
 # Alle Ablaeufe sind Skripte im Ordner scripts/ - nichts muss von Hand getippt
 # werden. Details in README.md und docs/.
-.PHONY: help setup setup-check preflight install tools nvidia-driver kwin-egpu podman zfs model model-verify pennyroyal ple-nvme verify-ple gateway litellm open-webui homepage portal autossh komodo postgres monitoring gpu-exporter collector watchdog watchdog-off gitops gitops-auto gitops-off tune tune-plan tune-conservative tune-rollback ple-native ple-copy ple-check ple-cache ple-warm deploy deploy-all deploy-non-gpu deploy-ready apply-units wait healthcheck health backup restore doctor bench bench-normal bench-long validate drift ci status docs docs-build pre-commit-install tui rotate-secrets show-credentials
+.PHONY: help setup setup-check preflight install tools nvidia-driver kwin-egpu podman zfs model model-verify pennyroyal ple-nvme verify-ple gateway litellm open-webui homepage portal autossh komodo postgres monitoring gpu-exporter collector watchdog watchdog-off gitops gitops-auto gitops-off tune tune-plan tune-conservative tune-maxkv tune-maxkv-an tune-rollback ple-native ple-copy ple-check ple-cache ple-warm gpu-frei gpu-frei-an gpu-frei-aus quality quality-lang quality-vergleich deploy deploy-all deploy-non-gpu deploy-ready apply-units wait healthcheck health backup restore doctor bench bench-normal bench-long validate drift ci status docs docs-build pre-commit-install checkpoint ungesichert tui rotate-secrets show-credentials
 
 help:
 	@echo 'llm-infra-setup - verfuegbare Befehle'
@@ -47,6 +47,11 @@ help:
 	@echo '  make tune              Tuning anwenden, messen, bei Schlechterstellung zurueck'
 	@echo '  make tune-conservative kleinerer Eingriff (nur Speicher und HiCache)'
 	@echo '  make tune-rollback     letzte Sicherung zurueckholen'
+	@echo '  make tune-maxkv        zwei grosse Sitzungen statt vieler kleiner'
+	@echo '  make gpu-frei          wer belegt gerade die Rechenkarte?'
+	@echo '  make gpu-frei-an       Desktop von der Rechenkarte nehmen'
+	@echo '  make quality           kurze Qualitaetspruefung (vor dem Tuning)   '
+	@echo '  make quality-vergleich zwei Pruefungen vergleichen'
 	@echo '  make ple-native        Blockflaeche fuer Einbettungen anlegen'
 	@echo '  make ple-copy          Einbettungstabelle dorthin kopieren und pruefen'
 	@echo '  make ple-cache         zeigt, wie viel davon im Arbeitsspeicher liegt'
@@ -129,6 +134,10 @@ tune:
 	./scripts/apply-tuning.sh
 tune-conservative:
 	./scripts/apply-tuning.sh --profil konservativ
+tune-maxkv:
+	./scripts/apply-tuning.sh --profil maxkv --nur-plan
+tune-maxkv-an:
+	./scripts/apply-tuning.sh --profil maxkv
 tune-rollback:
 	./scripts/apply-tuning.sh --zurueck
 ple-native:
@@ -141,6 +150,18 @@ ple-cache:
 	./scripts/ple-preload.sh --status
 ple-warm:
 	./scripts/ple-preload.sh
+gpu-frei:
+	./scripts/44-isolate-blackwell.sh --zeige-nutzer
+gpu-frei-an:
+	./scripts/44-isolate-blackwell.sh
+gpu-frei-aus:
+	./scripts/44-isolate-blackwell.sh --ruckgaengig
+quality:
+	./scripts/quality_check.py --schnell
+quality-lang:
+	./scripts/quality_check.py
+quality-vergleich:
+	./scripts/quality_check.py --vergleich
 gitops:
 	./scripts/gitops-deploy.sh
 gitops-auto:
@@ -182,5 +203,9 @@ docs:
 	mkdocs serve
 docs-build:
 	mkdocs build --strict
+checkpoint:
+	./scripts/session-checkpoint.sh
+ungesichert:
+	./scripts/session-checkpoint.sh --status
 pre-commit-install:
 	pre-commit install

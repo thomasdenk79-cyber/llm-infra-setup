@@ -71,6 +71,16 @@ nur zu 61 % ausgelastet - sie wartet auf Daten, nicht auf Rechenzeit.
 cat docs/performance.md             # Einordnung und Hebel
 ```
 
+## Arbeitsstand sichern (das Repository ist das Backup)
+
+```bash
+make checkpoint      # pruefen, committen, pushen - nach jedem abgeschlossenen Schritt
+make ungesichert     # zeigen, was noch nicht gesichert ist
+```
+
+Der Fortsetzungsanker ist `docs/HANDOFF.md`: was gerade gilt, was offen ist, welche
+Befehle der naechste Leser braucht. Nach einem Abbruch zuerst dort nachlesen.
+
 ## Grundregel: die Grafikkarte gehoert dem Modell
 
 Kein zweiter Container, keine VM und kein Trainingslauf bekommt GPU-Zugriff; die

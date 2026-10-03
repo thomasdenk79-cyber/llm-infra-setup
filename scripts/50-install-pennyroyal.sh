@@ -38,10 +38,17 @@ case "${PENNY_ONLINE_FP8}" in true|false) : ;; *) log 'PENNY_ONLINE_FP8 muss tru
 # bedeuten hoeheren Gesamtdurchsatz, aber niedrigere Rate pro Anfrage und mehr
 # Zustandsspeicher. Deshalb: aendern, messen, ggf. zurueck (apply-tuning.sh).
 CAP_ENV=''
+# a) Aufnahmefaehigkeit: das Bild liest diese Namen ohne PENNY_-Vorsatz
 for name in MAX_RUNNING_REQUESTS MAX_MAMBA_CACHE_SIZE MAX_TOTAL_TOKENS; do
   value_var="PENNY_${name}"
   if [[ -n "${!value_var:-}" ]]; then
     CAP_ENV+="Environment=${name}=${!value_var}"$'\n'
+  fi
+done
+# b) Werte, die unser Startskript selbst unter ihrem PENNY_-Namen liest
+for name in PENNY_CUDA_GRAPH_MAX_BS PENNY_ENABLE_MEMORY_SAVER; do
+  if [[ -n "${!name:-}" ]]; then
+    CAP_ENV+="Environment=${name}=${!name}"$'\n'
   fi
 done
 : "${PENNY_MODEL_NAME:=pennyroyal}"
