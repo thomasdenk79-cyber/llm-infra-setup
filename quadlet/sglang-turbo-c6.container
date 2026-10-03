@@ -18,6 +18,8 @@ Environment=TARGET_MODEL=/models/Qwen3.8-Flash-Next-NVFP4
 Environment=SGLANG_QWEN4_PLE_NVME_PATH=/models/Qwen3.8-Flash-Next-NVFP4
 Environment=SGLANG_QWEN4_PLE_NVME_BACKEND=io_uring
 Environment=SGLANG_RUST_BUILD_MODE=auto
+Environment=RUSTUP_TOOLCHAIN=stable
+Environment=RUSTUP_OFFLINE=1
 Environment=SGLANG_PORT=8001
 Environment=SGLANG_SM120_ONLINE_MXFP8=true
 Environment=SGLANG_MM_PREPROCESS_DEVICE=cpu
