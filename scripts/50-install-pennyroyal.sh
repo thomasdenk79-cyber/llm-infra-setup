@@ -94,6 +94,7 @@ Volume=${LLM_CACHE_DIR}/pennyroyal:/cache:U,Z
 Volume=${LLM_NIXL_DIR}:/nixl:U,Z
 Volume=$(dirname "${PENNY_PLE_NVME_MODEL}"):/ple:ro,Z
 Volume=@CONFIG_ROOT@/config/pennyroyal/serve-flash-next-frspec.sh:/opt/pennyroyal/configs/pennyroyal/serve-flash-next-frspec.sh:ro,Z
+Volume=@CONFIG_ROOT@/config/pennyroyal/ple-backend.sh:/opt/pennyroyal/configs/pennyroyal/ple-backend.sh:ro,Z
 Environment=HF_HOME=/cache/huggingface
 Environment=TARGET_MODEL=/models/$(basename "${MODEL_ID}")
 Environment=CACHE_BASE=/cache
