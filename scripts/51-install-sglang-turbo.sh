@@ -59,7 +59,7 @@ Volume=$LLM_CACHE_DIR/sglang-turbo:/cache:U,Z
 Volume=@CONFIG_ROOT@/config/turbo/serve-qwen38-flash-next-c6.sh:/opt/turbo/serve-c6.sh:ro,Z
 Environment=TARGET_MODEL=/models/$TURBO_MODEL_DIR
 Environment=SGLANG_QWEN4_PLE_NVME_PATH=/models/$TURBO_MODEL_DIR
-Environment=SGLANG_QWEN4_PLE_NVME_BACKEND=io_uring
+Environment=SGLANG_QWEN4_PLE_NVME_BACKEND=mmap
 Environment=SGLANG_RUST_BUILD_MODE=auto
 Environment=RUSTUP_TOOLCHAIN=stable
 Environment=RUSTUP_OFFLINE=1

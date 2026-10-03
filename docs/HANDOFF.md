@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T20:40:39+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T20:54:45+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -566,3 +566,7 @@ PLE auf mmap/Page-Cache und expliziten CUDA-Capture-Guard umgestellt
 ## Notiz 2026-10-03T20:40:39+02:00
 
 CUDA-Capture-Guard auf native und breakable graph detection erweitert
+
+## Notiz 2026-10-03T20:54:45+02:00
+
+Turbo nach wiederholtem Capture-Fehler stabilisiert und Unit auf mmap korrigiert
