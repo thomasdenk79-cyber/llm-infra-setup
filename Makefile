@@ -6,7 +6,7 @@
 #
 # Alle Ablaeufe sind Skripte im Ordner scripts/ - nichts muss von Hand getippt
 # werden. Details in README.md und docs/.
-.PHONY: help setup setup-check preflight install tools nvidia-driver kwin-egpu podman zfs model model-verify pennyroyal ple-nvme verify-ple gateway litellm open-webui homepage portal autossh komodo postgres monitoring gpu-exporter collector watchdog watchdog-off gitops gitops-auto gitops-off tune tune-plan tune-conservative tune-sweet tune-sweet-an tune-maxkv tune-maxkv-an tune-c16 tune-c16-an tune-rollback ple-native ple-copy ple-check ple-cache ple-warm gpu-frei gpu-frei-an gpu-frei-aus quality quality-lang quality-vergleich deploy deploy-all deploy-non-gpu deploy-ready apply-units wait healthcheck health backup restore doctor bench bench-normal bench-long validate drift ci status docs docs-build pre-commit-install checkpoint ungesichert tui rotate-secrets show-credentials
+.PHONY: help setup setup-check preflight install tools nvidia-driver kwin-egpu podman zfs model model-verify pennyroyal ple-nvme verify-ple gateway litellm open-webui homepage portal autossh komodo postgres monitoring gpu-exporter collector watchdog watchdog-off gitops gitops-auto gitops-off tune tune-plan tune-conservative tune-sweet tune-sweet-an tune-c6 tune-c6-an tune-maxkv tune-maxkv-an tune-c16 tune-c16-an tune-rollback ple-native ple-copy ple-check ple-cache ple-warm gpu-frei gpu-frei-an gpu-frei-aus quality quality-lang quality-vergleich deploy deploy-all deploy-non-gpu deploy-ready apply-units wait healthcheck health backup restore doctor bench bench-normal bench-long validate drift ci status docs docs-build pre-commit-install checkpoint ungesichert tui rotate-secrets show-credentials
 
 help:
 	@echo 'llm-infra-setup - verfuegbare Befehle'
@@ -48,6 +48,7 @@ help:
 	@echo '  make tune-conservative kleinerer Eingriff (nur Speicher und HiCache)'
 	@echo '  make tune-rollback     letzte Sicherung zurueckholen'
 	@echo '  make tune-sweet-an     empfohlener Punkt fuer 2-4 grosse Sitzungen'
+	@echo '  make tune-c6-an        offizielles C6-Produktionsprofil mit Online-FP8'
 	@echo '  make tune-maxkv        zwei grosse Sitzungen statt vieler kleiner'
 	@echo '  make gpu-frei          wer belegt gerade die Rechenkarte?'
 	@echo '  make gpu-frei-an       Desktop von der Rechenkarte nehmen'
@@ -139,6 +140,10 @@ tune-sweet:
 	./scripts/apply-tuning.sh --profil sweet --nur-plan
 tune-sweet-an:
 	./scripts/apply-tuning.sh --profil sweet
+tune-c6:
+	./scripts/apply-tuning.sh --profil c6-production --nur-plan
+tune-c6-an:
+	./scripts/apply-tuning.sh --profil c6-production
 tune-maxkv:
 	./scripts/apply-tuning.sh --profil maxkv --nur-plan
 tune-maxkv-an:

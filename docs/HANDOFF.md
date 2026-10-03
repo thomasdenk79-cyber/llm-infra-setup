@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T13:30:27+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T14:14:50+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -116,6 +116,15 @@ Fuer die Skalierungsmessung gibt es das Profil `c16`: 16 aufgenommene Anfragen, 
 * Nutzerdateien nicht ueberschreiben; Vorlagen legen sich daneben.
 * Keine `zfs destroy`-, `zpool`- oder Formatier-Befehle ohne Bestaetigung.
 * Keine Geheimnisse im Git; Beispiele bleiben Platzhalter.
+
+## Notiz 2026-10-03T14:05:00+02:00
+
+Produktionsprofil `c6-production` angelegt, noch nicht gestartet: Online-FP8,
+6 Requests, 36 Mamba-Slots, Graph-Maximum 6, KV-Obergrenze 1.048.576, NVMe-PLE
+und HiCache 16 GiB. Fuer diesen Test wird `PENNY_MEM_FRACTION_STATIC` aus
+`config/host.env` entfernt, damit der aktuelle Runtime-Default profiliert; die
+vorherige Annahme, 0.992 sei ursächlich, ist nicht belegt. Anwenden mit
+`./scripts/apply-tuning.sh --profil c6-production --ohnemessung`.
 
 ## Notiz 2026-10-03T08:09:39+02:00
 
@@ -365,3 +374,7 @@ Sicherheitsprofilstart diagnostiziert: mamba_ratio=5, vier Slots ergaben max_num
 ## Notiz 2026-10-03T13:30:27+02:00
 
 Sicherheitsprofilstart diagnostiziert: mamba_ratio=5, vier Slots ergaben max_num_reqs=0; Guard auf 5 und C1 maxkv auf 8 Slots korrigiert
+
+## Notiz 2026-10-03T14:14:50+02:00
+
+C6-Produktionsprofil vorbereitet: Online-FP8, 6 Requests, 36 Mamba-Slots, 1M KV, HiCache 16, NVMe-PLE; mem_fraction-Override wird fuer offiziellen Default entfernt

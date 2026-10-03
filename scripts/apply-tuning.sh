@@ -31,7 +31,7 @@ source "${root}/lib/units.sh"
 : "${RUNTIME_WAIT_SECONDS:=2400}"
 export RUNTIME_WAIT_SECONDS
 profile=aggressiv
-plan_only=0; rollback=0; skip_bench=0; online_fp8=false; isolate_gpu=true
+plan_only=0; rollback=0; skip_bench=0; online_fp8=false; profile_online_fp8=false; isolate_gpu=true
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --nur-plan) plan_only=1; shift ;;
@@ -84,6 +84,12 @@ case "${profile}" in
     # jede mit moeglichst langem Kontext. 4 Anfragen brauchen 16 Zustandsplaetze.
     new_hicache=16; new_mem='0.992'; new_steps=3; new_draft=4; new_sleep=0; new_chunk=8192
     new_running=4; new_mamba=16; new_graph=4; new_saver=1; new_total=1048576 ;;
+  c6-production)
+    # Offizieller C6-Ausgangspunkt: Online-FP8, sechs Requests, 36 Slots.
+    # mem_fraction bleibt beim Runtime-Default; HiCache bleibt bei 16 GiB.
+    new_hicache=16; new_mem=''; new_steps=3; new_draft=4; new_sleep=0; new_chunk=4096
+    new_running=6; new_mamba=36; new_graph=6; new_saver=''; new_total=1048576
+    profile_online_fp8=true ;;
   maxkv)
     # Zwei grosse Sitzungen statt vieler kleiner: weniger Zustandsslots und
     # kleinere mitgezeichnete Batchgroessen machen Speicher fuer den
@@ -95,8 +101,9 @@ case "${profile}" in
     # Belastungsprofil: 16 Anfragen und vier gemessene Mamba-Zustaende je Anfrage.
     new_hicache=16; new_mem='0.981'; new_steps=3; new_draft=4; new_sleep=0; new_chunk=8192
     new_running=16; new_mamba=64; new_graph=8; new_saver=1; new_total='' ;;
-  *) echo "--profil muss aggressiv, konservativ, sweet, maxkv oder c16 sein" >&2; exit 2 ;;
+  *) echo "--profil muss aggressiv, konservativ, c6-production, sweet, maxkv oder c16 sein" >&2; exit 2 ;;
 esac
+if [[ "${profile_online_fp8}" == true ]]; then online_fp8=true; fi
 new_ple="${PLE_NATIVE_MOUNT}/${ple_name}"
 
 echo "== Tuning-Profil ${profile} =="
@@ -203,7 +210,11 @@ set_or_add() {
 }
 set_or_add PENNY_PLE_NVME_MODEL "${new_ple}"
 set_or_add PENNY_HICACHE_SIZE_GB "${new_hicache}"
-set_or_add PENNY_MEM_FRACTION_STATIC "${new_mem}"
+if [[ -n "${new_mem}" ]]; then
+  set_or_add PENNY_MEM_FRACTION_STATIC "${new_mem}"
+else
+  sed -i '/^PENNY_MEM_FRACTION_STATIC=/d' "${host_env}"
+fi
 set_or_add PENNY_SPEC_NUM_STEPS "${new_steps}"
 set_or_add PENNY_SPEC_EAGLE_TOPK 1
 set_or_add PENNY_SPEC_NUM_DRAFT_TOKENS "${new_draft}"

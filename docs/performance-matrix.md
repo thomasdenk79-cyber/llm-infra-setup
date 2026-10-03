@@ -27,8 +27,10 @@ Fehler aus systemd, Podman und Loki.
 * `baseline`: aktuelle qualifizierte Einstellungen ohne Online-FP8.
 * `sweet`: vier grosse Sitzungen, hoher KV-Pool, Memory-Saver nur wenn mit dem
   Allocator kompatibel.
-* `c6-fp8-ram`: offizieller Leistungspfad: Online-FP8, RAM-PLE, sechs Requests,
-  36 Mamba-Slots, 1.048.576 angefordertes KV und Graphen bis Batch 6.
+* `c6-production`: offizieller Leistungspfad mit Online-FP8, NVMe-PLE auf dem
+  64-GB-Host, 16 GiB HiCache, sechs Requests, 36 Mamba-Slots, 1.048.576
+  angefordertem KV und Graphen bis Batch 6. Der lokale `mem_fraction`-Override
+  wird entfernt; SGLang profiliert mit seinem Rezept-Default.
 * `maxkv`: vorlaeufig eine Sitzung, Graph-Maximum 1 und grosse VRAM-Reserve;
   erst nach einem stabilen Lauf wieder auf mehrere Sitzungen erweitern.
 
