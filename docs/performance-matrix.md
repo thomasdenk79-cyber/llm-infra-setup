@@ -31,6 +31,32 @@ Fehler aus systemd, Podman und Loki.
   36 Mamba-Slots, 1.048.576 angefordertes KV und Graphen bis Batch 6.
 * `maxkv`: vorlaeufig eine Sitzung, Graph-Maximum 1 und grosse VRAM-Reserve;
   erst nach einem stabilen Lauf wieder auf mehrere Sitzungen erweitern.
+
+## Externe Zielpunkte fuer die eigene Sweep-Reihe
+
+Die offiziellen Pennyroyal-Daten nennen fuer Flash-Next auf einer RTX PRO 6000
+mit 524.288 Kontext, HiCache/NIXL und FR-Spec **C=6** sowie einen beobachteten
+KV-Pool von **1.039.040 Tokens**. Online-FP8 gewann in der offiziellen Messung
+etwa 3,86 GiB VRAM und steigerte C1 von 161,47 auf 207,12 Token/s; bei 490K
+Kontext blieben 172,64 Token/s uebrig. Diese Werte sind Ziel- und
+Vergleichspunkte, keine Garantie fuer unsere NVMe-PLE-Variante.
+
+Weitere reproduzierbare Community-Punkte:
+
+* `gabrielolympie`: interaktives C4-Profil mit etwa 572K KV und 231 Token/s C1;
+  grosses Einzelprofil mit etwa 827K KV und 185 Token/s C1; optional C8 mit
+  758 Token/s aggregiert. Das C8-Profil verlangt etwa sechs Mamba-Slots je
+  laufender Anfrage. Relaxte MTP-Annahme ist fuer lossless Vergleiche auf 1.0
+  zu setzen.
+* `keplerzip`: `mem_fraction=0.975`, nativer 256K-Kontext, C8, 32 Mamba-
+  Slots, 282.432 KV und 632,4 Token/s aggregiert. Das ist ein stabiler
+  Durchsatzpunkt, aber kein 524K/1M-KV-Profil.
+
+Daraus folgt die Messleiter: erst stabiler C1-Basispunkt, dann Online-FP8,
+dann C4/C6 mit Slots etwa 6x der Requests, danach C8. Jede Stufe braucht
+Wiederholungen mit kurzer, mittlerer und langer Eingabe sowie einen 24h-Soak;
+die offiziellen Zahlen wurden nicht mit einem einzelnen erfolgreichen Start,
+sondern mit validierten Arbeitslasten ermittelt.
 * `aggressiv`: acht Sitzungen als Lastprofil.
 * `c16`: Grenztest mit 16 Requests; nicht als produktiver Sweet Spot annehmen.
 

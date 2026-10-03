@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T13:05:26+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T13:17:54+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -325,6 +325,22 @@ Inaktivitaet. Damit wird ein langsamer, aber weiterarbeitender Modellstart nicht
 abgeschnitten. NVMe-I/O wird derzeit noch nicht direkt als eigener Fortschritts-
 indikator gemessen.
 
+## Notiz 2026-10-03T13:10:00+02:00
+
+Netzrecherche zu aggressiveren Zielprofilen abgeschlossen. Offizielles
+Pennyroyal v2.5.3 nennt auf derselben 96-GiB-RTX-PRO-6000 Flash-Next C=6 und
+1.039.040 beobachtete KV-Tokens; Online-FP8 spart etwa 3,86 GiB VRAM und hebt
+C1 offiziell von 161,47 auf 207,12 Token/s. Community-Profile melden C4 mit
+ca. 572K KV und C8 mit 758 Token/s aggregiert (dafuer etwa 6 Mamba-Slots je
+Request sowie teilweise relaxte MTP-Annahme), oder C8 mit 282.432 KV bei
+`mem_fraction=0.975` und 632,4 Token/s. Diese Werte sind dokumentierte Ziele,
+nicht direkt uebertragbare Garantien fuer NVMe-PLE.
+
+Der laufende Rettungslauf bleibt unveraendert. Nach Stabilitaetsnachweis wird
+die Messleiter C1 -> Online-FP8 -> C4 -> C6 -> C8 gefahren; pro Stufe kurze,
+mittlere und lange Kontexte, Wiederholungen und Soak-Test. Keine weitere
+Parallelitaet aus den externen Zahlen blind aktivieren.
+
 ## Notiz 2026-10-03T12:46:54+02:00
 
 Startup-Wartepruefung auf echte Aktivitaet umgestellt: Container, Journal, CPU, GPU und VRAM; bei Fortschritt ueber 40 Minuten hinaus warten
@@ -336,3 +352,7 @@ Startup-Wartepruefung auf echte Aktivitaet umgestellt: Container, Journal, CPU, 
 ## Notiz 2026-10-03T13:05:26+02:00
 
 CUDA-OOM nach gesundem Start dokumentiert: 12.35 GiB Graph-Pools und lazy Triton-Kernel; maxkv vorlaeufig auf Single-Request mit Graph 1 und 0.975 Reserve gesetzt
+
+## Notiz 2026-10-03T13:17:54+02:00
+
+Pennyroyal-Zielprofile recherchiert und dokumentiert: offizielles C6/1.039M KV, Online-FP8 VRAM-Gewinn, Community C4/C8; Messleiter nach stabilem C1
