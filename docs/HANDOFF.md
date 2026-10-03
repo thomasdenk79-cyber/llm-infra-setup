@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T08:37:21+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T08:52:42+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -165,3 +165,7 @@ Kontextziel-Argument fuer Benchmarks ergaenzt; Fixes vor Runtime-Neustart gesich
 ## Notiz 2026-10-03T08:37:21+02:00
 
 Ergebnis der heissen Phase (Profil sweet)
+
+## Notiz 2026-10-03T08:52:42+02:00
+
+Mehrstuendigen Performance-Sweep fuer Profile, Kontextgroessen und Parallelitaet hinzugefuegt
