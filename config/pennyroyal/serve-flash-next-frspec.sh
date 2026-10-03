@@ -84,7 +84,9 @@ if [[ "${PENNY_ENABLE_MEMORY_SAVER:-0}" == 1 ]]; then CUDA_GRAPH_ARGS+=(--enable
 # Wer MAX_RUNNING_REQUESTS erhoht, ohne MAX_MAMBA_CACHE_SIZE mitzuheben, laeuft
 # gegen die Plaetze statt gegen die Anfragen - und beides kostet Speicher, der
 # dann dem Zeichenspeicher fehlt.
-SLOTS_PER_REQUEST="${PENNY_MAMBA_SLOTS_PER_REQUEST:-4}"
+# SGLang v2.5.3 reports mamba_ratio=5 for this Flash-Next profile. Keep a
+# configurable guard, but default to the measured runtime requirement.
+SLOTS_PER_REQUEST="${PENNY_MAMBA_SLOTS_PER_REQUEST:-5}"
 if [[ -n "${MAX_RUNNING_REQUESTS:-}" && -n "${MAX_MAMBA_CACHE_SIZE:-}" ]] \
    && (( MAX_MAMBA_CACHE_SIZE < MAX_RUNNING_REQUESTS * SLOTS_PER_REQUEST )); then
   echo "MAX_MAMBA_CACHE_SIZE (${MAX_MAMBA_CACHE_SIZE}) sollte mindestens ${SLOTS_PER_REQUEST} mal MAX_RUNNING_REQUESTS (${MAX_RUNNING_REQUESTS}) = $(( MAX_RUNNING_REQUESTS * SLOTS_PER_REQUEST )) sein, sonst bringen die extra Anfragen nichts." >&2

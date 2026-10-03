@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T13:17:54+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T13:29:45+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -251,7 +251,8 @@ Block. Pennyroyal wurde danach erneut ueber `apply-runtime-unit.sh` gestartet.
 
 Das Profil `maxkv` ist nach dem beobachteten OOM vorlaeufig auf 1 Request,
 4 Mamba-Slots, Graph-Maximum 1, `mem_fraction=0.975` und KV-Ziel 524.288
-gesetzt. Der vorherige Lauf mit 4 Requests, 16 Slots und Graph-Maximum 4
+gesetzt (acht Slots, weil die Runtime aktuell `mamba_ratio=5` meldet; vier
+Slots wuerden selbst bei C1 auf null zugelassene Requests runden). Der vorherige Lauf mit 4 Requests, 16 Slots und Graph-Maximum 4
 erreichte zwar `/health`, starb aber bei der ersten kurzen Folgeanfrage: nur
 8 MiB frei, 12,35 GiB private CUDA-Graph-Pools, lazy Triton-Kernel benoetigten
 weitere 80 MiB. Das ist ein echter VRAM-Reservefehler, kein Long-Context-Test.
@@ -356,3 +357,7 @@ CUDA-OOM nach gesundem Start dokumentiert: 12.35 GiB Graph-Pools und lazy Triton
 ## Notiz 2026-10-03T13:17:54+02:00
 
 Pennyroyal-Zielprofile recherchiert und dokumentiert: offizielles C6/1.039M KV, Online-FP8 VRAM-Gewinn, Community C4/C8; Messleiter nach stabilem C1
+
+## Notiz 2026-10-03T13:29:45+02:00
+
+Sicherheitsprofilstart diagnostiziert: mamba_ratio=5, vier Slots ergaben max_num_reqs=0; Guard auf 5 und C1 maxkv auf 8 Slots korrigiert
