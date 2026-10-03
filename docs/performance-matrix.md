@@ -18,6 +18,9 @@ Fehler aus systemd, Podman und Loki.
 | PLE | NVMe, RAM nur bei ausreichendem RAM | SSD-Latenz gegen RAM-Bandbreite |
 | HiCache | 0, 16, 32 GiB | Hostcache gegen freie RAM-Reserve |
 | KV-Pool | automatisch, 824k, 1.0M | Kapazitaet gegen Decode-/VRAM-Kosten |
+| ZFS-/Linux-Cache | Referenz, `primarycache=all`, ARC 8/16/24 GiB | PLE-Caching ohne RAM-PLE |
+| Kernel/VM | Referenz, swappiness/cache-pressure/dirty ratios als Einzelarme | RAM-Druck und Flush-Verhalten |
+| I/O/CPU | Scheduler, Readahead, Governor, NUMA/IRQ nur einzeln | SSD-Prefill und Decode-Jitter |
 
 ## Profile
 
@@ -41,6 +44,9 @@ Fehler aus systemd, Podman und Loki.
 6. Cachearme Wiederholung: identischer Prefix warm, danach neue Suffixe.
 7. Long-context soak: 250k und 500k mindestens drei Wiederholungen, danach
    erneuter Healthcheck und Loki-Fehlersuche.
+8. Systemarme einzeln: ZFS-ARC, Linux-Page-Cache, VM-Parameter, NVMe-Readahead,
+   I/O-Scheduler, CPU-Governor und NUMA/IRQ. Nach jedem Arm zur Referenz
+   zurueckkehren, bevor der naechste beginnt.
 
 ## Abbruch- und Fehlerregeln
 
@@ -50,6 +56,12 @@ Fehler aus systemd, Podman und Loki.
 * RAM-PLE wird auf diesem Host mit etwa 15 GiB `MemAvailable` nicht automatisch
   aktiviert. Dafuer braucht es eine kontrollierte Vorpruefung oder weniger
   HiCache; NVMe-PLE bleibt die sichere Referenz.
+* Das PLE-Zvol steht aktuell auf `primarycache=metadata` und
+  `secondarycache=none`. `primarycache=all` wird als eigener ZFS-ARC-Arm
+  untersucht, weil dann ARC und ext4-Page-Cache um denselben Speicher konkurrieren.
+* Systemparameter werden zuerst nur aufgenommen (`sysctl -a`, ZFS- und
+  Blockgeraetwerte). Eine Aenderung braucht ein idempotentes Skript, einen
+  Checkpoint und einen Ruecklauf auf die gespeicherten Werte.
 * KVM/QEMU und andere CUDA-Prozesse werden vor jedem Block protokolliert.
 
 ## Quellen und Vergleichswerte

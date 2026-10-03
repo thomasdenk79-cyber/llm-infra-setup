@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T09:47:52+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T09:53:47+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -206,3 +206,7 @@ bleiben in Loki, `state/benchmarks/` und `state/benchmarks/sweep/` erhalten.
 ## Notiz 2026-10-03T09:47:52+02:00
 
 Handoff aktualisiert: Runtime healthy, Memory-Saver-Kombinationsfehler und RAM-PLE-Grenze dokumentiert
+
+## Notiz 2026-10-03T09:53:47+02:00
+
+Systemoptimierungs-Matrix erweitert: Linux-VM, ZFS-ARC, Page-Cache, NVMe, CPU und NUMA als getrennte Testarme
