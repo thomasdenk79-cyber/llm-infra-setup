@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T18:28:09+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T18:35:00+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -497,3 +497,7 @@ GPU nach Neustart wieder da, CDI neu erzeugt und Podman-GPU-Smoke bestanden
 ## Notiz 2026-10-03T18:28:09+02:00
 
 GPU- und natives PLE-Volume nach Neustart geprüft; Turbo-Smoke vorbereitet
+
+## Notiz 2026-10-03T18:35:00+02:00
+
+Turbo-Startfehler behoben: Rust-Cargo wird im stabilen Offline-Toolchain des Images ausgefuehrt
