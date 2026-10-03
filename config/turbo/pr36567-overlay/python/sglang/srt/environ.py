@@ -312,6 +312,12 @@ class Envs:
     SGLANG_QWEN4_PLE_NVME_QUEUE_DEPTH = EnvInt(512)
     SGLANG_QWEN4_PLE_NVME_MAX_BATCH_PAGES = EnvInt(4096)
     SGLANG_QWEN4_PLE_NVME_CACHE_PAGES = EnvInt(0)
+    # In-process row LRU for the mmap backend, capped in MiB (0=off). Rows are
+    # deduplicated by (file, offset); bytes stay at or below the budget.
+    SGLANG_QWEN4_PLE_NVME_MMAP_CACHE_MB = EnvInt(0)
+    # async = prefetch rows on the worker thread while the prior layer runs;
+    # sync = read inline in start_gather (no thread, completed future).
+    SGLANG_QWEN4_PLE_NVME_PREFETCH = EnvStr("async")
     SGLANG_QWEN4_PLE_NVME_LOG_INTERVAL = EnvInt(1000)
     # Select the FP8 (deep_gemm) tokenwise QSA indexer; only the BF16 reference
     # path is ported, so setting this fails loudly instead of degrading.

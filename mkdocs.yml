@@ -49,6 +49,7 @@ nav:
       - Vergleich: variant-comparison.md
       - Upstream-PLE (A): turbo-upstream-ple.md
       - Variante A: variants/variant-a-upstream-ple-graph.md
+      - Variante B: variants/variant-b-mmap-pagecache.md
   - English:
       - Overview: en/index.md
       - Operations: en/operations.md

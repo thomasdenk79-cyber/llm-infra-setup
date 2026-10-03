@@ -270,12 +270,21 @@ class RowReader(Protocol):
 
 
 class MMapRowReader:
-    """Portable correctness/debug backend backed by the page cache."""
+    """Portable correctness/debug backend backed by the page cache.
+
+    When SGLANG_QWEN4_PLE_NVME_MMAP_CACHE_MB is > 0, decoded rows additionally
+    live in a bounded in-process LRU so hot n-gram rows skip the page-cache
+    lookup entirely.  The cache stores plain bytes; its footprint stays at or
+    below the configured MiB budget.
+    """
 
     def __init__(self, manifest: PLEManifest) -> None:
         self.manifest = manifest
         self._files: dict[Path, Any] = {}
         self._maps: dict[Path, mmap.mmap] = {}
+        cache_mb = max(0, int(envs.SGLANG_QWEN4_PLE_NVME_MMAP_CACHE_MB.get()))
+        self._cache_rows = cache_mb * 1024 * 1024 // max(1, manifest.row_bytes)
+        self._cache: OrderedDict[tuple[Path, int], bytes] = OrderedDict()
 
     def _mapping(self, path: Path) -> mmap.mmap:
         mapping = self._maps.get(path)
@@ -290,8 +299,19 @@ class MMapRowReader:
         output = []
         for row_id in row_ids:
             location = self.manifest.locate(row_id)
-            mapping = self._mapping(location.path)
-            output.append(mapping[location.offset : location.offset + location.nbytes])
+            key = (location.path, location.offset)
+            row = self._cache.get(key) if self._cache_rows else None
+            if row is None:
+                mapping = self._mapping(location.path)
+                row = mapping[location.offset : location.offset + location.nbytes]
+                if self._cache_rows:
+                    self._cache[key] = row
+                    self._cache.move_to_end(key)
+                    while len(self._cache) > self._cache_rows:
+                        self._cache.popitem(last=False)
+            else:
+                self._cache.move_to_end(key)
+            output.append(row)
         return output
 
     def close(self) -> None:
@@ -301,6 +321,7 @@ class MMapRowReader:
             handle.close()
         self._maps.clear()
         self._files.clear()
+        self._cache.clear()
 
 
 class IoUringPageRowReader:
@@ -578,10 +599,22 @@ class NVMePLEEmbedding(nn.Module):
         row_ids = (
             input_ids.detach().reshape(-1).to(device="cpu", dtype=torch.int64).tolist()
         )
+        if self._prefetch_sync():
+            future: Future[list[bytes]] = Future()
+            future.set_result(self._timed_read_rows(row_ids))
+            return PendingGather(future, tuple(input_ids.shape))
         return PendingGather(
             self._io_executor.submit(self._timed_read_rows, row_ids),
             tuple(input_ids.shape),
         )
+
+    def _prefetch_sync(self) -> bool:
+        mode = envs.SGLANG_QWEN4_PLE_NVME_PREFETCH.get()
+        if mode not in ("async", "sync"):
+            raise ValueError(
+                f"unsupported SGLANG_QWEN4_PLE_NVME_PREFETCH={mode!r}; use async or sync"
+            )
+        return mode == "sync"
 
     def _timed_read_rows(self, row_ids: list[int]) -> list[bytes]:
         started = time.perf_counter()
