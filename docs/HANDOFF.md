@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T00:02:10+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T00:04:16+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -620,3 +620,7 @@ Doku: Rangfolge ohne Benchmark unbekannt, ple-preload.sh qualifiziert
 ## Notiz 2026-10-04T00:02:10+02:00
 
 HANDOFF.md: Rangfolge ohne Benchmark unbekannt; A-D sachlich eingeordnet
+
+## Notiz 2026-10-04T00:04:16+02:00
+
+Vorbereitung der sequenziellen Variantenprüfung A-B-D-C
