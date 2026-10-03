@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T12:46:54+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T12:47:30+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -321,5 +321,9 @@ abgeschnitten. NVMe-I/O wird derzeit noch nicht direkt als eigener Fortschritts-
 indikator gemessen.
 
 ## Notiz 2026-10-03T12:46:54+02:00
+
+Startup-Wartepruefung auf echte Aktivitaet umgestellt: Container, Journal, CPU, GPU und VRAM; bei Fortschritt ueber 40 Minuten hinaus warten
+
+## Notiz 2026-10-03T12:47:30+02:00
 
 Startup-Wartepruefung auf echte Aktivitaet umgestellt: Container, Journal, CPU, GPU und VRAM; bei Fortschritt ueber 40 Minuten hinaus warten
