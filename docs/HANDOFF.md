@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T17:56:30+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T18:13:03+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -449,3 +449,43 @@ PR36567 io_uring Row-Smoke erfolgreich (3 Zeilen); GPU-Smoke bewusst ausgesetzt 
 ## Notiz 2026-10-03T17:56:30+02:00
 
 Konfliktaufloesung PR36567 gegen vorhandene Turbo-PLE/NVFP4-Hooks explizit dokumentiert
+
+## Notiz 2026-10-03T18:10:00+02:00 – NVIDIA/PCIe-Recovery offen
+
+Die RTX PRO 6000 Blackwell ist im PCIe-Baum weiterhin sichtbar (`0000:22:00.0`,
+GB202GL), aber der NVIDIA-Treiber hat sie nach einem GPU-Hänger vom Bus verloren:
+
+```text
+NVRM: GPU 0000:22:00.0: GPU has fallen off the bus
+pciehp: Slot(0): Link Down
+nvidia-modeset: Error while waiting for GPU progress
+rm_power_source_change_event: Failed ... status=0xf
+```
+
+`nvidia-smi -L` meldet aktuell `No devices found`; bei `lspci -nnk` steht kein
+`Kernel driver in use`. Zwei alte `nvtop`-Prozesse wurden beendet, sie waren
+nicht die Ursache. IRQ 124 ist der PCIe-Hotplug-Thread (`irq/124-pciehp`) und
+kein LLM-Prozess.
+
+CDI (Container Device Interface) ist die Podman-Zuordnungsdatei
+`/etc/cdi/nvidia.yaml`. Sie übersetzt `nvidia.com/gpu=all` in konkrete NVIDIA-
+und DRM-Geräte. Die vorhandene Datei verweist noch auf `card0`/`renderD129`,
+die derzeit nicht existieren; nach erfolgreicher Treiberinitialisierung muss
+sie neu erzeugt werden:
+
+```bash
+sudo reboot
+nvidia-smi -L
+sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
+nvidia-ctk cdi list
+```
+
+Bis dahin keinen Turbo- oder Penny-Neustart erzwingen. Der Produktionszweig
+`turbo-c6-production` enthält das PR36567-Overlay (`r24-pr36567`) und bleibt
+sauber gepusht; Pennyroyal bleibt Fallback. Nach der GPU-Recovery zuerst CDI und
+`podman run --rm --device nvidia.com/gpu=all ... nvidia-smi` prüfen, dann erst die
+neue Port-8002-Unit anwenden.
+
+## Notiz 2026-10-03T18:13:03+02:00
+
+GPU/PCIe-Ausfall und CDI-Recovery fuer den naechsten Agenten dokumentiert
