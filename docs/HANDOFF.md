@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T20:54:45+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T21:38:10+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -570,3 +570,7 @@ CUDA-Capture-Guard auf native und breakable graph detection erweitert
 ## Notiz 2026-10-03T20:54:45+02:00
 
 Turbo nach wiederholtem Capture-Fehler stabilisiert und Unit auf mmap korrigiert
+
+## Notiz 2026-10-03T21:38:10+02:00
+
+Pennyroyal SSD Stream Plugin-Variante mit Graph-Hooks
