@@ -45,8 +45,6 @@ Seite sammelt nur die Fadenenden.
 ## Noch offen (Reihenfolge)
 
 1. Umzug abschliessen und pruefen (Punkt oben).
-2. `config/host.env`: `PENNY_PLE_NVME_MODEL=/srv/llm/ple-native/...` und
-   `PENNY_HICACHE_SIZE_GB=16` setzen; danach `make pennyroyal`.
 3. `./scripts/apply-tuning.sh` - das autonome Skript fuer die heisse Phase
    (Vorher/Nachher-Messung, automatischer Rückfaller, Protokoll in `state/tuning/`).
    Es startet die Runtime neu; laeuft das, stirbt diese Sitzung.

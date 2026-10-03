@@ -29,13 +29,14 @@ source "${root}/lib/units.sh"
 : "${PENNYROYAL_PORT:=8001}"
 : "${RUNTIME_WAIT_SECONDS:=2400}"
 profile=aggressiv
-plan_only=0; rollback=0; skip_bench=0
+plan_only=0; rollback=0; skip_bench=0; online_fp8=false
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --nur-plan) plan_only=1; shift ;;
     --profil) profile="$2"; shift 2 ;;
     --zurueck) rollback=1; shift ;;
     --ohnemessung) skip_bench=1; shift ;;
+    --online-fp8) online_fp8=true; shift ;;
     -h|--help) sed -n '2,26p' "$0"; exit 0 ;;
     *) echo 'unbekanntes Argument (hilfe: ./scripts/apply-tuning.sh --help)' >&2; exit 2 ;;
   esac
@@ -87,6 +88,7 @@ printf '  aufgenommene Anfragen: 4 -> %s (Zustandsplaetze %s)\n' "${new_running}
 printf '  Spekulation      : 3/1/4 -> %s/1/%s\n' "${new_steps}" "${new_draft}"
 printf '  sleep-on-idle    : 1 -> %s\n' "${new_sleep}"
 printf '  chunked-prefill  : 4096 -> %s\n' "${new_chunk}"
+printf '  Online-FP8       : %s\n' "${online_fp8}"
 
 # --- Vorbedingungen ---------------------------------------------------------
 problems=0
@@ -106,8 +108,8 @@ if [[ ! -d "${new_ple}/ple" ]]; then
   echo "FEHLT: PLE-Tabelle auf der neuen Flaeche: ${new_ple}/ple" >&2
   echo 'Jetzt ausführen: ./scripts/49-migrate-ple.sh   (und --nur-pruefen danach)' >&2
   problems=1
-elif ! tail -5 "${STATE_DIR}/ple-migrate.log" 2>/dev/null | grep -q 'PRÜFUNG OK\|PRUEFUNG OK'; then
-  echo 'WARNUNG: Der Umzug meldet keine erfolgreiche Pruefung; ich pruefe selbst.' >&2
+elif ! grep -q 'PRÜFUNG OK\|PRUEFUNG OK' "${STATE_DIR}/ple-migrate.log" 2>/dev/null; then
+  echo 'Der Umzugs-Log enthaelt keine erfolgreiche Pruefung; ich pruefe jetzt selbst.' >&2
   "${root}/scripts/49-migrate-ple.sh" --nur-pruefen || problems=1
 fi
 
@@ -183,8 +185,10 @@ set_or_add PENNY_SLEEP_ON_IDLE "${new_sleep}"
 set_or_add PENNY_CHUNKED_PREFILL_SIZE "${new_chunk}"
 set_or_add PENNY_MAX_RUNNING_REQUESTS "${new_running}"
 set_or_add PENNY_MAX_MAMBA_CACHE_SIZE "${new_mamba}"
+set_or_add PENNY_ONLINE_FP8 "${online_fp8}"
 set_or_add PENNY_MAX_RUNNING_REQUESTS "${new_running}"
 set_or_add PENNY_MAX_MAMBA_CACHE_SIZE "${new_mamba}"
+set_or_add PENNY_ONLINE_FP8 "${online_fp8}"
 echo 'Neue Werte in config/host.env geschrieben.'
 
 run ./scripts/50-install-pennyroyal.sh
@@ -207,6 +211,17 @@ if ! run ./scripts/wait-for-runtime.sh; then
   echo 'Letzte Meldung im Journal:'
   journalctl --user -u pennyroyal.service --no-pager -n 30 | tail -12
   exit 1
+fi
+
+# --- Kontrolle: wirkt Online-FP8 wirklich? ----------------------------------
+if [[ "${online_fp8}" == true ]]; then
+  if journalctl --user -u pennyroyal.service --no-pager --since "-25 min" \
+       | grep -q 'online FP8 enabled on SM120'; then
+    echo 'OK: Online-FP8 ist in der Laufzeit aktiv (Logzeile gefunden).'
+  else
+    echo 'WARNUNG: Online-FP8 war eingestellt, aber die Logzeile fehlt.'
+    journalctl --user -u pennyroyal.service --no-pager -n 300 | tail -20
+  fi
 fi
 
 # --- Messen und vergleichen -------------------------------------------------

@@ -118,6 +118,75 @@ GPUs und widerspricht der Grundregel, dass die Karte exklusiv dem Modell gehoert
 (siehe `docs/adr/0013-*.md`); dazu waere dafuer eine zweite Karte noetig.
 
 
+
+## Online-FP8: was der Schalter wirklich macht (und was nicht)
+
+Der Auftragstext (§11) nennt "Online FP8" als Leistungsexperiment, und die
+Versuchung liegt nahe, damit NVFP4 abzulösen. Das wäre ein Denkfehler. Aus dem
+verwendeten Bild (`penny_config.py`, `qwen4_exp.py`, `sm120_online_fp8.py`) steht
+der Zweck wörtlich da:
+
+> `SGLANG_SM120_ONLINE_MXFP8` = "online FP8 **for FP4 checkpoints**"
+
+Und aus dem Modellcode (`convert_eligible_linears_to_mxfp8`):
+
+> "eligible BF16 linears use MXFP8; HyperConnection mix and lm_head use rowwise FP8"
+> ausgeschlossen sind `FusedMoE` und `Qwen4ExpPLELayer`
+
+Das heißt in Klartext:
+
+| Teil des Modells | Format | Wirkung des Schalters |
+|---|---|---|
+| MoE-Experten (der große Teil der Gewichte) | **NVFP4** (Checkpoint, Blackwell-nativ) | bleibt - der Schalter fasst sie nicht an |
+| noch in BF16 laufende dichte Projektionen, HyperConnection-Mix | BF16 | werden beim Laden in MXFP8/FP8 überführt |
+| `lm_head` | BF16 | rowwise FP8 |
+| PLE-Speicher und sein Projektionspfad | wie eingestellt (fp8-Tabelle) | bleibt, ausdrücklich ausgenommen |
+
+NVFP4 bleibt also die Grundlage - genau weil Blackwell 4-Bit-Gewichte am besten
+verarbeitet. Online-FP8 ergänzt nur die Schichten, die im FP4-Checkpoint gar
+nicht quantisiert sind.
+
+Warum es für diesen Rechner überhaupt interessant ist: die Messung zeigt eine zu
+61 % ausgelastete Karte bei 275 W (Limit 600 W) und praktisch freier
+PCIe-Strecke. Die wartenden Momente entstehen in den Rechen- und
+Speicherpfaden der dichten Schichten und der Vorhersageprüfung, nicht bei den
+Experten-GEMMs. Genau dort setzt Online-FP8 an.
+
+Voraussetzungen und Grenzen (bei Verstoß bricht der Start hart ab):
+
+* nur SM120 (RTX PRO 6000 Blackwell passt), CUDA nötig
+* ein MXFP8-dichter Kernel muss verfügbar sein, sonst
+  `RuntimeError: ... no MXFP8 dense kernel is available`
+* kein gekoppelter `input`/`lm_head`-Gewichtssatz
+  (`does not support tied input/lm_head weights`)
+* **Nebenwirkung am Cache**: der Wert fließt in die NIXL-Cache-Identität ein
+  (`--field online_mxfp8=...` im Startskript). Nach dem Umschalten ist der
+  Zeichenspeicher-Cache neu aufzubauen - der erste Start dauert spürbar länger.
+
+Einschalten (standardmäßig aus, weil Upstream sagt: erst Anleitung lesen):
+
+```bash
+PENNY_ONLINE_FP8=true make pennyroyal     # schreibt Environment= in die Unit
+make apply-units                          # Unit installieren
+```
+
+oder im Tuning-Lauf als eigener Versuch:
+
+```bash
+./scripts/apply-tuning.sh --online-fp8
+```
+
+Der Lauf prüft nach dem Start die Logzeile "Flash-Next online FP8 enabled on SM120"
+und vergleicht die Schreibrate. Fällt sie unter 90 % der Baseline, stellt das
+Skript die alte Konfiguration wieder her.
+
+**Erwartung ehrlich gesagt:** ein Gewinn auf die Schreibrate einer einzelnen
+Anfrage ist möglich, aber nicht sicher - die dichten Schichten sind nur ein Teil
+des Pfads. Der sichere Gewinn dieses Rechners liegt woanders: 8 statt 4
+gleichzeitige Anfragen, mehr Zustandsslots und der Verzicht auf
+`sleep-on-idle` (`docs/adr/0012-*.md`, ADR 0013).
+
+
 ## Wie viele Sitzungen gleichzeitig?
 
 Zwei Grenzen, die leicht verwechselt werden (gemessen 2026-10-03):

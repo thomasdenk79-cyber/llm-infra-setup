@@ -25,6 +25,13 @@ source "${root}/lib/common.sh"
 # loader's temporary CPU peak leaves no reservation margin.
 : "${PENNY_HICACHE_SIZE_GB:=8}"
 : "${PENNY_HEALTH_START_SECONDS:=1800}"
+# Online-FP8 fuer FP4-Pruefpunkte (MXFP8 fuer die noch in BF16 laufenden
+# Projektionen; die NVFP4-Experten bleiben unberuehrt). Standert aus: der
+# Upstream-Hinweis lautet "read the FP8 guide before switching this on".
+# Achtung: der Wert fliest in die NIXL-Cache-Identitaet ein - beim Umschalten
+# ist der Zeichenspeicher-Cache neu aufzubauen (erklaerung in docs/performance.md).
+: "${PENNY_ONLINE_FP8:=false}"
+case "${PENNY_ONLINE_FP8}" in true|false) : ;; *) log 'PENNY_ONLINE_FP8 muss true oder false sein.'; exit 1 ;; esac
 # Aufnahmefaehigkeit der Laufzeit. Die Bild-Defaults sind MAX_RUNNING_REQUESTS=4 und
 # MAX_MAMBA_CACHE_SIZE=24; beide sind hier uebersteuerbar (read request-capacity.sh
 # im Bild: die Werte kommen als Umgebungsvariablen). Mehr aufgenommene Anfragen
@@ -86,6 +93,7 @@ Environment=CACHE_BASE=/cache
 Environment=NIXL_STORAGE_BASE=/nixl
 Environment=PENNY_HICACHE_SIZE_GB=${PENNY_HICACHE_SIZE_GB}
 Environment=PENNY_PLE_BACKEND=${PENNY_PLE_BACKEND}
+Environment=SGLANG_SM120_ONLINE_MXFP8=${PENNY_ONLINE_FP8}
 Environment=PENNY_PLE_NVME_MODEL=/ple/$(basename "${PENNY_PLE_NVME_MODEL}")
 ${extra_env}${CAP_ENV}# python3 exists in the runtime image; curl is not guaranteed.
 HealthCmd=python3 -c "import sys,urllib.request;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8001/health',timeout=8).status==200 else 1)"

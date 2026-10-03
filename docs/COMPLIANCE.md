@@ -21,7 +21,7 @@ dokumentierter Luecke, **zurueckgestellt** = bewusst spaeter.
 | 8 | Modell herunterladen | erfuellt | `scripts/40-download-model.sh` (fortsetzbar), Pruefung `42-verify-model.sh` |
 | 9 | Pennyroyal installieren | erfuellt | `scripts/50-install-pennyroyal.sh` mit Digest-Pinning |
 | 10 | Baseline validieren | erfuellt | Health-Pruefung, Rauchtest in `setup-qwen-pennyroyal.sh`, API-Kette getestet |
-| 11 | Online FP8 / Leistungsprofil | teilweise | Umgebungsvariable ist in der Unit durchreichbar (`PENNYROYAL_EXTRA_ENV=SGLANG_SM120_ONLINE_MXFP8=true`); Vorher/Nachher-Lauf steht aus | Experimenteller Schalter der Runtime; erst nach stabiler Baseline, Anleitung in `docs/performance.md` |
+| 11 | Online FP8 / Leistungsprofil | teilweise | eigen `PENNY_ONLINE_FP8` in `config/host.env` (schreibt die Unit) plus `./scripts/apply-tuning.sh --online-fp8` mit Messung und Rückfaller; NVFP4 bleibt unangetastet | Vorher/Nachher-Lauf auf diesem Rechner steht noch aus; Erklärung und Grenzen in `docs/performance.md` |
 | 12 | SGLang-Metriken | erfuellt | `--enable-metrics` ist im Startskript gesetzt; `--enable-mfu-metrics` bewusst nicht (Kompatibilitaet ungeprueft) |
 | 13 | Prometheus | erfuellt | laeuft rootless, Daten unter `~/.local/share`, Retention 30 Tage, Bindung `127.0.0.1:9090`, Config aus Git |
 | 14 | OS-Metriken | erfuellt | node_exporter mit Host-Einhaengung; Dashboard "Host" mit CPU/RAM/Platte/Netz/PSI, Einheiten menschenlesbar |
