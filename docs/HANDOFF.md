@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T08:11:47+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T08:21:27+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -121,3 +121,7 @@ Kurz vor der heissen Phase: Kartentrennung, KV-Knospen, Qualitaetspruefung und S
 ## Notiz 2026-10-03T08:11:47+02:00
 
 Zustandsplaetze je Anfrage gemessen (4); Profile sweet/aggressiv/maxkv neu dimensioniert; Guard im Rezept
+
+## Notiz 2026-10-03T08:21:27+02:00
+
+PREFILL_CHUNK_SIZE-Unbound-Fehler im Runtime-Rezept behoben; Default und Host-Override frueh definiert

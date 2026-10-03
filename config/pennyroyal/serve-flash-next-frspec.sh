@@ -48,7 +48,11 @@ PAGE_SIZE=64
 #   MIN_TOKENS=180 ./scripts/benchmark.sh normal
 # Erklaerung der einzelnen Hebel: docs/performance.md
 MEM_FRACTION_STATIC="${PENNY_MEM_FRACTION_STATIC:-0.981}"
-CHUNKED_PREFILL_SIZE="${PENNY_CHUNKED_PREFILL_SIZE:-${PREFILL_CHUNK_SIZE}}"
+# Keep the value defined before `set -u` reaches diagnostics and namespace
+# derivation.  The old fallback expanded the not-yet-defined variable
+# PREFILL_CHUNK_SIZE and made every restart exit before SGLang started.
+PREFILL_CHUNK_SIZE="${PENNY_CHUNKED_PREFILL_SIZE:-4096}"
+CHUNKED_PREFILL_SIZE="$PREFILL_CHUNK_SIZE"
 SPEC_NUM_STEPS="${PENNY_SPEC_NUM_STEPS:-3}"
 SPEC_EAGLE_TOPK="${PENNY_SPEC_EAGLE_TOPK:-1}"
 SPEC_NUM_DRAFT_TOKENS="${PENNY_SPEC_NUM_DRAFT_TOKENS:-4}"
@@ -107,7 +111,6 @@ KV_DTYPE=fp8_e4m3
 MAMBA_SSM_DTYPE=bfloat16
 MAMBA_CONV_DTYPE=bfloat16
 MAMBA_TRACK_INTERVAL=64
-PREFILL_CHUNK_SIZE=4096
 for path in "$SGLANG_EXE" "$PYTHON" "$NAMESPACE_HELPER"; do
   [[ -x "$path" ]] || { echo "Required executable missing: $path" >&2; exit 1; }
 done
