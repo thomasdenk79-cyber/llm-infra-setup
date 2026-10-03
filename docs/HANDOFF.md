@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T23:57:28+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T00:02:10+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -616,3 +616,7 @@ PLE mmap) laeuft unveraendert weiter; Pennyroyal bleibt Fallback.
 ## Notiz 2026-10-03T23:57:28+02:00
 
 Doku: Rangfolge ohne Benchmark unbekannt, ple-preload.sh qualifiziert
+
+## Notiz 2026-10-04T00:02:10+02:00
+
+HANDOFF.md: Rangfolge ohne Benchmark unbekannt; A-D sachlich eingeordnet
