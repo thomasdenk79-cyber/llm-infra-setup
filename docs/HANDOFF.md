@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T09:53:47+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T09:57:49+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -210,3 +210,7 @@ Handoff aktualisiert: Runtime healthy, Memory-Saver-Kombinationsfehler und RAM-P
 ## Notiz 2026-10-03T09:53:47+02:00
 
 Systemoptimierungs-Matrix erweitert: Linux-VM, ZFS-ARC, Page-Cache, NVMe, CPU und NUMA als getrennte Testarme
+
+## Notiz 2026-10-03T09:57:49+02:00
+
+Kernel-, Scheduler-, ZFS-ARC-, VM- und I/O-Testarme samt Ableitungsregeln dokumentiert

@@ -70,3 +70,40 @@ Die offizielle Pennyroyal-Referenz meldet fuer Online-FP8 etwa 207 Token/s kurz,
 196 bei 128k und 173 bei 490k; der offizielle C6-Pfad nutzt 36 Mamba-Slots und
 1.048.576 angeforderte KV-Tokens. Diese Werte sind Vergleichspunkte, keine
 Garantie fuer diesen Host.
+
+## System- und Kernelarme
+
+| Arm | Aenderung | Aussage, die wir ableiten wollen |
+|---|---|---|
+| K0 | aktueller CachyOS-Kernel, Scheduler unveraendert | Referenz fuer alle Modellmessungen |
+| K1 | gleicher Kernel, Governor `performance` | CPU-/PLE-Latenz gegen `powersave` |
+| K2 | BORE, falls im Kernel verfuegbar | Interaktive Einzelantworten und Jitter |
+| K3 | eigener BORE-Kernel mit gleicher Konfiguration | Effekt des Kernels getrennt vom Userspace |
+| K4 | `schedutil`/Standard gegen BORE bei C1/C4/C8 | Scheduler-Skalierung unter Last |
+| V1 | ZFS `primarycache=metadata` | NVMe-Referenz ohne Daten-ARC |
+| V2 | ZFS `primarycache=all`, ARC 8/16/24 GiB | PLE aus ARC/Page-Cache, RAM-Konkurrenz |
+| V3 | Linux `vm.swappiness`, `vfs_cache_pressure`, dirty ratios | Swap-/Flush-Verhalten und Long-Prefill |
+| I1 | NVMe-Readahead und I/O-Scheduler einzeln | PLE-Prefill und SSD-Wartezeit |
+| N1 | NUMA-/IRQ-Bindung unveraendert | Referenz ohne CPU-Affinitatsannahmen |
+| N2 | kontrollierte CPU-/IRQ-Bindung | PLE-Reader- und Tokenizer-Jitter |
+
+Jeder Arm wird mit derselben Runtime-Konfiguration in mindestens drei
+Wiederholungen gemessen. Wir speichern Median, P05/P95, Standardabweichung,
+Fehlerquote und Start-/Ready-Zeit. Ein Arm gilt erst als besser, wenn er bei
+identischem Kontext und gleicher Parallelitaet mindestens zwei der drei
+Wiederholungen verbessert, ohne Qualitaets- oder Stabilitaetsfehler.
+
+## Ableitungen
+
+* Steigt C1, aber nicht C4/C8, ist der Gewinn wahrscheinlich CPU-/Latenzpfad;
+  steigt nur C4/C8, ist es eher Batch-Scheduling oder GPU-Auslastung.
+* Sinkt TTFT bei 250k/500k, aber nicht steady Token/s, verbessert der Arm nur
+  Prefill/PLE. Steigt steady Token/s bei gleichem TTFT, verbessert er Decode.
+* Steigt `kv_available_tokens` nach einem Cache-Arm, ohne dass VRAM knapp wird,
+  ist der Arm fuer Kontextkapazitaet brauchbar; bei mehr Swap ist er verworfen.
+* Mehr ARC kann den PLE-Reader beschleunigen, aber durch Doppelcache auch den
+  Modellstart und den KV-Pool verschlechtern. Deshalb werden ARC-Hit, RAM,
+  Swap, SSD-Lesevolumen und Runtime-Fehler gemeinsam bewertet.
+* Ein Scheduler-/Kernelgewinn muss unter identischer GPU-, PLE- und
+  Cachekonfiguration reproduzierbar sein; ein einzelner schneller Lauf zaehlt
+  nicht als Beleg.
