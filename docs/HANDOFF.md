@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T19:39:57+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T19:43:02+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -538,3 +538,7 @@ Turbo-SSD-Stream nach GPU-Recovery gesund; Doku, Rust-Cache und exklusiver GPU-B
 ## Notiz 2026-10-03T19:39:57+02:00
 
 Gateway fuer Turbo umgestellt, damit OpenCode nicht mehr auf den gestoppten Penny-Port zeigt
+
+## Notiz 2026-10-03T19:43:02+02:00
+
+OpenCode auf LiteLLM 4000 mit aktuellem Turbo-Modell konfiguriert; vorhandene Datei gesichert
