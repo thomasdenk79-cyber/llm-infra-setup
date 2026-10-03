@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T09:44:11+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T09:47:52+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -185,3 +185,24 @@ Runtime-Fix validiert: Memory-Saver ohne expandable_segments; Logsammler shellch
 ## Notiz 2026-10-03T09:44:11+02:00
 
 Performance-Messmatrix mit Stabilitaets-, Kontext-, KV-, PLE- und Online-FP8-Achsen dokumentiert
+
+## Notiz 2026-10-03T09:50:00+02:00
+
+Die Runtime ist wieder `healthy` und `/health` antwortet. Ein vorheriger
+Startfehler war eine falsche lokale Kombination: `PENNY_ENABLE_MEMORY_SAVER=1`
+mit `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`; TorchMemorySaver brach
+dadurch vor dem Modellstart ab. Das Rezept entfernt `expandable_segments` jetzt
+nur im Memory-Saver-Modus (Commit `bd126e0`). Die Forschung wird fortgesetzt:
+solche Punkte gelten als konfigurationsbedingte Fehlerfaelle und werden in der
+Messmatrix separat erfasst, nicht als Modellgrenze verworfen.
+
+Der aktuelle Host hat etwa 15 GiB `MemAvailable` und rund 5 GiB Swap in Nutzung;
+RAM-PLE mit zusaetzlich ca. 48 GiB wird daher erst nach einer kontrollierten
+Vorpruefung getestet. NVMe-PLE ist die laufende Referenz. Vor dem naechsten
+Sweep pruefen: `curl -fsS http://127.0.0.1:8001/health`, `nvidia-smi`,
+`free -h`, `pgrep -af 'qemu|kvm'`. Ergebnisse, Fehlerlogs und Profilwechsel
+bleiben in Loki, `state/benchmarks/` und `state/benchmarks/sweep/` erhalten.
+
+## Notiz 2026-10-03T09:47:52+02:00
+
+Handoff aktualisiert: Runtime healthy, Memory-Saver-Kombinationsfehler und RAM-PLE-Grenze dokumentiert
