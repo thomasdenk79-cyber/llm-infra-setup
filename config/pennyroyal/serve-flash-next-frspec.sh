@@ -149,7 +149,14 @@ export TORCH_HOME="$CACHE_BASE/torch" TORCHINDUCTOR_CACHE_DIR="$CACHE_BASE/torch
 export TRITON_CACHE_DIR="$CACHE_BASE/triton" CUDA_CACHE_PATH="$CACHE_BASE/cuda"
 export FLASHINFER_WORKSPACE_BASE="$CACHE_BASE/flashinfer"
 export SGLANG_CACHE_DIR="$CACHE_BASE/sglang" SGLANG_JIT_CACHE_DIR="$CACHE_BASE/sglang/jit"
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+# TorchMemorySaver cannot initialize while expandable_segments is enabled.
+# Keep the allocator hint for normal runs, but remove it for the explicit
+# memory-saver profile so the runtime reaches model loading successfully.
+if [[ "${PENNY_ENABLE_MEMORY_SAVER:-0}" == 1 ]]; then
+  unset PYTORCH_CUDA_ALLOC_CONF
+else
+  export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
+fi
 export SGLANG_NUMA_BIND_V2=false SGLANG_ALLOW_OVERWRITE_LONGER_CONTEXT_LEN=1
 export SGLANG_MAMBA_CONV_DTYPE="$MAMBA_CONV_DTYPE"
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-4}" MKL_NUM_THREADS="${MKL_NUM_THREADS:-4}"
