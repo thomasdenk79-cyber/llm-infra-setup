@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T11:50:07+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T11:51:05+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -264,5 +264,9 @@ vergleichbarer Benchmarks. Jeder neue Long-Context-Test muss vorab die tatsaechl
 profilierte `sglang:max_total_num_tokens`-Grenze pruefen.
 
 ## Notiz 2026-10-03T11:50:07+02:00
+
+Handoff fuer den anderen Agenten aktualisiert: OOM, Sweep-Stopp, maxkv-Guard und naechster Schritt
+
+## Notiz 2026-10-03T11:51:05+02:00
 
 Handoff fuer den anderen Agenten aktualisiert: OOM, Sweep-Stopp, maxkv-Guard und naechster Schritt
