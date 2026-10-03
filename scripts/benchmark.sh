@@ -5,6 +5,7 @@
 #   ./scripts/benchmark.sh normal          mittlerer Prompt
 #   ./scripts/benchmark.sh long            langer Prompt
 #   ./scripts/benchmark.sh quick 4         4 gleichzeitige Anfragen
+#   ./scripts/benchmark.sh normal 4 20000  4 Anfragen mit ca. 20k Prompt-Token
 #   MIN_TOKENS=150 ./scripts/benchmark.sh  # Bruch bei zu geringer Geschwindigkeit
 #
 # Warum zwei Zahlen?
@@ -24,6 +25,7 @@ source "${root}/lib/common.sh"
 : "${MIN_TOKENS:=0}"
 profile="${1:-quick}"
 concurrency="${2:-1}"
+target_context_tokens="${3:-}"
 mkdir -p "${root}/state/benchmarks"
 base_url="http://127.0.0.1:${PENNYROYAL_PORT}/v1"
 
@@ -33,6 +35,17 @@ case "${profile}" in
   long)   prompt='Analysiere Gruende fuer Durchsatzgrenzen bei grossen Sprachmodellen.'; max_tokens=1500; repeat=400 ;;
   *) echo 'usage: benchmark.sh [quick|normal|long] [gleichzeitig]' >&2; exit 2 ;;
 esac
+
+if [[ -n "${target_context_tokens}" ]]; then
+  [[ "${target_context_tokens}" =~ ^[1-9][0-9]*$ ]] || { echo 'Kontextziel muss eine positive Zahl sein.' >&2; exit 2; }
+  # The repeated prompt is deliberately simple and deterministic. The API
+  # reports the actual prompt_tokens; that value is authoritative in the
+  # resulting JSON, while this estimate chooses the repeat count.
+  chars_per_token=4
+  base_chars=${#prompt}
+  repeat=$(( (target_context_tokens * chars_per_token + base_chars - 1) / base_chars ))
+  (( repeat > 0 )) || repeat=1
+fi
 
 running="$(curl -fsS --max-time 5 "http://127.0.0.1:${PENNYROYAL_PORT}/metrics" 2>/dev/null \
   | awk '/^sglang:num_running_reqs\{/ {print $2; found=1} END{if(!found) print "0"}')"
@@ -69,7 +82,7 @@ errors=0
 for pid in $(jobs -pr); do wait "${pid}" || errors=$((errors + 1)); done
 wall_ms=$(( $(date +%s%3N) - wall_start ))
 
-python3 - "${workdir}" "${json_out}" "${profile}" "${concurrency}" "${wall_ms}" "${errors}" <<'PY'
+python3 - "${workdir}" "${json_out}" "${profile}" "${concurrency}" "${wall_ms}" "${errors}" "${target_context_tokens}" <<'PY'
 import json, pathlib, statistics, sys
 work, out, profile, conc, wall_ms, errors = sys.argv[1:7]
 runs = []
@@ -87,6 +100,7 @@ tokens = sum(r.get('completion_tokens') or 0 for r in ok)
 doc = {
     'timestamp': pathlib.Path(out).stem,
     'profile': profile,
+    'target_context_tokens': int(sys.argv[7]) if sys.argv[7] else None,
     'concurrency': int(conc),
     'errors': int(errors),
     'requests_ok': len(ok),

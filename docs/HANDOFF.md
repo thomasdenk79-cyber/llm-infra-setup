@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T08:34:56+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T08:36:38+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -157,3 +157,7 @@ c16 Belastungsprofil fuer 16 parallele Anfragen und Benchmark-Sweep dokumentiert
 ## Notiz 2026-10-03T08:34:56+02:00
 
 Performance-Review: CUDA-Graph-, Memory-Saver- und Sleep-Optionen tatsaechlich an SGLang uebergeben
+
+## Notiz 2026-10-03T08:36:38+02:00
+
+Kontextziel-Argument fuer Benchmarks ergaenzt; Fixes vor Runtime-Neustart gesichert
