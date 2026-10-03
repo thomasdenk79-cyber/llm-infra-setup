@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T17:50:16+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T17:54:51+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -441,3 +441,7 @@ PR36567 NVMe-PLE-Overlay gegen Turbo r24 integriert; SM121 bewusst ausgelassen; 
 ## Notiz 2026-10-03T17:50:16+02:00
 
 PR36567 Overlay gebaut und validiert; Manifest 128 Shards/51.2GB; Rust io_uring cargo check ok; Live GPU-Smoke wegen nvidia-smi No devices found ausstehend
+
+## Notiz 2026-10-03T17:54:51+02:00
+
+PR36567 io_uring Row-Smoke erfolgreich (3 Zeilen); GPU-Smoke bewusst ausgesetzt wegen nvidia-smi No devices found
