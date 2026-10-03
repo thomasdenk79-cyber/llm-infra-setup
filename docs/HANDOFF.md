@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T15:03:02+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T17:40:37+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -421,3 +421,19 @@ unqualifiziert aktiviert werden.
 ## Notiz 2026-10-03T15:03:02+02:00
 
 Turbo r24 separat gebaut; Smoke zeigte harte Inkompatibilitaet von Datei-PLE auf RTX PRO 6000; Dienst gestoppt, Pennyroyal Fallback
+
+## Notiz 2026-10-03T17:30:00+02:00
+
+PR #36567 gegen Turbo r24 geprueft. Das Overlay uebernimmt nur die Storage-/Qwen4-
+NVMe-PLE-Commits `04648a7015` und `9f101e39ff`; der SM121-QSA-Commit bleibt weg.
+Turbo bleibt Compute-Basis, Pennyroyal unveraendert Fallback. Das PR-Modul nutzt
+den Original-Snapshot `/models/Qwen3.8-Flash-Next-NVFP4` (128 FP8-PLE-Shards),
+nicht das alte Penny-`layer-0.bin`-Overlay. Neues Image-Tag ist
+`localhost/sglang-qwen38fn-sm120-turbo:r24-pr36567`, Dienst bleibt Port 8002.
+Der Quadlet nutzt ein begrenztes io_uring-Seccomp-Profil und setzt C6/27/8 GiB/
+1M KV sowie Online-MXFP8, FP8-KV und NEXTN. Image-/Smoke-Bau steht noch aus;
+Live-GPU-Smoke bleibt wegen des aktuellen NVIDIA-Hostzustands blockiert.
+
+## Notiz 2026-10-03T17:40:37+02:00
+
+PR36567 NVMe-PLE-Overlay gegen Turbo r24 integriert; SM121 bewusst ausgelassen; Smoke folgt nach Imagebau

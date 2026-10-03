@@ -9,7 +9,8 @@ source "$root/lib/common.sh"
 : "${LLM_CACHE_DIR:=/srv/llm/cache}"
 : "${LLM_PLE_DIR:=/srv/llm/ple-native/Qwen3.8-Flash-Next-PLE-NVME}"
 : "${TURBO_SOURCE_DIR:=/srv/llm/cache/sglang-qwen38fn-sm120-turbo-r24}"
-: "${TURBO_IMAGE:=localhost/sglang-qwen38fn-sm120-turbo:r24}"
+: "${TURBO_BASE_IMAGE:=localhost/sglang-qwen38fn-sm120-turbo:r24}"
+: "${TURBO_IMAGE:=localhost/sglang-qwen38fn-sm120-turbo:r24-pr36567}"
 : "${TURBO_REVISION:=c6cd5062669625fdbaf08032931f10b6661f8f6f}"
 : "${TURBO_PORT:=8002}"
 : "${TURBO_CONTAINER_NAME:=sglang-turbo-c6}"
@@ -18,7 +19,6 @@ source "$root/lib/common.sh"
 have git || { log 'FEHLT: git'; exit 1; }
 have podman || { log 'FEHLT: podman'; exit 1; }
 [[ -d "$LLM_MODELS_DIR/$TURBO_MODEL_DIR" ]] || { log "Modell fehlt: $LLM_MODELS_DIR/$TURBO_MODEL_DIR"; exit 1; }
-[[ -f "$LLM_PLE_DIR/model.safetensors.index.json" ]] || { log "NVMe-PLE-Overlay fehlt: $LLM_PLE_DIR (make ple-nvme)"; exit 1; }
 install -d -m 0755 "$LLM_CACHE_DIR/sglang-turbo"
 
 if [[ ! -d "$TURBO_SOURCE_DIR/.git" ]]; then
@@ -32,8 +32,10 @@ if [[ "$actual" != "$TURBO_REVISION" ]]; then
 fi
 [[ "$(git -C "$TURBO_SOURCE_DIR" rev-parse HEAD)" == "$TURBO_REVISION" ]] || { log 'Turbo-Revision stimmt nicht'; exit 1; }
 
-log "Baue $TURBO_IMAGE aus Turbo-Revision $TURBO_REVISION"
-podman build --pull=missing -t "$TURBO_IMAGE" "$TURBO_SOURCE_DIR"
+log "Baue $TURBO_BASE_IMAGE aus Turbo-Revision $TURBO_REVISION"
+podman build --pull=missing -t "$TURBO_BASE_IMAGE" "$TURBO_SOURCE_DIR"
+log "Baue PR-36567-NVMe-PLE-Overlay $TURBO_IMAGE"
+podman build --pull=never --build-arg BASE_IMAGE="$TURBO_BASE_IMAGE" -t "$TURBO_IMAGE" -f "$root/config/turbo/Dockerfile.pr36567" "$root/config/turbo"
 digest="$(podman image inspect "$TURBO_IMAGE" --format '{{.Id}}')"
 [[ -n "$digest" ]] || { log 'Turbo-Image konnte nicht inspiziert werden'; exit 1; }
 
@@ -51,13 +53,14 @@ ContainerName=$TURBO_CONTAINER_NAME
 Network=llm-inference.network
 PublishPort=127.0.0.1:$TURBO_PORT:8001
 AddDevice=nvidia.com/gpu=all
-PodmanArgs=--ipc=host --security-opt=seccomp=unconfined
+PodmanArgs=--ipc=host --security-opt=seccomp=@CONFIG_ROOT@/config/turbo/seccomp-io-uring.json
 Volume=$LLM_MODELS_DIR:/models:ro
 Volume=$LLM_CACHE_DIR/sglang-turbo:/cache:U,Z
-Volume=$LLM_PLE_DIR:/ple-table:ro,Z
 Volume=@CONFIG_ROOT@/config/turbo/serve-qwen38-flash-next-c6.sh:/opt/turbo/serve-c6.sh:ro,Z
 Environment=TARGET_MODEL=/models/$TURBO_MODEL_DIR
-Environment=PLE_DIR=/ple-table
+Environment=SGLANG_QWEN4_PLE_NVME_PATH=/models/$TURBO_MODEL_DIR
+Environment=SGLANG_QWEN4_PLE_NVME_BACKEND=io_uring
+Environment=SGLANG_RUST_BUILD_MODE=auto
 Environment=SGLANG_PORT=8001
 Environment=SGLANG_SM120_ONLINE_MXFP8=true
 Environment=SGLANG_MM_PREPROCESS_DEVICE=cpu

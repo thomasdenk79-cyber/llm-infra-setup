@@ -1,0 +1,12 @@
+# NVMe-PLE overlay for Turbo r24.  PR #36567 only; SM121 QSA changes are omitted.
+ARG BASE_IMAGE=localhost/sglang-qwen38fn-sm120-turbo:r24
+FROM ${BASE_IMAGE}
+COPY pr36567-overlay/python/sglang/srt/environ.py /sgl-workspace/sglang/python/sglang/srt/environ.py
+COPY pr36567-overlay/python/sglang/srt/models/qwen4_exp.py /sgl-workspace/sglang/python/sglang/srt/models/qwen4_exp.py
+COPY pr36567-overlay/python/sglang/srt/models/qwen4_ple_nvme.py /sgl-workspace/sglang/python/sglang/srt/models/qwen4_ple_nvme.py
+COPY pr36567-overlay/rust/Cargo.toml /sgl-workspace/sglang/rust/Cargo.toml
+COPY pr36567-overlay/rust/Cargo.lock /sgl-workspace/sglang/rust/Cargo.lock
+COPY pr36567-overlay/rust/sglang-storage /sgl-workspace/sglang/rust/sglang-storage
+# Keep runtime extension discovery reproducible; the loader builds _storage once
+# into its cache and reports an actionable io_uring/seccomp error if blocked.
+ENV SGLANG_RUST_BUILD_MODE=auto

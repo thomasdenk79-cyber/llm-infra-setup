@@ -54,3 +54,20 @@ Penny-PLE-Patches doppelt bzw. unqualifiziert kombinieren. Fuer den gewuenschten
 Sweet-Spot muss daher entweder der SSD-Stream-Hook gegen Turbo r24 portiert und
 qualifiziert werden oder Turbo voruebergehend mit gepinntem RAM-PLE auf einem Host
 mit ausreichend RAM laufen.
+
+## NVMe-PLE-Overlay PR #36567 (2026-10-03)
+
+Der Produktionszweig verwendet jetzt ein Overlay-Image `r24-pr36567` auf dem
+unveraenderten Turbo-r24-Image. Uebernommen sind nur die beiden relevanten PR-
+Commits: `04648a7015` (Rust `sglang-storage`/io_uring) und `9f101e39ff`
+(Qwen4-PLE-Snapshot-Reader, pinned staging, async H2D und CUDA-Graph-Hooks).
+Der dritte PR-Commit `8ef3b3fee3` (SM121-QSA-Kernel) bleibt bewusst draussen,
+weil Turbo seine SM120-QSA-Patches behalten muss.
+
+Der Reader erwartet den Original-Modell-Snapshot mit den referenzierten
+`model-plefp8-*.safetensors`-Shards. Deshalb zeigt `SGLANG_QWEN4_PLE_NVME_PATH`
+auf `/models/Qwen3.8-Flash-Next-NVFP4`; das Penny-Overlay mit `layer-0.bin` wird
+nicht als PR-Snapshot ausgegeben. Gelesen wird TP1 mit `io_uring`, `O_DIRECT`
+und begrenztem pinned staging; die Tabelle wird nicht in Host-RAM geladen.
+Der Container nutzt ein versioniertes Profil `config/turbo/seccomp-io-uring.json`
+mit nur den drei benoetigten io_uring-Syscalls zusaetzlich zum Podman-Standard.
