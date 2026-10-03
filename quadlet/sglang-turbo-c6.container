@@ -1,0 +1,44 @@
+# GENERIERT von scripts/51-install-sglang-turbo.sh - bitte dort aendern.
+[Unit]
+Description=SGLang SM120 Turbo C6 production runtime (separate Penny fallback)
+After=network-online.target
+Wants=llm-inference-network.service
+
+[Container]
+Image=localhost/sglang-qwen38fn-sm120-turbo:r24
+ContainerName=sglang-turbo-c6
+Network=llm-inference.network
+PublishPort=127.0.0.1:8002:8001
+AddDevice=nvidia.com/gpu=all
+PodmanArgs=--ipc=host --security-opt=seccomp=unconfined
+Volume=/srv/llm/models:/models:ro
+Volume=/srv/llm/cache/sglang-turbo:/cache:U,Z
+Volume=/srv/llm/ple-native/Qwen3.8-Flash-Next-PLE-NVME:/ple-table:ro,Z
+Volume=/home/z000g9hu/work/llm-infra-setup/config/turbo/serve-qwen38-flash-next-c6.sh:/opt/turbo/serve-c6.sh:ro,Z
+Environment=TARGET_MODEL=/models/Qwen3.8-Flash-Next-NVFP4
+Environment=PLE_DIR=/ple-table
+Environment=SGLANG_PORT=8001
+Environment=SGLANG_SM120_ONLINE_MXFP8=true
+Environment=SGLANG_MM_PREPROCESS_DEVICE=cpu
+Environment=MAX_RUNNING_REQUESTS=6
+Environment=MAX_MAMBA_CACHE_SIZE=27
+Environment=MAX_TOTAL_TOKENS=1048576
+Environment=HICACHE_SIZE_GB=8
+Environment=MEM_FRACTION_STATIC=0.98
+Environment=HF_HOME=/cache/huggingface
+HealthCmd=python3 -c "import sys,urllib.request;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8001/health',timeout=8).status==200 else 1)"
+HealthInterval=30s
+HealthTimeout=15s
+HealthRetries=4
+HealthStartPeriod=2400s
+Exec=/opt/turbo/serve-c6.sh
+
+[Service]
+Restart=on-failure
+RestartSec=30
+KillMode=mixed
+TimeoutStartSec=3600
+TimeoutStopSec=180
+
+[Install]
+WantedBy=default.target

@@ -19,6 +19,7 @@ have git || { log 'FEHLT: git'; exit 1; }
 have podman || { log 'FEHLT: podman'; exit 1; }
 [[ -d "$LLM_MODELS_DIR/$TURBO_MODEL_DIR" ]] || { log "Modell fehlt: $LLM_MODELS_DIR/$TURBO_MODEL_DIR"; exit 1; }
 [[ -f "$LLM_PLE_DIR/model.safetensors.index.json" ]] || { log "NVMe-PLE-Overlay fehlt: $LLM_PLE_DIR (make ple-nvme)"; exit 1; }
+install -d -m 0755 "$LLM_CACHE_DIR/sglang-turbo"
 
 if [[ ! -d "$TURBO_SOURCE_DIR/.git" ]]; then
   install -d -m 0755 "$(dirname "$TURBO_SOURCE_DIR")"
@@ -43,7 +44,6 @@ cat > "$root/quadlet/sglang-turbo-c6.container" <<UNIT
 Description=SGLang SM120 Turbo C6 production runtime (separate Penny fallback)
 After=network-online.target
 Wants=llm-inference-network.service
-TimeoutStartSec=3600
 
 [Container]
 Image=$TURBO_IMAGE
@@ -78,6 +78,7 @@ Exec=/opt/turbo/serve-c6.sh
 Restart=on-failure
 RestartSec=30
 KillMode=mixed
+TimeoutStartSec=3600
 TimeoutStopSec=180
 
 [Install]

@@ -37,3 +37,20 @@ Es werden keine Benchmarks oder Profilvergleiche durch diesen Installationspfad
 ausgeführt. Für den Smoke-Test sind sechs kurze parallele Requests zulässig;
 bei CUDA-OOM, Swap-Nutzung oder fehlendem Health-Status bleibt Pennyroyal der
 Rückfall.
+
+## Smoke-Ergebnis 2026-10-03
+
+Der Turbo-Start hat Modell und Laufzeitparameter korrekt erkannt (TP1, C6, 27
+Mamba-Slots, Online-MXFP8, FP8-KV, NEXTN/MTP, 8 GiB HiCache). Der Start stoppt
+jedoch beim NVMe-PLE: Turbo r24s `--ple-offload-backend file` verweigert die
+RTX PRO 6000, weil diese GPU keine pageable Host-Table-Zugriffe ueber Unified
+Memory unterstuetzt. Der Fehler ist somit eine dokumentierte Runtime-Grenze,
+kein CUDA-OOM. Das Service bleibt gestoppt, damit kein Restart-Loop entsteht.
+
+Die vorhandene Pennyroyal-NVMe-Implementierung ist ein separater, versions- und
+Hash-gepruefter SSD-Stream-Hook. Sie kann nicht ohne weitere Portierung in Turbo
+r24 geladen werden; ein blindes Deaktivieren der Hash-Pruefung wuerde Turbo- und
+Penny-PLE-Patches doppelt bzw. unqualifiziert kombinieren. Fuer den gewuenschten
+Sweet-Spot muss daher entweder der SSD-Stream-Hook gegen Turbo r24 portiert und
+qualifiziert werden oder Turbo voruebergehend mit gepinntem RAM-PLE auf einem Host
+mit ausreichend RAM laufen.

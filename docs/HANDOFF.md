@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T14:42:05+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T15:03:02+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -405,3 +405,19 @@ Live-Anwendung oder Smoke-Daten in diesem Stand.
 ## Notiz 2026-10-03T14:42:05+02:00
 
 Separater Turbo-C6-Branch vorbereitet: r24, eigenes Image/Quadlet, C6 mit 27 Mamba-Slots und NVMe-PLE; Pennyroyal bleibt Fallback
+
+
+## Notiz 2026-10-03T15:00:00+02:00
+
+Turbo-C6-Image r24 wurde separat gebaut und auf Port 8002 gestartet. Die
+Konfiguration wurde bis zur Modellinitialisierung korrekt erkannt (C6, 27
+Mamba, Online-MXFP8, FP8-KV, NEXTN/MTP, 8 GiB HiCache). Der Smoke-Start scheitert
+gezielt an der Turbo-Datei-PLE-Pruefung: RTX PRO 6000 ist kein Unified-Memory-
+Geraet, daher verweigert r24 `--ple-offload-backend file`. Dienst bleibt aus;
+Pennyroyal bleibt Fallback. Kein OOM. Ein Port des Pennyroyal-SSD-Stream-Hooks
+gegen die Turbo-Revision ist offen und darf nicht durch Hash-Pruefung-Bypass
+unqualifiziert aktiviert werden.
+
+## Notiz 2026-10-03T15:03:02+02:00
+
+Turbo r24 separat gebaut; Smoke zeigte harte Inkompatibilitaet von Datei-PLE auf RTX PRO 6000; Dienst gestoppt, Pennyroyal Fallback

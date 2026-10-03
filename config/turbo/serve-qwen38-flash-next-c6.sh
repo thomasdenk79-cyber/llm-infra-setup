@@ -43,6 +43,7 @@ args=(
   --tp 1 --dtype bfloat16 --quantization modelopt_fp4
   --kv-cache-dtype fp8_e4m3
   --context-length "$CONTEXT_LENGTH"
+  --max-total-tokens 1048576
   --mem-fraction-static "$MEM_FRACTION_STATIC"
   --page-size 64 --chunked-prefill-size 4096
   --max-running-requests "$MAX_RUNNING_REQUESTS"
