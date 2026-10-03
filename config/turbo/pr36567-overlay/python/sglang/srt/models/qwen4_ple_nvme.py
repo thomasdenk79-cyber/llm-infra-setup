@@ -579,6 +579,8 @@ class NVMePLEEmbedding(nn.Module):
         out: torch.Tensor | None = None,
         stream: torch.cuda.Stream | None = None,
     ) -> torch.Tensor:
+        if torch.cuda.is_available() and torch.cuda.is_current_stream_capturing():
+            return _capture_finish_gather(self, pending, device, out=out, stream=stream)
         rows = pending.future.result()
         expected_shape = (*pending.input_shape, self.embedding_dim)
         output = (

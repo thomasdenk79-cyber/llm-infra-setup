@@ -18,7 +18,7 @@ MAX_MAMBA_CACHE_SIZE="${MAX_MAMBA_CACHE_SIZE:-27}"
 export SGLANG_SM120_ONLINE_MXFP8="${SGLANG_SM120_ONLINE_MXFP8:-true}"
 export SGLANG_MM_PREPROCESS_DEVICE="${SGLANG_MM_PREPROCESS_DEVICE:-cpu}"
 export SGLANG_QWEN4_PLE_NVME_PATH="${SGLANG_QWEN4_PLE_NVME_PATH:-$MODEL_PATH}"
-export SGLANG_QWEN4_PLE_NVME_BACKEND="${SGLANG_QWEN4_PLE_NVME_BACKEND:-io_uring}"
+export SGLANG_QWEN4_PLE_NVME_BACKEND="${SGLANG_QWEN4_PLE_NVME_BACKEND:-mmap}"
 export SGLANG_RUST_BUILD_MODE="${SGLANG_RUST_BUILD_MODE:-auto}"
 export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
 export SAFETENSORS_FAST_GPU=1
@@ -53,9 +53,6 @@ args=(
   --enable-hierarchical-cache --hicache-size "$HICACHE_SIZE_GB"
   --hicache-write-policy write_through
   --enable-metrics --enable-cache-report --enable-request-time-stats-logging
-  # PLE io_uring reads are asynchronous; CUDA graph capture must not touch the
-  # stream until the capture-safe SSD path is fixed.
-  --disable-cuda-graph
   --sleep-on-idle
 )
 
