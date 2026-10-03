@@ -2,6 +2,17 @@
 
 ## Unveroeffentlicht (Review- und Ausbauphase, 2026-10-02)
 
+Neu (nur Doku, keine Live-Aenderung):
+
+* `docs/ple-graph-analysis.md` buert die Ursachenanalyse der Varianten A-D:
+  unbedingter `wait_stream`-Join auf `_prefetch_stream` als Grund des
+  `cudaErrorStreamCaptureIsolation`, Breakable-Pflicht fuer den SSD-PLE-Pfad,
+  Geschwindigkeitsprognose (B vor D, C als Referenz), ausserdem der Nachweis
+  aus dem Pennyroyal-Bild, dass dessen `ssd_stream`-Plugin-Hook
+  (Erfassungserkennung, Ereignissynchronisation, Slot-Staging) graph-sicherer
+  ist als der eigene Turbo-Lader. Bildinhalt per `podman cp` geprueft, der
+  Container wurde nie gestartet.
+
 Behoben (Zustand des Rechners war betroffen):
 
 * PLE-Speicher fehlte nach einem Neustart: der `nofail`-Eintrag in `/etc/fstab`

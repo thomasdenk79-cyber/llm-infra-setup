@@ -42,6 +42,11 @@ Stand: 2026-10-02, Review- und Ausbauphase
   Hauptgrenze), siehe `docs/performance.md` und ADR 0012.
 * `versions.lock` enthaelt nur noch gepinnte Referenzen; der beobachtete Hoststand
   steht in `state/host-facts.txt`.
+* Ursachenanalyse der vier Turbo/PLE-Varianten abgeschlossen und dokumentiert
+  (`docs/ple-graph-analysis.md`): Fremdstream-Join als Capture-Abbruch,
+  Breakable-Pflicht fuer SSD-PLE, Geschwindigkeitsprognose (B vor D, C als
+  Referenz), Pennyroyal-Plugin-Hook als graph-sicherster Pfad bestaetigt
+  (Bildinhalt per `podman cp` geprueft, Container nie gestartet).
 
 ## Laufender Zustand (geprueft 2026-10-02)
 

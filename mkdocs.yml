@@ -46,6 +46,7 @@ nav:
       - Schreibrate-Grenze: adr/0012-grenze-der-schreibrate-liegt-nicht-an-thunderbolt.md
       - Exklusive GPU: adr/0013-grundregel-exklusive-grafikkarte.md
   - Varianten:
+      - Ursachenanalyse: ple-graph-analysis.md
       - Testauftrag: variant-test-prompt.md
   - English:
       - Overview: en/index.md
