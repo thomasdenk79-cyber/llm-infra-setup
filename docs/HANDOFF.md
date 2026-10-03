@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T19:47:22+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T19:52:28+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -546,3 +546,7 @@ OpenCode auf LiteLLM 4000 mit aktuellem Turbo-Modell konfiguriert; vorhandene Da
 ## Notiz 2026-10-03T19:47:22+02:00
 
 Zu niedriger Turbo-Durchsatz diagnostiziert: CUDA-Graphen wegen NVMe-Capture-Transfer aus; Capture-Stub im Reader ergaenzt
+
+## Notiz 2026-10-03T19:52:28+02:00
+
+Turbo-Unit vor kontrolliertem Neustart gesichert
