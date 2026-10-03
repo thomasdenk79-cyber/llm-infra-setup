@@ -72,6 +72,22 @@ und begrenztem pinned staging; die Tabelle wird nicht in Host-RAM geladen.
 Der Container nutzt ein versioniertes Profil `config/turbo/seccomp-io-uring.json`
 mit nur den drei benoetigten io_uring-Syscalls zusaetzlich zum Podman-Standard.
 
+## Smoke-Ergebnis nach GPU-Recovery 2026-10-03
+
+Nach dem Neustart wurde die RTX PRO 6000 wieder erkannt und die CDI-Datei neu
+erzeugt. Der Turbo-Dienst laeuft isoliert auf Port 8002; Pennyroyal bleibt als
+Fallback-Unit vorhanden, ist waehrend des exklusiven Turbo-Betriebs gestoppt.
+Der Start bestaetigt `Qwen4 PLE NVMe table: 47.68 GiB across 10 files`
+(`320001536` Zeilen), und `/health` antwortet mit HTTP 200. Ein kurzer
+OpenAI-kompatibler Chat-Request war erfolgreich.
+
+Fuer den Datei-Reader ist `RUSTUP_TOOLCHAIN=stable` mit `RUSTUP_OFFLINE=1`
+gesetzt; die `io-uring`-Extension wurde einmalig im Build-Container mit
+Host-Netz gebaut und im persistenten Turbo-Cache abgelegt. CUDA-Graphen sind
+fuer den SSD-Pfad deaktiviert, weil die Graph-Capture-Phase den CPU-seitigen
+Zeilenabruf nicht unterstuetzt. Dadurch ist der Dienst stabil, waehrend die
+CUDA-Graph-Optimierung ein separater spaeterer Messarm bleibt.
+
 ### Bewusste Konfliktauflösung
 
 PR #36567 ließ sich nicht als Ganzes auf Turbo anwenden, weil Turbo r24 bereits

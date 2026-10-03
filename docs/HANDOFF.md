@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T19:04:30+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T19:17:24+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -490,6 +490,23 @@ neue Port-8002-Unit anwenden.
 
 GPU/PCIe-Ausfall und CDI-Recovery fuer den naechsten Agenten dokumentiert
 
+## Notiz 2026-10-03T19:16:00+02:00 – Turbo-SSD-Stream laeuft
+
+Nach dem Neustart wurde die RTX PRO 6000 erkannt, CDI neu erzeugt und der
+Podman-GPU-Smoke bestanden. Der Turbo-r24-PR36567-Dienst laeuft jetzt gesund
+auf Port 8002 und ist alleiniger GPU-Nutzer; Pennyroyal ist als Fallback
+gestoppt. Der Startlog bestaetigt den NVMe-PLE-Reader mit 47,68 GiB in 10
+Dateien und 320.001.536 Zeilen. `/health` liefert HTTP 200, ein kurzer
+Chat-Request war erfolgreich.
+
+Fuer den isolierten Dienst wurde die `io-uring`-Rust-Extension einmalig mit
+Host-Netz gebaut und im persistenten Cache abgelegt. `RUSTUP_TOOLCHAIN=stable`
+und `RUSTUP_OFFLINE=1` verhindern erneute Netz- oder Toolchain-Abhaengigkeit.
+CUDA-Graphen sind fuer diesen SSD-Pfad deaktiviert, da Graph-Capture den
+CPU-seitigen NVMe-Zeilenabruf nicht unterstuetzt. Der naechste sinnvolle Schritt
+ist ein Benchmark gegen Pennyroyal nach kontrolliertem Umschalten; dafuer muss
+Turbo zuerst gestoppt und Pennyroyal exklusiv gestartet werden.
+
 ## Notiz 2026-10-03T18:23:17+02:00
 
 GPU nach Neustart wieder da, CDI neu erzeugt und Podman-GPU-Smoke bestanden
@@ -513,3 +530,7 @@ NVMe-PLE-Overlay bis CUDA-Graph-Warmup validiert; TP1-API-Vertragsmethode ergaen
 ## Notiz 2026-10-03T19:04:30+02:00
 
 Turbo-NVMe-Reader erreicht CUDA-Graph-Capture; SSD-Pfad deaktiviert Graphen gezielt fuer stabile TP1-Ausfuehrung
+
+## Notiz 2026-10-03T19:17:24+02:00
+
+Turbo-SSD-Stream nach GPU-Recovery gesund; Doku, Rust-Cache und exklusiver GPU-Betrieb gesichert
