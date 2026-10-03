@@ -90,8 +90,12 @@ Fuer die Skalierungsmessung gibt es das Profil `c16`: 16 aufgenommene Anfragen, 
 4. Eigenes Seccomp-Profil statt `unconfined` fuer den Inferenz-Container.
 5. Komodo und Wartungstunnel erst mit echten Zielangaben aktivieren
    (`make komodo`, `make autossh`).
-6. Virtueller Gateway-Schluessel pro Agent + Test (Auftragstext Abschnitt 22/40-8).
-7. spaeter: zweites Modell, Azure-Fallback, KVM - siehe `AGENTS.md`.
+ 6. Virtueller Gateway-Schluessel pro Agent + Test (Auftragstext Abschnitt 22/40-8).
+ 7. spaeter: zweites Modell, Azure-Fallback, KVM - siehe `AGENTS.md`.
+ 8. Turbo-Varianten A-D sind vorbereitet, aber **keine einzige ist getestet**
+    (kein Build, kein Start, kein Benchmark). Auftrag und Ablauf:
+    `docs/variant-test-prompt.md` und `docs/variant-comparison.md`.
+
 
 ## 5. Wo was liegt
 
@@ -570,3 +574,41 @@ CUDA-Capture-Guard auf native und breakable graph detection erweitert
 ## Notiz 2026-10-03T20:54:45+02:00
 
 Turbo nach wiederholtem Capture-Fehler stabilisiert und Unit auf mmap korrigiert
+
+## 7. Turbo/PLE-Varianten (Stand 2026-10-03, diese Sitzung)
+
+Ursache des CUDA-Graph-Capture-Absturzes und der zu geringen Schreibrate ist
+geklaert und dokumentiert (Log- und Codebelege in den Doku-Seiten):
+
+* Capture-Abbruch: `qwen4_exp.py:1336` joined den Fremdstream
+  `_prefetch_stream` unbedingt in das native Capture, waehrend dort
+  Warmlauf-Kopien als nicht erfasste Arbeit anstanden
+  (`cudaErrorStreamCaptureIsolation`, Log 20:38/20:50).
+* Guard-Defekt: `_capture_active()` pruefte `is_in_breakable_cuda_graph()`,
+  das in Capture *und* Replay gilt - im Breakable-Replay waere der echte
+  PLE-Lauf zum Null-Stub erstarrt. Mit dem `full`-Backend enthaelt das Graph
+  nur den Null-Stub; korrekte PLE-Graphen liefert nur
+  `--cuda-graph-backend-decode=breakable`.
+* Langsamkeit (31 tok/s C1): `mean_read_ms=199,9` pro Gather (~720 Zeilen):
+  QD1-Sequenzlesen, ein IO-Worker, blockierendes `future.result()`,
+  Einzel-Staging-Puffer mit Event-Stall; io_uring-Seitencache Default 0.
+
+Vorbereitete, **getrennt startbare** Varianten (je eigener Branch, Worktree,
+Bild-Tag, Port; keine davon getestet, kein Bild gebaut, nichts gestartet):
+
+| Variante | Branch | Worktree | Port | Kern |
+|---|---|---|---|---|
+| A | `turbo-upstream-ple-graph` | `~/work/llm-infra-setup-turbo-upstream` | 8003 | graph-sichere Guards + breakable Decode-Graphen |
+| B | `variant-b-mmap-pagecache` | `~/work/llm-infra-setup-variant-b` | 8004 | wie A + mmap/Page-Cache + begrenzter LRU + Sync-Modus |
+| C | `pennyroyal-plugin-variant` | `~/work/llm-infra-setup-pennyroyal` | 8001 | offizielles Pennyroyal-`ssd_stream`-Plugin (Bild), nur Konfiguration |
+| D | `variant-d-staging-double-buffer` | `~/work/llm-infra-setup-variant-d` | 8005 | wie B + Double-Buffer-Pinned-Staging |
+
+Empfehlung: **A zuerst** (beweist Capture-Korrektur), dann **B**
+(voraussichtlich schnellste Turbo-Variante), dann **D**; **C** als
+Referenz. Der complete Testauftrag (Build, Start, C1/C6-Messung mit
+TTFT/steady/aggregat, Rueckbau, Checkpoints) liegt in
+`docs/variant-test-prompt.md`; die Vergleichstabelle in
+`docs/variant-comparison.md` (je Variantenzweig committet). Der
+Produktionsdienst `sglang-turbo-c6` (Port 8002, `--disable-cuda-graph`,
+PLE mmap) laeuft unveraendert weiter; Pennyroyal bleibt Fallback.
+
