@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T20:30:35+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T20:40:39+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -562,3 +562,7 @@ Turbo stabil mit SSD-PLE-Fallback und Benchmark 64.7 tok/s
 ## Notiz 2026-10-03T20:30:35+02:00
 
 PLE auf mmap/Page-Cache und expliziten CUDA-Capture-Guard umgestellt
+
+## Notiz 2026-10-03T20:40:39+02:00
+
+CUDA-Capture-Guard auf native und breakable graph detection erweitert
