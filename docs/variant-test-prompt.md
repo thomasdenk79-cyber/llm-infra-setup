@@ -46,16 +46,25 @@ Reihenfolge und Erwartung (Details in docs/variant-comparison.md):
    keine "uncaptured work"-Meldung. Erwartung: deutlich ueber 31 tok/s C1;
    io_uring-Latenz (~200 ms/Gather) bleibt, Ueberlappung muss greifen.
 2) B 'variant-b-mmap-pagecache' (Port 8004, Tag ...variant-b). wie A, aber
-   mmap/Page-Cache + begrenzter LRU (Unit: 512 MiB) + Vorladen mit
-   ./scripts/ple-preload.sh vor dem Start. Erwartung: hoechste Rate der
-   Turbo-Reihe, wenn Cache traegt (mean_read_ms << 200).
+   mmap/Page-Cache + begrenzter LRU (Unit: 512 MiB). Kein Vorladen:
+   ./scripts/ple-preload.sh waermt nur das Pennyroyal-native Artefakt
+   (PENNY_PLE_NVME_MODEL, layer-0.bin/layer-*.safetensors) und ist kein
+   Turbo-Safetensors-Preloader. Erwartung: moeglicher Cache-Gewinn, nur
+   messbar an mean_read_ms und getroffenem Page-Cache-Anteil.
 3) D 'variant-d-staging-double-buffer' (Port 8005, Tag ...variant-d). wie B
    plus Double-Buffer-Staging (kein Event-Stall pro Schritt). Nur sinnvoll
-   nach B; Vergleich B gegen D isoliert den Staging-Effekt.
+   nach B; Vergleich B gegen D isoliert den Staging-Effekt (moeglicher
+   Staging-Gewinn).
 4) C 'pennyroyal-plugin-variant' (Pennyroyal Port 8001, Bild-Plugin
-   ssd_stream, PENNY_PLE_BACKEND=nvme). Referenz des offiziellen Pfads;
-   bricht sie fehl (Plugin/Manifest fehlt im Bild), ist das ein Ergebnis,
-   kein Bug dieses Repos.
+   ssd_stream, PENNY_PLE_BACKEND=nvme). strukturell vielversprechend und
+   unabhaengige Referenz des offiziellen Pfads; bricht sie fehl
+   (Plugin/Manifest fehlt im Bild), ist das ein Ergebnis, kein Bug dieses
+   Repos.
+
+Eine Rangfolge der Rate ist vor den Messungen unbekannt; keine Erwartung an
+einen Variantenrang im Vorfeld berichten, nur die vier Einordnungen
+(C strukturell vielversprechend, B moeglicher Cache-Gewinn, D moeglicher
+Staging-Gewinn, A Capture-Referenz).
 
 Messprotokoll pro Variante (identisch halten):
 a) Build/Unit:
@@ -103,8 +112,10 @@ Abnahme:
 
 ## Kurzfassung fuer den Betreiber
 
-Starte mit **A** (beweist die Capture-Korrektur). Die voraussichtlich
-schnellste Turbo-Variante ist **B** (Page-Cache plus LRU), Feinschliff danach
-**D**; **C** ist die unabhaengige Referenz. Zielwerte laut
+Starte mit **A** (beweist die Capture-Korrektur, Capture-Referenz). Eine
+Rangfolge der Schreibrate ist **ohne Benchmark unbekannt**; die Einordnungen
+sind: **C** strukturell vielversprechend, **B** ein moeglicher Cache-Gewinn,
+**D** ein moeglicher Staging-Gewinn. Vor der Messung aller vier
+Konfigurationen gehoert keine Rangfolge in Berichte. Zielwerte laut
 `docs/performance.md`: C1 ~160-200 tok/s, C6 deutlich ueber 78 tok/s pro
 Anfrage.

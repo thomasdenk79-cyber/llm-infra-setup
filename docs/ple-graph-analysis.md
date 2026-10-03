@@ -94,12 +94,16 @@ Grundprobleme der Referenzmessung (Log `mean_read_ms=199,9` pro Gather bei
 `future.result()`, Einzel-Staging-Puffer mit Ereignis-Stall;
 io_uring-Seitencache Standard 0.
 
-| Variante | Erwartung | Begruendung |
+Eine Rangfolge der Schreibrate ist **ohne Benchmark unbekannt** - die vier
+Patches sind ungetestet und keine Messung liegt vor. Was sich strukturell
+begrinden laesst:
+
+| Variante | Einordnung | Begruendung |
 |---|---|---|
-| **B** (schnellste Turbo-Variante) | deutlich ueber A | mmap/Page-Cache + begrenzter Zeilen-LRU + Vorladen (`ple-preload.sh`) drueckt `mean_read_ms` weit unter 200 ms; Sync-Modus entfernt Thread-/Future-Overhead |
-| **D** | >= B | zusaetzliche Rotation zweier gepinnter staging-Puffer entfernt den Ereignis-Stall pro Schritt; gewinnt nur, wenn Staging (nicht IO) dominiert - isolierbar durch Direktvergleich B gegen D |
-| **A** | ueber 31 tok/s, unter B | beweist nur die Capture-Korrektheit; io_uring-Latenz (~200 ms) bleibt, Ueberlappung muss greifen |
-| **C** (Referenz, moeglicher Gesamtbestwert) | kann B/D uebertreffen | Bild-Plugin mit nativem Rust-io_uring-Lader, rotierenden staging-Slots und Vor-Capture-Hooks; keine eigene Python-Staging-Schleife |
+| **C** (strukturell vielversprechend) | offen | Bild-Plugin mit nativem Rust-io_uring-Lader, rotierenden staging-Slots und Vor-Capture-Hooks; keine eigene Python-Staging-Schleife |
+| **B** (moeglicher Cache-Gewinn) | offen | mmap/Page-Cache + begrenzter Zeilen-LRU koennen `mean_read_ms` unter 200 ms druecken, aber nur wenn der Seitenspeicher die Tabelle wirklich haelt; Sync-Modus entfernt Thread-/Future-Overhead, kostet dafuer Ueberlappung. Ein Vorlader fuer den Turbo-Pfad existiert nicht: `scripts/ple-preload.sh` waermt das Pennyroyal-native Artefakt (`PENNY_PLE_NVME_MODEL`, layer-0.bin/layer-*.safetensors), nicht die Turbo-Safetensors |
+| **D** (moeglicher Staging-Gewinn) | offen | Rotation zweier gepinnter staging-Puffer entfernt den Ereignis-Stall pro Schritt; gewinnt nur, wenn Staging (nicht IO) dominiert - isolierbar allein durch den Direktvergleich B gegen D nach Messung |
+| **A** (Capture-Referenz) | offen | beweist nur die Capture-Korrektheit; io_uring-Latenz (~200 ms) bleibt, Ueberlappung muss greifen |
 
 Zielwerte laut `docs/performance.md`: C1 ~160-200 tok/s, C6 klar ueber
 78 tok/s pro Anfrage. Pro Variante drei Messungen, Median, getrennt
@@ -154,8 +158,11 @@ BF16-Staging-Hotfix-Doku zeigt, dass dort frueher Kapazitaetsfehler auftraten
   Install-Skript 52 mit Graph-Strategie-Umschalter (breakable Decode).
 * **B** (`de6f24e`): auf A - Zeilen-LRU fuer `MMapRowReader`
   (`SGLANG_QWEN4_PLE_NVME_MMAP_CACHE_MB`), Sync-Vorholmodus
-  (`SGLANG_QWEN4_PLE_NVME_PREFETCH=sync`, kein Workerthread/Future),
-  Vorladen ueber `scripts/ple-preload.sh` vor dem Start; Install-Skript 53.
+  (`SGLANG_QWEN4_PLE_NVME_PREFETCH=sync`, kein Workerthread/Future);
+  Install-Skript 53. Kein Vorladen: `scripts/ple-preload.sh` waermt das
+  Pennyroyal-native Artefakt (`PENNY_PLE_NVME_MODEL`) und ist kein
+  Turbo-Safetensors-Preloader, das Warmen des Turbo-Pfads uebernimmt der
+  mmap-Lader selbst.
 * **D** (`3ccf3ae`): auf B - zwei rotierende gepinnte staging-Puffer mit
   Slot-Ereignissen; der CPU-Kopie eines Gather wartet nur noch auf das
   Ereignis des vor zwei Schritten benutzten Slots; Install-Skript 54.
@@ -170,8 +177,9 @@ BF16-Staging-Hotfix-Doku zeigt, dass dort frueher Kapazitaetsfehler auftraten
   (`io_uring_setup/enter/register`); sonst EPERM -> Rueckzug auf
   `SGLANG_QWEN4_PLE_NVME_BACKEND=mmap`.
 * **B:** Page-Cache kann ARC/Arbeitsspeicher verdaengen; LRU-Deckel (Unit:
-  512 MiB) einhalten, Vorladen nur vor dem Start. Sync-Modus kostet
-  Ueberlappung - bei schwachem Cache kann A/B mit async schneller sein.
+  512 MiB) einhalten. Sync-Modus kostet Ueberlappung - bei schwachem Cache
+  kann A/B mit async schneller sein. Ein Rate-Vorteil gegenueber A ist
+  ungemessen.
 * **D:** zweiter gepinnter Puffer erhoht fest reservierten Host-Speicher.
 * **Breakable allgemein:** Eager-Inseln kosten Erfassungsvorteile; bei
   Schlafmodus-Konflikt `NotImplementedError ... memory saver` ->
@@ -188,12 +196,16 @@ BF16-Staging-Hotfix-Doku zeigt, dass dort frueher Kapazitaetsfehler auftraten
 
 1. **A** - Beweisziel: Erfassung laeuft durch, `cuda graph: True`, keine
    "uncaptured work"-Meldung, Breakable-Decode aktiv.
-2. **B** - hoechste Turbo-Rate erwartet; `mean_read_ms << 200` im Startlog
-   nach `ple-preload.sh` verifizieren.
-3. **D** - Direktvergleich gegen B (gleiche Parameter); nur die
-   Staging-Aenderung entscheidet.
-4. **C** - unabhaengige Referenz des offiziellen Pfads; bricht sie mangels
-   Artefakt ab, ist das ein dokumentiertes Ergebnis.
+2. **B** - moeglicher Cache-Gewinn; `mean_read_ms` und der getroffene
+   Page-Cache-Anteil im Startlog protokollieren (ein Turbo-Vorlader fehlt;
+   `scripts/ple-preload.sh` erwischt nur das Pennyroyal-native Artefakt).
+3. **D** - moeglicher Staging-Gewinn; Direktvergleich gegen B (gleiche
+   Parameter), damit allein laesst sich der Staging-Effekt ablesen.
+4. **C** - strukturell vielversprechend und unabhaengige Referenz des
+   offiziellen Pfads; bricht sie mangels Artefakt ab, ist das ein
+   dokumentiertes Ergebnis.
+
+Erst nach diesen Messungen entsteht eine Rangfolge; vorher ist sie unbekannt.
 
 Immer: eine Variante, GPU exclusiv, drei Messungen pro Konfiguration
 (C1 und C6 getrennt), Rueckbau und Produktionsdienst danach zurueck,
