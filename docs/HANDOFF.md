@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T11:47:51+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T11:50:07+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -240,3 +240,29 @@ Performance-Sweep: Profil sweet abgeschlossen
 ## Notiz 2026-10-03T11:47:51+02:00
 
 Tuning-Guard toleriert API-Aussetzer waehrend Kaltstart; maxkv kann danach sicher angewendet werden
+
+## Notiz 2026-10-03T11:48:00+02:00
+
+Nach der Rueckkehr wurde der Zustand geprueft: Seit dem CUDA-OOM um 10:22
+liefen keine weiteren Benchmarks; der Sweep war beendet. Der OOM trat bei einem
+Long-Context-Test auf, nachdem die Runtime mit nur etwa 0,1 GiB freiem VRAM und
+12,35 GiB privaten CUDA-Graph-Pools gestartet war. Die Auswertung verwirft diesen
+Block. Pennyroyal wurde danach erneut ueber `apply-runtime-unit.sh` gestartet.
+
+Das Profil `maxkv` (2 Requests, 12 Mamba-Slots, Graph-Maximum 2, KV-Ziel 1.0M)
+konnte waehrend des Kaltstarts zunaechst nicht angewendet werden, weil
+`apply-tuning.sh` einen temporaeren Curl-Exit 56 unter `set -e -o pipefail`
+als Fehler behandelte. Dieser Guard ist in Commit `f948499` repariert. Nach
+`healthy` erneut ausfuehren:
+
+```bash
+./scripts/apply-tuning.sh --profil maxkv --ohnemessung
+```
+
+Danach lokale API nur fuer Architektur-/Planungsfragen nutzen, niemals waehrend
+vergleichbarer Benchmarks. Jeder neue Long-Context-Test muss vorab die tatsaechlich
+profilierte `sglang:max_total_num_tokens`-Grenze pruefen.
+
+## Notiz 2026-10-03T11:50:07+02:00
+
+Handoff fuer den anderen Agenten aktualisiert: OOM, Sweep-Stopp, maxkv-Guard und naechster Schritt
