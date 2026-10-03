@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T08:36:38+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T08:37:21+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -161,3 +161,7 @@ Performance-Review: CUDA-Graph-, Memory-Saver- und Sleep-Optionen tatsaechlich a
 ## Notiz 2026-10-03T08:36:38+02:00
 
 Kontextziel-Argument fuer Benchmarks ergaenzt; Fixes vor Runtime-Neustart gesichert
+
+## Notiz 2026-10-03T08:37:21+02:00
+
+Ergebnis der heissen Phase (Profil sweet)
