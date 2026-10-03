@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T10:00:21+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T10:03:59+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -218,3 +218,17 @@ Kernel-, Scheduler-, ZFS-ARC-, VM- und I/O-Testarme samt Ableitungsregeln dokume
 ## Notiz 2026-10-03T10:00:21+02:00
 
 Sweep startet aktives sweet-Profil ohne unnoetigen Neustart erneut
+
+## Notiz 2026-10-03T10:05:00+02:00
+
+Ein 470k-Token-OpenCode-Request hat den laufenden Messblock ungueltig gemacht
+und danach einen echten CUDA-OOM ausgeloest: nur 68 MiB frei, 12,35 GiB in
+privaten CUDA-Graph-Pools. Die Session wurde beendet und Pennyroyal ueber den
+kontrollierten Runtime-Pfad neu gestartet. Dieser Lauf wird verworfen; neue
+Benchmarks starten erst nach `healthy` mit leerem KV-/Graph-Zustand. Waerend
+des Sweeps keine lokale API-Architekturfragen und keine OpenCode-Sitzungen
+gegen dieselbe Runtime senden.
+
+## Notiz 2026-10-03T10:03:59+02:00
+
+470k-Token-Session als Messstoerung und CUDA-OOM mit Graph-Pool-Belegung dokumentiert
