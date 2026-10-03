@@ -1,0 +1,10 @@
+[Unit]
+Description=llm-infra GitOps Intervall (standardmaessig aus)
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=6h
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

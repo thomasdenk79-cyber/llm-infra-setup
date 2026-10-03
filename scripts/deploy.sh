@@ -1,19 +1,24 @@
 #!/usr/bin/env bash
+# Minimalpfad: nur die GPU-Runtime als rootless User-Unit starten.
+# Fuer den vollstaendigen Stack (Gateway, Portal, Beobachtung) make deploy-ready
+# bzw. ohne GPU make deploy-non-gpu verwenden.
 set -Eeuo pipefail
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 source "${root}/lib/common.sh"
-unit_src="${root}/quadlet/pennyroyal.container"
-[[ -f "${unit_src}" ]] || { log 'Generate quadlet first with scripts/50-install-pennyroyal.sh'; exit 1; }
-user_dir="${XDG_CONFIG_HOME:-${HOME}/.config}/containers/systemd"
-install -d -m 0755 "${user_dir}"
-network_src="${root}/quadlet/llm-inference.network"
-[[ -f "${network_src}" ]] || { log 'Missing llm-inference.network quadlet'; exit 1; }
-install -m 0644 "${network_src}" "${user_dir}/llm-inference.network"
-install -m 0644 "${unit_src}" "${user_dir}/pennyroyal.container"
-install -d -m 0755 "${user_dir}/default.target.wants"
-ln -sfn "../llm-inference.network" "${user_dir}/default.target.wants/llm-inference.network"
-ln -sfn "../pennyroyal.container" "${user_dir}/default.target.wants/pennyroyal.container"
-systemctl --user daemon-reload
-systemctl --user start llm-inference-network.service
-systemctl --user start pennyroyal.service
-log 'Pennyroyal deployed as a rootless user Quadlet service.'
+source "${root}/lib/units.sh"
+[[ -f "${root}/config/host.env" ]] && source "${root}/config/host.env"
+if [[ ! -f "${root}/quadlet/pennyroyal.container" ]]; then
+  log 'Runtime-Unit fehlt noch; wird jetzt erzeugt.'
+  run "${root}/scripts/50-install-pennyroyal.sh"
+fi
+install -d -m 0755 "${HOME}/.local/share/llm-infra"
+install_units llm-inference.network pennyroyal.container
+systemd_reload
+start_units llm-inference.network pennyroyal.container
+cat <<NEXT
+Pennyroyal-Unit ist installiert und aktiv.
+Kalter Start dauert etwa 15 Minuten. Fortschritt:
+  journalctl --user -u pennyroyal.service -f
+Wenn "ready to roll" im Log steht:
+  make healthcheck
+NEXT

@@ -1,0 +1,179 @@
+# Alarmregeln. Bewusst ruhig gestellt, solange der Kaltstart laeuft: der
+# Runtime benoetigt ~15 Minuten (Gewichte laden, CUDA-Graphen aufwaermen).
+groups:
+  - name: runtime
+    rules:
+      - alert: PennyroyalNichtErreichbar
+        expr: up{job="pennyroyal"} == 0
+        for: 20m
+        labels: { severity: critical }
+        annotations:
+          summary: "Inferenz-Runtime antwortet nicht auf /metrics"
+          description: >-
+            Kalter Start dauert ca. 15 Minuten. Naehert sich ein Neustart, ist
+            das normal. Sonst: ./scripts/doctor.sh und
+            journalctl --user -u pennyroyal.service -n 120
+
+      - alert: PennyroyalOhneFortschritt
+        expr: sum(sglang:num_running_reqs) > 0 and sum(rate(sglang:generation_tokens_total[5m])) == 0
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "Anfragen laufen, aber es werden keine Token erzeugt"
+          description: "Runtime haengt wahrscheinlich. ./scripts/apply-runtime-unit.sh --restart-only"
+
+  - name: resources
+    rules:
+      - alert: GPUWarmeGrenze
+        expr: max(nvidia_smi_temperature_gpu) > 88
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: "GPU wird sehr heiss" }
+
+      - alert: GPUDrosselt
+        expr: |
+          max(rate(nvidia_smi_clocks_event_reasons_counters_sw_power_cap_seconds[5m])) > 0.1
+           or max(rate(nvidia_smi_clocks_event_reasons_counters_hw_thermal_slowdown_seconds[5m])) > 0.05
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "GPU drosselt (Leistungsgrenze oder Waerme)"
+          description: "Drosselungspanel im GPU-Dashboard; Erklaerung in docs/performance.md"
+
+      - alert: PCIeAnbindungReduziert
+        expr: llm_pcie_link_width < llm_pcie_link_width_max / 2
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "GPU haengt deutlich schmaler als moeglich am PCIe"
+          description: "Bei Thunderbolt-eGPU Normalfall: Durchsatzdecke, nicht Modell- oder GPU-Schuld. Siehe docs/performance.md"
+
+  - name: storage
+    rules:
+      - alert: PleSpeicherFehlt
+        expr: llm_ple_mounted == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "PLE-Speicher ist nicht eingehaengt"
+          description: "Ohne /ple startet Pennyroyal nicht. ./scripts/47-setup-ple-storage.sh"
+
+      - alert: ModellDateienFehlen
+        expr: llm_model_shard_files < 150
+        for: 10m
+        labels: { severity: critical }
+        annotations:
+          summary: "Weniger Model-Shards gefunden als erwartet"
+          description: "./scripts/42-verify-model.sh"
+
+      - alert: FestplatteVolll
+        expr: (node_filesystem_avail_bytes{mountpoint=~"/srv|/"} / node_filesystem_size_bytes{mountpoint=~"/srv|/"}) < 0.10
+        for: 10m
+        labels: { severity: critical }
+        annotations: { summary: "Weniger als 10 % Platz auf {{ $labels.mountpoint }}" }
+
+      - alert: ZFSPoolNichtOnline
+        expr: llm_zfs_pool_health != 1
+        for: 2m
+        labels: { severity: critical }
+        annotations: { summary: "ZFS-Pool {{ $labels.pool }} ist nicht ONLINE" }
+
+      - alert: NVMeKritisch
+        expr: llm_smart_critical_warning > 0 or llm_smart_percentage_used > 90 or llm_smart_available_spare < 10
+        for: 15m
+        labels: { severity: critical }
+        annotations: { summary: "NVMe-SMART meldet Problem an {{ $labels.device }}" }
+
+  - name: self
+    rules:
+      - alert: KennzahlensammlungSteht
+        expr: time() - max(llm_infra_collect_timestamp_seconds) > 180
+        labels: { severity: warning }
+        annotations:
+          summary: "Host-Kennzahlen werden seit 3 Minuten nicht mehr aktualisiert"
+          description: "systemctl --user status llm-infra-collect-facts.timer"
+
+      - alert: BeobachtungZieltNicht
+        expr: up{job=~"node|gpu|loki"} == 0
+        for: 10m
+        labels: { severity: warning }
+        annotations: { summary: "Target {{ $labels.job }} wird nicht erreicht" }
+
+  - name: gateway
+    rules:
+      - alert: GatewayNichtErreichbar
+        expr: llm_unit_active{unit="litellm"} == 0
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "LiteLLM-Gateway laeuft nicht"
+          description: "systemctl --user status litellm.service --no-pager"
+
+      - alert: ChatOberflaecheFehlt
+        expr: llm_unit_active{unit="open-webui"} == 0
+        for: 10m
+        labels: { severity: warning }
+        annotations: { summary: "Open WebUI laeuft nicht" }
+
+      - alert: DatenbankFehlt
+        expr: llm_unit_active{unit="litellm-postgres"} == 0
+        for: 5m
+        labels: { severity: critical }
+        annotations: { summary: "PostgreSQL fuer den Gateway laeuft nicht" }
+
+  - name: arbeitsspeicher
+    rules:
+      - alert: RAMKnapp
+        expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.05
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "Weniger als 5 % Arbeitsspeicher frei"
+          description: "Modelladen oder Observability kann fehlschlagen. Druckpanel im Host-Dashboard ansehen."
+
+      - alert: SwapAktiv
+        expr: (node_memory_SwapTotal_bytes - node_memory_SwapFree_bytes) > 8e9
+        for: 15m
+        labels: { severity: warning }
+        annotations: { summary: "Mehr als 8 GiB Swap belegt", description: "Der Host hatte Speicherdruck; docs/performance.md#arbeitsspeicher-hicache" }
+
+      - alert: SpeicherdruckPSI
+        expr: rate(node_pressure_memory_stalled_seconds_total[5m]) > 0.05
+        for: 10m
+        labels: { severity: warning }
+        annotations: { summary: "Prozesse warten auf Arbeitsspeicher (PSI ueber 5 %)" }
+
+  - name: anfragequalitaet
+    rules:
+      - alert: VorlaufzeitZuHoch
+        expr: histogram_quantile(0.95, sum by (le) (rate(sglang:time_to_first_token_seconds_bucket[10m]))) > 10
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: "Vorlaufzeit (P95) ueber 10 Sekunden"
+          description: "Lange Prompts, kalter Cache oder Speicherdruck. Getrennt von der Schreibrate betrachten."
+
+      - alert: SchreibrateGering
+        expr: |
+          (sum(rate(sglang:generation_tokens_total[10m])) / clamp_min(sum(sglang:num_running_reqs), 1)) < 25
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: "Unter 25 Token/s pro Anfrage"
+          description: "PCIe-Anbindung, PLE-Speicher und Kuehlung pruefen: docs/performance.md"
+
+      - alert: VorhersageWirktNicht
+        expr: sglang:spec_accept_length < 1.2
+        for: 30m
+        labels: { severity: warning }
+        annotations:
+          summary: "Spekulative Ausfuehrung bringt nichts mehr"
+          description: "Bei einem einzigen Modellwechsel normal; sonst Bild- und Modellkombination pruefen."
+
+      - alert: KVSpeicherVolllaeuft
+        expr: 100 * sglang:kv_used_tokens / sglang:max_total_num_tokens > 95
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "KV-Cache zu ueber 95 % gefuellt"
+          description: "Neue Anfragen muessen warten; NIXL und Zulaufe im Blick behalten."

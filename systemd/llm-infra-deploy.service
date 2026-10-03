@@ -1,0 +1,9 @@
+[Unit]
+Description=llm-infra GitOps: neuen Stand aus Git holen und ausrollen
+# Bewusst kein WantedBy: dieser Dienst startet nicht von selbst.
+# Einschalten mit: make gitops-auto
+
+[Service]
+Type=oneshot
+Nice=10
+ExecStart=@CONFIG_ROOT@/scripts/gitops-deploy.sh

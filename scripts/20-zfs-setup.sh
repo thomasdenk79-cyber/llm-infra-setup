@@ -12,7 +12,7 @@ if [[ -z "${pool}" ]]; then
   if [[ -n "${srv_dataset}" ]]; then
     pool="${srv_dataset%%/*}"
   else
-    pools=( $(zpool list -H -o name) )
+    mapfile -t pools < <(zpool list -H -o name)
     ((${#pools[@]} == 1)) || { log 'Set ZFS_POOL explicitly when zero or multiple pools exist.'; exit 1; }
     pool="${pools[0]}"
   fi
@@ -70,7 +70,7 @@ sudo install -d -m 0755 -o "$(id -u)" -g "$(id -g)" /srv/llm/cache/pennyroyal /s
 # Rootless Podman maps UID 1000 inside the container to a subordinate host UID.
 # Keep the empty NVMe-PLE staging root writable without using :U, which would
 # recursively chown large trees and can create severe ZFS I/O pressure.
-sudo install -d -m 0777 /srv/llm/ple-nvme
+sudo install -d -m 0775 /srv/llm/ple-nvme
 # Convenience link for interactive users; data remains on the ZFS dataset.
 install -d -m 0755 "${HOME}/llm"
 ln -sfn /srv/llm/models "${HOME}/llm/models"

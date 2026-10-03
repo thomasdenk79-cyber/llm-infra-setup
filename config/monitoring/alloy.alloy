@@ -1,9 +1,55 @@
+// Container-Logsammlung fuer Loki.
+//
+// Der Podman-Socket wird ueber die Docker-kompatible API gelesen. Wichtige
+// Details, die in der ersten Version gefehlt haben:
+//   * discovery.docker liefert Meta-Labels wie __meta_docker_container_name
+//     (mit fuehrendem Schragschrich, z. B. "/pennyroyal"). Ohne Relabel landen
+//     alle Containers unter einem ununterscheidbaren Strom.
+//   * der Schragschrich wird hier entfernt, damit die Suche nach
+//     {container="pennyroyal"} funktioniert.
+//
+// Der Socket wird im Quadlet quadlet/alloy.container eingebunden
+// (%t/podman/podman.sock). Mehr dazu in docs/monitoring.md.
+
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+}
+
+discovery.relabel "containers" {
+  targets = discovery.docker.containers.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_image"]
+    target_label  = "image"
+  }
+  rule {
+    target_label = "job"
+    replacement  = "containerlogs"
+  }
+}
+
 loki.source.docker "containers" {
   host       = "unix:///var/run/docker.sock"
-  targets    = [{__address__ = "localhost"}]
-  labels     = {job = "containerlogs"}
+  targets    = discovery.relabel.containers.output
+  forward_to = [loki.process.parse.receiver]
+  labels     = { stack = "llm-infra" }
+}
+
+// Zeitstempel der Runtime uebernehmen, damit die Reihenfolge in der Suche stimmt.
+loki.process "parse" {
+  stage.timestamp {
+    source            = "time"
+    format            = "RFC3339"
+    action_on_failure = "fudge"
+  }
   forward_to = [loki.write.local.receiver]
 }
+
 loki.write "local" {
   endpoint {
     url = "http://loki:3100/loki/api/v1/push"

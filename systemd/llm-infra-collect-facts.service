@@ -1,0 +1,11 @@
+[Unit]
+Description=llm-infra Host-Kennzahlen alle 30s sammeln
+Wants=llm-infra-collect-facts.service
+
+[Service]
+Type=oneshot
+Nice=10
+IOSchedulingClass=idle
+# Smartctl braucht sudo; ohne passenden sudoers-Eintrag liefert das Skript
+# trotzdem alle anderen Werte und setzt llm_smart_available=0.
+ExecStart=@CONFIG_ROOT@/scripts/collect-host-facts.sh

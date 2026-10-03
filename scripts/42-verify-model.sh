@@ -51,7 +51,6 @@ import sys
 path = pathlib.Path(sys.argv[1])
 lines = path.read_text().splitlines()
 updates = {
-    "model": "downloaded",
     "model_id": os.environ["MODEL_ID_VALUE"],
     "model_revision": os.environ["MODEL_REVISION_VALUE"],
 }

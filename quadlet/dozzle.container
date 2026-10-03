@@ -5,11 +5,13 @@ After=llm-observability-network.service
 [Container]
 Image=docker.io/amir20/dozzle:v8.14.7
 Network=llm-observability.network
+NetworkAlias=dozzle
 PublishPort=127.0.0.1:8080:8080
 Volume=%t/podman/podman.sock:/var/run/docker.sock:ro
 
 [Service]
 Restart=on-failure
+RestartSec=15
 
 [Install]
 WantedBy=default.target

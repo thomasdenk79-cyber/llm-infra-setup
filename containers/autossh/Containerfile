@@ -1,0 +1,6 @@
+# Kleines, lokal gebautes Image fuer den optionalen Wartungstunnel.
+# Der Tunnel installiert zur Laufzeit nichts mehr nach (kein apk add im Takt),
+# damit er auch ohne Internetverbindung neu starten kann.
+FROM docker.io/library/alpine:3.20
+RUN apk add --no-cache autossh openssh-client
+ENTRYPOINT ["/usr/bin/autossh"]

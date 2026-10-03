@@ -1,31 +1,141 @@
 #!/usr/bin/env bash
+# Benchmark mit trenntlicher Messung von Vorlaufzeit und Schreibgeschwindigkeit.
+#
+#   ./scripts/benchmark.sh                 schneller Test (quick)
+#   ./scripts/benchmark.sh normal          mittlerer Prompt
+#   ./scripts/benchmark.sh long            langer Prompt
+#   ./scripts/benchmark.sh quick 4         4 gleichzeitige Anfragen
+#   MIN_TOKENS=150 ./scripts/benchmark.sh  # Bruch bei zu geringer Geschwindigkeit
+#
+# Warum zwei Zahlen?
+#   time_to_first_token      = Wartezeit, bis das erste Wort erscheint (Vorlauf)
+#   steady_tokens_per_second = Schreibgeschwindigkeit danach
+# Der alte "tokens_per_second"-Wert enthielt beides gemischt und war deshalb zu
+# klein. Er wird weiter mitgeführt, damit aeltere Messreihen vergleichbar bleiben.
+#
+# Ergebnis: state/benchmarks/<zeitstempel>.json und .md plus Verlauf in
+#           state/benchmarks/history.csv
 set -Eeuo pipefail
-root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"; mkdir -p "$root/state/benchmarks"
-profile="${1:-quick}"; concurrency="${2:-1}"; port="${PENNYROYAL_PORT:-8001}"; url="http://127.0.0.1:${port}/v1/chat/completions"
-case "$profile" in quick) prompt='Explain ZFS in one sentence.'; max=256;; normal) prompt="$(printf 'Summarize this infrastructure design. %.0s' {1..500})"; max=1024;; long) prompt="$(printf 'Provide a detailed technical analysis. %.0s' {1..5000})"; max=1024;; *) echo 'usage: benchmark.sh [quick|normal|long] [concurrency]' >&2; exit 2;; esac
-model="${BENCHMARK_MODEL:-pennyroyal}"; ts="$(date -u +%Y%m%dT%H%M%SZ)"; json="$root/state/benchmarks/$ts.json"; md="$root/state/benchmarks/$ts.md"; start=$(date +%s%3N)
-payload=$(python3 -c 'import json,sys; print(json.dumps({"model":sys.argv[1],"messages":[{"role":"user","content":sys.argv[2]}],"max_tokens":int(sys.argv[3]),"stream":False}))' "$model" "$prompt" "$max")
-errs=0; total=0; response="{}"
-for i in $(seq 1 "$concurrency"); do out=$(curl --fail --silent --show-error --max-time 300 -H 'Content-Type: application/json' -d "$payload" "$url" 2>&1) || { errs=$((errs+1)); continue; }; total=$((total+1)); [[ "$i" == 1 ]] && response="$out"; done
-end=$(date +%s%3N); elapsed=$((end-start)); python3 - "$json" "$profile" "$concurrency" "$elapsed" "$total" "$errs" "$response" <<'PY'
-import json,sys,datetime
-p,profile,conc,ms,ok,errors,response=sys.argv[1:]; d={"timestamp":datetime.datetime.now(datetime.timezone.utc).isoformat(),"profile":profile,"concurrency":int(conc),"elapsed_ms":int(ms),"successful_requests":int(ok),"errors":int(errors)}
-try:
- x=json.loads(response); u=x.get('usage',{}); d.update({"prompt_tokens":u.get('prompt_tokens'),"completion_tokens":u.get('completion_tokens'),"total_tokens":u.get('total_tokens')})
- if u.get('completion_tokens') and int(ms) > 0:
-  d["tokens_per_second"] = round(u["completion_tokens"] / (int(ms) / 1000), 2)
-except Exception: pass
-open(p,'w').write(json.dumps(d,indent=2)+"\n")
+root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+source "${root}/lib/common.sh"
+[[ -f "${root}/config/host.env" ]] && source "${root}/config/host.env"
+: "${PENNYROYAL_PORT:=8001}"
+: "${BENCHMARK_MODEL:=pennyroyal}"
+: "${MIN_TOKENS:=0}"
+profile="${1:-quick}"
+concurrency="${2:-1}"
+mkdir -p "${root}/state/benchmarks"
+base_url="http://127.0.0.1:${PENNYROYAL_PORT}/v1"
+
+case "${profile}" in
+  quick)  prompt='Erkläre ZFS in einem Satz.'; max_tokens=256; repeat=1 ;;
+  normal) prompt='Fasse die Architektur eines lokalen LLM-Stacks mit Podman, ZFS und LiteLLM zusammen.'; max_tokens=1024; repeat=60 ;;
+  long)   prompt='Analysiere Gruende fuer Durchsatzgrenzen bei grossen Sprachmodellen.'; max_tokens=1500; repeat=400 ;;
+  *) echo 'usage: benchmark.sh [quick|normal|long] [gleichzeitig]' >&2; exit 2 ;;
+esac
+
+running="$(curl -fsS --max-time 5 "http://127.0.0.1:${PENNYROYAL_PORT}/metrics" 2>/dev/null \
+  | awk '/^sglang:num_running_reqs\{/ {print $2; found=1} END{if(!found) print "0"}')"
+if [[ "${running%.*}" != 0 ]]; then
+  printf 'ACHTUNG: es laufen bereits %s Anfragen; Messung wird ungenau.\n' "${running}" >&2
+  printf '         Warten oder mit BENCHMARK_ALLOW_BUSY=1 trotzdem messen.\n' >&2
+  if [[ "${BENCHMARK_ALLOW_BUSY:-0}" != 1 ]]; then
+    for _ in $(seq 1 12); do
+      sleep 5
+      running="$(curl -fsS --max-time 5 "http://127.0.0.1:${PENNYROYAL_PORT}/metrics" 2>/dev/null | awk '/^sglang:num_running_reqs\{/ {print $2; exit}')"
+      [[ "${running:-0}" == "0" || "${running:-0}" == "0.0" ]] && break
+    done
+  fi
+fi
+
+printf 'Aufwaermens (zaehlt nicht in die Messung) ...\n'
+"${root}/scripts/benchmark_probe.py" --base-url "${base_url}" --model "${BENCHMARK_MODEL}" \
+  --prompt 'Antworte mit genau einem Wort.' --max-tokens 8 >/dev/null 2>&1 || true
+
+ts="$(date -u +%Y%m%dT%H%M%SZ)"
+json_out="${root}/state/benchmarks/${ts}.json"
+md_out="${root}/state/benchmarks/${ts}.md"
+workdir="$(mktemp -d)"
+trap 'rm -rf "${workdir}"' EXIT
+
+printf 'Starte %s Anfrage(n) im Profil %s ...\n' "${concurrency}" "${profile}"
+wall_start="$(date +%s%3N)"
+for i in $(seq 1 "${concurrency}"); do
+  "${root}/scripts/benchmark_probe.py" --base-url "${base_url}" --model "${BENCHMARK_MODEL}" \
+    --prompt "${prompt}" --prompt-repeat "${repeat}" --max-tokens "${max_tokens}" --sample-metrics \
+    > "${workdir}/${i}.json" 2>"${workdir}/${i}.err" &
+done
+errors=0
+for pid in $(jobs -pr); do wait "${pid}" || errors=$((errors + 1)); done
+wall_ms=$(( $(date +%s%3N) - wall_start ))
+
+python3 - "${workdir}" "${json_out}" "${profile}" "${concurrency}" "${wall_ms}" "${errors}" <<'PY'
+import json, pathlib, statistics, sys
+work, out, profile, conc, wall_ms, errors = sys.argv[1:7]
+runs = []
+for p in sorted(pathlib.Path(work).glob('*.json')):
+    try:
+        runs.append(json.loads(p.read_text()))
+    except Exception:
+        pass
+ok = [r for r in runs if r.get('ok')]
+def q(vals, frac):
+    if not vals:
+        return None
+    return round(statistics.quantiles(vals, n=100, method='inclusive')[min(99, int(frac * 100))], 3)
+tokens = sum(r.get('completion_tokens') or 0 for r in ok)
+doc = {
+    'timestamp': pathlib.Path(out).stem,
+    'profile': profile,
+    'concurrency': int(conc),
+    'errors': int(errors),
+    'requests_ok': len(ok),
+    'wall_ms': int(wall_ms),
+    'completion_tokens_total': tokens,
+    'aggregate_tokens_per_second': round(tokens / (int(wall_ms) / 1000), 2) if int(wall_ms) else None,
+    'time_to_first_token_seconds_median': q([r['time_to_first_token_seconds'] for r in ok], 0.50),
+    'time_to_first_token_seconds_p95': q([r['time_to_first_token_seconds'] for r in ok], 0.95),
+    'steady_tokens_per_second_median': q([r['steady_tokens_per_second'] for r in ok], 0.50),
+    'steady_tokens_per_second_p95': q([r['steady_tokens_per_second'] for r in ok], 0.95),
+    'tokens_per_second': round(tokens / (int(wall_ms) / 1000), 2) if int(wall_ms) else None,
+    'sglang_spec_accept_length': next((r.get('sglang_spec_accept_length') for r in ok if r.get('sglang_spec_accept_length') is not None), None),
+    'gpu_after': next((r.get('gpu_after') for r in ok if r.get('gpu_after')), {}),
+    'runs': runs,
+}
+pathlib.Path(out).write_text(json.dumps(doc, indent=2, ensure_ascii=False) + '\n')
+print(json.dumps({k: doc[k] for k in ('steady_tokens_per_second_median', 'time_to_first_token_seconds_median', 'aggregate_tokens_per_second', 'requests_ok', 'errors')}))
 PY
-cat > "$md" <<EOF2
-# Benchmark $ts
 
-- Profile: **$profile**
-- Concurrency: **$concurrency**
-- Elapsed: **${elapsed}ms**
-- Successful: **$total**; errors: **$errs**
-- Tokens per second are recorded in the JSON result when the API returns completion usage.
+steady="$(python3 -c "import json,sys;print(json.load(open('${json_out}'))['steady_tokens_per_second_median'] or 0)")"
+cat > "${md_out}" <<EOF2
+# Benchmark ${ts}
 
-Raw machine-readable result: $(basename "$json")
+| Messgroesse | Wert | Bedeutung |
+|---|---|---|
+| Vorlaufzeit bis zum ersten Token (Median) | $(python3 -c "import json;d=json.load(open('${json_out}'));print(d['time_to_first_token_seconds_median'])") s | Warten, bevor etwas erscheint |
+| Schreibgeschwindigkeit (Median) | ${steady} Token/s | eigentlicher Durchsatz pro Anfrage |
+| Gesamt durchsatz (alle Anfragen) | $(python3 -c "import json;d=json.load(open('${json_out}'));print(d['aggregate_tokens_per_second'])") Token/s | Wie viel das System insgesamt schafft |
+| Spekulativ akzeptiert je Schritt | $(python3 -c "import json;d=json.load(open('${json_out}'));print(d['sglang_spec_accept_length'])") | gross = Modell raeumt schnell voraus |
+| Anfragen ok / Fehler | $(python3 -c "import json;d=json.load(open('${json_out}'));print(d['requests_ok'],'/',d['errors'])") |  |
+| GPU hinterher | $(python3 -c "import json;d=json.load(open('${json_out}'));g=(d['gpu_after'].get('gpus') or [{}])[0];print(f\"{g.get('utilization_percent','-')} % Auslastung, {g.get('memory_used_mib','-')} MiB VRAM, {g.get('power_watts','-')} W\")" ) |  |
+
+Einordnung, warum Zahlen liegen, wie sie liegen: docs/performance.md
+Maschinenlesbar: $(basename "${json_out}")
 EOF2
-cat "$md"; (( errs == 0 ))
+cat "${md_out}"
+
+{
+  f="${root}/state/benchmarks/history.csv"
+  [[ -f "${f}" ]] || printf 'timestamp,profile,concurrency,steady_tok_s,ttft_median_s,aggregate_tok_s,requests,errors\n' > "${f}"
+  python3 -c "
+import json
+d=json.load(open('${json_out}'))
+print(','.join(str(x) for x in (d['timestamp'],d['profile'],d['concurrency'],d['steady_tokens_per_second_median'],d['time_to_first_token_seconds_median'],d['aggregate_tokens_per_second'],d['requests_ok'],d['errors'])))
+" >> "${f}"
+}
+
+if [[ "${MIN_TOKENS}" != 0 ]]; then
+  awk -v got="${steady}" -v min="${MIN_TOKENS}" 'BEGIN { exit (got+0 >= min+0 ? 0 : 1) }' \
+    || { printf '\nUNTERSCHREITEN: %s Token/s < geforderte %s Token/s\n' "${steady}" "${MIN_TOKENS}" >&2; exit 1; }
+  printf '\nGrenze erfuellt: %s >= %s Token/s\n' "${steady}" "${MIN_TOKENS}"
+fi

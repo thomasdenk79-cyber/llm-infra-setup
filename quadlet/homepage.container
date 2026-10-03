@@ -1,3 +1,4 @@
+# GENERIERT von scripts/60-install-homepage.sh - dort ändern, nicht hier.
 [Unit]
 Description=LLM Infrastructure Homepage portal
 After=llm-observability-network.service
@@ -13,6 +14,7 @@ Volume=%h/.config/llm-infra/homepage:/app/config:Z,U
 
 [Service]
 Restart=on-failure
+RestartSec=15
 
 [Install]
 WantedBy=default.target

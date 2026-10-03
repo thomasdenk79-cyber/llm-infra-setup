@@ -7,6 +7,7 @@ config_dir="${XDG_CONFIG_HOME:-${HOME}/.config}/llm-infra/homepage"
 install -d -m 0755 "${config_dir}"
 cp -f "${root}"/config/homepage/*.yaml "${config_dir}/"
 cat > "${root}/quadlet/homepage.container" <<'UNIT'
+# GENERIERT von scripts/60-install-homepage.sh - dort ändern, nicht hier.
 [Unit]
 Description=LLM Infrastructure Homepage portal
 After=llm-observability-network.service
@@ -22,6 +23,7 @@ Volume=%h/.config/llm-infra/homepage:/app/config:Z,U
 
 [Service]
 Restart=on-failure
+RestartSec=15
 
 [Install]
 WantedBy=default.target

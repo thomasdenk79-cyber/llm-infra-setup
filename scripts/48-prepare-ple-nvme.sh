@@ -14,7 +14,7 @@ if [[ -f "${PENNY_PLE_NVME_MODEL}/model-plefp8-00009.safetensors" && -f "${PENNY
   log "NVMe PLE overlay already prepared: ${PENNY_PLE_NVME_MODEL}"
   exit 0
 fi
-install -d -m 0777 "${parent_dir}"
+install -d -m 0755 "${parent_dir}"
 tmp_name=".$(basename -- "${PENNY_PLE_NVME_MODEL}").tmp.$$"
 tmp_path="${parent_dir}/${tmp_name}"
 trap 'rmdir "${tmp_path}" 2>/dev/null || true' EXIT

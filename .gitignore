@@ -9,3 +9,7 @@ __pycache__/
 site/
 .cache/
 config/homepage/.secret.env
+# Backup-Archiv und erzeugte Kennzahlen (Rechnerzustand, nicht Quellcode)
+state/backups/
+state/config-backup-*.tar.gz
+*.prom

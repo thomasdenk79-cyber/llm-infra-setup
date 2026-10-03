@@ -1,0 +1,8 @@
+[Unit]
+Description=llm-infra Pennyroyal Laufzeit-Wächter
+Wants=llm-inference-network.service
+
+[Service]
+Type=oneshot
+Nice=5
+ExecStart=@CONFIG_ROOT@/scripts/runtime-watchdog.sh check

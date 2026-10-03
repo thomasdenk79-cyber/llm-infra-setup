@@ -42,6 +42,32 @@ TOKEN_MAP="$SCRIPT_DIR/frspec/flash-next-64k.pt"
 
 CONTEXT_LENGTH=524288
 PAGE_SIZE=64
+# --- Stellgroessen fuer den Betrieb ---------------------------------------
+# Alle Werte sind die bisherigen Qualifikationswerte; nur ausuchen, nicht erfinden.
+# Jede Aenderung braucht einen Vorher/Nachher-Lauf:
+#   MIN_TOKENS=180 ./scripts/benchmark.sh normal
+# Erklaerung der einzelnen Hebel: docs/performance.md
+MEM_FRACTION_STATIC="${PENNY_MEM_FRACTION_STATIC:-0.981}"
+CHUNKED_PREFILL_SIZE="${PENNY_CHUNKED_PREFILL_SIZE:-${PREFILL_CHUNK_SIZE}}"
+SPEC_NUM_STEPS="${PENNY_SPEC_NUM_STEPS:-3}"
+SPEC_EAGLE_TOPK="${PENNY_SPEC_EAGLE_TOPK:-1}"
+SPEC_NUM_DRAFT_TOKENS="${PENNY_SPEC_NUM_DRAFT_TOKENS:-4}"
+SLEEP_ON_IDLE="${PENNY_SLEEP_ON_IDLE:-1}"
+ENABLE_MFU_METRICS="${PENNY_ENABLE_MFU_METRICS:-0}"
+for value_name in MEM_FRACTION_STATIC SPEC_NUM_STEPS SPEC_EAGLE_TOPK SPEC_NUM_DRAFT_TOKENS SLEEP_ON_IDLE; do
+  case "${!value_name}" in
+    ''|*[!0-9.]*) echo "${value_name} muss eine Zahl sein, erhalten: '${!value_name}'" >&2; exit 1 ;;
+  esac
+done
+if (( SPEC_NUM_DRAFT_TOKENS < SPEC_NUM_STEPS + 1 )); then
+  echo "PENNY_SPEC_NUM_DRAFT_TOKENS (${SPEC_NUM_DRAFT_TOKENS}) muss mindestens PENNY_SPEC_NUM_STEPS + 1 sein" >&2
+  exit 1
+fi
+SLEEP_ARGS=()
+if [[ "${SLEEP_ON_IDLE}" == 1 ]]; then SLEEP_ARGS+=(--sleep-on-idle); fi
+MFU_ARGS=()
+if [[ "${ENABLE_MFU_METRICS}" == 1 ]]; then MFU_ARGS+=(--enable-mfu-metrics); fi
+
 # TP1 is the qualified default; TP_SIZE=2 opts into the two-GPU experimental
 # (not yet hardware-qualified) path: the NIXL namespace hashes tp_size, so
 # the two topologies can never share one cache root, and the FR-Spec
@@ -117,6 +143,7 @@ configure_max_total_tokens 824384
 TARGET_OVERRIDES='{"text_config":{"rope_parameters":{"mrope_interleaved":true,"mrope_section":[11,11,10],"rope_type":"yarn","rope_theta":10000000,"partial_rotary_factor":0.25,"factor":2.0,"original_max_position_embeddings":262144}}}'
 printf 'Pennyroyal profile: Flash-Next FR-Spec\n  runtime: %s\n  target: %s\n  token map: %s\n  cache root: %s\n  NIXL root: %s\n' \
   "$SGLANG_EXE" "$TARGET_MODEL" "$TOKEN_MAP" "$CACHE_BASE" "$NIXL_STORAGE_BASE"
+echo "Stellgroessen: mem_fraction=${MEM_FRACTION_STATIC} chunked_prefill=${CHUNKED_PREFILL_SIZE} spec=${SPEC_NUM_STEPS}/${SPEC_EAGLE_TOPK}/${SPEC_NUM_DRAFT_TOKENS} sleep_on_idle=${SLEEP_ON_IDLE} mfu=${ENABLE_MFU_METRICS} hicache=${HICACHE_SIZE_GB} ple=${PENNY_PLE_BACKEND:-auto}"
 echo "Verifying the pinned FR-Spec map and tokenizer..."
 read -r TOKEN_MAP_SHA _ < <(sha256sum "$TOKEN_MAP")
 [[ "$TOKEN_MAP_SHA" == becfa41d394b86c26c632bea8f3c6ea64bbb76d7b238d8673c06afae21269f25 ]] || {
@@ -177,10 +204,10 @@ launch_args=(serve \
   --served-model-name pennyroyal \
   --host 0.0.0.0 --port 8001 --tp "$TP_SIZE" \
   --dtype "$COMPUTE_DTYPE" --quantization modelopt_fp4 --kv-cache-dtype "$KV_DTYPE" \
-  --mem-fraction-static 0.981 \
+  --mem-fraction-static "${MEM_FRACTION_STATIC}" \
   "${TOKEN_CAP_ARGS[@]}" --warmups=structured_output \
   --context-length "$CONTEXT_LENGTH" --json-model-override-args "$TARGET_OVERRIDES" \
-  --page-size "$PAGE_SIZE" --max-running-requests "$MAX_RUNNING_REQUESTS" --sleep-on-idle \
+  --page-size "$PAGE_SIZE" --max-running-requests "$MAX_RUNNING_REQUESTS" \
   --chunked-prefill-size "$PREFILL_CHUNK_SIZE" \
   --mamba-radix-cache-strategy extra_buffer --mamba-ssm-dtype "$MAMBA_SSM_DTYPE" \
   --max-mamba-cache-size "$MAX_MAMBA_CACHE_SIZE" --gdn-mtp-cache-mode none \
@@ -191,8 +218,8 @@ launch_args=(serve \
   --reasoning-parser qwen3 --tool-call-parser qwen3_coder \
   --enable-request-time-stats-logging --enable-metrics \
   --default-chat-template-kwargs "$DEFAULT_CHAT_TEMPLATE_KWARGS" \
-  --speculative-algorithm NEXTN --speculative-num-steps 3 \
-  --speculative-eagle-topk 1 --speculative-num-draft-tokens 4 \
+  --speculative-algorithm NEXTN --speculative-num-steps "${SPEC_NUM_STEPS}" \
+  --speculative-eagle-topk "${SPEC_EAGLE_TOPK}" --speculative-num-draft-tokens "${SPEC_NUM_DRAFT_TOKENS}" \
   --speculative-draft-model-quantization unquant \
   --speculative-token-map "$TOKEN_MAP" --watchdog-timeout 1800)
 if (( HICACHE_SIZE_GB > 0 )); then

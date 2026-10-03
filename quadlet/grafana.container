@@ -5,6 +5,7 @@ After=llm-observability-network.service prometheus.service loki.service
 [Container]
 Image=docker.io/grafana/grafana:12.1.1
 Network=llm-observability.network
+NetworkAlias=grafana
 PublishPort=127.0.0.1:3000:3000
 Volume=%h/.local/share/llm-infra/grafana:/var/lib/grafana:Z,U
 Volume=@CONFIG_ROOT@/config/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro,Z
@@ -14,6 +15,7 @@ Secret=grafana_admin_password,type=env,target=GF_SECURITY_ADMIN_PASSWORD
 
 [Service]
 Restart=on-failure
+RestartSec=15
 
 [Install]
 WantedBy=default.target
