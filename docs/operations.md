@@ -103,6 +103,25 @@ Nie zwei Dinge gleichzeitig aendern (Modell und Bild, oder Treiber und Bild).
 ./scripts/show-credentials.sh           # aktuelle Werte anzeigen
 ```
 
+## Mehrere Sitzungen gleichzeitig
+
+Zwei Grenzen der Laufzeit (Anzeige mit `./scripts/doctor.sh`, Punkt 9):
+
+* eine Anfrage: hoechstens 524288 Token
+* alle Anfragen zusammen: 824384 Token Speicher (Kennzahl `max_total_num_tokens`)
+* aufgenommene Anfragen gleichzeitig: Standard 4 (`PENNY_MAX_RUNNING_REQUESTS`)
+
+Konsequenz fuer opencode-Sitzungen: eine Sitzung mit 300000 Token belegt mehr als ein Drittel. Ab etwa 200000-250000 Token verdichten (`compact`), oder dem Client
+eine Grenze geben - dafuer ist das Skript da:
+
+```bash
+./scripts/configure-opencode-client.sh              # zeigen
+./scripts/configure-opencode-client.sh --schreiben  # setzen (mit Sicherungskopie)
+```
+
+Es setzt `compaction` (auto, prune, reservierter Puffer) und
+`models.<schluessel>.limit.context` - vorhandene Einstellungen bleiben erhalten.
+
 ## Beobachtung
 
 Siehe `docs/monitoring.md`. Der kurze Weg:

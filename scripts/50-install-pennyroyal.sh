@@ -25,6 +25,18 @@ source "${root}/lib/common.sh"
 # loader's temporary CPU peak leaves no reservation margin.
 : "${PENNY_HICACHE_SIZE_GB:=8}"
 : "${PENNY_HEALTH_START_SECONDS:=1800}"
+# Aufnahmefaehigkeit der Laufzeit. Die Bild-Defaults sind MAX_RUNNING_REQUESTS=4 und
+# MAX_MAMBA_CACHE_SIZE=24; beide sind hier uebersteuerbar (read request-capacity.sh
+# im Bild: die Werte kommen als Umgebungsvariablen). Mehr aufgenommene Anfragen
+# bedeuten hoeheren Gesamtdurchsatz, aber niedrigere Rate pro Anfrage und mehr
+# Zustandsspeicher. Deshalb: aendern, messen, ggf. zurueck (apply-tuning.sh).
+CAP_ENV=''
+for name in MAX_RUNNING_REQUESTS MAX_MAMBA_CACHE_SIZE MAX_TOTAL_TOKENS; do
+  value_var="PENNY_${name}"
+  if [[ -n "${!value_var:-}" ]]; then
+    CAP_ENV+="Environment=${name}=${!value_var}"$'\n'
+  fi
+done
 : "${PENNY_MODEL_NAME:=pennyroyal}"
 : "${PENNYROYAL_EXTRA_ENV:=}"
 have podman || { log 'FEHLT: podman. Jetzt ausführen: make install'; exit 1; }
@@ -75,7 +87,7 @@ Environment=NIXL_STORAGE_BASE=/nixl
 Environment=PENNY_HICACHE_SIZE_GB=${PENNY_HICACHE_SIZE_GB}
 Environment=PENNY_PLE_BACKEND=${PENNY_PLE_BACKEND}
 Environment=PENNY_PLE_NVME_MODEL=/ple/$(basename "${PENNY_PLE_NVME_MODEL}")
-${extra_env}# python3 exists in the runtime image; curl is not guaranteed.
+${extra_env}${CAP_ENV}# python3 exists in the runtime image; curl is not guaranteed.
 HealthCmd=python3 -c "import sys,urllib.request;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8001/health',timeout=8).status==200 else 1)"
 HealthInterval=30s
 HealthTimeout=15s

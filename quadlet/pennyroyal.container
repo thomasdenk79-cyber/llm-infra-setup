@@ -19,7 +19,7 @@ PodmanArgs=--security-opt=seccomp=unconfined
 Volume=/srv/llm/models:/models:ro
 Volume=/srv/llm/cache/pennyroyal:/cache:U,Z
 Volume=/srv/llm/nixl:/nixl:U,Z
-Volume=/srv/llm/ple-ext4:/ple:ro,Z
+Volume=/srv/llm/ple-native:/ple:ro,Z
 Volume=@CONFIG_ROOT@/config/pennyroyal/serve-flash-next-frspec.sh:/opt/pennyroyal/configs/pennyroyal/serve-flash-next-frspec.sh:ro,Z
 Environment=HF_HOME=/cache/huggingface
 Environment=TARGET_MODEL=/models/Qwen3.8-Flash-Next-NVFP4

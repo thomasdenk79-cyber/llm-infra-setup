@@ -70,9 +70,11 @@ fi
 # --- Profile ----------------------------------------------------------------
 case "${profile}" in
   aggressiv)
-    new_hicache=16; new_mem='0.99'; new_steps=5; new_draft=8; new_sleep=0; new_chunk=8192 ;;
+    new_hicache=16; new_mem='0.99'; new_steps=5; new_draft=8; new_sleep=0; new_chunk=8192
+    new_running=8; new_mamba=48 ;;
   konservativ)
-    new_hicache=16; new_mem='0.981'; new_steps=3; new_draft=4; new_sleep=1; new_chunk=4096 ;;
+    new_hicache=16; new_mem='0.981'; new_steps=3; new_draft=4; new_sleep=1; new_chunk=4096
+    new_running=4; new_mamba=24 ;;
   *) echo "--profil muss aggressiv oder konservativ sein" >&2; exit 2 ;;
 esac
 new_ple="${PLE_NATIVE_MOUNT}/${ple_name}"
@@ -81,6 +83,7 @@ echo "== Tuning-Profil ${profile} =="
 printf '  PLE-Flaeche      : %s\n' "${new_ple}"
 printf '  HiCache (RAM)    : %s -> %s GiB\n' "${PENNY_HICACHE_SIZE_GB:-?}" "${new_hicache}"
 printf '  mem-fraction     : %s -> %s\n' '0.981' "${new_mem}"
+printf '  aufgenommene Anfragen: 4 -> %s (Zustandsplaetze %s)\n' "${new_running}" "${new_mamba}"
 printf '  Spekulation      : 3/1/4 -> %s/1/%s\n' "${new_steps}" "${new_draft}"
 printf '  sleep-on-idle    : 1 -> %s\n' "${new_sleep}"
 printf '  chunked-prefill  : 4096 -> %s\n' "${new_chunk}"
@@ -178,6 +181,10 @@ set_or_add PENNY_SPEC_EAGLE_TOPK 1
 set_or_add PENNY_SPEC_NUM_DRAFT_TOKENS "${new_draft}"
 set_or_add PENNY_SLEEP_ON_IDLE "${new_sleep}"
 set_or_add PENNY_CHUNKED_PREFILL_SIZE "${new_chunk}"
+set_or_add PENNY_MAX_RUNNING_REQUESTS "${new_running}"
+set_or_add PENNY_MAX_MAMBA_CACHE_SIZE "${new_mamba}"
+set_or_add PENNY_MAX_RUNNING_REQUESTS "${new_running}"
+set_or_add PENNY_MAX_MAMBA_CACHE_SIZE "${new_mamba}"
 echo 'Neue Werte in config/host.env geschrieben.'
 
 run ./scripts/50-install-pennyroyal.sh
