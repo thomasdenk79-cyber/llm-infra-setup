@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T19:52:28+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-03T20:04:06+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -550,3 +550,7 @@ Zu niedriger Turbo-Durchsatz diagnostiziert: CUDA-Graphen wegen NVMe-Capture-Tra
 ## Notiz 2026-10-03T19:52:28+02:00
 
 Turbo-Unit vor kontrolliertem Neustart gesichert
+
+## Notiz 2026-10-03T20:04:06+02:00
+
+Turbo nach Graph-Capture-Fehler vorlaeufig auf stabile PLE-Ausfuehrung gestellt

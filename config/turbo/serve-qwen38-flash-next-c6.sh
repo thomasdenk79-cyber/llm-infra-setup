@@ -53,6 +53,9 @@ args=(
   --enable-hierarchical-cache --hicache-size "$HICACHE_SIZE_GB"
   --hicache-write-policy write_through
   --enable-metrics --enable-cache-report --enable-request-time-stats-logging
+  # PLE io_uring reads are asynchronous; CUDA graph capture must not touch the
+  # stream until the capture-safe SSD path is fixed.
+  --disable-cuda-graph
   --sleep-on-idle
 )
 
