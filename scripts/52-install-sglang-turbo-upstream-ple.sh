@@ -55,6 +55,11 @@ Environment=SGLANG_RUST_BUILD_MODE=auto
 Environment=RUSTUP_TOOLCHAIN=stable
 Environment=RUSTUP_OFFLINE=1
 Environment=SGLANG_PORT=8001
+# A bleibt fuer NVMe-PLE standardmaessig eager: kein geerbtes Full-Graph-Flag
+# darf den nativen Null-Stub aufzeichnen und PLE-Werte verfälschen.
+Environment=TURBO_CUDA_GRAPH=off
+Environment=TURBO_CUDA_GRAPH_BACKEND_DECODE=breakable
+Environment=TURBO_SLEEP_ON_IDLE=on
 Environment=SGLANG_SM120_ONLINE_MXFP8=true
 Environment=SGLANG_MM_PREPROCESS_DEVICE=cpu
 Environment=MAX_RUNNING_REQUESTS=6

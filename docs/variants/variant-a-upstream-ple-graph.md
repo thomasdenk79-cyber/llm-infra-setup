@@ -71,6 +71,27 @@ systemctl --user stop sglang-turbo-upstream-ple.service
 systemctl --user start sglang-turbo-c6.service
 ```
 
+## Heilung des Laufs 2026-10-04
+
+**Ursache:** Der Evidenzlauf zeigt keinen Runtime- oder CUDA-Capture-Fehler.
+Die A-Unit meldete nach dem langen Modellstart `Qwen4 PLE NVMe table: 47.68 GiB
+across 10 files`, danach `cuda graph: False` und `/health 200`. Beendet wurde der
+Lauf erst nach `benchmark_failed`; der externe Matrix-Restore meldete zusaetzlich
+einen Syntaxfehler in `run-ple-variant-matrix.sh` (Zeilen 161/162). Die
+Import-Warnungen fuer Sarashina2 sind fuer dieses Textmodell nicht fatal.
+
+**Patch:** Der Generator und die committete A-Quadlet setzen nun explizit
+`TURBO_CUDA_GRAPH=off`, `TURBO_CUDA_GRAPH_BACKEND_DECODE=breakable` und
+`TURBO_SLEEP_ON_IDLE=on`. Damit kann keine geerbte Systemd-Umgebung versehentlich
+den Full-Graph-Pfad aktivieren, der bei NVMe-PLE den nativen Null-Stub aufzeichnen
+und beim Replay falsche PLE-Zeilen liefern wuerde. Der SSD-Pfad (`io_uring`) und
+alle Capture-Isolations-Guards bleiben unveraendert.
+
+**Restrisiko:** A laeuft damit korrekt eager und ohne CUDA-Graph-Beschleunigung;
+der r24-Breakable-Pfad bleibt fuer einen spaeteren, separat freigegebenen Test
+vorbehalten. Der externe Benchmark-/Restore-Syntaxfehler ist in diesem Worktree
+nicht behoben.
+
 ## Risiken / offene Punkte
 
 * CUDA-Graphs sind standardmaessig aus; der explizite Graph-Pfad (`TURBO_CUDA_GRAPH=on`)
