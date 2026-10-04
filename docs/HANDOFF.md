@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T08:11:11+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T08:13:35+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -578,3 +578,7 @@ Start Analyse Variante D: Belege und Worktree sichern
 ## Notiz 2026-10-04T08:11:11+02:00
 
 Variante-D-Healing implementiert: Prefill-CUDA-Graph explizit deaktiviert
+
+## Notiz 2026-10-04T08:13:35+02:00
+
+D-Healing korrigiert: Decode-BCG umgehen, SSD-PLE eager erhalten

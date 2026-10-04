@@ -56,6 +56,7 @@ Environment=SGLANG_RUST_BUILD_MODE=auto
 Environment=RUSTUP_TOOLCHAIN=stable
 Environment=RUSTUP_OFFLINE=1
 Environment=SGLANG_PORT=8001
+Environment=TURBO_CUDA_GRAPH=off
 Environment=TURBO_CUDA_GRAPH_BACKEND_PREFILL=disabled
 Environment=SGLANG_SM120_ONLINE_MXFP8=true
 Environment=SGLANG_MM_PREPROCESS_DEVICE=cpu

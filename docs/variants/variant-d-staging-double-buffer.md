@@ -89,15 +89,15 @@ die 47,68-GiB-Tabelle mit 320.001.536 Zeilen ist daher nicht die Ursache.
 
 ### Minimaler Patch
 
-Variante D setzt `TURBO_CUDA_GRAPH_BACKEND_PREFILL=disabled`. Das Startskript
-reicht diese Einstellung explizit als `--cuda-graph-backend-prefill disabled`
-weiter. Prefill laeuft damit eager, waehrend der Decode-Graph mit dem
-Breakable-Backend erhalten bleibt; der mmap-PLE-Pfad und seine Doppel-Pufferung
-werden nicht veraendert. Die Produktions-Unit und laufende Pods bleiben
-unberuehrt.
+Variante D setzt `TURBO_CUDA_GRAPH=off` (und zusaetzlich Prefill auf
+`disabled`). Damit laeuft der gesamte Request eager; der inkompatible
+Breakable-Capture wird auch im Decode nicht erreicht. Der mmap-PLE-Pfad und
+seine Doppel-Pufferung laufen dabei real und behalten ihre Korrektheit. Die
+Produktions-Unit und laufende Pods bleiben unberuehrt.
 
 ### Restrisiko
 
-Prefill verliert den Graph-Overheadvorteil und kann die Vorlaufzeit erhoehen.
-Decode-Capture sowie SSD-PLE-Replay sind weiterhin nicht live verifiziert; vor
-einer Produktionsentscheidung sind Start-, Health- und Benchmark-Gates noetig.
+Prefill und Decode verlieren den Graph-Overheadvorteil und koennen Vorlaufzeit
+und Schreibrate verschlechtern. Der eager SSD-PLE-Pfad ist weiterhin nicht live
+verifiziert; vor einer Produktionsentscheidung sind Start-, Health- und
+Benchmark-Gates noetig.

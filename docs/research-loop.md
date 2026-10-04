@@ -11,16 +11,17 @@ Prefill-Graphen auf den EagerRunner routet:
 * SGLang `cuda_graph_config.py`, abgerufen am 2026-10-04:
   <https://github.com/sgl-project/sglang/blob/main/python/sglang/srt/model_executor/cuda_graph_config.py>
 
-Das passt direkt zum Beleg: r24 versucht trotz der Auto-Disable-Meldung den
-Breakable-Prefill-Runner und scheitert an `LogitsProcessorOutput`. Der Patch
-setzt deshalb nur in Variante D den Prefill-Backend explizit auf `disabled`;
-der Decode-Backend bleibt `breakable` fuer den SSD-PLE-Replaypfad.
+Der Trace zeigt jedoch den Fehler im `capture_decode_graph`: r24 versucht dort
+den Breakable-Backend mit `LogitsProcessorOutput` zu puffern. Prefill allein zu
+deaktivieren waere deshalb unzureichend. D setzt den vorhandenen Eager-Schalter
+`TURBO_CUDA_GRAPH=off`; der SSD-PLE-Pfad bleibt real aktiv und wird nicht durch
+einen Full-Graph-Stub ersetzt.
 
-**Erwarteter Gewinn:** Start/Capture kommt am nicht unterstuetzten Prefill-
-Ausgabetyp vorbei; SSD-PLE und Decode-CUDA-Graphs bleiben aktiv.
+**Erwarteter Gewinn:** Der Start kommt am nicht unterstuetzten BCG-Ausgabetyp
+vorbei; SSD-PLE bleibt korrekt aktiv.
 
-**Risiko:** Prefill ist eager und kann TTFT erhoehen. Die Quelle nennt keine
-Garantie fuer diese r24-Sonderbasis; Start, Health und Benchmark muessen daher
-als Kandidatengates erneut laufen. Es wurde kein zusaetzlicher Forschungsbranch
-angelegt, weil der Ansatz eine punktuelle Konfigurationskorrektur der bestehenden
-Variante ist.
+**Risiko:** Prefill und Decode sind eager und koennen TTFT sowie Durchsatz
+verschlechtern. Die Quelle nennt keine Garantie fuer diese r24-Sonderbasis;
+Start, Health und Benchmark muessen daher als Kandidatengates erneut laufen.
+Es wurde kein zusaetzlicher Forschungsbranch angelegt, weil der Ansatz eine
+punktuelle Konfigurationskorrektur der bestehenden Variante ist.
