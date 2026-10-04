@@ -76,3 +76,28 @@ Doppel-Pufferung wenig, weil die SSD-Latenz dominiert.
 * Die Slots wachsen unabhaengig; ein spaeterer langer Prompt verkleinert
   einen groessen Slot nicht (bewusst, vermeidet Allozieren im Schritt).
 * Kein Live-Test, kein Benchmark durchgefuehrt.
+
+## Healing-Lauf 2026-10-04
+
+### Ursache
+
+Der Start brach beim Capture des Decode-Runners ab. Das Breakable-CUDA-Graph-
+Backend wollte ein `LogitsProcessorOutput` als BCG-Ausgabe puffern, unterstuetzt
+diesen Typ in der verwendeten r24-Basis aber nicht (`TypeError`). Der SSD-PLE-
+Manifest- und mmap-Pfad war zu diesem Zeitpunkt bereits erfolgreich geladen;
+die 47,68-GiB-Tabelle mit 320.001.536 Zeilen ist daher nicht die Ursache.
+
+### Minimaler Patch
+
+Variante D setzt `TURBO_CUDA_GRAPH_BACKEND_PREFILL=disabled`. Das Startskript
+reicht diese Einstellung explizit als `--cuda-graph-backend-prefill disabled`
+weiter. Prefill laeuft damit eager, waehrend der Decode-Graph mit dem
+Breakable-Backend erhalten bleibt; der mmap-PLE-Pfad und seine Doppel-Pufferung
+werden nicht veraendert. Die Produktions-Unit und laufende Pods bleiben
+unberuehrt.
+
+### Restrisiko
+
+Prefill verliert den Graph-Overheadvorteil und kann die Vorlaufzeit erhoehen.
+Decode-Capture sowie SSD-PLE-Replay sind weiterhin nicht live verifiziert; vor
+einer Produktionsentscheidung sind Start-, Health- und Benchmark-Gates noetig.

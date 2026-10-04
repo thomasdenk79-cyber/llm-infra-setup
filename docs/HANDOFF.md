@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T08:08:28+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T08:11:11+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -574,3 +574,7 @@ Turbo nach wiederholtem Capture-Fehler stabilisiert und Unit auf mmap korrigiert
 ## Notiz 2026-10-04T08:08:28+02:00
 
 Start Analyse Variante D: Belege und Worktree sichern
+
+## Notiz 2026-10-04T08:11:11+02:00
+
+Variante-D-Healing implementiert: Prefill-CUDA-Graph explizit deaktiviert

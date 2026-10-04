@@ -32,6 +32,8 @@ export TRANSFORMERS_OFFLINE=1 HF_HUB_OFFLINE=1
 # NVMe-PLE-Zeilen im Replay laeuft), off = reine Eager-Ausfuehrung wie vorher.
 TURBO_CUDA_GRAPH="${TURBO_CUDA_GRAPH:-on}"
 TURBO_CUDA_GRAPH_BACKEND_DECODE="${TURBO_CUDA_GRAPH_BACKEND_DECODE:-breakable}"
+# Variant D disables prefill capture because r24 cannot buffer its multimodal logits output.
+TURBO_CUDA_GRAPH_BACKEND_PREFILL="${TURBO_CUDA_GRAPH_BACKEND_PREFILL:-breakable}"
 # sleep-on-idle nutzt Torch-Memory-Saver; der breakbare Backend verbietet die
 # Memory-Saver-Kombination. Bei "NotImplementedError: Breakable CUDA graph is
 # not compatible with memory saver mode" hier auf off stellen.
@@ -41,6 +43,10 @@ case "$TURBO_CUDA_GRAPH" in
     case "$TURBO_CUDA_GRAPH_BACKEND_DECODE" in
       breakable|full) graph_args=(--cuda-graph-backend-decode "$TURBO_CUDA_GRAPH_BACKEND_DECODE") ;;
       *) echo "TURBO_CUDA_GRAPH_BACKEND_DECODE muss breakable oder full sein" >&2; exit 2 ;;
+    esac
+    case "$TURBO_CUDA_GRAPH_BACKEND_PREFILL" in
+      breakable|tc_piecewise|disabled) graph_args+=(--cuda-graph-backend-prefill "$TURBO_CUDA_GRAPH_BACKEND_PREFILL") ;;
+      *) echo "TURBO_CUDA_GRAPH_BACKEND_PREFILL muss breakable, tc_piecewise oder disabled sein" >&2; exit 2 ;;
     esac
     ;;
   off) graph_args=(--disable-cuda-graph) ;;
