@@ -42,8 +42,10 @@ for ((cycle=1; cycles == 0 || cycle <= cycles; cycle++)); do
     log 'Kein neues Laufverzeichnis mit summary.csv gefunden; Rundezaehlt als Fehler, alte Laeufe werden nicht geheilt.'
     failed=1
   else
+    expected=0
     while IFS=, read -r variant result _detail; do
       [[ "$variant" == variant ]] && continue
+      expected=$((expected + 1))
       case "$result" in
         passed) ;;
         *)
@@ -54,8 +56,12 @@ for ((cycle=1; cycles == 0 || cycle <= cycles; cycle++)); do
           ;;
       esac
     done < "$run_dir/summary.csv"
+    if (( expected != 4 )); then
+      log "Unvollständige Matrix summary.csv: $expected von 4 Varianten; Runde zählt als Fehler."
+      failed=1
+    fi
   fi
-  for job in "${jobs[@]:-}"; do wait "$job" || true; done
+  for job in "${jobs[@]}"; do [[ -n "$job" ]] && wait "$job" || true; done
   research_pid=""
   if [[ "${PLE_RESEARCH_AUDIT:-1}" == 1 ]]; then
     "$root/scripts/ple-research-audit.sh" & research_pid="$!"

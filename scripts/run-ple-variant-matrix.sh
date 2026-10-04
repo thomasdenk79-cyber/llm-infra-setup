@@ -219,13 +219,11 @@ restore_production() {
     "$WANTS_DIR/sglang-turbo-variant-b.container" \
     "$WANTS_DIR/sglang-turbo-variant-d.container"
   systemd_reload
-  REPO_ROOT="$root" UNIT_NAME=sglang-turbo-c6.container bash -c '
-    set -Eeuo pipefail
-    source "$REPO_ROOT/lib/common.sh"
-    source "$REPO_ROOT/lib/units.sh"
-    render_unit "$UNIT_NAME"
-    systemd_reload
-  '
+  export REPO_ROOT="$root" UNIT_NAME=sglang-turbo-c6.container
+  source "$root/lib/common.sh"
+  source "$root/lib/units.sh"
+  render_unit "$UNIT_NAME"
+  systemd_reload
   systemctl --user start sglang-turbo-c6.service || true
   # Die Produktions-Unit sglang-turbo-c6 exponiert gemaess quadlet/sglang-turbo-c6.container
   # den Host-Port 8002 (8001 gehoert zu Pennyroyal). Der alte Default 8001 lies die
