@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T09:38:29+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T09:40:42+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -578,3 +578,7 @@ Pennyroyal SSD Stream Plugin-Variante mit Graph-Hooks
 ## Notiz 2026-10-04T09:38:29+02:00
 
 C-Variante: Fehleranalyse vor Reparatur
+
+## Notiz 2026-10-04T09:40:43+02:00
+
+C-Reparatur: Benchmark-Pipe und Forschungsdoku

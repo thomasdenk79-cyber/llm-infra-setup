@@ -84,3 +84,30 @@ Skripts); Vorlauf-, Schreib- und Gesamtrate getrennt protokollieren
 * NIXL-/HiCache-Identitaet: Wechsel von `ple_backend` baut den
   Zeichenspeicher-Cache neu auf (siehe `docs/performance.md`).
 * Kein Live-Test, kein Benchmark durchgefuehrt.
+
+## Fehleranalyse und Reparatur (2026-10-04)
+
+Der Lauf `20261004T040547Z` ist nicht beim Start oder CUDA-Graph-Capture
+abgebrochen: Das SSD-Stream-Plugin meldete die geladene 47,68-GiB-Tabelle,
+Target-Verify- und Draft-Decode-/Extend-Graphs wurden aufgenommen, die Runtime
+wurde bereit und Chat-Anfragen liefen erfolgreich. Der erste Quick-Benchmark
+hatte 0 Fehler. Der zweite Benchmark brach mit `printf: ... broken pipe` ab,
+weil die Busy-Pruefung in `scripts/benchmark.sh` `awk` nach dem ersten
+Prometheus-Treffer beendete. Durch `set -o pipefail` wurde der dadurch
+abgebrochene `curl`-Schreibvorgang zum Skriptfehler. Der Matrix-Runner meldete
+deshalb `benchmark_failed` und startete den Heiler; die Evidenz enthaelt keinen
+Runtime-Crash.
+
+Der minimale Patch liest die Metrik-Antwort vollstaendig ein und druckt den
+letzten Wert erst in `END`. So kann `curl` die Antwort vollstaendig schreiben.
+Es wurden keine Runtime-Units und keine PLE-/Graph-Einstellungen geaendert.
+Der Lauf belegt weiter, dass multimodales Prefill ohne Graph ausgefuehrt wird,
+waehrend Decode-CUDA-Graphs aktiv bleiben. Der Hinweis auf 524288 angeforderten
+gegen 262144 abgeleiteten Kontext ist ein separates Genauigkeits-/CUDA-Risiko;
+dieser Patch qualifiziert den Kontext nicht neu.
+
+Rest-Risiko: Die Busy-Pruefung wartet hoechstens 60 Sekunden und kann bei einer
+echten haengenden Anfrage weiterhin messen oder fehlschlagen. Der minimale Patch
+behebt den beobachteten Pipe-Fehler, aber der C6-Benchmark muss an einem
+ruhigen Lauf erneut durch die vorgesehenen Gates gehen. Es wurde hier kein
+Benchmark ausgefuehrt.

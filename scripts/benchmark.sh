@@ -55,7 +55,7 @@ if [[ "${running%.*}" != 0 ]]; then
   if [[ "${BENCHMARK_ALLOW_BUSY:-0}" != 1 ]]; then
     for _ in $(seq 1 12); do
       sleep 5
-      running="$(curl -fsS --max-time 5 "http://127.0.0.1:${PENNYROYAL_PORT}/metrics" 2>/dev/null | awk '/^sglang:num_running_reqs\{/ {print $2; exit}')"
+      running="$(curl -fsS --max-time 5 "http://127.0.0.1:${PENNYROYAL_PORT}/metrics" 2>/dev/null | awk '/^sglang:num_running_reqs\{/ {value=$2} END {if (value == "") value=0; print value}')"
       [[ "${running:-0}" == "0" || "${running:-0}" == "0.0" ]] && break
     done
   fi
