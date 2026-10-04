@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T21:38:10+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T09:38:29+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -574,3 +574,7 @@ Turbo nach wiederholtem Capture-Fehler stabilisiert und Unit auf mmap korrigiert
 ## Notiz 2026-10-03T21:38:10+02:00
 
 Pennyroyal SSD Stream Plugin-Variante mit Graph-Hooks
+
+## Notiz 2026-10-04T09:38:29+02:00
+
+C-Variante: Fehleranalyse vor Reparatur
