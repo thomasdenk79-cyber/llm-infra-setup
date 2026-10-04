@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T03:31:26+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T04:19:49+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -578,3 +578,7 @@ Start Variantenanalyse A: Arbeitsstand sichern
 ## Notiz 2026-10-04T03:31:26+02:00
 
 Variante A: BCG-LogitsProcessorOutput abgefangen, sicherer Eager-Standard dokumentiert
+
+## Notiz 2026-10-04T04:19:49+02:00
+
+Start: Varianten-A-Heilung untersuchen
