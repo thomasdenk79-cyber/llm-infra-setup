@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T18:50:38+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T19:58:10+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -586,3 +586,19 @@ C-Reparatur: Benchmark-Pipe und Forschungsdoku
 ## Notiz 2026-10-04T18:50:38+02:00
 
 Vorstellung des Pennyroyal-aggressiv-Originalprofils nach wiederholtem CUDA-OOM
+
+## Notiz 2026-10-04T20:00:00+02:00
+
+Pennyroyal nach OOM mit dem reproduzierbaren c6-Produktionsprofil neu gestartet.
+Effektive Startwerte geprüft: `mem_fraction=0.981`, `sleep_on_idle=0`,
+`memory_saver=0`, `hicache=16`, `max_total_num_tokens=1048576`,
+`max_running_requests=6`, `max_mamba_cache_size=36`, FP8-KV und NVMe-PLE.
+Der Dienst ist nach dem langen Modell-Ladevorgang wieder `healthy`; kein
+Benchmark während dieser Sicherung. Die zuvor ungewollt aktiven Werte
+`sleep_on_idle=1` und `memory_saver=1` sind in der Quadlet-Quelle korrigiert.
+Vor einem Neustart: `systemctl --user status pennyroyal.service` und
+`podman logs --tail 80 pennyroyal` prüfen. GPU bleibt exklusiv für Pennyroyal.
+
+## Notiz 2026-10-04T19:58:10+02:00
+
+Penny c6-Profil effektiv verifiziert und Neustart dokumentiert
