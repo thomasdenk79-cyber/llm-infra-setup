@@ -10,7 +10,8 @@
 #
 # Warum zwei Zahlen?
 #   time_to_first_token      = Wartezeit, bis das erste Wort erscheint (Vorlauf)
-#   steady_tokens_per_second = Schreibgeschwindigkeit danach
+#   overall_tokens_per_second = End-to-end-Durchsatz inklusive Vorlauf
+#   steady_tokens_per_second = diagnostische Schreibgeschwindigkeit danach
 # Der alte "tokens_per_second"-Wert enthielt beides gemischt und war deshalb zu
 # klein. Er wird weiter mitgeführt, damit aeltere Messreihen vergleichbar bleiben.
 #
@@ -114,12 +115,14 @@ doc = {
     'wall_ms': int(wall_ms),
     'completion_tokens_total': tokens,
     'aggregate_tokens_per_second': round(tokens / (int(wall_ms) / 1000), 2) if int(wall_ms) else None,
+    'end_to_end_tokens_per_second': round(tokens / (int(wall_ms) / 1000), 2) if int(wall_ms) else None,
     'time_to_first_token_seconds_median': q([r['time_to_first_token_seconds'] for r in ok], 0.50),
     'time_to_first_token_seconds_p95': q([r['time_to_first_token_seconds'] for r in ok], 0.95),
     'steady_tokens_per_second_median': q([r['steady_tokens_per_second'] for r in ok], 0.50),
     'steady_tokens_per_second_p95': q([r['steady_tokens_per_second'] for r in ok], 0.95),
     'tokens_per_second': round(tokens / (int(wall_ms) / 1000), 2) if int(wall_ms) else None,
     'sglang_spec_accept_length': next((r.get('sglang_spec_accept_length') for r in ok if r.get('sglang_spec_accept_length') is not None), None),
+    'sglang_gen_throughput_sample': next((r.get('sglang_gen_throughput_now') for r in ok if r.get('sglang_gen_throughput_now') is not None), None),
     'gpu_after': next((r.get('gpu_after') for r in ok if r.get('gpu_after')), {}),
     'runs': runs,
 }
@@ -134,7 +137,9 @@ cat > "${md_out}" <<EOF2
 | Messgroesse | Wert | Bedeutung |
 |---|---|---|
 | Vorlaufzeit bis zum ersten Token (Median) | $(python3 -c "import json;d=json.load(open('${json_out}'));print(d['time_to_first_token_seconds_median'])") s | Warten, bevor etwas erscheint |
-| Schreibgeschwindigkeit (Median) | ${steady} Token/s | eigentlicher Durchsatz pro Anfrage |
+| End-to-end-Durchsatz | $(python3 -c "import json;d=json.load(open('${json_out}'));print(d['end_to_end_tokens_per_second'])") Token/s | Primäre Vergleichszahl inklusive Vorlauf |
+| SGLang-Gen-Durchsatz (Momentaufnahme) | $(python3 -c "import json;d=json.load(open('${json_out}'));print(d['sglang_gen_throughput_sample'])") Token/s | Server-Metrik über laufende Decodes |
+| Diagnostische Schreibgeschwindigkeit | ${steady} Token/s | Ohne Vorlauf; nicht als End-to-end-Wert vergleichen |
 | Gesamt durchsatz (alle Anfragen) | $(python3 -c "import json;d=json.load(open('${json_out}'));print(d['aggregate_tokens_per_second'])") Token/s | Wie viel das System insgesamt schafft |
 | Spekulativ akzeptiert je Schritt | $(python3 -c "import json;d=json.load(open('${json_out}'));print(d['sglang_spec_accept_length'])") | gross = Modell raeumt schnell voraus |
 | Anfragen ok / Fehler | $(python3 -c "import json;d=json.load(open('${json_out}'));print(d['requests_ok'],'/',d['errors'])") |  |

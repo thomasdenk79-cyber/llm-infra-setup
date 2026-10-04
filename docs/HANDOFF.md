@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T05:17:26+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T10:01:33+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -760,3 +760,7 @@ OpenCode-Heiler und Research-Audits mit Laufzeit-Timeout versehen
 ## Notiz 2026-10-04T05:17:26+02:00
 
 Auch Luna-Codex mit Laufzeit-Timeout abgesichert
+
+## Notiz 2026-10-04T10:01:33+02:00
+
+Benchmark-End-to-End-Metriken und Pennyroyal-Heiler-Erkennung korrigiert
