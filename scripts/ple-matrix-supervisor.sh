@@ -11,6 +11,10 @@ for ((cycle=1; cycles == 0 || cycle <= cycles; cycle++)); do
     log 'Vorheriger Matrixlauf läuft noch; Supervisor wartet.'
     sleep 30
   done
+  while systemctl --user is-active --quiet ple-research-audit.service; do
+    log 'Forschungsprüfung läuft noch; Supervisor startet keine neue GPU-Variante.'
+    sleep 30
+  done
   systemd-run --user --unit=ple-variant-matrix --collect --property=Type=exec \
     "$root/scripts/run-ple-variant-matrix.sh" --retry-failed
   while systemctl --user is-active --quiet ple-variant-matrix.service; do sleep 20; done
