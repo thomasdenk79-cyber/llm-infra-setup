@@ -25,6 +25,10 @@ Nginx läuft als `nginx.service` und wird beim Systemstart aktiviert. LiteLLM,
 Pennyroyal und interne Datenbankports werden nicht über diesen Proxy
 veröffentlicht.
 
+UFW erlaubt die vier Nginx-Ports ausschließlich aus `192.168.0.0/24`:
+`3000:3002/tcp` und `8080/tcp`. Nach einer Neuinstallation gehören diese
+Firewall-Regeln ebenfalls zur Einrichtung.
+
 ## Begründung
 
 Der Zugriff von Windows-Arbeitsplätzen soll ohne SSH-Tunnel möglich sein,
