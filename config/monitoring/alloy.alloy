@@ -40,13 +40,10 @@ loki.source.docker "containers" {
   labels     = { stack = "llm-infra" }
 }
 
-// Zeitstempel der Runtime uebernehmen, damit die Reihenfolge in der Suche stimmt.
+// Den Zeitstempel der Podman-Logquelle beibehalten. Die Anwendung schreibt
+// zusaetzlich eigene Zeitfelder in die Logzeile, die eine andere Zeitzone oder
+// einen verzoegerten Ereigniszeitpunkt enthalten koennen.
 loki.process "parse" {
-  stage.timestamp {
-    source            = "time"
-    format            = "RFC3339"
-    action_on_failure = "fudge"
-  }
   forward_to = [loki.write.local.receiver]
 }
 
