@@ -18,7 +18,7 @@
   - Join in `_consume_prefetched_embeddings` nur noch bei UVA-Pfad oder
     ausserhalb nativen Captures (fixed die Capture-Isolation-Panik).
 * `config/turbo/serve-qwen38-flash-next-c6-upstream-ple.sh`
-  - Graph-Schalter: `TURBO_CUDA_GRAPH=on|off`,
+  - Graph-Schalter: `TURBO_CUDA_GRAPH=on|off` (sicherer Standard: `off`),
     `TURBO_CUDA_GRAPH_BACKEND_DECODE=breakable|full`,
     `TURBO_SLEEP_ON_IDLE=on|off`.
 * `scripts/52-install-sglang-turbo-upstream-ple.sh`
@@ -27,9 +27,12 @@
 
 ## Idee und Fehlerbehebung
 
-Das Turbo-Rezept bleibt unveraendert; CUDA-Graphs werden nicht deaktiviert,
-sondern auf das fuer eager Abschnitte gebaute Breakable-Backend gestellt.
-Die beiden Overlay-Patches beheben die nachgewiesenen Capture-Fehler:
+Das Turbo-Rezept und der SSD-PLE-Reader bleiben unveraendert. Der sichere
+Standard laeuft ohne CUDA-Graph-Capture, weil der r24-Breakable-Backend beim
+Capture ein nicht unterstuetztes `LogitsProcessorOutput` liefert. Dadurch wird
+weder ein Dienstabbruch noch ein Replay mit falschen (Null-)PLE-Zeilen
+zugelassen. Die beiden Overlay-Patches beheben weiterhin die urspruenglichen
+Capture-Fehler, falls der Graph-Pfad spaeter gezielt getestet wird:
 
 1. Der unbedingte `wait_stream(_prefetch_stream)`-Join wartete im nativen
    Capture auf einem nicht erfassten Fremdstream
@@ -70,7 +73,11 @@ systemctl --user start sglang-turbo-c6.service
 
 ## Risiken / offene Punkte
 
-* Breakable-Backend mit Mamba/NEXTN auf r24: ungetestet;
+* CUDA-Graphs sind standardmaessig aus; der explizite Graph-Pfad (`TURBO_CUDA_GRAPH=on`)
+  bleibt auf r24 wegen `Unsupported BCG output type: LogitsProcessorOutput`
+  unbrauchbar und darf erst nach einem kompatiblen Backend-Update aktiviert
+  werden. Eager-Ausfuehrung ist korrekt, aber langsamer.
+* Breakable-Backend mit Mamba/NEXTN auf r24 bleibt ungetestet;
   Memory-Saver-Kollision moeglich (`TURBO_SLEEP_ON_IDLE=off`).
 * io_uring-Seccomp-Profil bleibt Voraussetzung der Unit.
 * io_uring-Latenz (~200 ms/Gaenger) wird durch A nicht besser - dafuer ist

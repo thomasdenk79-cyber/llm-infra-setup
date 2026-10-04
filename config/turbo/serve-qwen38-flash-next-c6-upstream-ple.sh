@@ -30,7 +30,10 @@ export TRANSFORMERS_OFFLINE=1 HF_HUB_OFFLINE=1
 
 # CUDA-Graphs: on = breakbare Decode-Graphen (einziger Pfad, der die echten
 # NVMe-PLE-Zeilen im Replay laeuft), off = reine Eager-Ausfuehrung wie vorher.
-TURBO_CUDA_GRAPH="${TURBO_CUDA_GRAPH:-on}"
+# r24's breakable backend aborts while sizing LogitsProcessorOutput.  Keep
+# the safe default eager; opting into graphs remains explicit for a later
+# compatible backend and never changes the SSD-PLE reader.
+TURBO_CUDA_GRAPH="${TURBO_CUDA_GRAPH:-off}"
 TURBO_CUDA_GRAPH_BACKEND_DECODE="${TURBO_CUDA_GRAPH_BACKEND_DECODE:-breakable}"
 # sleep-on-idle nutzt Torch-Memory-Saver; der breakbare Backend verbietet die
 # Memory-Saver-Kombination. Bei "NotImplementedError: Breakable CUDA graph is

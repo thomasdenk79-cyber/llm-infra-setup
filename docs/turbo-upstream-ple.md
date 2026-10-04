@@ -3,8 +3,9 @@
 Isolierter Vergleichsdienst fuer das Turbo-r24-Rezept (Port 8003, Container
 `sglang-turbo-upstream-ple`). Das Startrezept bleibt gegenueber
 `config/turbo/serve-qwen38-flash-next-c6.sh` unveraendert: TP1, Online-MXFP8,
-NEXTN/MTP, HiCache und KV-FP8 bleiben an. CUDA-Graphs sind **aktiviert**
-(Default: Decode-Backend `breakable`). Die einzige Laufzeiterweiterung ist der
+NEXTN/MTP, HiCache und KV-FP8 bleiben an. CUDA-Graphs sind standardmaessig
+**deaktiviert** (der explizite Schalter bleibt fuer spaetere Backend-Updates).
+Die einzige Laufzeiterweiterung ist der
 PR36567-SSD-PLE-Reader plus der graph-sicheren Overlayerweiterung unten.
 
 ## Diagnose: warum der Capture bisher abstuerzte
@@ -113,9 +114,9 @@ PENNYROYAL_PORT=8003 BENCHMARK_MODEL=Qwen3.8-Flash-Next \
   ./scripts/benchmark.sh quick 6     # C6: dazu aggregierter Durchsatz
 ```
 
-Im Startlog erwartet: `cuda_graph=on/breakable`, spater `cuda graph: True`
-in den Decode-Zeilen, und `Qwen4 PLE NVMe: ... mean_read_ms=` ohne
-Capture-Fehlermeldungen.
+Im Startlog erwartet: `cuda_graph=off` und `Qwen4 PLE NVMe: ...
+mean_read_ms=` ohne Capture-Fehlermeldungen. `TURBO_CUDA_GRAPH=on` bleibt bis
+zu einem Backend-Update ein gezielter, nicht fuer den Betrieb empfohlener Test.
 
 ## Risiken und offene Punkte
 
