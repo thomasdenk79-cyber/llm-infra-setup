@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T03:28:48+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T03:29:13+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -640,3 +640,7 @@ Robuster PLE-Variantenwächter: Crash-Weiterlauf, Log-Sicherung, Produktions-Res
 ## Notiz 2026-10-04T03:28:48+02:00
 
 Luna-Healer und Matrix-Supervisor validiert und gesichert
+
+## Notiz 2026-10-04T03:29:13+02:00
+
+Healer: Laufverzeichnis auf absoluten Pfad korrigiert

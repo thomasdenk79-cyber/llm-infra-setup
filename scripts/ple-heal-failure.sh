@@ -2,7 +2,7 @@
 # Analyse und Reparatur einer fehlgeschlagenen PLE-Variante.
 set -Eeuo pipefail
 variant="${1:?Variante A, B, C oder D fehlt}"
-run_dir="${2:?Laufverzeichnis fehlt}"
+run_dir="$(realpath -- "${2:?Laufverzeichnis fehlt}")"
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 case "$variant" in
   A) worktree="$root/../llm-infra-setup-turbo-upstream" ;;
