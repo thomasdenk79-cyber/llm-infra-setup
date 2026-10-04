@@ -15,6 +15,10 @@ einen plausiblen Gewinn verspricht.
    Start, `/health`, C1- und C6-Benchmark.
 6. Nur messbar bessere Kandidaten dürfen als neue Referenz vorgeschlagen werden;
    bei Verschlechterung bleibt der bisherige Referenzstand aktiv.
+7. Ein bestandener Matrixlauf erzeugt automatisch einen Benchmarkbericht mit allen
+   verfügbaren C-Profilen, KV-Cache-/HiCache-Werten und Laufzeitparametern sowie
+   einen Commit und ein Git-Tag. Qwen bewertet danach, ob der Punkt pausiert,
+   weiter verbessert oder als Basis für eine neue Variante kopiert wird.
 
 Qwen und Luna sollen neue Forschungskandidaten in diesem Dokument eintragen und
 den vorgeschlagenen Runner-Eintrag beschreiben. Der Supervisor übernimmt einen

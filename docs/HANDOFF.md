@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T04:42:27+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T04:46:34+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -728,3 +728,7 @@ Forschungsmodus fuer Qwen- und Luna-Heiler dokumentiert
 ## Notiz 2026-10-04T04:42:27+02:00
 
 Parallele Qwen-Forschungspruefung aller Varianten eingerichtet
+
+## Notiz 2026-10-04T04:46:34+02:00
+
+Erfolgsstaende mit C-Profilen KV-Cache und Laufzeitmetriken gesichert

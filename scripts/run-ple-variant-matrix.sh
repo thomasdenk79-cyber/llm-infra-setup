@@ -125,6 +125,8 @@ run_one() {
       capture_logs "$name-attempt-$attempt" "$service" "$container"
       if run_benchmarks "$name" "$worktree" "$port" "$model"; then
         printf '%s,passed,attempt-%s\n' "$name" "$attempt" >> "$summary"
+        "$root/scripts/record-variant-success.sh" "$name" "$worktree" "$run_dir" "$attempt" || \
+          log "$name: Erfolgs-Commit/Tag konnte nicht erstellt werden."
         return 0
       fi
       printf '%s,benchmark_failed,attempt-%s\n' "$name" "$attempt" >> "$summary"
