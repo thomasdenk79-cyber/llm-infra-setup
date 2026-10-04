@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T04:46:34+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T05:04:41+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -732,3 +732,7 @@ Parallele Qwen-Forschungspruefung aller Varianten eingerichtet
 ## Notiz 2026-10-04T04:46:34+02:00
 
 Erfolgsstaende mit C-Profilen KV-Cache und Laufzeitmetriken gesichert
+
+## Notiz 2026-10-04T05:04:41+02:00
+
+Agenten-Kontext-Watchdog fuer dynamischen KV-Druck installiert

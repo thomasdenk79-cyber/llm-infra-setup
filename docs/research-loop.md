@@ -24,3 +24,16 @@ Qwen und Luna sollen neue Forschungskandidaten in diesem Dokument eintragen und
 den vorgeschlagenen Runner-Eintrag beschreiben. Der Supervisor übernimmt einen
 Kandidaten erst in einen Matrixlauf, wenn Branch, Worktree und reproduzierbare
 Startparameter vorhanden sind.
+
+## Agenten-Kontext-Watchdog
+
+`scripts/agent-context-watchdog.sh` misst globalen KV-Füllgrad, freie Slots,
+Prefill-Reserve, laufende/wartende Requests und aktive OpenCode-Prozesse. Der
+Timer wird mit `scripts/install-agent-context-watchdog.sh` installiert und
+schreibt `state/agent-context/latest.txt` sowie bei Druck `state/agent-context/pressure`.
+
+Die Rollenlimits sind absichtlich noch nicht aktiv: Erst wenn Agenten ihre Rolle,
+ID und ihr Kontextlimit als Request-Metadaten melden, kann der Watchdog den
+relativen Füllgrad berechnen und gezielt den Agenten mit dem höchsten Füllgrad
+zum Compacting auffordern. Bis dahin warnt er nur und lässt laufende Arbeit
+unangetastet.
