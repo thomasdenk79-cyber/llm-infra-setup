@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T10:19:37+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T10:51:56+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -788,3 +788,7 @@ Benchmark bricht bei belegter Runtime statt verfälschter Messung ab
 ## Notiz 2026-10-04T10:19:37+02:00
 
 Qwen-Runner-Review abgeschlossen; Matrixlauf wird wieder aufgenommen
+
+## Notiz 2026-10-04T10:51:56+02:00
+
+Drain ignoriert interne Heiler und wartet nur auf externe Agenten

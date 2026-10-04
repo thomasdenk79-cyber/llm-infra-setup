@@ -33,8 +33,17 @@ stop_gpu_services() {
     done
     # Nur echte Inferenz-Nutzer blockieren; die Heiler- und Pruefskripte selbst
     # gehren der Matrix und wuerden den Drain sonst dauerhaft auf Halten.
-    agents="$(pgrep -fc 'opencode run|codex exec' || true)"
-    [[ "$agents" =~ ^[0-9]+$ ]] && (( agents > 0 )) && busy=1
+    # Eigene Heiler warten absichtlich auf das Ende der Matrix und dürfen den
+    # GPU-Drain deshalb nicht gegenseitig blockieren. Nur fremde Agenten zählen.
+    agents=0
+    while IFS= read -r agent_line; do
+      [[ "$agent_line" == *"run-ple-variant-matrix.sh"* ||
+         "$agent_line" == *"ple-heal-failure.sh"* ||
+         "$agent_line" == *"ple-research-audit.sh"* ||
+         "$agent_line" == *"ple-matrix-healer.sh"* ]] && continue
+      (( agents += 1 ))
+    done < <(pgrep -af 'opencode run|codex exec' || true)
+    (( agents > 0 )) && busy=1
     if (( busy == 1 )); then
       idle_since=0
     elif (( idle_since == 0 )); then
