@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T10:01:33+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T10:04:24+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -764,3 +764,7 @@ Auch Luna-Codex mit Laufzeit-Timeout abgesichert
 ## Notiz 2026-10-04T10:01:33+02:00
 
 Benchmark-End-to-End-Metriken und Pennyroyal-Heiler-Erkennung korrigiert
+
+## Notiz 2026-10-04T10:04:24+02:00
+
+LiteLLM-DNS-Ziel korrigiert; Drift-Prüfung nach Commit erneut
