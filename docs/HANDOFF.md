@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T12:53:27+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T12:53:37+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -818,5 +818,9 @@ Matrix: CPU-Preflight vor GPU-Start und Readiness-Timeout auf 30 Minuten begrenz
 Matrix: CPU-Preflight vor GPU-Start und Readiness-Timeout auf 30 Minuten begrenzt
 
 ## Notiz 2026-10-04T12:53:27+02:00
+
+Matrix-Abbruch und falschen Alle-erfolgreich-Status behoben
+
+## Notiz 2026-10-04T12:53:37+02:00
 
 Matrix-Abbruch und falschen Alle-erfolgreich-Status behoben
