@@ -97,9 +97,11 @@ und den Zeitraum. Fuer freie Abfragen kann man weiterhin Grafana Explore mit
 der Datenquelle Loki verwenden:
 
 Fuer die haeufigste Abfrage gibt es auf der Homepage den Eintrag
-**Runtime-Logs**. Er oeffnet die Pennyroyal-Logs bereits mit einem kurzen
-Zeitraum und zehn Sekunden Aktualisierung. **Dozzle** zeigt parallel die
-rohen Live-Ausgaben aller Container.
+**Runtime-Logs**. Er fragt `pennyroyal|sglang-turbo-.*` gemeinsam ab. Dadurch
+bleiben auch alte Container-Namen in der Suche und ein neuer Runtime-Name
+braucht keinen manuellen Eintrag. **Dozzle** zeigt parallel die rohen
+Live-Ausgaben der aktuell vorhandenen Container; entfernte Pods kann Dozzle
+nicht nachtraeglich anzeigen.
 
 ```
 {container="pennyroyal"}                       alles von der Runtime

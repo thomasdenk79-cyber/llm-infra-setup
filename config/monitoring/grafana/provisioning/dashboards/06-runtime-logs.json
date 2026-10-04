@@ -1,0 +1,38 @@
+{
+  "uid": "llm-infra-runtime-logs",
+  "title": "Runtime-Logs",
+  "tags": ["logs", "runtime", "sglang"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": {"from": "now-6h", "to": "now"},
+  "panels": [
+    {
+      "type": "logs",
+      "title": "Pennyroyal / SGLang (alle Container-Namen)",
+      "id": 1,
+      "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
+      "gridPos": {"h": 22, "w": 24, "x": 0, "y": 0},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{container=~\"pennyroyal|sglang-turbo-.*\"}",
+          "queryType": "range",
+          "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
+          "editorMode": "code"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "deduplication": "exact",
+        "sortOrder": "Descending"
+      }
+    }
+  ]
+}

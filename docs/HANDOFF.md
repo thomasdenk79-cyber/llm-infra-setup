@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T03:55:03+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T03:58:42+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -684,3 +684,7 @@ Vorbereitung direkter Runtime-Log-Link
 ## Notiz 2026-10-04T03:55:03+02:00
 
 Direkter Runtime-Logs-Link und Dozzle-Hinweis eingerichtet
+
+## Notiz 2026-10-04T03:58:42+02:00
+
+Runtime-Logs ueber wechselnde Pod-Namen gebuendelt
