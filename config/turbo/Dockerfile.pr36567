@@ -4,6 +4,7 @@ FROM ${BASE_IMAGE}
 COPY pr36567-overlay/python/sglang/srt/environ.py /sgl-workspace/sglang/python/sglang/srt/environ.py
 COPY pr36567-overlay/python/sglang/srt/models/qwen4_exp.py /sgl-workspace/sglang/python/sglang/srt/models/qwen4_exp.py
 COPY pr36567-overlay/python/sglang/srt/models/qwen4_ple_nvme.py /sgl-workspace/sglang/python/sglang/srt/models/qwen4_ple_nvme.py
+COPY pr36567-overlay/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py /sgl-workspace/sglang/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
 COPY pr36567-overlay/rust/Cargo.toml /sgl-workspace/sglang/rust/Cargo.toml
 COPY pr36567-overlay/rust/Cargo.lock /sgl-workspace/sglang/rust/Cargo.lock
 COPY pr36567-overlay/rust/sglang-storage /sgl-workspace/sglang/rust/sglang-storage

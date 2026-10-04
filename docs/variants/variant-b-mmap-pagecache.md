@@ -83,6 +83,26 @@ C1/C6 getrennt gegen Port 8004 mit `PENNYROYAL_PORT=8004
 BENCHMARK_MODEL=Qwen3.8-Flash-Next ./scripts/benchmark.sh quick <1|6>`;
 Log-Kennzahl `mean_read_ms` vor/nach Vorladen notieren.
 
+## Healing 2026-10-04
+
+Der Start/Capture brach in beiden Versuchen beim Target-Verify-Capture ab. Der
+Breakable-CUDA-Graph-Allocator akzeptierte nur Tensor-, Listen- und
+Tuple-Ausgaben, Qwen4-Exp liefert wegen der EAGLE-Hidden-States aber ein
+`LogitsProcessorOutput`-Dataclass. Das erklärt den Fehler `Unsupported BCG output
+type`; der mmap-PLE war zu diesem Zeitpunkt bereits korrekt geöffnet und
+meldete 47,68 GiB mit 320.001.536 Zeilen.
+
+Der minimale Patch ueberlagert deshalb nur den Breakable-Backend-Allocator: Er
+behandelt Dataclass-Felder rekursiv wie die bereits unterstuetzten Strukturen
+und legt fuer Tensorfelder Capture-Puffer an. Der Breakable-Replay und der
+mmap-/LRU-PLE-Leser bleiben unveraendert; Produktions-Units werden nicht
+geaendert und es wurden keine Pods gestartet.
+
+Restrisiko: Andere Dataclasses mit nicht-stabilen Laufzeitfeldern sind nicht
+validiert; insbesondere Hidden-State-Layouts muessen bei einem spaeteren
+Live-Start geprueft werden. `make validate` deckt Syntax und Overlay-Kopie ab,
+ein Live-Capture und Benchmark stehen weiterhin aus.
+
 ## Risiken / offene Punkte
 
 * Cache-Hits haengen an der Token-/N-Gramm-Verteilung der Last; die

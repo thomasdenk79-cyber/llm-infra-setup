@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T03:29:32+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T03:34:29+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -574,3 +574,7 @@ Turbo nach wiederholtem Capture-Fehler stabilisiert und Unit auf mmap korrigiert
 ## Notiz 2026-10-04T03:29:32+02:00
 
 Start Analyse Variante B: Healing-Beleg lesen
+
+## Notiz 2026-10-04T03:34:29+02:00
+
+Variante B Healing: BCG Dataclass-Ausgabe fuer LogitsProcessorOutput
