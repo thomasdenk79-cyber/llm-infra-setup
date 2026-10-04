@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T10:15:25+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T10:19:37+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -784,3 +784,7 @@ runner-review report folgt
 ## Notiz 2026-10-04T10:15:25+02:00
 
 Benchmark bricht bei belegter Runtime statt verfälschter Messung ab
+
+## Notiz 2026-10-04T10:19:37+02:00
+
+Qwen-Runner-Review abgeschlossen; Matrixlauf wird wieder aufgenommen
