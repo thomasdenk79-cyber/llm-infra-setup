@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T05:04:41+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T05:08:27+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -736,3 +736,7 @@ Erfolgsstaende mit C-Profilen KV-Cache und Laufzeitmetriken gesichert
 ## Notiz 2026-10-04T05:04:41+02:00
 
 Agenten-Kontext-Watchdog fuer dynamischen KV-Druck installiert
+
+## Notiz 2026-10-04T05:08:27+02:00
+
+KV-HiCache- und Agenten-Warnungen fuer Grafana Prometheus ergaenzt

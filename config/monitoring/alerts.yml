@@ -177,3 +177,27 @@ groups:
         annotations:
           summary: "KV-Cache zu ueber 95 % gefuellt"
           description: "Neue Anfragen muessen warten; NIXL und Zulaufe im Blick behalten."
+
+      - alert: KVSpeicherKritisch
+        expr: 100 * sglang:kv_used_tokens / sglang:max_total_num_tokens > 98
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "KV-Cache ueber 98 % gefuellt"
+          description: "Neue Agenten pausieren; zuerst Compacting oder HiCache-Auslagerung pruefen."
+
+      - alert: KVWarteschlangeWachst
+        expr: sum(sglang:num_queue_reqs) > 0 and sum(sglang:pending_prealloc_token_usage) > 0
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "Anfragen warten auf KV-/Prefill-Kapazitaet"
+          description: "Neue grosse Kontexte zurueckhalten; KV- und Agenten-Watchdog pruefen."
+
+      - alert: HiCacheNaheVoll
+        expr: 100 * sglang:hicache_host_used_tokens / sglang:hicache_host_total_tokens > 90
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "Host-HiCache ueber 90 % gefuellt"
+          description: "Auslagerung kann in Re-Prefill oder Host-Speicherdruck uebergehen."
