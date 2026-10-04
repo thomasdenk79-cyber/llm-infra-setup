@@ -85,23 +85,33 @@ Log-Kennzahl `mean_read_ms` vor/nach Vorladen notieren.
 
 ## Healing 2026-10-04
 
-Der Start/Capture brach in beiden Versuchen beim Target-Verify-Capture ab. Der
-Breakable-CUDA-Graph-Allocator akzeptierte nur Tensor-, Listen- und
-Tuple-Ausgaben, Qwen4-Exp liefert wegen der EAGLE-Hidden-States aber ein
-`LogitsProcessorOutput`-Dataclass. Das erklärt den Fehler `Unsupported BCG output
-type`; der mmap-PLE war zu diesem Zeitpunkt bereits korrekt geöffnet und
-meldete 47,68 GiB mit 320.001.536 Zeilen.
+Der Start wurde erst nach erfolgreicher Runtime-Initialisierung beendet. Das
+Protokoll zeigt erfolgreiche CUDA-Graph-Captures fuer Target-Verify, Draft
+Decode und Draft Extend sowie den mmap-PLE mit 47,68 GiB/320.001.536 Zeilen.
+Der anschliessende `sm120_turbo_structured_output`-Warmup lief durch EAGLE bis
+XGrammar; dort trafen 1 Logits-Zeile auf eine Grammar-Bitmaske mit 4 Zeilen
+(`batch size mismatch: logits 1 vs bitmask 4`). Das ist die belegte
+Abbruchursache, nicht CUDA-Graph-Capture oder PLE-Leser.
 
-Der minimale Patch ueberlagert deshalb nur den Breakable-Backend-Allocator: Er
-behandelt Dataclass-Felder rekursiv wie die bereits unterstuetzten Strukturen
-und legt fuer Tensorfelder Capture-Puffer an. Der Breakable-Replay und der
-mmap-/LRU-PLE-Leser bleiben unveraendert; Produktions-Units werden nicht
-geaendert und es wurden keine Pods gestartet.
+Der minimale Patch schaltet fuer Variante B nur diesen strukturierten
+Anfrage-Warmup ab (`TURBO_WARMUPS=none`). Der Capture der Decode- und Verify-
+Graphen bleibt aktiv und der mmap-/LRU-PLE-Pfad unveraendert. Der gemeinsame
+Launcher behaelt fuer andere Nutzer den bisherigen Warmup als Standard;
+Produktions-Units werden nicht geaendert.
 
-Restrisiko: Andere Dataclasses mit nicht-stabilen Laufzeitfeldern sind nicht
-validiert; insbesondere Hidden-State-Layouts muessen bei einem spaeteren
-Live-Start geprueft werden. `make validate` deckt Syntax und Overlay-Kopie ab,
-ein Live-Capture und Benchmark stehen weiterhin aus.
+Restrisiko: Ohne den Request-Warmup entfaellt dessen Kernel-/Pfad-Aufwaermung;
+die expliziten CUDA-Graph-Captures laufen beim Start weiter, aber ein spaeterer
+Live-Start muss Server-Health und echte strukturierte Anfragen bestaetigen. Der
+Patch umgeht den fehlerhaften Warmup und behebt nicht die EAGLE/XGrammar-
+Batchform-Inkonsistenz. Es wurden keine Pods gestartet und kein Benchmark
+ausgefuehrt.
+
+## Forschungsnotiz
+
+Siehe [research-loop.md](../research-loop.md) fuer Primaerquelle, Datum und
+Entscheidung. Ein Folge-Branch ist derzeit nicht gerechtfertigt: Ein
+verifizierter Upstream-Fix fuer genau diesen EAGLE/XGrammar-Batchfehler wurde
+nicht gefunden.
 
 ## Risiken / offene Punkte
 

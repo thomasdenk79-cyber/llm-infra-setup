@@ -11,6 +11,7 @@ MEM_FRACTION_STATIC="${MEM_FRACTION_STATIC:-0.98}"
 HICACHE_SIZE_GB="${HICACHE_SIZE_GB:-8}"
 MAX_RUNNING_REQUESTS="${MAX_RUNNING_REQUESTS:-6}"
 MAX_MAMBA_CACHE_SIZE="${MAX_MAMBA_CACHE_SIZE:-27}"
+TURBO_WARMUPS="${TURBO_WARMUPS:-sm120_turbo_structured_output}"
 
 [[ -f "$MODEL_PATH/config.json" ]] || { echo "Turbo-Modell fehlt: $MODEL_PATH" >&2; exit 2; }
 [[ -f "$MODEL_PATH/model.safetensors.index.json" ]] || { echo "Turbo-Index fehlt: $MODEL_PATH" >&2; exit 2; }
@@ -80,6 +81,12 @@ args=(
   "${graph_args[@]}"
   "${sleep_args[@]}"
 )
+
+# The structured-output warmup currently reaches an incompatible EAGLE/XGrammar
+# batch shape on this pinned build. CUDA graph capture above remains enabled.
+if [[ "$TURBO_WARMUPS" != none ]]; then
+  args+=(--warmups "$TURBO_WARMUPS")
+fi
 
 printf 'turbo-upstream-ple: model=%s context=%s mem_fraction=%s C%s mamba=%s hicache=%sGB ple=file:%s backend=%s cuda_graph=%s/%s sleep_idle=%s online_mxfp8=%s kv=fp8_e4m3\n' \
   "$MODEL_PATH" "$CONTEXT_LENGTH" "$MEM_FRACTION_STATIC" "$MAX_RUNNING_REQUESTS" \

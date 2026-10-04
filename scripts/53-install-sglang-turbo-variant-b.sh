@@ -17,6 +17,7 @@ source "$root/lib/common.sh"
 : "${TURBO_VARIANT_B_CONTAINER_NAME:=sglang-turbo-variant-b}"
 : "${TURBO_VARIANT_B_MMAP_CACHE_MB:=512}"
 : "${TURBO_VARIANT_B_PREFETCH:=async}"
+: "${TURBO_VARIANT_B_WARMUPS:=none}"
 
 have podman || { log 'FEHLT: podman'; exit 1; }
 [[ -d "$LLM_MODELS_DIR/$TURBO_MODEL_DIR" ]] || { log "Modell fehlt: $LLM_MODELS_DIR/$TURBO_MODEL_DIR"; exit 1; }
@@ -52,6 +53,7 @@ Environment=SGLANG_QWEN4_PLE_NVME_PATH=/models/$TURBO_MODEL_DIR
 Environment=SGLANG_QWEN4_PLE_NVME_BACKEND=mmap
 Environment=SGLANG_QWEN4_PLE_NVME_MMAP_CACHE_MB=$TURBO_VARIANT_B_MMAP_CACHE_MB
 Environment=SGLANG_QWEN4_PLE_NVME_PREFETCH=$TURBO_VARIANT_B_PREFETCH
+Environment=TURBO_WARMUPS=$TURBO_VARIANT_B_WARMUPS
 Environment=SGLANG_RUST_BUILD_MODE=auto
 Environment=RUSTUP_TOOLCHAIN=stable
 Environment=RUSTUP_OFFLINE=1

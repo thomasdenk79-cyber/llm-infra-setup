@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T03:34:29+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T06:43:00+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -578,3 +578,7 @@ Start Analyse Variante B: Healing-Beleg lesen
 ## Notiz 2026-10-04T03:34:29+02:00
 
 Variante B Healing: BCG Dataclass-Ausgabe fuer LogitsProcessorOutput
+
+## Notiz 2026-10-04T06:43:00+02:00
+
+Variante B Warmup-Batchfehler minimal umgehen
