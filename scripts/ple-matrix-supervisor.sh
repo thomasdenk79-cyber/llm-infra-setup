@@ -31,6 +31,12 @@ for ((cycle=1; cycles == 0 || cycle <= cycles; cycle++)); do
     esac
   done < "$run_dir/summary.csv"
   for job in "${jobs[@]:-}"; do wait "$job" || true; done
+  research_pid=""
+  if [[ "${PLE_RESEARCH_AUDIT:-1}" == 1 ]]; then
+    "$root/scripts/ple-research-audit.sh" & research_pid="$!"
+    log "Parallele Qwen-Forschungsprüfung aller Varianten gestartet (PID $research_pid)."
+  fi
+  if [[ -n "$research_pid" ]]; then wait "$research_pid" || true; fi
   (( failed == 0 )) && { log 'Alle Varianten erfolgreich; Supervisor beendet.'; exit 0; }
   log 'Fehler repariert oder dokumentiert; nächste Matrixrunde folgt.'
 done
