@@ -142,3 +142,14 @@ unter `~/.local/share/llm-infra`, Metrikziel in Prometheus, Diagnosefall in
 * PLE auf echter NVMe-Partition gemessen gegen Loop-Datei (Anleitung in
   `docs/performance.md`).
 * KVM/libvirt als spaetere, getrennte Phase (ohne GPU-Durchreichung).
+
+## Neustart-Übergabe 2026-10-04
+
+Pennyroyal ist die stabile Referenz. Letzter gesicherter Commit: `c1459b9`.
+Effektive Werte: `mem_fraction=0.981`, `sleep_on_idle=0`,
+`memory_saver=0`, HiCache 16 GiB, FP8-KV, sechs Requests, 36 Mamba-Slots,
+NVMe-PLE. Nach einem Neustart zuerst den Dienst und Health 200 prüfen; den
+autonomen Runner ausschließlich aus
+`~/work/qwen38-flash-next-blackwell` mit `./scripts/start_runner.sh`
+übernehmen lassen. Keine GPU-parallelen Starts und keine ungemessenen KV-
+oder Durchsatzwerte dokumentieren.
