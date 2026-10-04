@@ -128,6 +128,9 @@ run_one() {
         return 0
       fi
       printf '%s,benchmark_failed,attempt-%s\n' "$name" "$attempt" >> "$summary"
+      capture_logs "$name-attempt-$attempt" "$service" "$container"
+      queue_healer "$name"
+      stop_gpu_services
       return 1
     fi
     capture_logs "$name-attempt-$attempt" "$service" "$container"
@@ -156,10 +159,13 @@ restore_production() {
     systemd_reload
   '
   systemctl --user start sglang-turbo-c6.service || true
-  wait_variant_ready PROD sglang-turbo-c6.service 8002 sglang-turbo-c6 || true
+  # Die Produktions-Unit exponiert den API-Port aus ihrer Vorlage; aktuell ist
+  # das 8001. Ein abweichender Health-Port ließ den Runner nach dem Restore hängen.
+  wait_variant_ready PROD sglang-turbo-c6.service "${PROD_HOST_PORT:-8001}" sglang-turbo-c6 || true
 }
 
-trap restore_production EXIT INT TERM
+trap 'restore_production' EXIT
+trap 'exit 130' INT TERM
 
 overall=0
 run_one A "$root/../llm-infra-setup-turbo-upstream" ./scripts/52-install-sglang-turbo-upstream-ple.sh \
