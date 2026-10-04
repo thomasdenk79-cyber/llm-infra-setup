@@ -45,6 +45,11 @@ PLE-Page-Cache, Linux-/ZFS-Cache, Triton-/FlashInfer-Caches, CUDA-Graph-Capture
 und wiederholte Warmups. Entwickle bei Bedarf eine eigene Startup-Cache-Variante;
 der Runner darf Preload-Schritte nicht nur ausgeben, sondern muss sie sicher,
 idempotent und vor dem Start ausführen.
+Baue außerdem schnelle Vorab-Gates vor jeden teuren GPU-Start: Shell-/Python-
+Syntax, Varianten-Drift, doppelte oder widersprüchliche SGLang-Argumente,
+verfügbare Modell-/PLE-Pfade, importierbare Overlay-Module und einen CPU-/
+Container-Smoke-Test für Warmup-Registrierungen. Ein Fehler muss in Sekunden
+als `preflight_failed` erscheinen und darf keinen 10-Minuten-GPU-Start auslösen.
 
 Arbeite autonom: repariere belegte Fehler direkt, entscheide über Architektur
 und Varianten und implementiere die nötigen Änderungen. Stoppe oder starte keine Pods und ändere keine
