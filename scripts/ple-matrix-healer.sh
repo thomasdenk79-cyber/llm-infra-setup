@@ -47,6 +47,15 @@ Heilern, Benchmarks oder Dokumentation. Führe bash -n, make validate und bei
 Unit-Bezug make drift aus. Committe jede Änderung präzise. Schreibe Befunde,
 Änderungen, Commit und offene Risiken nach $out/report.md. Wenn alles stimmt,
 schreibe das ausdrücklich und ändere nichts.
+
+Bewerte ausdrücklich einen Kandidaten "Pennyroyal-Turbo-Hybrid": Pennyroyal
+bleibt die unveränderte SSD/NIXL-Basis; Turbo-Ideen wie
+Mamba-Cache-Strategie, lazy/extra-buffer, MXFP8-/FlashInfer-Parameter,
+Chunked-Prefill und CUDA-Graph-Batchgrößen werden nur als isolierte
+Konfigurationsvariante getestet. Kopiere keinen Turbo-PLE-Pythonlader in
+Pennyroyal. Wenn die Logs oder Messwerte dafür sprechen, lege einen eigenen
+Branch und Worktree an, dokumentiere die Hypothese und trage die Variante in
+die Matrixplanung ein. Wenn nicht, begründe das im Bericht.
 EOF
 )"
 timeout --signal=INT --kill-after=60s "${PLE_MATRIX_HEALER_MAX_SECONDS:-3600}" \
