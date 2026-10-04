@@ -93,7 +93,9 @@ render_variant_unit() {
 }
 
 wait_variant_ready() {
-  local name="$1" service="$2" port="$3" container="$4" deadline=$((SECONDS + 2700))
+  local name="$1" service="$2" port="$3" container="$4"
+  local ready_timeout="${PLE_VARIANT_READY_TIMEOUT_SECONDS:-1800}"
+  local deadline=$((SECONDS + ready_timeout))
   while (( SECONDS < deadline )); do
     local service_status container_status
     service_status="$(systemctl --user is-active "$service" 2>/dev/null || true)"
@@ -116,8 +118,21 @@ wait_variant_ready() {
     fi
     sleep 15
   done
-  log "$name: Readiness-Timeout nach 45 Minuten."
+  log "$name: Readiness-Timeout nach $((ready_timeout / 60)) Minuten."
   return 1
+}
+
+preflight_variant() {
+  local name="$1" worktree="$2"
+  log "$name: CPU-Vorprüfung vor GPU-Start."
+  if ! (cd "$worktree" && timeout --signal=TERM --kill-after=10s \
+      "${PLE_PREFLIGHT_TIMEOUT_SECONDS:-180}" make validate && \
+      timeout --signal=TERM --kill-after=10s \
+      "${PLE_PREFLIGHT_TIMEOUT_SECONDS:-180}" make drift); then
+    log "$name: preflight_failed (validate/drift); kein teurer GPU-Start."
+    return 1
+  fi
+  log "$name: CPU-Vorprüfung bestanden."
 }
 
 run_benchmarks() {
@@ -147,6 +162,11 @@ run_one() {
   (( retry_failed == 1 )) && max_attempts=2
   while (( attempt <= max_attempts )); do
     log "===== $name attempt $attempt/$max_attempts ====="
+    if ! preflight_variant "$name" "$worktree"; then
+      printf '%s,preflight_failed,attempt-%s\n' "$name" "$attempt" >> "$summary"
+      queue_healer "$name"
+      return 1
+    fi
     stop_gpu_services
     run_started="$(date --iso-8601=seconds)"
     if ! (cd "$worktree" && "$installer"); then
