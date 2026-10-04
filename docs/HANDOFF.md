@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T09:40:42+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T18:50:38+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -582,3 +582,7 @@ C-Variante: Fehleranalyse vor Reparatur
 ## Notiz 2026-10-04T09:40:43+02:00
 
 C-Reparatur: Benchmark-Pipe und Forschungsdoku
+
+## Notiz 2026-10-04T18:50:38+02:00
+
+Vorstellung des Pennyroyal-aggressiv-Originalprofils nach wiederholtem CUDA-OOM
