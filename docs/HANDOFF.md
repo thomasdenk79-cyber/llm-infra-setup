@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T04:23:55+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T04:40:48+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -720,3 +720,7 @@ Metrics-Vorcheck und zentraler Benchmark robust gemacht
 ## Notiz 2026-10-04T04:23:55+02:00
 
 Bestandsaufnahme Repository und Aufwandsschaetzung
+
+## Notiz 2026-10-04T04:40:48+02:00
+
+Forschungsmodus fuer Qwen- und Luna-Heiler dokumentiert

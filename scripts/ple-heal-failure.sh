@@ -28,6 +28,16 @@ SSD-PLE und CUDA-Graph-Korrektheit erhält. Ändere keine Produktions-Units,
 starte keine Pods und führe keinen Benchmark aus. Führe make validate und,
 falls Units betroffen sind, make drift aus. Dokumentiere Ursache, Patch und
 Restrisiko in der Varianten-Doku, committe den Worktree und gib Commit/Dateien aus.
+
+Arbeite im Forschungsmodus: Wenn du einen plausiblen besseren Upstream-Patch,
+ein Paper, einen offiziellen CUDA-/SGLang-Ansatz oder ein Plugin findest, prüfe
+die Primärquelle im Internet. Übernimm nichts ungeprüft. Dokumentiere Quelle,
+Datum, erwarteten Gewinn und Risiko in docs/research-loop.md. Wenn der Ansatz
+eine zusätzliche Variante rechtfertigt, lege dafür einen eigenen Branch und
+Worktree mit sprechendem Namen an und beschreibe die nötigen Runner-Einträge;
+ändere die laufende Produktionsvariante nicht. Neue Forschungskandidaten
+werden erst nach denselben Validate-, Start-, Health- und Benchmark-Gates
+Kandidaten für die Produktion.
 EOF
 echo "Luna-Reparatur für $variant startet."
 (cd "$worktree" && codex exec -m gpt-6-luna -C "$worktree" \
@@ -40,7 +50,7 @@ for _ in $(seq 1 180); do
   sleep 30
 done
 if curl -fsS --max-time 5 http://127.0.0.1:8002/health >/dev/null 2>&1; then
-  qwen_prompt="Prüfe den Reparaturstand der Variante $variant in $worktree. Lies $evidence und die letzten Commits. Suche Restfehler beim Breakable-CUDA-Graphen und SSD-PLE. Arbeite nur im Variantenbranch, ändere keine Produktionsdateien, starte keine Pods und benchmarke nicht. Korrigiere nötige Restfehler, führe make validate/make drift aus und committe."
+  qwen_prompt="Prüfe den Reparaturstand der Variante $variant in $worktree. Lies $evidence und die letzten Commits. Suche Restfehler beim Breakable-CUDA-Graphen und SSD-PLE. Arbeite nur im Variantenbranch, ändere keine Produktionsdateien, starte keine Pods und benchmarke nicht. Korrigiere nötige Restfehler, führe make validate/make drift aus und committe. Forschungsmodus: Wenn ein offizieller Upstream-/Paper-/CUDA-/SGLang-/Plugin-Ansatz oder eine Kombination plausibel besser ist, recherchiere die Primärquelle im Internet, dokumentiere URL, Datum, Nutzen und Risiko in docs/research-loop.md und beschreibe eine neue isolierte Variante mit eigenem Branch/Worktree. Übernehme sie nicht ungeprüft in Produktion; sie braucht dieselben Validate-, Start-, Health- und Benchmark-Gates."
   (cd "$worktree" && opencode run --dir "$worktree" --model local-litellm/qwen3.8-flash-next \
     --agent build --auto "$qwen_prompt") > "$run_dir/healing/$variant-qwen.log" 2>&1 || true
 else
