@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T12:16:31+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T12:16:56+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -810,5 +810,9 @@ Qwen soll Startup-Caches und Preload als eigene Optimierungsvariante prüfen
 Qwen soll schnelle Preflight-Gates vor teuren GPU-Starts entwerfen
 
 ## Notiz 2026-10-04T12:16:31+02:00
+
+Matrix: CPU-Preflight vor GPU-Start und Readiness-Timeout auf 30 Minuten begrenzt
+
+## Notiz 2026-10-04T12:16:56+02:00
 
 Matrix: CPU-Preflight vor GPU-Start und Readiness-Timeout auf 30 Minuten begrenzt
