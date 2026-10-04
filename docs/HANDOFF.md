@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T11:02:33+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T11:50:19+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -590,3 +590,7 @@ Start Analyse Variante B: Capture-Belege und aktueller Stand gelesen
 ## Notiz 2026-10-04T11:02:33+02:00
 
 Variante B: festen Warmup-Schalter entfernt, Doku und Forschungsnotiz aktualisiert
+
+## Notiz 2026-10-04T11:50:19+02:00
+
+Variante B EAGLE/NEXTN Shape-Absturz isoliert; Speculation nur in B deaktivierbar, PLE und Graph-Pfad erhalten

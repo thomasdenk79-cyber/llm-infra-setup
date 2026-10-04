@@ -12,6 +12,7 @@ HICACHE_SIZE_GB="${HICACHE_SIZE_GB:-8}"
 MAX_RUNNING_REQUESTS="${MAX_RUNNING_REQUESTS:-6}"
 MAX_MAMBA_CACHE_SIZE="${MAX_MAMBA_CACHE_SIZE:-27}"
 TURBO_WARMUPS="${TURBO_WARMUPS:-sm120_turbo_structured_output}"
+TURBO_SPECULATIVE="${TURBO_SPECULATIVE:-on}"
 
 [[ -f "$MODEL_PATH/config.json" ]] || { echo "Turbo-Modell fehlt: $MODEL_PATH" >&2; exit 2; }
 [[ -f "$MODEL_PATH/model.safetensors.index.json" ]] || { echo "Turbo-Index fehlt: $MODEL_PATH" >&2; exit 2; }
@@ -53,6 +54,18 @@ case "$TURBO_SLEEP_ON_IDLE" in
   *) echo "TURBO_SLEEP_ON_IDLE muss on oder off sein" >&2; exit 2 ;;
 esac
 
+# NEXTN/EAGLE crashes on this pinned build when verify logits and grammar
+# masks have incompatible batch shapes. Keep it switchable for other variants.
+case "$TURBO_SPECULATIVE" in
+  on)
+    speculative_args=(--speculative-algorithm NEXTN --speculative-num-steps 3
+      --speculative-eagle-topk 1 --speculative-num-draft-tokens 4
+      --gdn-mtp-cache-mode none)
+    ;;
+  off) speculative_args=() ;;
+  *) echo "TURBO_SPECULATIVE muss on oder off sein" >&2; exit 2 ;;
+esac
+
 args=(
   serve
   --host 0.0.0.0 --port "$PORT"
@@ -71,12 +84,10 @@ args=(
   --mem-fraction-static "$MEM_FRACTION_STATIC"
   --page-size 64 --chunked-prefill-size 4096
   --max-running-requests "$MAX_RUNNING_REQUESTS"
-  --speculative-algorithm NEXTN --speculative-num-steps 3
-  --speculative-eagle-topk 1 --speculative-num-draft-tokens 4
-  --gdn-mtp-cache-mode none
   --enable-hierarchical-cache --hicache-size "$HICACHE_SIZE_GB"
   --hicache-write-policy write_through
   --enable-metrics --enable-cache-report --enable-request-time-stats-logging
+  "${speculative_args[@]}"
   "${graph_args[@]}"
   "${sleep_args[@]}"
 )
@@ -87,7 +98,7 @@ if [[ "$TURBO_WARMUPS" != none ]]; then
   args+=(--warmups "$TURBO_WARMUPS")
 fi
 
-printf 'turbo-upstream-ple: model=%s context=%s mem_fraction=%s C%s mamba=%s hicache=%sGB ple=file:%s backend=%s cuda_graph=%s/%s sleep_idle=%s online_mxfp8=%s kv=fp8_e4m3\n' \
+printf 'turbo-upstream-ple: model=%s context=%s mem_fraction=%s C%s mamba=%s hicache=%sGB ple=file:%s backend=%s cuda_graph=%s/%s speculative=%s sleep_idle=%s online_mxfp8=%s kv=fp8_e4m3\n' \
   "$MODEL_PATH" "$CONTEXT_LENGTH" "$MEM_FRACTION_STATIC" "$MAX_RUNNING_REQUESTS" \
-  "$MAX_MAMBA_CACHE_SIZE" "$HICACHE_SIZE_GB" "$SGLANG_QWEN4_PLE_NVME_PATH" "$SGLANG_QWEN4_PLE_NVME_BACKEND" "$TURBO_CUDA_GRAPH" "$TURBO_CUDA_GRAPH_BACKEND_DECODE" "$TURBO_SLEEP_ON_IDLE" "$SGLANG_SM120_ONLINE_MXFP8" >&2
+  "$MAX_MAMBA_CACHE_SIZE" "$HICACHE_SIZE_GB" "$SGLANG_QWEN4_PLE_NVME_PATH" "$SGLANG_QWEN4_PLE_NVME_BACKEND" "$TURBO_CUDA_GRAPH" "$TURBO_CUDA_GRAPH_BACKEND_DECODE" "$TURBO_SPECULATIVE" "$TURBO_SLEEP_ON_IDLE" "$SGLANG_SM120_ONLINE_MXFP8" >&2
 exec sglang "${args[@]}"

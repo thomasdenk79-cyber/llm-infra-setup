@@ -85,29 +85,26 @@ Log-Kennzahl `mean_read_ms` vor/nach Vorladen notieren.
 
 ## Healing 2026-10-04
 
-Der Start wurde erst nach erfolgreicher Runtime-Initialisierung beendet. Das
-Protokoll zeigt erfolgreiche CUDA-Graph-Captures fuer Target-Verify, Draft
-Decode und Draft Extend sowie den mmap-PLE mit 47,68 GiB/320.001.536 Zeilen.
-Der anschliessende `sm120_turbo_structured_output`-Warmup lief durch EAGLE bis
-XGrammar; dort trafen 1 Logits-Zeile auf eine Grammar-Bitmaske mit 4 Zeilen
-(`batch size mismatch: logits 1 vs bitmask 4`). Das ist die belegte
-Abbruchursache, nicht CUDA-Graph-Capture oder PLE-Leser.
+Beide Startprotokolle bestaetigen, dass der mmap-PLE mit 47,68 GiB und
+320.001.536 Zeilen initialisiert und Target-Verify-, Draft-Decode- sowie
+Draft-Extend-Graphs erfolgreich erfasst wurden. Versuch 1 stuerzte beim
+strukturierten Warmup mit `batch size mismatch: logits 1 vs bitmask 4` in
+XGrammar ab. Versuch 2 lief ohne diesen Warmup weiter, scheiterte aber im
+NEXTN/EAGLE-Verify mit `target_predict.reshape(1, 4)` bei nur einem Eingabewert.
+Damit ist die gemeinsame Fehlergrenze die spekulative Verify-Pipeline; der
+zweite Trace belegt, dass das Entfernen des Warmups allein nicht reicht.
 
-Der erste Healing-Patch setzte fuer Variante B zwar `TURBO_WARMUPS=none`,
-liess aber im gemeinsamen Launcher das feste Argument
-`--warmups sm120_turbo_structured_output` stehen. Dadurch lief der fehlerhafte
-Warmup trotz der Umgebungsvariable weiter. Der minimale Reparaturpatch entfernt
-nur dieses feste Argument; der Launcher fuegt den Warmup jetzt ausschliesslich
-bei `TURBO_WARMUPS != none` hinzu. Der Capture der Decode- und Verify-Graphen
-bleibt aktiv und der mmap-/LRU-PLE-Pfad unveraendert. Produktions-Units werden
-nicht geaendert.
+Der varianteigene Launcher erhaelt nun `TURBO_SPECULATIVE=on|off`; Variante B
+setzt standardmaessig `off` und laesst die NEXTN-Argumente weg. Breakable
+Decode-CUDA-Graphs bleiben aktiv, damit der NVMe-PLE-Pfad weiterhin waehrend
+des Graph-Replays seine echten Zeilen liest. Die Guards waehrend nativer
+Graph-Captures bleiben ebenfalls unveraendert. Produktions-Units und andere
+Launcher-Nutzer werden nicht geaendert.
 
-Restrisiko: Ohne den Request-Warmup entfaellt dessen Kernel-/Pfad-Aufwaermung;
-die expliziten CUDA-Graph-Captures laufen beim Start weiter, aber ein spaeterer
-Live-Start muss Server-Health und echte strukturierte Anfragen bestaetigen. Der
-Patch umgeht den fehlerhaften Warmup und behebt nicht die EAGLE/XGrammar-
-Batchform-Inkonsistenz. Es wurden keine Pods gestartet und kein Benchmark
-ausgefuehrt.
+Restrisiko: Ohne NEXTN sinkt der erwartbare Durchsatz, und der alternative
+Graph-Replay mit eager Target-Decode plus mmap-PLE wurde nicht live validiert.
+Start, Health, korrekte strukturierte Antworten und Benchmark bleiben daher
+offene Gates. Es wurden keine Pods gestartet und kein Benchmark ausgefuehrt.
 
 ## Forschungsnotiz
 
