@@ -59,7 +59,6 @@ args=(
   --served-model-name Qwen3.8-Flash-Next
   --model-path "$MODEL_PATH"
   --reasoning-parser auto --tool-call-parser auto
-  --warmups sm120_turbo_structured_output
   --linear-attn-prefill-backend flashinfer --linear-attn-decode-backend flashinfer
   --moe-runner-backend flashinfer_cutlass
   --max-mamba-cache-size "$MAX_MAMBA_CACHE_SIZE"

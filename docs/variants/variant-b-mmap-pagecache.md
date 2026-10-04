@@ -93,11 +93,14 @@ XGrammar; dort trafen 1 Logits-Zeile auf eine Grammar-Bitmaske mit 4 Zeilen
 (`batch size mismatch: logits 1 vs bitmask 4`). Das ist die belegte
 Abbruchursache, nicht CUDA-Graph-Capture oder PLE-Leser.
 
-Der minimale Patch schaltet fuer Variante B nur diesen strukturierten
-Anfrage-Warmup ab (`TURBO_WARMUPS=none`). Der Capture der Decode- und Verify-
-Graphen bleibt aktiv und der mmap-/LRU-PLE-Pfad unveraendert. Der gemeinsame
-Launcher behaelt fuer andere Nutzer den bisherigen Warmup als Standard;
-Produktions-Units werden nicht geaendert.
+Der erste Healing-Patch setzte fuer Variante B zwar `TURBO_WARMUPS=none`,
+liess aber im gemeinsamen Launcher das feste Argument
+`--warmups sm120_turbo_structured_output` stehen. Dadurch lief der fehlerhafte
+Warmup trotz der Umgebungsvariable weiter. Der minimale Reparaturpatch entfernt
+nur dieses feste Argument; der Launcher fuegt den Warmup jetzt ausschliesslich
+bei `TURBO_WARMUPS != none` hinzu. Der Capture der Decode- und Verify-Graphen
+bleibt aktiv und der mmap-/LRU-PLE-Pfad unveraendert. Produktions-Units werden
+nicht geaendert.
 
 Restrisiko: Ohne den Request-Warmup entfaellt dessen Kernel-/Pfad-Aufwaermung;
 die expliziten CUDA-Graph-Captures laufen beim Start weiter, aber ein spaeterer
@@ -121,4 +124,4 @@ nicht gefunden.
   `free -h` pruefen, ggf. MMAP_CACHE_MB senken.
 * Sync-Modus kann die Vorlaufzeit pro Schritt erhohen (keine Ueberlappung);
 * er dient als Nachweispfad, nicht als Zielkonfiguration.
-* Kein Live-Test, kein Benchmark durchgefuehrt.
+* Kein Live-Test, kein Benchmark durchgefuehrt; der Patch ist statisch geprueft.

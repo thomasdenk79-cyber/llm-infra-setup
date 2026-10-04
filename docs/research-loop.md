@@ -25,9 +25,11 @@ mit 47,68 GiB/320.001.536 Zeilen initialisiert.
 Die Code-Links auf `main` sind bewegliche Referenzen; maßgeblich fuer den
 betroffenen Lauf bleibt die im Run verwendete, in `versions.lock` gepinnte
 Turbo-Revision `c6cd5062669625fdbaf08032931f10b6661f8f6f` sowie der konkrete
-Stacktrace in `state/variant-runs/20261004T040547Z/B-attempt-1/journal.log`.
+Stacktrace in `/home/z000g9hu/work/llm-infra-setup/state/variant-runs/20261004T081939Z/B-attempt-1/journal.log`.
 
 **Entscheidung / erwarteter Gewinn:** Variante B setzt `TURBO_WARMUPS=none`.
+Der Reparaturpatch entfernt das zuvor doppelte feste `--warmups`-Argument,
+sodass diese Einstellung tatsaechlich wirksam wird.
 Der gemeinsame Launcher behaelt `sm120_turbo_structured_output` als Default.
 Das vermeidet den bekannten fehlerhaften Request-Warmup und sollte den Start
 bis zum Health-Endpunkt fortsetzen; es aendert weder Decode-Spekulation noch
