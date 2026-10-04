@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T04:07:24+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T04:16:44+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -704,3 +704,7 @@ Statuspruefung Variantenlauf vor Live-Diagnose
 ## Notiz 2026-10-04T04:07:24+02:00
 
 Runner beendet Readiness sofort bei Container-Crash
+
+## Notiz 2026-10-04T04:16:44+02:00
+
+Crashursache nach Readiness und Benchmark pruefen
