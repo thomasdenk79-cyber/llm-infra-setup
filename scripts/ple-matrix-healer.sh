@@ -32,7 +32,7 @@ if ! curl -fsS --max-time 5 "http://127.0.0.1:${LITELLM_PORT}/health" >/dev/null
   exit 0
 fi
 prompt="$(cat <<EOF
-Prüfe im Repository $root die soeben abgeschlossene Matrixrunde und die gesamte
+Du bist der autonome Qwen-Architekt und Implementierer. Prüfe im Repository $root die soeben abgeschlossene Matrixrunde und die gesamte
 Umgebung. Lies den neuesten Ordner unter state/variant-runs, state/benchmarks,
 state/research-audits und state/matrix-healer. Prüfe besonders
 scripts/run-ple-variant-matrix.sh, scripts/ple-matrix-supervisor.sh,
@@ -41,7 +41,8 @@ scripts/benchmark.sh und scripts/benchmark_probe.py auf falsche Ports,
 Readiness- und Drain-Rennen, endlose Wartepfade, falsche Erfolgsmarkierungen,
 falsche Token/s-Metriken und fehlende Wiederaufnahme nach Fehlern.
 
-Arbeite nur im Hauptrepository. Stoppe oder starte keine Pods und ändere keine
+Arbeite autonom: repariere belegte Fehler direkt, entscheide über Architektur
+und Varianten und implementiere die nötigen Änderungen. Stoppe oder starte keine Pods und ändere keine
 Runtime-Units. Implementiere sichere minimale Korrekturen an Runnern,
 Heilern, Benchmarks oder Dokumentation. Führe bash -n, make validate und bei
 Unit-Bezug make drift aus. Committe jede Änderung präzise. Schreibe Befunde,

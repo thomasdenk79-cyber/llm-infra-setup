@@ -38,8 +38,8 @@ audit_variant() {
   local variant="$1" worktree="$2"
   local report="$out/$variant.md" log="$out/$variant.log"
   cat > "$out/$variant-prompt.txt" <<EOF
-Du bist der Forschungsprüfer für Variante $variant im Worktree $worktree.
-Arbeite ausschließlich lesend am Code und an den Berichten; starte keine Pods,
+Du bist der autonome Qwen-Architekt und Implementierer für Variante $variant im Worktree $worktree.
+Analysiere, entscheide und implementiere belegte Reparaturen direkt; starte keine Pods,
 ändere keine Produktions-Units und führe keinen Benchmark aus.
 
 Prüfe gründlich:
@@ -61,7 +61,10 @@ Schreibe den vollständigen Bericht nach $report mit:
 - konkreten Dateien und Parametern für einen isolierten Branch,
 - klarer Empfehlung, was zuerst codiert werden sollte.
 Keine erfundenen Messwerte. Wenn eine Quelle oder Messung fehlt, vermerken.
-Committe ausschließlich den Forschungsbericht im Variantenworktree.
+Führe bash -n, make validate und bei Unit-Bezug make drift aus. Committe die
+Code-/Dokumentationsänderungen zusammen mit dem Forschungsbericht im
+Variantenworktree. Neue Kandidaten legst du als isolierten Branch/Worktree an
+und dokumentierst ihre Matrix-Integration. Keine erfundenen Messwerte.
 EOF
   (cd "$worktree" && timeout --signal=INT --kill-after=60s \
     "${OPENCODE_RESEARCH_MAX_SECONDS:-3600}" opencode run --dir "$worktree" \
