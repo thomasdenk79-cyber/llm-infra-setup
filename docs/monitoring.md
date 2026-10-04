@@ -38,7 +38,7 @@ Targetspruefung im Browser: http://127.0.0.1:9090/targets - dort muss
 
 ## Dashboards
 
-Vier Dashboards liegen versioniert unter
+Fuenf Dashboards liegen versioniert unter
 `config/monitoring/grafana/provisioning/dashboards/` und werden von Grafana
 automatisch geladen (Ordner "LLM Infrastructure"):
 
@@ -51,6 +51,8 @@ automatisch geladen (Ordner "LLM Infrastructure"):
 4. **Speicher** - ZFS-Poolzustand, Scrub, ARC-Groesse und Trefferquote,
    Dataset-Fuellstand und Kompression, NVMe-SMART, Modell- und PLE-Dateien,
    Zustand aller Dienste, Protokolle.
+5. **Logs** - eine eigene Logansicht mit Dienstauswahl. Im Feld **Dienst** oben
+   einen Container waehlen; Zeitraum und Aktualisierung stehen rechts oben.
 
 Alle Achsen sind menschenlesbar skaliert (Prozent, GiB, MB/s, Millisekunden, °C).
 
@@ -89,7 +91,10 @@ ein kritischer Ort ist.
 ## Protokolle
 
 Alloy liest die Container ueber den Podman-Socket (`%t/podman/podman.sock`)
-und schiebt sie zu Loki. Suche in Grafana (Explore, Datenquelle Loki):
+und schiebt sie zu Loki. Die strukturierte Ansicht ist direkt erreichbar:
+`http://127.0.0.1:3000/d/llm-infra-logs/logs`. Dort waehlt man oben den Dienst
+und den Zeitraum. Fuer freie Abfragen kann man weiterhin Grafana Explore mit
+der Datenquelle Loki verwenden:
 
 ```
 {container="pennyroyal"}                       alles von der Runtime
