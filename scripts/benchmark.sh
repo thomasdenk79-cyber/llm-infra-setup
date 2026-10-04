@@ -67,6 +67,10 @@ if [[ "${running%.*}" != 0 ]]; then
       running="$(printf '%s\n' "${running}" | awk '/^sglang:num_running_reqs\{/ {print $NF; exit}')"
       [[ "${running:-0}" == "0" || "${running:-0}" == "0.0" ]] && break
     done
+    if [[ "${running:-0}" != "0" && "${running:-0}" != "0.0" ]]; then
+      printf 'ABBRUCH: Runtime blieb während der Wartezeit belegt (%s Anfragen). Keine Messung aufgezeichnet.\n' "${running}" >&2
+      exit 3
+    fi
   fi
 fi
 
