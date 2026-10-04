@@ -83,6 +83,12 @@ run_benchmarks() {
   done
 }
 
+queue_healer() {
+  local name="$1"
+  "$root/scripts/ple-heal-failure.sh" "$name" "$run_dir" &
+  log "$name: Luna-Heiler im Hintergrund gestartet (PID $!)."
+}
+
 run_one() {
   local name="$1" worktree="$2" installer="$3" unit="$4" service="$5" port="$6" container="$7" model="$8"
   local attempt=1 max_attempts=1
@@ -94,16 +100,19 @@ run_one() {
     if ! (cd "$worktree" && "$installer"); then
       capture_logs "$name-attempt-$attempt" "$service" "$container"
       printf '%s,install_failed,attempt-%s\n' "$name" "$attempt" >> "$summary"
+      queue_healer "$name"
       return 1
     fi
     if ! render_variant_unit "$worktree" "$unit"; then
       capture_logs "$name-attempt-$attempt" "$service" "$container"
       printf '%s,render_failed,attempt-%s\n' "$name" "$attempt" >> "$summary"
+      queue_healer "$name"
       return 1
     fi
     if ! systemctl --user start "$service"; then
       capture_logs "$name-attempt-$attempt" "$service" "$container"
       printf '%s,start_failed,attempt-%s\n' "$name" "$attempt" >> "$summary"
+      queue_healer "$name"
       attempt=$((attempt + 1)); continue
     fi
     if wait_variant_ready "$name" "$service" "$port"; then
@@ -117,6 +126,7 @@ run_one() {
     fi
     capture_logs "$name-attempt-$attempt" "$service" "$container"
     printf '%s,crashed_or_timeout,attempt-%s\n' "$name" "$attempt" >> "$summary"
+    queue_healer "$name"
     attempt=$((attempt + 1))
   done
   return 1

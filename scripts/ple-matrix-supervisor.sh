@@ -22,7 +22,12 @@ for ((cycle=1; cycles == 0 || cycle <= cycles; cycle++)); do
     [[ "$variant" == variant ]] && continue
     case "$result" in
       passed) ;;
-      *) failed=1; "$root/scripts/ple-heal-failure.sh" "$variant" "$run_dir" & jobs+=("$!") ;;
+      *)
+        failed=1
+        if [[ ! -e "$run_dir/healing/$variant.done" ]]; then
+          "$root/scripts/ple-heal-failure.sh" "$variant" "$run_dir" & jobs+=("$!")
+        fi
+        ;;
     esac
   done < "$run_dir/summary.csv"
   for job in "${jobs[@]:-}"; do wait "$job" || true; done

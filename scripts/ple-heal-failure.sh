@@ -46,4 +46,5 @@ if curl -fsS --max-time 5 http://127.0.0.1:8002/health >/dev/null 2>&1; then
 else
   echo "Qwen-Review verschoben: Produktionsdienst auf 8002 war nicht bereit."
 fi
+touch "$run_dir/healing/$variant.done"
 echo "Reparaturlauf $variant beendet."

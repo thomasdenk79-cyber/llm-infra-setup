@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T03:31:42+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T03:32:54+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -652,3 +652,7 @@ Supervisor wartet auf laufende Matrix und startet danach Reparaturrunden
 ## Notiz 2026-10-04T03:31:42+02:00
 
 Vorbereitung Homepage-Links prüfen
+
+## Notiz 2026-10-04T03:32:54+02:00
+
+Matrixrunner startet Heiler bei jedem Fehler; Supervisor vermeidet Doppeljobs
