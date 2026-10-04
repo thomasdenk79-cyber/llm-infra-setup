@@ -31,5 +31,5 @@
         description: Metriken und Targets
     - Loki:
         icon: loki.png
-        href: http://127.0.0.1:3000/explore
-        description: Logs in Grafana Explore
+        href: http://127.0.0.1:3000/d/llm-infra-logs/logs?orgId=1&from=now-6h&to=now&refresh=30s
+        description: Strukturierte Logs nach Dienst

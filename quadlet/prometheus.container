@@ -9,6 +9,7 @@ After=llm-observability-network.service
 Image=docker.io/prom/prometheus:v3.5.0
 Network=llm-observability.network
 Network=llm-inference.network
+NetworkAlias=prometheus
 PublishPort=127.0.0.1:9090:9090
 AddHost=host.containers.internal:host-gateway
 Volume=%h/.local/share/llm-infra/prometheus:/prometheus:Z,U

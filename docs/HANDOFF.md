@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T03:37:07+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T03:39:49+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -668,3 +668,7 @@ Homepage-Fixes validiert und Drift geprueft
 ## Notiz 2026-10-04T03:37:07+02:00
 
 Vorbereitung strukturierte Grafana-Loki-Ansicht
+
+## Notiz 2026-10-04T03:39:49+02:00
+
+Logs-Dashboard und Grafana-DNS-Fix vorbereitet

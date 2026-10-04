@@ -1,0 +1,55 @@
+{
+  "uid": "llm-infra-logs",
+  "title": "Logs",
+  "tags": ["logs", "loki"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {"from": "now-6h", "to": "now"},
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "label": "Dienst",
+        "type": "query",
+        "datasource": {"type": "loki", "uid": "loki"},
+        "query": "label_values(container)",
+        "refresh": 2,
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "sort": 1,
+        "current": {"text": "Alle", "value": ["$__all"]}
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "logs",
+      "title": "Container-Protokolle",
+      "id": 2,
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 21, "w": 24, "x": 0, "y": 0},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{container=~\"$service\"}",
+          "queryType": "range",
+          "datasource": {"type": "loki", "uid": "loki"},
+          "editorMode": "code"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "deduplication": "exact",
+        "sortOrder": "Descending"
+      }
+    }
+  ]
+}
