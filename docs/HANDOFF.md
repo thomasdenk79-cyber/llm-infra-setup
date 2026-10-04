@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T02:22:12+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T02:23:34+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -632,3 +632,7 @@ Produktionsdienst fuer Variante-A-Test kontrolliert gestoppt
 ## Notiz 2026-10-04T02:22:12+02:00
 
 Befund Nachtlauf: A Breakable-Graph-Output TypeError; Orchestrator-Fehler analysiert
+
+## Notiz 2026-10-04T02:23:34+02:00
+
+Robuster PLE-Variantenwächter: Crash-Weiterlauf, Log-Sicherung, Produktions-Restore
