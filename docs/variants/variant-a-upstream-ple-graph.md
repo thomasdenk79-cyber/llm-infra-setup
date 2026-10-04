@@ -89,8 +89,25 @@ alle Capture-Isolations-Guards bleiben unveraendert.
 
 **Restrisiko:** A laeuft damit korrekt eager und ohne CUDA-Graph-Beschleunigung;
 der r24-Breakable-Pfad bleibt fuer einen spaeteren, separat freigegebenen Test
-vorbehalten. Der externe Benchmark-/Restore-Syntaxfehler ist in diesem Worktree
-nicht behoben.
+vorbehalten.
+
+**Nachprüfung 2026-10-04T05:00:** Die Overlay-Patches (Capture-Isolation,
+Breakable-Replay-Guard) sind statisch geprueft (`py_compile`) und in allen drei
+Betriebsarten korrekt verzahnt: Eager fuehrt den echten SSD-Pfad, native
+Capture zeichnet nur den Null-Stub, Breakable-Replay laeuft den echten Koerper
+ausserhalb des Captures. Die A-Unit enthielt im Evidenzlauf keinen CUDA- oder
+PLE-Fehler (`PLE NVMe table: 47.68 GiB`, danach `/health 200`; das erste
+`503` liegt an der Warmup-Phase und wird vom Readiness-Loop abgedeckt).
+Der Restore-Syntaxfehler in `run-ple-variant-matrix.sh` (Zeilen 161/162) ist
+im Produktionsrepository laengst behoben (`bash -n` sauber, Produktions-Stand
+2026-10-04T04:20). Neuer Befund: Der sofortige `benchmark_failed` von A erklaert
+sich dadurch, dass das Produktions-`scripts/benchmark.sh` sein
+`config/host.env` erst nach der Umgebungsubergabe einliest; die dort gesetzte
+`PENNYROYAL_PORT=8001` ueberschreibt das vom Matrix-Runner uebergebene `8003`,
+und die Messung lief gegen den laengst gestoppten Produktionsport. Das ist ein
+Fehler im Produktionsrepository (ausserhalb dieses Branches) und dort als
+offener Punkt zu beheben: Uebergabewerte vor dem `source` retten oder
+`host.env` nur noch mit `:=`-Defaults fuellen.
 
 ## Risiken / offene Punkte
 

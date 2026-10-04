@@ -586,3 +586,9 @@ Start: Varianten-A-Heilung untersuchen
 ## Notiz 2026-10-04T04:23:24+02:00
 
 Variante A geheilt: Graph-Sicherheitsdefaults und Doku
+
+## Notiz 2026-10-04T05:02:00+02:00
+
+Variante A nachgeprueft: Overlay statisch sauber, Matrix-Syntaxfehler produktionsseitig behoben;
+Produktionsfehler gefunden - benchmark.sh ueberschreibt PENNYROYAL_PORT via host.env
+(8003 -> 8001), im Produktionsrepo zu beheben
