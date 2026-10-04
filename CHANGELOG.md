@@ -1,5 +1,42 @@
 # Aenderungsprotokoll
 
+## Unveroeffentlicht (Runner-Review, 2026-10-04)
+
+Behoben (Runner- und Benchmark-Pfade, keine Runtime-Units angefasst):
+
+* `scripts/benchmark.sh`: `config/host.env` ueberschrieb still den vom
+  Variantrunner uebergebenen `PENNYROYAL_PORT`/`BENCHMARK_MODEL`; Varianten
+  wurden dadurch gegen Port 8001 gemessen statt gegen ihren eigenen Port.
+  Aufruferwerte gewinnen jetzt. Zusätzlich beendet sich das Skript mit
+  Fehlerstatus, wenn Anfragen fehlgeschlagen sind (vorher Exit-Status 0
+  trotz 0 erfolgreicher Anfragen und damit falsche `passed`-Markierung der
+  Variante A im Lauf 20261004T040547Z).
+  Metrikparsung nutzt jetzt das letzte Feld (robust gegen Label-Leerzeichen).
+* `scripts/run-ple-variant-matrix.sh`: Drain blockierte dauerhaft 30 Minuten,
+  wenn gar kein Metrikdienst antwortete oder die eigenen Heiler-Skripte
+  liefen; jetzt blockieren nur noch echte `opencode run`/`codex exec`-Prozesse.
+  Restore-Readiness prüft Turbo-C6 jetzt auf dessen echtem Host-Port 8002
+  (vorher Default 8001 = 45-Minuten-Haenger bei jedem Matrix-Ende).
+  Readiness bricht nicht mehr sofort ab, wenn der Container noch fehlt
+  (Hochfahr-Race nach `systemctl start`).
+* `scripts/ple-heal-failure.sh`:   Qwen-Review wartete bis zu 90 Minuten blind
+  auf 8001/8002 und konnte waehrend eines laufenden Matrixlaufs der
+  Messung GPU-Zeit wegnehmen. Jetzt: zuerst begrenztes Warten, bis die
+  Matrix die GPU frei gibt, dann maximal 20 Minuten Health-Pruefung,
+  zusaetzlich LiteLLM-Pruefung (Port 4000) vor dem Review.
+* `scripts/ple-matrix-supervisor.sh`: Submission-Race nach `systemd-run`
+  (Unit noch nicht registriert) konnte die veraltete `summary.csv` des
+  Vorlaufs als Ergebnis der neuen Runde deuten; jetzt wird Registrierung
+  abgewartet und nur ein seit Rundenstart neu angelegtes Laufverzeichnis
+  akzeptiert, fehlende `summary.csv` zaehlt als Fehler statt als Erfolg.
+* `scripts/ple-research-audit.sh` und `scripts/ple-matrix-healer.sh`:
+  Vorpruefung (Produktionsruntime 8001/8002 und LiteLLM 4000 erreichbar,
+  Matrix nicht laufend) verhindert stundenlanges lautes Laufen von
+  Qwen-Sessions gegen eine tote API.
+* `scripts/benchmark_probe.py`: abgebrochene Streams (`RemoteDisconnected`,
+  `ConnectionError`, HTTPException) wurden nicht abgefangen; Schaetzung der
+  Tokenzahl aus SSE-Chunks ist jetzt mit `tokens_from_chunks` gekennzeichnet.
+
 ## Unveroeffentlicht (Review- und Ausbauphase, 2026-10-02)
 
 Neu (nur Doku, keine Live-Aenderung):

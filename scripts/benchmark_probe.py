@@ -16,6 +16,7 @@ Benutzung:  ./scripts/benchmark_probe.py --prompt "..." --max-tokens 256
 from __future__ import annotations
 
 import argparse
+import http.client
 import json
 import subprocess
 import sys
@@ -106,11 +107,14 @@ def one_request(args, prompt: str) -> dict:
                         chunks += 1
                         chars += len(piece)
                         text_tail = (text_tail + piece)[-160:]
-    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as exc:
+    except (urllib.error.URLError, TimeoutError, ConnectionError,
+            http.client.HTTPException) as exc:
         error = f"{type(exc).__name__}: {exc}"
     total = time.perf_counter() - started
     tokens = usage.get("completion_tokens")
+    tokens_from_chunks = tokens is None
     if tokens is None:
+        # SSE-Chunks sind keine Token; der Ersatz ist eine grobe Schaetzung.
         tokens = max(chunks, 1)
     steady_window = max(total - (ttft or 0.0), 1e-6)
     return {
@@ -118,6 +122,7 @@ def one_request(args, prompt: str) -> dict:
         "error": error,
         "prompt_tokens": usage.get("prompt_tokens"),
         "completion_tokens": tokens,
+        "tokens_from_chunks": tokens_from_chunks,
         "time_to_first_token_seconds": round(ttft or total, 3),
         "total_seconds": round(total, 3),
         "steady_tokens_per_second": round(tokens / steady_window, 2) if tokens else 0.0,

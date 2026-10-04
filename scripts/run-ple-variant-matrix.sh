@@ -18,34 +18,36 @@ log "Matrixlauf; Ergebnisse: $run_dir"
 
 stop_gpu_services() {
   local service
-  local idle_since=0 deadline=$((SECONDS + 1800))
+  local idle_since=0 deadline=$((SECONDS + 1800)) drained=0
   local drain_seconds="${GPU_DRAIN_IDLE_SECONDS:-120}"
   log 'Warte auf einen ruhigen Anfragezustand vor dem GPU-Stop.'
   while (( SECONDS < deadline )); do
-    local seen=0 busy=0 port metrics running queued agents
+    local busy=0 port metrics running queued agents
     for port in 8001 8002 8003 8004 8005; do
       metrics="$(curl -fsS --max-time 2 "http://127.0.0.1:$port/metrics" 2>/dev/null || true)"
       [[ -n "$metrics" ]] || continue
-      seen=1
       running="$(awk -F' ' '/sglang:num_running_reqs\{/ {print $NF; exit}' <<<"$metrics")"
       queued="$(awk -F' ' '/sglang:num_queue_reqs\{/ {print $NF; exit}' <<<"$metrics")"
       [[ "${running:-0}" =~ ^[0-9.]+$ ]] && awk -v v="$running" 'BEGIN{exit !(v>0)}' && busy=1
       [[ "${queued:-0}" =~ ^[0-9.]+$ ]] && awk -v v="$queued" 'BEGIN{exit !(v>0)}' && busy=1
     done
-    agents="$(pgrep -fc 'opencode run|ple-heal-failure\.sh|ple-research-audit\.sh' || true)"
+    # Nur echte Inferenz-Nutzer blockieren; die Heiler- und Pruefskripte selbst
+    # gehren der Matrix und wuerden den Drain sonst dauerhaft auf Halten.
+    agents="$(pgrep -fc 'opencode run|codex exec' || true)"
     [[ "$agents" =~ ^[0-9]+$ ]] && (( agents > 0 )) && busy=1
-    if (( seen == 0 || busy == 1 )); then
+    if (( busy == 1 )); then
       idle_since=0
     elif (( idle_since == 0 )); then
       idle_since=$SECONDS
       log 'Keine laufenden oder wartenden Requests; Drain-Timer gestartet.'
     elif (( SECONDS - idle_since >= drain_seconds )); then
       log "Anfrage- und Agenten-Drain ${drain_seconds} Sekunden stabil; GPU-Stop darf beginnen."
+      drained=1
       break
     fi
     sleep 15
   done
-  if (( SECONDS >= deadline )); then
+  if (( drained == 0 )); then
     log 'Drain-Timeout nach 30 Minuten; stoppe trotzdem kontrolliert.'
   fi
   for service in sglang-turbo-upstream-ple.service sglang-turbo-variant-b.service \
@@ -84,13 +86,18 @@ render_variant_unit() {
 wait_variant_ready() {
   local name="$1" service="$2" port="$3" container="$4" deadline=$((SECONDS + 2700))
   while (( SECONDS < deadline )); do
-    if ! systemctl --user is-active --quiet "$service"; then
-      log "$name: Dienst ist vor Readiness beendet."
-      return 1
-    fi
-    local container_status
+    local service_status container_status
+    service_status="$(systemctl --user is-active "$service" 2>/dev/null || true)"
+    case "$service_status" in
+      active|activating|reloading) ;;
+      *)
+        log "$name: Dienst ist vor Readiness beendet (Status '$service_status')."
+        return 1
+        ;;
+    esac
     container_status="$(podman inspect --format '{{.State.Status}}' "$container" 2>/dev/null || true)"
-    if [[ "$container_status" != running ]]; then
+    # Leer und created zaehlen als Hochfahrphase; erst exited/dead/parked brechen ab.
+    if [[ -n "$container_status" && "$container_status" != running && "$container_status" != created ]]; then
       log "$name: Containerstatus ist '$container_status'; Readiness abgebrochen."
       return 1
     fi
@@ -191,9 +198,10 @@ restore_production() {
     systemd_reload
   '
   systemctl --user start sglang-turbo-c6.service || true
-  # Die Produktions-Unit exponiert den API-Port aus ihrer Vorlage; aktuell ist
-  # das 8001. Ein abweichender Health-Port ließ den Runner nach dem Restore hängen.
-  wait_variant_ready PROD sglang-turbo-c6.service "${PROD_HOST_PORT:-8001}" sglang-turbo-c6 || true
+  # Die Produktions-Unit sglang-turbo-c6 exponiert gemaess quadlet/sglang-turbo-c6.container
+  # den Host-Port 8002 (8001 gehoert zu Pennyroyal). Der alte Default 8001 lies die
+  # Restore-Readiness jedes Mal vollstaendig in den 45-Minuten-Timeout laufen.
+  wait_variant_ready PROD sglang-turbo-c6.service "${PROD_HOST_PORT:-8002}" sglang-turbo-c6 || true
 }
 
 trap 'restore_production' EXIT

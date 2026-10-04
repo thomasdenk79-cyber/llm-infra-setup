@@ -20,9 +20,14 @@
 set -Eeuo pipefail
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 source "${root}/lib/common.sh"
+# Aufruferwerte gewinnen immer: der Variantrunner uebergibt PENNYROYAL_PORT und
+# BENCHMARK_MODEL fuer die Port des Vergleichsdienstes; host.env wuerde sie sonst
+# schweigend auf 8001/pennyroyal zuruecksetzen.
+_caller_port="${PENNYROYAL_PORT:-}"
+_caller_model="${BENCHMARK_MODEL:-}"
 [[ -f "${root}/config/host.env" ]] && source "${root}/config/host.env"
-: "${PENNYROYAL_PORT:=8001}"
-: "${BENCHMARK_MODEL:=pennyroyal}"
+PENNYROYAL_PORT="${_caller_port:-${PENNYROYAL_PORT:-8001}}"
+BENCHMARK_MODEL="${_caller_model:-${BENCHMARK_MODEL:-pennyroyal}}"
 : "${MIN_TOKENS:=0}"
 profile="${1:-quick}"
 concurrency="${2:-1}"
@@ -50,7 +55,8 @@ fi
 
 running="$(curl -fsS --max-time 5 "http://127.0.0.1:${PENNYROYAL_PORT}/metrics" 2>/dev/null || true)"
 running="$(printf '%s\n' "${running}" \
-  | awk '/^sglang:num_running_reqs\{/ {print $2; found=1} END{if(!found) print "0"}')"
+  | awk '/^sglang:num_running_reqs\{/ {print $NF; found=1} END{if(!found) print "0"}')"
+if [[ "${running:-0}" == "" ]]; then running=0; fi
 if [[ "${running%.*}" != 0 ]]; then
   printf 'ACHTUNG: es laufen bereits %s Anfragen; Messung wird ungenau.\n' "${running}" >&2
   printf '         Warten oder mit BENCHMARK_ALLOW_BUSY=1 trotzdem messen.\n' >&2
@@ -58,7 +64,7 @@ if [[ "${running%.*}" != 0 ]]; then
     for _ in $(seq 1 12); do
       sleep 5
       running="$(curl -fsS --max-time 5 "http://127.0.0.1:${PENNYROYAL_PORT}/metrics" 2>/dev/null || true)"
-      running="$(printf '%s\n' "${running}" | awk '/^sglang:num_running_reqs\{/ {print $2; exit}')"
+      running="$(printf '%s\n' "${running}" | awk '/^sglang:num_running_reqs\{/ {print $NF; exit}')"
       [[ "${running:-0}" == "0" || "${running:-0}" == "0.0" ]] && break
     done
   fi
@@ -159,6 +165,13 @@ d=json.load(open('${json_out}'))
 print(','.join(str(x) for x in (d['timestamp'],d['profile'],d['concurrency'],d['steady_tokens_per_second_median'],d['time_to_first_token_seconds_median'],d['aggregate_tokens_per_second'],d['requests_ok'],d['errors'])))
 " >> "${f}"
 }
+
+if [[ "${errors}" != 0 ]]; then
+  printf '\nFEHLER: %s Anfrage(n) fehlgeschlagen; Messung ungueltig.\n' "${errors}" >&2
+  printf 'Naechster Schritt: ./scripts/healthcheck.sh, danach ./scripts/benchmark.sh %s %s erneut.\n' \
+    "${profile}" "${concurrency}" >&2
+  exit 1
+fi
 
 if [[ "${MIN_TOKENS}" != 0 ]]; then
   awk -v got="${steady}" -v min="${MIN_TOKENS}" 'BEGIN { exit (got+0 >= min+0 ? 0 : 1) }' \

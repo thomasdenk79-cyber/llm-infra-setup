@@ -12,6 +12,25 @@ if ! mkdir "$lock" 2>/dev/null; then
   exit 0
 fi
 trap 'rmdir "$lock" 2>/dev/null || true' EXIT
+# Vorpruefung: Qwen laeuft ueber LiteLLM (Port 4000) auf einer gesunden
+# Produktionsruntime (Pennyroyal 8001 oder Turbo 8002). Ohne die beiden waere die
+# Stunde Laufzeit nur ein stummer Fehlerritt gegen eine tote API.
+_caller_litellm_port="${LITELLM_PORT:-}"
+[[ -f "$root/config/host.env" ]] && source "$root/config/host.env"
+LITELLM_PORT="${_caller_litellm_port:-${LITELLM_PORT:-4000}}"
+prod_ready=0
+for candidate in 8001 8002; do
+  curl -fsS --max-time 5 "http://127.0.0.1:${candidate}/health" >/dev/null 2>&1 && { prod_ready=1; break; }
+done
+if (( prod_ready == 0 )); then
+  echo "Matrix-Heiler verschoben: kein Produktionsdienst auf 8001/8002 erreichbar. Naechster Befehl: ./scripts/doctor.sh" >&2
+  exit 0
+fi
+if ! curl -fsS --max-time 5 "http://127.0.0.1:${LITELLM_PORT}/health" >/dev/null 2>&1 \
+   && ! curl -fsS --max-time 5 "http://127.0.0.1:${LITELLM_PORT}/health/liveness" >/dev/null 2>&1; then
+  echo "Matrix-Heiler verschoben: LiteLLM auf ${LITELLM_PORT} nicht erreichbar. Naechster Befehl: ./scripts/doctor.sh" >&2
+  exit 0
+fi
 prompt="$(cat <<EOF
 Prüfe im Repository $root die soeben abgeschlossene Matrixrunde und die gesamte
 Umgebung. Lies den neuesten Ordner unter state/variant-runs, state/benchmarks,

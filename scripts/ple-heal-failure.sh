@@ -45,34 +45,56 @@ echo "Luna-Reparatur für $variant startet."
   --dangerously-bypass-approvals-and-sandbox < "$prompt_file") || \
   echo "Luna konnte $variant nicht reparieren."
 
-# Qwen läuft über LiteLLM; dafür genügt jede gesunde lokale Produktionsruntime.
+# Qwen läuft über LiteLLM (Port 4000); dafür genügt jede gesunde lokale Produktionsruntime.
 # Pennyroyal (8001) wird bevorzugt, Turbo (8002) ist der Fallback.
-prod_port="${HEALER_PROD_PORT:-}"
-if [[ -z "$prod_port" ]]; then
+_caller_litellm_port="${LITELLM_PORT:-}"
+[[ -f "$root/config/host.env" ]] && source "$root/config/host.env"
+LITELLM_PORT="${_caller_litellm_port:-${LITELLM_PORT:-4000}}"
+
+# Die Matrix hält die GPU exklusiv. Ein Qwen-Review mittendurch würde die laufende
+# Messung verfälschen und beim nächsten GPU-Stop abgewürgt; erst darf es starten.
+matrix_deadline=$((SECONDS + ${HEALER_MATRIX_WAIT_SECONDS:-10800}))
+while pgrep -f 'run-ple-variant-matrix\.sh' >/dev/null 2>&1 \
+   || systemctl --user is-active --quiet ple-variant-matrix.service 2>/dev/null; do
+  if (( SECONDS >= matrix_deadline )); then break; fi
+  sleep 30
+done
+
+gateway_ready() {
+  curl -fsS --max-time 5 "http://127.0.0.1:${LITELLM_PORT}/health" >/dev/null 2>&1 \
+    || curl -fsS --max-time 5 "http://127.0.0.1:${LITELLM_PORT}/health/liveness" >/dev/null 2>&1
+}
+probe_prod() {
+  prod_port=""
+  local candidate
   for candidate in 8001 8002; do
     if curl -fsS --max-time 5 "http://127.0.0.1:${candidate}/health" >/dev/null 2>&1; then
       prod_port="$candidate"
-      break
+      return 0
     fi
   done
-fi
-for _ in $(seq 1 180); do
-  [[ -n "$prod_port" ]] && curl -fsS --max-time 5 "http://127.0.0.1:${prod_port}/health" >/dev/null 2>&1 && break
+  return 1
+}
+prod_port="${HEALER_PROD_PORT:-}"
+if [[ -n "$prod_port" ]] && ! curl -fsS --max-time 5 "http://127.0.0.1:${prod_port}/health" >/dev/null 2>&1; then
   prod_port=""
-  for candidate in 8001 8002; do
-    if curl -fsS --max-time 5 "http://127.0.0.1:${candidate}/health" >/dev/null 2>&1; then prod_port="$candidate"; break; fi
-  done
-  [[ -n "$prod_port" ]] && break
-  sleep 30
+fi
+# Endloses Warten vermeiden: maximal 20 Minuten auf eine gesunde Produktionsruntime.
+probe_deadline=$((SECONDS + ${HEALER_PROD_WAIT_SECONDS:-1200}))
+while [[ -z "$prod_port" ]] && (( SECONDS < probe_deadline )); do
+  probe_prod || sleep 15
 done
-if [[ -n "$prod_port" ]] && curl -fsS --max-time 5 "http://127.0.0.1:${prod_port}/health" >/dev/null 2>&1; then
+if (( SECONDS >= matrix_deadline )) && ( pgrep -f 'run-ple-variant-matrix\.sh' >/dev/null 2>&1 \
+     || systemctl --user is-active --quiet ple-variant-matrix.service 2>/dev/null ); then
+  echo "Qwen-Review verschoben: Matrixlauf hält die GPU noch immer (Timeout abgelaufen). Naechster Befehl: ./scripts/ple-matrix-supervisor.sh beobachten."
+elif [[ -n "$prod_port" ]] && gateway_ready; then
   qwen_prompt="Prüfe den Reparaturstand der Variante $variant in $worktree. Lies $evidence und die letzten Commits. Suche Restfehler beim Breakable-CUDA-Graphen und SSD-PLE. Arbeite nur im Variantenbranch, ändere keine Produktionsdateien, starte keine Pods und benchmarke nicht. Korrigiere nötige Restfehler, führe make validate/make drift aus und committe. Forschungsmodus: Wenn ein offizieller Upstream-/Paper-/CUDA-/SGLang-/Plugin-Ansatz oder eine Kombination plausibel besser ist, recherchiere die Primärquelle im Internet, dokumentiere URL, Datum, Nutzen und Risiko in docs/research-loop.md und beschreibe eine neue isolierte Variante mit eigenem Branch/Worktree. Übernehme sie nicht ungeprüft in Produktion; sie braucht dieselben Validate-, Start-, Health- und Benchmark-Gates."
   (cd "$worktree" && timeout --signal=INT --kill-after=60s \
     "${OPENCODE_MAX_SECONDS:-5400}" opencode run --dir "$worktree" \
     --model local-litellm/qwen3.8-flash-next --agent build --auto "$qwen_prompt") \
     > "$run_dir/healing/$variant-qwen.log" 2>&1 || true
 else
-  echo "Qwen-Review verschoben: kein Produktionsdienst auf 8001/8002 war bereit."
+  echo "Qwen-Review verschoben: kein Produktionsdienst auf 8001/8002 oder LiteLLM auf ${LITELLM_PORT} war bereit. Naechster Befehl: ./scripts/doctor.sh"
 fi
 touch "$run_dir/healing/$variant.done"
 echo "Reparaturlauf $variant beendet."

@@ -7,6 +7,7 @@ run_root="$root/state/variant-runs"
 log(){ printf '[%s] %s\n' "$(date --iso-8601=seconds)" "$*"; }
 for ((cycle=1; cycles == 0 || cycle <= cycles; cycle++)); do
   log "Matrixrunde $cycle startet."
+  cycle_start_epoch="$(date +%s)"
   while systemctl --user is-active --quiet ple-variant-matrix.service; do
     log 'Vorheriger Matrixlauf läuft noch; Supervisor wartet.'
     sleep 30
@@ -17,23 +18,43 @@ for ((cycle=1; cycles == 0 || cycle <= cycles; cycle++)); do
   done
   systemd-run --user --unit=ple-variant-matrix --collect --property=Type=exec \
     "$root/scripts/run-ple-variant-matrix.sh" --retry-failed
-  while systemctl --user is-active --quiet ple-variant-matrix.service; do sleep 20; done
-  run_dir="$(find "$run_root" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' \
+  # Race: systemd-run kehrt nach der Jobabgabe zurueck; die Unit kann noch
+  # registriert werden. Erst auf Registrierung warten, sonst werte ein sofort
+  # beendeter Lauf als "nicht laufend" und die alte summary.csv waere neu.
+  registered=0
+  for _ in $(seq 1 24); do
+    state="$(systemctl --user show -p ActiveState --value ple-variant-matrix.service 2>/dev/null || echo inactive)"
+    case "$state" in
+      activating|active|reloading|deactivating) registered=1; break ;;
+    esac
+    sleep 5
+  done
+  if (( registered == 1 )); then
+    while systemctl --user is-active --quiet ple-variant-matrix.service; do sleep 20; done
+  else
+    log 'Matrix-Unit wurde nicht als laufend beobachtet; Pruefung, ob ein neues Laufverzeichnis entstand.'
+  fi
+  run_dir="$(find "$run_root" -mindepth 1 -maxdepth 1 -type d -newermt "@${cycle_start_epoch}" -printf '%T@ %p\n' 2>/dev/null \
     | sort -nr | head -1 | cut -d' ' -f2-)"
   failed=0
   jobs=()
-  while IFS=, read -r variant result _detail; do
-    [[ "$variant" == variant ]] && continue
-    case "$result" in
-      passed) ;;
-      *)
-        failed=1
-        if [[ ! -e "$run_dir/healing/$variant.done" ]]; then
-          "$root/scripts/ple-heal-failure.sh" "$variant" "$run_dir" & jobs+=("$!")
-        fi
-        ;;
-    esac
-  done < "$run_dir/summary.csv"
+  if [[ -z "$run_dir" || ! -f "$run_dir/summary.csv" ]]; then
+    log 'Kein neues Laufverzeichnis mit summary.csv gefunden; Rundezaehlt als Fehler, alte Laeufe werden nicht geheilt.'
+    failed=1
+  else
+    while IFS=, read -r variant result _detail; do
+      [[ "$variant" == variant ]] && continue
+      case "$result" in
+        passed) ;;
+        *)
+          failed=1
+          if [[ ! -e "$run_dir/healing/$variant.done" ]]; then
+            "$root/scripts/ple-heal-failure.sh" "$variant" "$run_dir" & jobs+=("$!")
+          fi
+          ;;
+      esac
+    done < "$run_dir/summary.csv"
+  fi
   for job in "${jobs[@]:-}"; do wait "$job" || true; done
   research_pid=""
   if [[ "${PLE_RESEARCH_AUDIT:-1}" == 1 ]]; then
