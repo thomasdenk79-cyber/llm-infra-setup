@@ -7,6 +7,10 @@ run_root="$root/state/variant-runs"
 log(){ printf '[%s] %s\n' "$(date --iso-8601=seconds)" "$*"; }
 for ((cycle=1; cycles == 0 || cycle <= cycles; cycle++)); do
   log "Matrixrunde $cycle startet."
+  while systemctl --user is-active --quiet ple-variant-matrix.service; do
+    log 'Vorheriger Matrixlauf läuft noch; Supervisor wartet.'
+    sleep 30
+  done
   systemd-run --user --unit=ple-variant-matrix --collect --property=Type=exec \
     "$root/scripts/run-ple-variant-matrix.sh" --retry-failed
   while systemctl --user is-active --quiet ple-variant-matrix.service; do sleep 20; done

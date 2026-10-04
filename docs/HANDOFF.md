@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T03:29:13+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T03:30:19+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -644,3 +644,7 @@ Luna-Healer und Matrix-Supervisor validiert und gesichert
 ## Notiz 2026-10-04T03:29:13+02:00
 
 Healer: Laufverzeichnis auf absoluten Pfad korrigiert
+
+## Notiz 2026-10-04T03:30:19+02:00
+
+Supervisor wartet auf laufende Matrix und startet danach Reparaturrunden
