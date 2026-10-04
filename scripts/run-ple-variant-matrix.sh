@@ -19,9 +19,10 @@ log "Matrixlauf; Ergebnisse: $run_dir"
 stop_gpu_services() {
   local service
   local idle_since=0 deadline=$((SECONDS + 1800))
+  local drain_seconds="${GPU_DRAIN_IDLE_SECONDS:-120}"
   log 'Warte auf einen ruhigen Anfragezustand vor dem GPU-Stop.'
   while (( SECONDS < deadline )); do
-    local seen=0 busy=0 port metrics running queued
+    local seen=0 busy=0 port metrics running queued agents
     for port in 8001 8002 8003 8004 8005; do
       metrics="$(curl -fsS --max-time 2 "http://127.0.0.1:$port/metrics" 2>/dev/null || true)"
       [[ -n "$metrics" ]] || continue
@@ -31,13 +32,15 @@ stop_gpu_services() {
       [[ "${running:-0}" =~ ^[0-9.]+$ ]] && awk -v v="$running" 'BEGIN{exit !(v>0)}' && busy=1
       [[ "${queued:-0}" =~ ^[0-9.]+$ ]] && awk -v v="$queued" 'BEGIN{exit !(v>0)}' && busy=1
     done
+    agents="$(pgrep -fc 'opencode run|ple-heal-failure\.sh|ple-research-audit\.sh' || true)"
+    [[ "$agents" =~ ^[0-9]+$ ]] && (( agents > 0 )) && busy=1
     if (( seen == 0 || busy == 1 )); then
       idle_since=0
     elif (( idle_since == 0 )); then
       idle_since=$SECONDS
       log 'Keine laufenden oder wartenden Requests; Drain-Timer gestartet.'
-    elif (( SECONDS - idle_since >= 120 )); then
-      log 'Anfrage-Drain 120 Sekunden stabil; GPU-Stop darf beginnen.'
+    elif (( SECONDS - idle_since >= drain_seconds )); then
+      log "Anfrage- und Agenten-Drain ${drain_seconds} Sekunden stabil; GPU-Stop darf beginnen."
       break
     fi
     sleep 15
