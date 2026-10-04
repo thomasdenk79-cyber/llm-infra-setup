@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T03:32:54+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T03:33:33+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -656,3 +656,7 @@ Vorbereitung Homepage-Links prüfen
 ## Notiz 2026-10-04T03:32:54+02:00
 
 Matrixrunner startet Heiler bei jedem Fehler; Supervisor vermeidet Doppeljobs
+
+## Notiz 2026-10-04T03:33:33+02:00
+
+Homepage-Links fuer Loki, Komodo und Dokumentation korrigiert

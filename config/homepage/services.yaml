@@ -10,8 +10,8 @@
 - Verwaltung:
     - Komodo:
         icon: komodo.png
-        href: https://komodo.example.net
-        description: Host- und Containerverwaltung
+        href: http://127.0.0.1:8120
+        description: Lokaler Komodo-Periphery-Endpunkt
     - Dozzle:
         icon: dozzle.png
         href: http://127.0.0.1:8080
@@ -31,5 +31,5 @@
         description: Metriken und Targets
     - Loki:
         icon: loki.png
-        href: http://127.0.0.1:3100
-        description: Logs und Abfragen
+        href: http://127.0.0.1:3000/explore
+        description: Logs in Grafana Explore

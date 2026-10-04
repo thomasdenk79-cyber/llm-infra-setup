@@ -1,7 +1,10 @@
 - Dokumentation:
     - Open WebUI RAG:
-        - ab: https://docs.openwebui.com/features/chat-conversations/rag/
+        - abbr: OW
+          href: https://docs.openwebui.com/features/chat-conversations/rag/
     - Komodo:
-        - docs: https://komo.do/docs
+        - abbr: KO
+          href: https://komo.do/docs
     - Projektstatus:
-        - repo: https://github.com/thomasdenk79-cyber/llm-infra-setup
+        - abbr: GH
+          href: https://github.com/thomasdenk79-cyber/llm-infra-setup
