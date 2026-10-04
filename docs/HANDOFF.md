@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T05:10:00+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T05:12:46+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -744,3 +744,7 @@ KV-HiCache- und Agenten-Warnungen fuer Grafana Prometheus ergaenzt
 ## Notiz 2026-10-04T05:10:00+02:00
 
 Supervisor wartet vor naechster GPU-Runde auf Forschungsagenten
+
+## Notiz 2026-10-04T05:12:46+02:00
+
+GPU-Stop wartet 120 Sekunden auf stabilen Request-Drain
