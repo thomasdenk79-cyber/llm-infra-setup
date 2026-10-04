@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T10:04:24+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T10:09:01+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -768,3 +768,7 @@ Benchmark-End-to-End-Metriken und Pennyroyal-Heiler-Erkennung korrigiert
 ## Notiz 2026-10-04T10:04:24+02:00
 
 LiteLLM-DNS-Ziel korrigiert; Drift-Prüfung nach Commit erneut
+
+## Notiz 2026-10-04T10:09:01+02:00
+
+Matrix-Healer-Syntax korrigiert

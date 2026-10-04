@@ -41,6 +41,10 @@ for ((cycle=1; cycles == 0 || cycle <= cycles; cycle++)); do
     log "Parallele Qwen-Forschungsprüfung aller Varianten gestartet (PID $research_pid)."
   fi
   if [[ -n "$research_pid" ]]; then wait "$research_pid" || true; fi
+  if [[ "${PLE_MATRIX_HEALER:-1}" == 1 ]]; then
+    log 'Qwen-Matrix-Heiler prüft Runner, Benchmark und Umgebung.'
+    "$root/scripts/ple-matrix-healer.sh" || true
+  fi
   (( failed == 0 )) && { log 'Alle Varianten erfolgreich; Supervisor beendet.'; exit 0; }
   log 'Fehler repariert oder dokumentiert; nächste Matrixrunde folgt.'
 done
