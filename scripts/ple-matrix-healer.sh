@@ -40,6 +40,11 @@ scripts/ple-heal-failure.sh, scripts/ple-research-audit.sh,
 scripts/benchmark.sh und scripts/benchmark_probe.py auf falsche Ports,
 Readiness- und Drain-Rennen, endlose Wartepfade, falsche Erfolgsmarkierungen,
 falsche Token/s-Metriken und fehlende Wiederaufnahme nach Fehlern.
+Untersuche zusätzlich die Startzeit jedes Dienstes: Gewichts- und Draft-Ladezeit,
+PLE-Page-Cache, Linux-/ZFS-Cache, Triton-/FlashInfer-Caches, CUDA-Graph-Capture
+und wiederholte Warmups. Entwickle bei Bedarf eine eigene Startup-Cache-Variante;
+der Runner darf Preload-Schritte nicht nur ausgeben, sondern muss sie sicher,
+idempotent und vor dem Start ausführen.
 
 Arbeite autonom: repariere belegte Fehler direkt, entscheide über Architektur
 und Varianten und implementiere die nötigen Änderungen. Stoppe oder starte keine Pods und ändere keine

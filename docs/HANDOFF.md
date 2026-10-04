@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T11:12:27+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T11:21:17+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -800,3 +800,7 @@ Qwen-Matrix-Heiler bewertet Pennyroyal-Turbo-Hybrid als neuen Kandidaten
 ## Notiz 2026-10-04T11:12:28+02:00
 
 Qwen als autonomer Varianten-Architekt und Implementierer aktiviert
+
+## Notiz 2026-10-04T11:21:17+02:00
+
+Qwen soll Startup-Caches und Preload als eigene Optimierungsvariante prüfen
