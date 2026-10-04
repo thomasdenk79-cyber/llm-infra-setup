@@ -47,7 +47,8 @@ if [[ -n "${target_context_tokens}" ]]; then
   (( repeat > 0 )) || repeat=1
 fi
 
-running="$(curl -fsS --max-time 5 "http://127.0.0.1:${PENNYROYAL_PORT}/metrics" 2>/dev/null \
+running="$(curl -fsS --max-time 5 "http://127.0.0.1:${PENNYROYAL_PORT}/metrics" 2>/dev/null || true)"
+running="$(printf '%s\n' "${running}" \
   | awk '/^sglang:num_running_reqs\{/ {print $2; found=1} END{if(!found) print "0"}')"
 if [[ "${running%.*}" != 0 ]]; then
   printf 'ACHTUNG: es laufen bereits %s Anfragen; Messung wird ungenau.\n' "${running}" >&2
@@ -55,7 +56,8 @@ if [[ "${running%.*}" != 0 ]]; then
   if [[ "${BENCHMARK_ALLOW_BUSY:-0}" != 1 ]]; then
     for _ in $(seq 1 12); do
       sleep 5
-      running="$(curl -fsS --max-time 5 "http://127.0.0.1:${PENNYROYAL_PORT}/metrics" 2>/dev/null | awk '/^sglang:num_running_reqs\{/ {print $2; exit}')"
+      running="$(curl -fsS --max-time 5 "http://127.0.0.1:${PENNYROYAL_PORT}/metrics" 2>/dev/null || true)"
+      running="$(printf '%s\n' "${running}" | awk '/^sglang:num_running_reqs\{/ {print $2; exit}')"
       [[ "${running:-0}" == "0" || "${running:-0}" == "0.0" ]] && break
     done
   fi

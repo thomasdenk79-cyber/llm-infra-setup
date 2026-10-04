@@ -80,7 +80,7 @@ run_benchmarks() {
   local concurrency
   for concurrency in 1 6; do
     log "$name: quick benchmark, concurrency=$concurrency"
-    if ! (cd "$worktree" && BENCHMARK_MODEL="$model" PENNYROYAL_PORT="$port" \
+    if ! (cd "$root" && BENCHMARK_MODEL="$model" PENNYROYAL_PORT="$port" \
       MIN_TOKENS=0 ./scripts/benchmark.sh quick "$concurrency") \
       > "$profile/benchmark-c${concurrency}.log" 2>&1; then
       log "$name: benchmark c$concurrency failed; continuing to next variant."

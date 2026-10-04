@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T04:19:21+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T04:20:40+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -712,3 +712,7 @@ Crashursache nach Readiness und Benchmark pruefen
 ## Notiz 2026-10-04T04:19:21+02:00
 
 Runner-Aufraeumpfad nach Benchmark-SIGTERM korrigiert
+
+## Notiz 2026-10-04T04:20:40+02:00
+
+Metrics-Vorcheck und zentraler Benchmark robust gemacht
