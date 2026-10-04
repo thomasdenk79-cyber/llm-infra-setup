@@ -142,3 +142,23 @@ unter `~/.local/share/llm-infra`, Metrikziel in Prometheus, Diagnosefall in
 * PLE auf echter NVMe-Partition gemessen gegen Loop-Datei (Anleitung in
   `docs/performance.md`).
 * KVM/libvirt als spaetere, getrennte Phase (ohne GPU-Durchreichung).
+
+## Neustart-Übergabe 2026-10-04
+
+Nach einem PC-Neustart startet der Betreiber nur wieder Codex. Beim nächsten
+Arbeitsbeginn zuerst `docs/HANDOFF.md`, die drei Repositories und GPU-/Podman-
+Status prüfen. Der zuletzt gesicherte Pennyroyal-Stand liegt im Worktree
+`/home/z000g9hu/work/llm-infra-setup-pennyroyal`, Branch
+`pennyroyal-plugin-variant`, Commit `c1459b9`; die laufende Profilquelle nutzt
+`mem_fraction=0.981`, `sleep_on_idle=0`, `memory_saver=0`, HiCache 16 GiB,
+FP8-KV, sechs Requests, 36 Mamba-Slots und NVMe-PLE. Das neue autonome
+Orchestrator-Repository liegt unter
+`/home/z000g9hu/work/qwen38-flash-next-blackwell`, Commit `c834281`.
+
+Der Orchestrator/Watchdog war vor dem Neustart sauber beendet. Sein persistenter
+Task `OOM-001` ist als `pending`/`candidaterun` vorbereitet. Nicht manuell
+parallel starten: nach Health- und GPU-Exklusivitätsprüfung im neuen Repo
+`./scripts/start_runner.sh` ausführen. Der Runner stoppt Pennyroyal nur über die
+GPU-Übergabe, führt Candidate-Health/Benchmark/Incident/Qwen-Review aus und
+stellt die Referenz danach wieder her. KV-Pool- und Durchsatzwerte bleiben bis
+zu einer echten Messung unbekannt.
