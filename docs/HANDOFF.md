@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T03:42:27+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T03:53:50+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -676,3 +676,7 @@ Logs-Dashboard und Grafana-DNS-Fix vorbereitet
 ## Notiz 2026-10-04T03:42:27+02:00
 
 Strukturiertes Logs-Dashboard aktiviert und Grafana-Datenquellen repariert
+
+## Notiz 2026-10-04T03:53:50+02:00
+
+Vorbereitung direkter Runtime-Log-Link
