@@ -52,10 +52,16 @@ render_variant_unit() {
 }
 
 wait_variant_ready() {
-  local name="$1" service="$2" port="$3" deadline=$((SECONDS + 2700))
+  local name="$1" service="$2" port="$3" container="$4" deadline=$((SECONDS + 2700))
   while (( SECONDS < deadline )); do
     if ! systemctl --user is-active --quiet "$service"; then
       log "$name: Dienst ist vor Readiness beendet."
+      return 1
+    fi
+    local container_status
+    container_status="$(podman inspect --format '{{.State.Status}}' "$container" 2>/dev/null || true)"
+    if [[ "$container_status" != running ]]; then
+      log "$name: Containerstatus ist '$container_status'; Readiness abgebrochen."
       return 1
     fi
     if curl -fsS --max-time 5 "http://127.0.0.1:$port/health" >/dev/null 2>&1; then
@@ -115,7 +121,7 @@ run_one() {
       queue_healer "$name"
       attempt=$((attempt + 1)); continue
     fi
-    if wait_variant_ready "$name" "$service" "$port"; then
+    if wait_variant_ready "$name" "$service" "$port" "$container"; then
       capture_logs "$name-attempt-$attempt" "$service" "$container"
       if run_benchmarks "$name" "$worktree" "$port" "$model"; then
         printf '%s,passed,attempt-%s\n' "$name" "$attempt" >> "$summary"
@@ -150,7 +156,7 @@ restore_production() {
     systemd_reload
   '
   systemctl --user start sglang-turbo-c6.service || true
-  wait_variant_ready PROD sglang-turbo-c6.service 8002 || true
+  wait_variant_ready PROD sglang-turbo-c6.service 8002 sglang-turbo-c6 || true
 }
 
 trap restore_production EXIT INT TERM

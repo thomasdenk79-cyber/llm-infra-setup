@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T04:06:18+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T04:07:24+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -700,3 +700,7 @@ Asynchrone Logsammlung bestaetigt und Alloy-Zeitstempel geladen
 ## Notiz 2026-10-04T04:06:18+02:00
 
 Statuspruefung Variantenlauf vor Live-Diagnose
+
+## Notiz 2026-10-04T04:07:24+02:00
+
+Runner beendet Readiness sofort bei Container-Crash
