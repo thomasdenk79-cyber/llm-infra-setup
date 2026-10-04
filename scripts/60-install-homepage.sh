@@ -18,7 +18,7 @@ Image=ghcr.io/gethomepage/homepage:v2.4.0
 ContainerName=llm-homepage
 Network=llm-observability.network
 PublishPort=127.0.0.1:3002:3000
-Environment=HOMEPAGE_ALLOWED_HOSTS=127.0.0.1:3002,localhost:3002
+Environment=HOMEPAGE_ALLOWED_HOSTS=127.0.0.1:3002,localhost:3002,192.168.0.198:3002,192.168.0.198,cachyos-x8664:3002,cachyos-x8664,cachyos2:3002,cachyos2
 Volume=%h/.config/llm-infra/homepage:/app/config:Z,U
 
 [Service]

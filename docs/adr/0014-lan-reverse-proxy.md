@@ -14,6 +14,18 @@ CachyOS-LAN-Adresse.
 
 Aktuelle Weiterleitungen:
 
+Der bevorzugte Einstieg ist HTTPS auf Port 443. Die Pfade sind:
+
+| HTTPS-Pfad | Ziel |
+|---|---|
+| `/grafana/` | Grafana |
+| `/webui/` | Open WebUI |
+| `/portal/` | LLM-Portal/Homepage |
+| `/logs/` | Dozzle/Containerlogs |
+
+Zusätzlich bleiben die einzelnen LAN-Ports als Diagnose-/Fallback-Zugriff
+erreichbar:
+
 | LAN-Port | Ziel | Zweck |
 |---:|---|---|
 | 3000 | `127.0.0.1:3000` | Grafana |
@@ -25,9 +37,10 @@ Nginx läuft als `nginx.service` und wird beim Systemstart aktiviert. LiteLLM,
 Pennyroyal und interne Datenbankports werden nicht über diesen Proxy
 veröffentlicht.
 
-UFW erlaubt die vier Nginx-Ports ausschließlich aus `192.168.0.0/24`:
-`3000:3002/tcp` und `8080/tcp`. Nach einer Neuinstallation gehören diese
-Firewall-Regeln ebenfalls zur Einrichtung.
+UFW erlaubt Port 443 sowie die HTTP-Weiterleitung auf Port 80 ausschließlich
+aus `192.168.0.0/24`; die Diagnoseports `3000:3002/tcp` und `8080/tcp` sind
+ebenfalls nur in diesem Netz offen. Nach einer Neuinstallation gehören diese
+Firewall-Regeln und das lokale Zertifikat ebenfalls zur Einrichtung.
 
 ## Begründung
 
