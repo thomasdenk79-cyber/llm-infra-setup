@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T10:14:41+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T10:15:25+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -780,3 +780,7 @@ Qwen-Matrix-Wächter nach jeder Runde aktiviert
 ## Notiz 2026-10-04T10:14:41+02:00
 
 runner-review report folgt
+
+## Notiz 2026-10-04T10:15:25+02:00
+
+Benchmark bricht bei belegter Runtime statt verfälschter Messung ab
