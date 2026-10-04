@@ -96,6 +96,11 @@ und schiebt sie zu Loki. Die strukturierte Ansicht ist direkt erreichbar:
 und den Zeitraum. Fuer freie Abfragen kann man weiterhin Grafana Explore mit
 der Datenquelle Loki verwenden:
 
+Fuer die haeufigste Abfrage gibt es auf der Homepage den Eintrag
+**Runtime-Logs**. Er oeffnet die Pennyroyal-Logs bereits mit einem kurzen
+Zeitraum und zehn Sekunden Aktualisierung. **Dozzle** zeigt parallel die
+rohen Live-Ausgaben aller Container.
+
 ```
 {container="pennyroyal"}                       alles von der Runtime
 {container="pennyroyal"} |= "error"             nur Fehlerzeilen

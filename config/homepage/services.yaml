@@ -15,7 +15,11 @@
     - Dozzle:
         icon: dozzle.png
         href: http://127.0.0.1:8080
-        description: Live-Containerlogs
+        description: Live-Pod-Logs im Browser
+    - Runtime-Logs:
+        icon: grafana.png
+        href: http://127.0.0.1:3000/d/llm-infra-logs/logs?orgId=1&var-service=pennyroyal&from=now-1h&to=now&refresh=10s
+        description: Pennyroyal/SGLang live in Grafana
     - Repository:
         icon: github.png
         href: https://github.com/thomasdenk79-cyber/llm-infra-setup

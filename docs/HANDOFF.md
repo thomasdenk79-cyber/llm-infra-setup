@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T03:53:50+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T03:55:03+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -680,3 +680,7 @@ Strukturiertes Logs-Dashboard aktiviert und Grafana-Datenquellen repariert
 ## Notiz 2026-10-04T03:53:50+02:00
 
 Vorbereitung direkter Runtime-Log-Link
+
+## Notiz 2026-10-04T03:55:03+02:00
+
+Direkter Runtime-Logs-Link und Dozzle-Hinweis eingerichtet
