@@ -51,8 +51,10 @@ for _ in $(seq 1 180); do
 done
 if curl -fsS --max-time 5 http://127.0.0.1:8002/health >/dev/null 2>&1; then
   qwen_prompt="Prüfe den Reparaturstand der Variante $variant in $worktree. Lies $evidence und die letzten Commits. Suche Restfehler beim Breakable-CUDA-Graphen und SSD-PLE. Arbeite nur im Variantenbranch, ändere keine Produktionsdateien, starte keine Pods und benchmarke nicht. Korrigiere nötige Restfehler, führe make validate/make drift aus und committe. Forschungsmodus: Wenn ein offizieller Upstream-/Paper-/CUDA-/SGLang-/Plugin-Ansatz oder eine Kombination plausibel besser ist, recherchiere die Primärquelle im Internet, dokumentiere URL, Datum, Nutzen und Risiko in docs/research-loop.md und beschreibe eine neue isolierte Variante mit eigenem Branch/Worktree. Übernehme sie nicht ungeprüft in Produktion; sie braucht dieselben Validate-, Start-, Health- und Benchmark-Gates."
-  (cd "$worktree" && opencode run --dir "$worktree" --model local-litellm/qwen3.8-flash-next \
-    --agent build --auto "$qwen_prompt") > "$run_dir/healing/$variant-qwen.log" 2>&1 || true
+  (cd "$worktree" && timeout --signal=INT --kill-after=60s \
+    "${OPENCODE_MAX_SECONDS:-5400}" opencode run --dir "$worktree" \
+    --model local-litellm/qwen3.8-flash-next --agent build --auto "$qwen_prompt") \
+    > "$run_dir/healing/$variant-qwen.log" 2>&1 || true
 else
   echo "Qwen-Review verschoben: Produktionsdienst auf 8002 war nicht bereit."
 fi

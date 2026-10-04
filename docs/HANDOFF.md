@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T05:13:37+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T05:16:31+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -752,3 +752,7 @@ GPU-Stop wartet 120 Sekunden auf stabilen Request-Drain
 ## Notiz 2026-10-04T05:13:37+02:00
 
 Drain wartet zusaetzlich auf Runner-Agenten und ist konfigurierbar
+
+## Notiz 2026-10-04T05:16:31+02:00
+
+OpenCode-Heiler und Research-Audits mit Laufzeit-Timeout versehen

@@ -35,7 +35,8 @@ Schreibe den vollständigen Bericht nach $report mit:
 Keine erfundenen Messwerte. Wenn eine Quelle oder Messung fehlt, vermerken.
 Committe ausschließlich den Forschungsbericht im Variantenworktree.
 EOF
-  (cd "$worktree" && opencode run --dir "$worktree" \
+  (cd "$worktree" && timeout --signal=INT --kill-after=60s \
+    "${OPENCODE_RESEARCH_MAX_SECONDS:-3600}" opencode run --dir "$worktree" \
     --model local-litellm/qwen3.8-flash-next --agent build --auto \
     "$(cat "$out/$variant-prompt.txt")") > "$log" 2>&1 || true
 }
