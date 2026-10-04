@@ -40,7 +40,8 @@ werden erst nach denselben Validate-, Start-, Health- und Benchmark-Gates
 Kandidaten für die Produktion.
 EOF
 echo "Luna-Reparatur für $variant startet."
-(cd "$worktree" && codex exec -m gpt-6-luna -C "$worktree" \
+(cd "$worktree" && timeout --signal=INT --kill-after=60s \
+  "${LUNA_MAX_SECONDS:-7200}" codex exec -m gpt-6-luna -C "$worktree" \
   --dangerously-bypass-approvals-and-sandbox < "$prompt_file") || \
   echo "Luna konnte $variant nicht reparieren."
 
