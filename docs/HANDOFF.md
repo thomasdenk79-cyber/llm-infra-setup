@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-04T04:01:27+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-04T04:02:13+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -692,3 +692,7 @@ Runtime-Logs ueber wechselnde Pod-Namen gebuendelt
 ## Notiz 2026-10-04T04:01:27+02:00
 
 Loki-Zeitstempel auf Podman-Logzeit korrigiert
+
+## Notiz 2026-10-04T04:02:13+02:00
+
+Asynchrone Logsammlung bestaetigt und Alloy-Zeitstempel geladen
