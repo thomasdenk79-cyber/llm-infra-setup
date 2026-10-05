@@ -27,11 +27,22 @@ if (( drift == 0 )); then
   exit 0
 fi
 
-# Agenten-Guard: ein laufender Chat-/Codex-/Agentenprozess blockiert den Neustart.
-if pgrep -f 'opencode run|opencode serve|agents/qwen\.sh|agents/luna\.sh|codex exec' >/dev/null 2>&1; then
-  log 'BLOCKIERT: laufende Agentensitzung - warte auf fensterfreies Intervall.'
-  exit 0
-fi
+# Agenten-Guard: nicht der Prozess entscheidet, sondern der Traffic im
+# SGLang-Log (dieselbe Wahrheit wie der Runner-Guard): letzte LLM-Aufrufe
+# innerhalb von 120 s => busy => vertagen; Log unlesbar => fail-closed.
+busy="$(cd /home/z000g9hu/work/qwen38-flash-next-blackwell && python3 -c '
+from runner.gpuhandover import default_llm_busy
+import subprocess
+def cmd(argv, timeout=30):
+    p = subprocess.run(argv, capture_output=True, text=True, timeout=timeout)
+    class R: returncode, stdout, stderr = p.returncode, p.stdout, p.stderr
+    return R()
+print(default_llm_busy("pennyroyal", 120, cmd))' 2>/dev/null || echo None)"
+case "$busy" in
+  False) log 'Alle Agenten idle (kein Modelltraffic im Fenster) - Neustart erlaubt.' ;;
+  *) log "BLOCKIERT: Modelltraffic aktiv/unbekannt (busy=$busy) - spaeterer Versuch."
+     exit 0 ;;
+esac
 
 log 'Quadlet wird mit Agent-Profil neu erzeugt.'
 export PENNY_HICACHE_SIZE_GB=$DESIRED_HICACHE
