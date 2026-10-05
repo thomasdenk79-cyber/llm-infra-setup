@@ -1,6 +1,6 @@
 # Projektstatus
 
-Stand: 2026-10-05, Gateway-Reverse-Tunnel in Umsetzung
+Stand: 2026-10-05, Teamzugriff auf Gateway initial in Betrieb
 
 ## Done
 
@@ -22,9 +22,11 @@ Stand: 2026-10-05, Gateway-Reverse-Tunnel in Umsetzung
 * Alloy sammelt Container-Protokolle inklusive Pennyroyal (Labels `container`,
   `image`, `job`), damit die Logsuche pro Dienst funktioniert.
 * Gateway-Kette (PostgreSQL, LiteLLM, Open WebUI, Homepage) laeuft ohne GPU.
-* Reverse-SSH-Tunnel zum Azure-Gateway ist als loopback-only Dienst vorbereitet;
-  oeffentliche HTTPS-Freigabe bleibt bis DNS-/Zertifikats- und Azure-NSG-Klaerung
-  deaktiviert (siehe `docs/gateway-access.md`).
+* Reverse-SSH-Tunnel zum Azure-Gateway laeuft rootless per Podman/Quadlet; der
+  LiteLLM-Port ist dort nur an `127.0.0.1:4000` gebunden. Fuenf separate
+  Virtual Keys sind lokal mit Modus `0600` gespeichert. Oeffentliche HTTPS-
+  Freigabe bleibt bis DNS-/Zertifikats- und Azure-NSG-Klaerung deaktiviert
+  (siehe `docs/gateway-access.md`).
 * Alle Zugangswerte sind Zufallswerte ausserhalb von Git; die alten
   Standard-Passwoerter sind aus dem Code entfernt, `make validate` prueft darauf.
 * Deployment-Pfade sind vereinheitlicht: eine Installationsregel in `lib/units.sh`,
