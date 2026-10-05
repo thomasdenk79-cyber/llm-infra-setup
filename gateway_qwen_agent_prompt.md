@@ -39,10 +39,10 @@ und den Betreiber mit einer funktionierenden Client-Anleitung uebergeben.
   `~/.config/llm-infra/team-api-tokens/{owner,thomas,martin,johannes,holger}.key`
   (Modus `0600`). Niemals Werte ausgeben, in Logs schreiben oder committen.
   `make team-api-keys` ist idempotent und behaelt vorhandene Dateien.
-* Lokale Commits: `4d68f72`, `9ab713e` und `4816481`. Der letzte Commit ergaenzt
-  Grafana und Homepage im Tunnel. Ein Push scheiterte an fehlender
-  GitHub-Anmeldung. Keine Credentials erfinden, konfigurieren oder umgehen;
-  push nur, wenn der Betreiber bereits eine sichere, verfuegbare Anmeldung hat.
+* Setup-Commits: `4d68f72`, `9ab713e` und `4816481`; `4816481` ergaenzt Grafana
+  und Homepage im Tunnel. Ein Push scheiterte an fehlender GitHub-Anmeldung.
+  Keine Credentials erfinden, konfigurieren oder umgehen; push nur, wenn der
+  Betreiber bereits eine sichere, verfuegbare Anmeldung hat.
 * Der Tunnel und die drei Forwards sind eingerichtet. Bei Start des Agents war
   der Worktree nur durch diese bestehenden, nicht zugehoerigen Aenderungen
   geaendert: `config/homepage/services.yaml`, `docs/operations.md` und
