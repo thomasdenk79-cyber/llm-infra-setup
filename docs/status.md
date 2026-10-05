@@ -28,7 +28,9 @@ Stand: 2026-10-05, Gateway-Zugang: oeffentliches 443 fuer LiteLLM in Betrieb
 * Oeffentlicher HTTPS-Zugang auf Port 443 ist in Betrieb: Caddy auf der VM
   (`scripts/70-setup-gateway-proxy.sh`) bedient nur fuer die Team-Netze
   erreichbar: LiteLLM `/v1` (Token), Grafana `/grafana/` und Homepage `/`
-  (Basic-Auth pro Person); tls-internal-Zertifikat, Entra-ID vorbereitet.
+  (Basic-Auth pro Person); tls-internal-Zertifikat, Entra-ID vorbereitet
+  (Gruppe `edipoc-gateway-llm` angelegt, App-Registrierung offen - Ticketwortlaut
+  in `docs/gateway-access.md`).
   NSG-Rueckfahrt auf `allow-ssh-cachyos` (22) und `allow-web-team`
   (80/443 aus Zscaler+Eigene) ist offen (siehe `docs/gateway-access.md`).
 * Alle Zugangswerte sind Zufallswerte ausserhalb von Git; die alten

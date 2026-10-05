@@ -88,6 +88,17 @@ hinzufuegen). Die Gruppen-ID ist in `config/gateway.env` hinterlegt
 Offen (scheitert derzeit an den Rechten fuer die App-Registrierung - ggf.
 IT-Ticket mit exakt diesen Vorgaben):
 
+> Ich benötige eine Microsoft-Entra-ID-App-Registrierung (Typ „Nur
+> Organisation dieses Mandanten“, Mandant siemens.com) für einen
+> Grafana-OAuth-Login einer privaten Azure-VM.
+> - Redirect-URI (Web): `https://edipoc-gateway.westeurope.cloudapp.azure.com/login/azuread`
+> - Clientsecret (Laufzeit 12 Monate), sichere Übermittlung an den Antragsteller
+> - „Zuweisung erforderlich“ = Ja; zugewiesene Gruppe: `edipoc-gateway-llm`
+>   (Objekt-ID 892544c5-1696-46ad-ac09-ad40488b117b)
+> - Delegierte Berechtigungen: `User.Read`, `Email`, `Profile`, `OpenID`
+>   (Standard-Delegierung, kein Admin-Consent)
+> Rückgabe: Tenant-ID (GUID), Client-ID, Secret-Wert
+
 1. App-Registrierung, Kontotyp "Nur Organisation dieses Mandanten".
 2. Umleitungs-URI (Web): `https://edipoc-gateway.westeurope.cloudapp.azure.com/login/azuread`.
 3. Clientgeheimnis (~12 Monate), Werte (Tenant-ID, Client-ID, Secret) in

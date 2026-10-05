@@ -869,3 +869,19 @@ fuer Grafana vorbereitet (Skript-Abschnitt 9; App-Registrierung fehlt noch,
 Umleitungs-URI https://edipoc-gateway.westeurope.cloudapp.azure.com/login/azuread).
 Offen: NSG auf allow-ssh-cachyos (22) + allow-web-team (80/443 aus
 Zscaler+Eigene) umstellen, 3000/8080 loeschen; Team-Passwoerter verteilen.
+
+## Notiz 2026-10-05T15:40:00+02:00 – Entra-Gruppe steht, App-Registrierung offen
+
+Sicherheitsgruppe `edipoc-gateway-llm` (Objekt-ID
+892544c5-1696-46ad-ac09-ad40488b117b, Mandant siemens.onmicrosoft.com,
+4 Mitglieder: martin.citak, holger.heise, thomas.denk,
+Johannes.Holzhaeuer @siemens.com) ist angelegt; Betreiber-E-Mail noch
+hinzufuegen. Gruppen-ID liegt in `config/gateway.env`
+(`GATEWAY_AZUREAD_GROUP_OBJECT_ID`) und wird als
+`GF_AUTH_AZUREAD_ALLOWED_GROUPS` uebernommen. Es fehlt die
+Azure-App-Registrierung (Portal-Rechte); Ticketwortlaut mit Redirect-URI
+`https://edipoc-gateway.westeurope.cloudapp.azure.com/login/azuread` und
+„Zuweisung erforderlich=Ja“ steht in `docs/gateway-access.md`. Sobald
+Tenant-ID/Client-ID/Secret in `config/gateway.env` stehen:
+`./scripts/70-setup-gateway-proxy.sh` erneut laufen lassen (startet nur
+Grafana neu). Bis dahin bleibt Basic-Auth der einzige Browser-Zugang.
