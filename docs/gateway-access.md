@@ -82,15 +82,22 @@ CachyOS-Maschine: `~/.ssh/llm_gateway_reverse_ed25519` (Tunnel, am Gateway mit
 
 ## Nachziehen der Absicherung (offen)
 
-* Azure-NSG war zum Teststart weit geoeffnet (22, 443, 3000, 8080). Plan:
-  Port 22 von Quelle `Any` auf die eigenen Netze einschraenken, 3000/8080
-  ganz entfernen, 443 bleibt `Any` (Schutz = Token). Die erlaubten Kreise
-  stehen in `GATEWAY_ALLOWED_SSH_CIDRS` (config/gateway.env, nicht in Git);
-  das Setup-Skript zeigt zu jeder Regel den Portal-Wortlaut und den
-  Azure-CLI-Befehl und warnt vor Selbst-Aussperrung, wenn die eigene
-  oeffentliche IP fehlt. Aktuell hinterlegt: CachyOS `92.209.14.229/32`
-  (Vodafone-Pool, kann sich aendern - dann IP nachschlagen und nachziehen:
-  `curl -s https://api.ipify.org`).
+* aktiver Stand der Azure-NSG (2026-10-05): eine Regel laesst TCP 22, 443 und
+  80 aus den Siemens-/Zscaler-Kreisen Muenchen `147.161.168.0/22`,
+  `147.161.176.0/23`, `147.161.250.0/23` durch (deckt die Kollegen im Buero
+  ab). fuer CachyOS zusaetzlich der Vodafone-Kabel-Pool
+  `92.208.0.0/15` (RIPE-Objekt `VFDE-IP-SERVICE-01`, enthaelt die aktuelle
+  Maschine `92.209.14.229/32`). Rest von `Any` auf 22 entfernen; 3000/8080
+  ganz löschen; 443 kann fuer das Team offen bleiben (Schutz = Token) oder
+  auf dieselben Kreise gesetzt werden.
+* Die Kreise sind Spiegelbildlich in `GATEWAY_ALLOWED_SSH_CIDRS`
+  (config/gateway.env, nicht in Git) gepflegt; das Setup-Skript zeigt zu
+  jeder Regel den Portal-Wortlaut und den Azure-CLI-Befehl und warnt vor
+  Selbst-Aussperrung, wenn die eigene oeffentliche IP fehlt.
+* oeffentliche IP nach einer Einwahl-Aenderung neu bestimmen und nachziehen:
+  `curl -s https://api.ipify.org` (Vodafone vergibt die Adresse dynamisch;
+  der /15-Pool deckt die meisten Faelle ab, ein Blockwechsel ausserhalb
+  erfordert eine zusatzliche Zeile).
 * wichtig: Jeder Kollege mit Grafana/Homepage-Tunnel (martin, johannes,
   holger) benoetigt seinen Netz-Kreis in der NSG-Regel; ohne Eintrag sperrt
   die Netzwerkregel aus, unabhaengig von seinem SSH-Schluessel.

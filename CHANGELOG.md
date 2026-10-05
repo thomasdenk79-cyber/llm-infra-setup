@@ -8,6 +8,10 @@
   harte Warnung plus Abbruch bei Selbst-Aussperrung, Portal-Wortlaut und
   Azure-CLI-Befehl zum Anpassen der NSG-Regel. Port 443 bleibt offen
   (Schutz = persoenlicher Token); 3000/8080 sollen aus der NSG verschwinden.
+* aktiver NSG-Ausbaustand dokumentiert: TCP 22/80/443 aus den
+  Siemens-Zscaler-Kreisen Muenchen (147.161.168.0/22, 147.161.176.0/23,
+  147.161.250.0/23) plus Vodafone-Kabel-Pool 92.208.0.0/15
+  (VFDE-IP-SERVICE-01, enthaelt 92.209.14.229) fuer CachyOS.
 * Hinweis dokumentiert: Grafana/Homepage-Tunnel der Kollegen erfordern deren
   Netz-Kreise in der NSG, nicht nur ihre SSH-Schluessel.
 
