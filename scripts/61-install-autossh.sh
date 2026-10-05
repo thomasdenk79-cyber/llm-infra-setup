@@ -19,8 +19,12 @@ source "${root}/lib/units.sh"
 : "${AUTOSSH_REMOTE_USER:=llm}"
 : "${AUTOSSH_REMOTE_PORT:=22}"
 : "${AUTOSSH_REMOTE_BIND_PORT:=4000}"
+: "${AUTOSSH_REMOTE_GRAFANA_PORT:=3000}"
+: "${AUTOSSH_REMOTE_HOMEPAGE_PORT:=3002}"
 : "${AUTOSSH_LOCAL_HOST:=127.0.0.1}"
 : "${AUTOSSH_LOCAL_PORT:=4000}"
+: "${AUTOSSH_LOCAL_GRAFANA_PORT:=3000}"
+: "${AUTOSSH_LOCAL_HOMEPAGE_PORT:=3002}"
 : "${AUTOSSH_SSH_KEY:=%h/.ssh/id_ed25519}"
 key_path="${AUTOSSH_SSH_KEY/\%h/${HOME}}"
 state_dir="${HOME}/.local/share/llm-infra/ssh"
@@ -76,6 +80,8 @@ Exec=-M 0 -N -o BatchMode=yes -o IdentitiesOnly=yes -o ServerAliveInterval=30 -o
     -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/ssh/known_hosts \\
     -i /ssh/id_ed25519 -p ${AUTOSSH_REMOTE_PORT} \\
     -R 127.0.0.1:${AUTOSSH_REMOTE_BIND_PORT}:${AUTOSSH_LOCAL_HOST}:${AUTOSSH_LOCAL_PORT} \\
+    -R 127.0.0.1:${AUTOSSH_REMOTE_GRAFANA_PORT}:127.0.0.1:${AUTOSSH_LOCAL_GRAFANA_PORT} \\
+    -R 127.0.0.1:${AUTOSSH_REMOTE_HOMEPAGE_PORT}:127.0.0.1:${AUTOSSH_LOCAL_HOMEPAGE_PORT} \\
     ${AUTOSSH_REMOTE_USER}@${AUTOSSH_REMOTE_HOST}
 
 [Service]

@@ -49,8 +49,8 @@ fuer die Einschaltung steht als Kommentar in der Datei.
 Container steuern. Wer das nicht will: Dozzle braucht den Socket nur fuer die
 Oberflaeche und kann entfernt werden (`make apply-units` zeigt, was sich aendert).
 
-**5. Gateway-Zugriff.** Der Reverse-Tunnel uebertraegt ausschliesslich den
-LiteLLM-Port und bindet ihn auf dem Gateway an `127.0.0.1`. Externe Clients
+**5. Gateway-Zugriff.** Der Reverse-Tunnel uebertraegt LiteLLM, Grafana und
+Homepage und bindet alle drei Ports auf dem Gateway an Loopback. Externe Clients
 nutzen bis zur Einrichtung eines HTTPS-Endpunkts SSH-Portweiterleitung (siehe
 `docs/gateway-access.md`), nicht unverschluesseltes HTTP im Netz.
 

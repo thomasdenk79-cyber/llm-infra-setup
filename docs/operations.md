@@ -55,17 +55,22 @@ ssh -L 3000:127.0.0.1:3000 -L 3001:127.0.0.1:3001 deinrechner
 
 ### Teamzugriff ueber den Azure-Gateway
 
-Der optionale Reverse-Tunnel stellt LiteLLM auf dem Gateway unter
-`127.0.0.1:4000` bereit. Fuer einen Client mit SSH-Zugang:
+Der optionale Reverse-Tunnel stellt LiteLLM, Grafana und Homepage auf dem
+Gateway an Loopback-Ports bereit. Fuer einen Client mit SSH-Zugang:
 
 ```bash
-ssh -N -L 4000:127.0.0.1:4000 azureuser@20.73.54.102
+ssh -i "$HOME\.ssh\id_rsa" -N `
+  -L 4000:127.0.0.1:4000 `
+  -L 3000:127.0.0.1:3000 `
+  -L 3002:127.0.0.1:3002 `
+  azureuser@20.73.54.102
 ```
 
-Die Anwendung nutzt `http://127.0.0.1:4000/v1` und den persoenlichen
-LiteLLM-Virtual-Key. Der Gateway-Port bleibt loopback-only; den Port nicht
-unverschluesselt oeffentlich freigeben. Teamzugang, Schluesselverwaltung und
-HTTPS-Voraussetzungen stehen in [gateway-access.md](gateway-access.md).
+LiteLLM: `http://127.0.0.1:4000/v1`; Grafana:
+`http://127.0.0.1:3000`; Homepage: `http://127.0.0.1:3002`. Fuer die API den
+persoenlichen LiteLLM-Virtual-Key verwenden; Grafana benoetigt eigene
+Zugangsdaten. Die Gateway-Ports bleiben loopback-only; nicht unverschluesselt
+oeffentlich freigeben. Details: [gateway-access.md](gateway-access.md).
 
 ## Modell austauschen
 

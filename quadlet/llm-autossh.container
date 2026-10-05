@@ -15,6 +15,8 @@ Exec=-M 0 -N -o BatchMode=yes -o IdentitiesOnly=yes -o ServerAliveInterval=30 -o
     -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/ssh/known_hosts \
     -i /ssh/id_ed25519 -p 22 \
     -R 127.0.0.1:4000:127.0.0.1:4000 \
+    -R 127.0.0.1:3000:127.0.0.1:3000 \
+    -R 127.0.0.1:3002:127.0.0.1:3002 \
     azureuser@20.73.54.102
 
 [Service]

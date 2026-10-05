@@ -22,10 +22,10 @@ Stand: 2026-10-05, Teamzugriff auf Gateway initial in Betrieb
 * Alloy sammelt Container-Protokolle inklusive Pennyroyal (Labels `container`,
   `image`, `job`), damit die Logsuche pro Dienst funktioniert.
 * Gateway-Kette (PostgreSQL, LiteLLM, Open WebUI, Homepage) laeuft ohne GPU.
-* Reverse-SSH-Tunnel zum Azure-Gateway laeuft rootless per Podman/Quadlet; der
-  LiteLLM-Port ist dort nur an `127.0.0.1:4000` gebunden. Fuenf separate
-  Virtual Keys sind lokal mit Modus `0600` gespeichert. Oeffentliche HTTPS-
-  Freigabe bleibt bis DNS-/Zertifikats- und Azure-NSG-Klaerung deaktiviert
+* Reverse-SSH-Tunnel zum Azure-Gateway laeuft rootless per Podman/Quadlet;
+  LiteLLM, Grafana und Homepage sind dort nur an Loopback gebunden. Fuenf
+  separate Virtual Keys sind lokal mit Modus `0600` gespeichert. Oeffentliche
+  HTTPS-Freigabe bleibt bis DNS-/Zertifikats- und Azure-NSG-Klaerung deaktiviert
   (siehe `docs/gateway-access.md`).
 * Alle Zugangswerte sind Zufallswerte ausserhalb von Git; die alten
   Standard-Passwoerter sind aus dem Code entfernt, `make validate` prueft darauf.

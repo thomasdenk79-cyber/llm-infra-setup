@@ -92,6 +92,8 @@ Fuer die Skalierungsmessung gibt es das Profil `c16`: 16 aufgenommene Anfragen, 
 6. Gateway-Teamzugang laeuft: Reverse-Tunnel und fuenf persoenliche
    LiteLLM-Virtual-Keys sind aktiv. Oeffentliche HTTPS-Freigabe erst nach
    DNS-/Zertifikats- und Azure-NSG-Klaerung (`docs/gateway-access.md`).
+   Der konkrete Arbeitsauftrag fuer den lokalen Qwen-Agenten liegt in
+   `gateway_qwen_agent_prompt.md`; vor Fortsetzung Live-Stand und Worktree pruefen.
  7. spaeter: zweites Modell, Azure-Fallback, KVM - siehe `AGENTS.md`.
  8. Turbo-Varianten A-D sind vorbereitet, aber **keine einzige ist getestet**
     (kein Build, kein Start, kein Benchmark). Auftrag und Ablauf:
