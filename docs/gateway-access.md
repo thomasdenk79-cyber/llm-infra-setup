@@ -71,24 +71,35 @@ Status `make gateway-proxy-check`).
   `~/.ssh/llm_gateway_reverse_ed25519` (Tunnel, `permitlisten`-beschraenkt)
   und `~/.ssh/llm_gateway_admin_ed25519` (VM-Verwaltung).
 
-## Entra-ID-Login (geplant)
+## Entra-ID-Login (in Vorbereitung)
 
 On-Premises-Active-Directory (LDAP) ist von der Azure-VM aus nicht erreichbar
 (Siemens-Firewall) - die praxistaugliche Bruicke ist **Entra ID** als
 cloudseitiges Spiegelbild des Firmen-AD (GID/E-Mail bleiben dieselben).
-Dafuer fehlt nur eine Azure-App-Registrierung:
 
-1. Entra ID -> App-Registrierungen -> Neue Registrierung; Kontotyp
-   "Nur Organisiation".
+Erledigt am 2026-10-05: Sicherheitsgruppe **edipoc-gateway-llm**
+(Objekt-ID `892544c5-1696-46ad-ac09-ad40488b117b`, Mandant
+`siemens.onmicrosoft.com`, 4 Mitglieder: martin.citak, holger.heise,
+thomas.denk, Johannes.Holzhaeuer @siemens.com; Betreiber-E-Mail noch
+hinzufuegen). Die Gruppen-ID ist in `config/gateway.env` hinterlegt
+(`GATEWAY_AZUREAD_GROUP_OBJECT_ID`) und wird von Grafana als
+`GF_AUTH_AZUREAD_ALLOWED_GROUPS` gesetzt.
+
+Offen (scheitert derzeit an den Rechten fuer die App-Registrierung - ggf.
+IT-Ticket mit exakt diesen Vorgaben):
+
+1. App-Registrierung, Kontotyp "Nur Organisation dieses Mandanten".
 2. Umleitungs-URI (Web): `https://edipoc-gateway.westeurope.cloudapp.azure.com/login/azuread`.
-3. Zertifikat/Geheimnis anlegen; Tenant-ID, Client-ID und Geheimnis in
-   `config/gateway.env` eintragen (`GATEWAY_AZUREAD_*`).
-4. `./scripts/70-setup-gateway-proxy.sh` erneut laufen lassen - es schreibt
+3. Clientgeheimnis (~12 Monate), Werte (Tenant-ID, Client-ID, Secret) in
+   `config/gateway.env` eintragen.
+4. Eigenschaften -> "Zuweisung erforderlich" = Ja, Gruppe von oben zuweisen.
+5. `./scripts/70-setup-gateway-proxy.sh` erneut laufen lassen - es schreibt
    `~/.config/llm-infra/grafana.env` (0600) und startet nur Grafana neu.
 
 Danach genuegt in Grafana der Entra-Button; die Basic-Auth bleibt als
 zweite Schicht vor dem Proxy. Die LiteLLM-API laeuft weiter rein per Token
-(Maschinenzugriff passt nicht in Browser-OAuth).
+(Maschinenzugriff passt nicht in Browser-OAuth). Bis die App-Registrierung
+steht, bleibt die Basic-Auth der einzige Browser-Zugang.
 
 ## Brandmauer-Regeln (Azure-NSG)
 

@@ -58,6 +58,7 @@ source "${env_file}"
 : "${GATEWAY_AZUREAD_CLIENT_ID:=}"
 : "${GATEWAY_AZUREAD_CLIENT_SECRET:=}"
 : "${GATEWAY_AZUREAD_ALLOWED_DOMAINS:=siemens.com}"
+: "${GATEWAY_AZUREAD_GROUP_OBJECT_ID:=}"
 auth_store="${HOME}/.config/llm-infra/gateway-web-auth"
 
 [[ -n "${GATEWAY_HOST}" && "${GATEWAY_HOST}" != example.net ]] || {
@@ -364,6 +365,10 @@ if [[ -n "${GATEWAY_AZUREAD_TENANT_ID}" && -n "${GATEWAY_AZUREAD_CLIENT_ID}" && 
     "GF_AUTH_AZUREAD_ALLOWED_DOMAINS=${GATEWAY_AZUREAD_ALLOWED_DOMAINS}" \
     "GF_AUTH_OAUTH_AUTO_ASSIGN_ROLE=true" \
     "GF_USERS_DEFAULT_ORG_ROLE=Viewer")"
+  if [[ -n "${GATEWAY_AZUREAD_GROUP_OBJECT_ID}" ]]; then
+    desired="${desired}
+GF_AUTH_AZUREAD_ALLOWED_GROUPS=${GATEWAY_AZUREAD_GROUP_OBJECT_ID}"
+  fi
   if [[ -f "${grafana_env}" && "$(cat "${grafana_env}")" == "${desired}" ]]; then
     echo "Grafana-Entra-Konfiguration unveraendert: ${grafana_env}"
   elif [[ "${mode}" == "--check" || "${mode}" == "--dry-run" ]]; then
