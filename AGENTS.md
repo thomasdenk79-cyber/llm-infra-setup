@@ -87,6 +87,7 @@ Das Repository ist das einzige Backup dieser Arbeit. Deshalb gilt fuer jeden Sch
 | `scripts/60-install-homepage.sh` | Portal-Unit |
 | `scripts/60-install-monitoring.sh` | ganze Beobachtungsstufe inkl. Timer, `--check` |
 | `scripts/61-install-autossh.sh` | optionaler Wartungstunnel, nur ein Schluessel, kein `apk add` zur Laufzeit |
+| `scripts/70-setup-gateway-proxy.sh` | oeffentlicher 443-Zugang (Caddy) auf der Azure-Gateway-VM, nur LiteLLM unter `/v1`, Verwaltungs-Schluessel, `--check`/`--dry-run` |
 | `scripts/62-install-komodo.sh` | optionale Periphery, bricht ohne echten Server ab |
 | `scripts/63-install-postgres.sh` | Datenbank-Unit |
 | `scripts/65-install-gpu-exporter.sh` | GPU-Metriken (nvidia-smi oder dcgm) |

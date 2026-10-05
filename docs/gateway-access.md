@@ -9,10 +9,10 @@ nicht an der oeffentlichen Netzwerkschnittstelle gebunden.
 Der verifizierte SSH-Host-Key-Fingerprint (ED25519) lautet
 `SHA256:rDkL6da/9HUzecqAq5JS0TB1lhQh8F3fKsdA85AbjGo`.
 
-Bis ein DNS-Name und ein vertrauenswuerdiger HTTPS-Endpunkt eingerichtet sind,
-bleibt der API-Zugriff absichtlich auf SSH-Portweiterleitung beschraenkt. Jeder
-Nutzer braucht dafuer einen eigenen SSH-Zugang zum Gateway und einen eigenen
-LiteLLM-Virtual-Key:
+Die LiteLLM-API ist zusaetzlich oeffentlich ueber HTTPS/443 freigegeben
+(unten, Abschnitt Oeffentliche HTTPS-Freigabe); dafuer genuegt der
+persoenliche Virtual Key. Fuer Grafana und Homepage bleibt jeder Nutzer auf
+einen eigenen SSH-Zugang zum Gateway angewiesen:
 
 ```bash
 ssh -i "$HOME\.ssh\id_rsa" -N `
@@ -26,7 +26,7 @@ Solange das SSH-Fenster offen ist, sind die Dienste erreichbar:
 
 | Dienst | Adresse auf dem Client |
 |---|---|
-| LiteLLM API | `http://127.0.0.1:4000/v1` |
+| LiteLLM API | `http://127.0.0.1:4000/v1` (alternativ oeffentlich ueber HTTPS/443) |
 | Grafana | `http://127.0.0.1:3000` |
 | Homepage | `http://127.0.0.1:3002` |
 
@@ -49,9 +49,43 @@ neuen erzeugen; niemals einen persoenlichen Token fuer mehrere Nutzer teilen.
 Budgets und Ablaufzeiten sind noch nicht festgelegt und muessen vor einer
 groesseren Freigabe abgestimmt werden.
 
-## Oeffentliche HTTPS-Freigabe
+## Oeffentliche HTTPS-Freigabe (in Betrieb seit 2026-10-05)
 
-Den API-Port nicht direkt per HTTP im Internet freigeben. Vor einer
-oeffentlichen Freigabe sind ein DNS-Name, HTTPS-Zertifikat, eine passende
-Azure-Netzwerkregel fuer TCP/443 sowie ein externer Verbindungstest
-erforderlich. Bis dahin bleibt der Gateway-Port auf dem Gateway-Loopback.
+Die LiteLLM-API ist ueber die Azure-Gateway-VM oeffentlich auf Port 443
+erreichbar; der Zugriffsschutz ist der persoenliche Virtual Key. Eingerichtet
+und idempotent nachziehbar mit `./scripts/70-setup-gateway-proxy.sh`
+(`make gateway-proxy`, Status: `make gateway-proxy-check`).
+
+* Oeffentlicher Endpunkt: `https://edipoc-gateway.westeurope.cloudapp.azure.com/v1`
+* Reverse-Proxy: Caddy 2.11 auf der VM, Let's-Encrypt-Zertifikat ueber
+  TLS-ALPN (port 443 genuegt). Die Konfiguration liegt versioniert in
+  `gateway/Caddyfile.template`; Werte in `config/gateway.env` (nicht in Git).
+* Freigegebene Pfade: nur `/v1/*`, `/health/liveliness`, `/health/readiness`.
+  Alles andere antwortet 404 - Grafana, Homepage und etwaige Verwaltungs-
+  oberflaechen sind oeffentlich nicht erreichbar.
+* Der Proxy leitet auf `127.0.0.1:4000`; dort endet der Reverse-Tunnel von
+  CachyOS. An der oeffentlichen Schnittstelle der VM lauscht nur Caddy.
+
+Der API-Zugriff fuer ein Teammitglied (kein Tunnel noetig, nur der persoenliche
+Schluessel aus `~/.config/llm-infra/team-api-tokens/`):
+
+```bash
+curl https://edipoc-gateway.westeurope.cloudapp.azure.com/v1/models \
+  -H "Authorization: Bearer <persoenlicher-key>"
+```
+
+Grafana und Homepage erfordern weiterhin den zusaetzlichen SSH-Tunnel pro
+Person (siehe Abschnitt Verbindung). Die Verwaltungs-Schluessel der
+CachyOS-Maschine: `~/.ssh/llm_gateway_reverse_ed25519` (Tunnel, am Gateway mit
+`permitlisten` eingeschraenkt) und `~/.ssh/llm_gateway_admin_ed25519`
+(VM-Verwaltung; wird vom Skript erzeugt und hinterlegt).
+
+## Nachziehen der Absicherung (offen)
+
+* Azure-NSG war zum Teststart weit geoeffnet (22, 80?, 443, 3000, 8080). Nach
+  dem Testlauf auf 22 und 443 zurueckfahren; 3000/8080 brauchen keine
+  Internetregel, die Dienste binden am Gateway nur Loopback.
+* LiteLLM-Rollenrechtest pruefen: oeffentlich soll nur die Chat-API dienen,
+  nicht die Verwaltungs-API (Schluesselverwaltung bleibt localhost-only).
+* Fuehrt ein Betreiber die Azure-CLI (`az`), kann das Skript die NSG-Regel
+  pruefen statt sie nur zu testen.

@@ -1,6 +1,6 @@
 # Projektstatus
 
-Stand: 2026-10-05, Teamzugriff auf Gateway initial in Betrieb
+Stand: 2026-10-05, Gateway-Zugang: oeffentliches 443 fuer LiteLLM in Betrieb
 
 ## Done
 
@@ -24,8 +24,11 @@ Stand: 2026-10-05, Teamzugriff auf Gateway initial in Betrieb
 * Gateway-Kette (PostgreSQL, LiteLLM, Open WebUI, Homepage) laeuft ohne GPU.
 * Reverse-SSH-Tunnel zum Azure-Gateway laeuft rootless per Podman/Quadlet;
   LiteLLM, Grafana und Homepage sind dort nur an Loopback gebunden. Fuenf
-  separate Virtual Keys sind lokal mit Modus `0600` gespeichert. Oeffentliche
-  HTTPS-Freigabe bleibt bis DNS-/Zertifikats- und Azure-NSG-Klaerung deaktiviert
+  separate Virtual Keys sind lokal mit Modus `0600` gespeichert.
+* Oeffentlicher HTTPS-Zugang auf Port 443 ist in Betrieb: Caddy auf der VM
+  (`scripts/70-setup-gateway-proxy.sh`), nur LiteLLM unter `/v1` mit
+  Let's-Encrypt-Zertifikat, Grafana/Homepage bleiben Tunnel-pflichtig.
+  NSG war zum Test weit geoeffnet; Rueckfahrt auf 22/443 ist offen
   (siehe `docs/gateway-access.md`).
 * Alle Zugangswerte sind Zufallswerte ausserhalb von Git; die alten
   Standard-Passwoerter sind aus dem Code entfernt, `make validate` prueft darauf.

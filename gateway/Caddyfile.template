@@ -1,0 +1,31 @@
+# GENERIERT von scripts/70-setup-gateway-proxy.sh. Nicht manuell auf dem
+# Gateway editieren - Aenderungen gehoeren in diese Vorlage und config/gateway.env.
+#
+# Platzhalter (werden lokal eingesetzt):
+#   __SITE__          DNS-Name (automatisches Let's Encrypt) oder https://<IP> (tls internal)
+#   __TLS__           "tls internal" ohne DNS-Namen, sonst leer
+#   __GLOBAL_TAIL__   optional "email <adresse>" fuer Let's Encrypt
+#   __LITELLM_PORT__  Loopback-Port des LiteLLM-Reverse-Tunnels auf dem Gateway
+#
+# Freigabe: ausschliesslich die LiteLLM-API unter /v1 und die beiden
+# Health-Pfade. Grafana, Homepage und alle anderen Pfade antworten mit 404
+# und bleiben nur per SSH-Tunnel (ssh -L) erreichbar.
+
+{
+	admin off
+	__GLOBAL_TAIL__
+}
+
+__SITE__ {
+	__TLS__
+	encode zstd gzip
+
+	@litellm path /v1 /v1/* /health/liveliness /health/readiness
+	handle @litellm {
+		reverse_proxy 127.0.0.1:__LITELLM_PORT__
+	}
+
+	handle {
+		respond "Nur die LiteLLM-API ist ueber diesen Endpunkt freigegeben. Grafana und Homepage sind ausschliesslich per SSH-Tunnel erreichbar." 404
+	}
+}

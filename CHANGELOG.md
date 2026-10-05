@@ -1,5 +1,29 @@
 # Aenderungsprotokoll
 
+## Unveroeffentlicht (Gateway-443-Zugang, 2026-10-05)
+
+* Neues `scripts/70-setup-gateway-proxy.sh` (`make gateway-proxy`,
+  `make gateway-proxy-check`): richtet auf der Azure-Gateway-VM Caddy als
+  Reverse-Proxy nur auf Port 443 ein. Oeffentlich erreichbar ist damit
+  ausschliesslich
+  die LiteLLM-API unter `/v1` (plus Health-Pfade); Zugriffsschutz ist der
+  persoenliche Virtual Key. Grafana, Homepage und alle anderen Pfade antworten
+  404 und bleiben auf den SSH-Tunnel pro Person beschraenkt.
+* Let's-Encrypt-Zertifikat ueber TLS-ALPN fuer
+  `edipoc-gateway.westeurope.cloudapp.azure.com`; ohne oeffentlich erreichbaren
+  Port 443 bleibt das Skript auf `tls internal` und erklaert den naechsten
+  Betreiber-Schritt (NSG).
+* Versionierte Vorlage `gateway/Caddyfile.template`, Beispielkonfiguration
+  `config/gateway.env.example`; echte Werte bleiben ausserhalb von Git.
+* Eigener Verwaltungs-Schluessel der CachyOS-Maschine fuer die Gateway-VM
+  (`~/.ssh/llm_gateway_admin_ed25519`), idempotent hinterlegt; der
+  Tunnel-Schluessel bleibt davon getrennt. Vorhandene `authorized_keys`-Eintraege
+  werden nur ergaenzt, nie ersetzt.
+* Pruefung des Gateway-Host-Keys gegen den verifizierten Fingerprint, Abbruch
+  bei Abweichung.
+* Live getestet: `/health/liveliness` 200, `/v1/models` 401 ohne und 200 mit
+  persoenlichem Token, `/` 404, TLS ohne `-k` vertrauenswuerdig.
+
 ## Unveroeffentlicht (Gateway-Reverse-Tunnel, 2026-10-05)
 
 * Autossh-Quadlet nutzt das Host-Netzwerk, damit der Container LiteLLM erreicht,

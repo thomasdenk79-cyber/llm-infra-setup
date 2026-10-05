@@ -89,9 +89,12 @@ Fuer die Skalierungsmessung gibt es das Profil `c16`: 16 aufgenommene Anfragen, 
    Rechten ( png/pdf ) und ZFS-Snapshot braucht Berechtigung - loesen.
 4. Eigenes Seccomp-Profil statt `unconfined` fuer den Inferenz-Container.
 5. Komodo erst mit echten Zugangsdaten aktivieren (`make komodo`).
-6. Gateway-Teamzugang laeuft: Reverse-Tunnel und fuenf persoenliche
-   LiteLLM-Virtual-Keys sind aktiv. Oeffentliche HTTPS-Freigabe erst nach
-   DNS-/Zertifikats- und Azure-NSG-Klaerung (`docs/gateway-access.md`).
+6. Gateway-Teamzugang laeuft: Reverse-Tunnel, fuenf persoenliche
+   LiteLLM-Virtual-Keys und seit 2026-10-05 der oeffentliche HTTPS-Zugang
+   auf Port 443 (Caddy, nur `/v1`, Let's Encrypt) ueber
+   `scripts/70-setup-gateway-proxy.sh`. Offen: NSG vom Testzustand
+   (22/80?/443/3000/8080 offen) auf 22 und 443 zurueckfahren,
+   LiteLLM-Rollenrechte pruefen (`docs/gateway-access.md`).
    Der konkrete Arbeitsauftrag fuer den lokalen Qwen-Agenten liegt in
    `gateway_qwen_agent_prompt.md`; vor Fortsetzung Live-Stand und Worktree pruefen.
  7. spaeter: zweites Modell, Azure-Fallback, KVM - siehe `AGENTS.md`.
@@ -835,3 +838,14 @@ Matrix-Abbruch und falschen Alle-erfolgreich-Status behoben
 ## Notiz 2026-10-04T19:04:25+02:00
 
 vor sicherem Watchdog-Fix und Penny-Neustart
+
+## Notiz 2026-10-05T13:05:00+02:00 – Oeffentliches 443 auf dem Gateway
+
+Caddy auf der Azure-VM eingerichtet (`scripts/70-setup-gateway-proxy.sh`,
+Vorlage `gateway/Caddyfile.template`, Werte `config/gateway.env`). Nur
+LiteLLM unter `/v1` oeffentlich, Let's-Encrypt-Zertifikat ueber
+`edipoc-gateway.westeurope.cloudapp.azure.com`; Grafana/Homepage bleiben
+SSH-Tunnel-pflichtig. CachyOS hat zusaetzlich einen Verwaltungs-Schluessel
+`~/.ssh/llm_gateway_admin_ed25519`. Getestet: 200/401/404 und Token-Zugriff
+auf `qwen3.8-flash-next`. NSG ist bewusst im Testzustand weit offen -
+Rueckfahrt auf 22/443 nach Testende ist offen (Punkt 6).
