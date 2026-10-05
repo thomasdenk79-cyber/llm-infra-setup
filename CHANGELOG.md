@@ -1,5 +1,14 @@
 # Aenderungsprotokoll
 
+## Unveroeffentlicht (Gateway-Reverse-Tunnel, 2026-10-05)
+
+* Autossh-Quadlet nutzt das Host-Netzwerk, damit der Container LiteLLM erreicht,
+  das auf CachyOS absichtlich nur an `127.0.0.1` gebunden ist.
+* Tunnel-SSH prueft einen vorab verifizierten Host-Key, nutzt nur den dedizierten
+  Schluessel und bindet den Reverse-Port am Gateway ausschliesslich auf Loopback.
+* Teamzugriff, persoenliche Virtual Keys und notwendige HTTPS-Schritte sind in
+  `docs/gateway-access.md` dokumentiert.
+
 ## Unveroeffentlicht (Runner-Review, 2026-10-04)
 
 Behoben (Runner- und Benchmark-Pfade, keine Runtime-Units angefasst):

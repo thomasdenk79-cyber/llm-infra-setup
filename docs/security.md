@@ -49,10 +49,10 @@ fuer die Einschaltung steht als Kommentar in der Datei.
 Container steuern. Wer das nicht will: Dozzle braucht den Socket nur fuer die
 Oberflaeche und kann entfernt werden (`make apply-units` zeigt, was sich aendert).
 
-**5. Keine Verschluesselung im Betrieb.** Zugriffe erfolgen ueber SSH-Port-
-weiterleitung (siehe `docs/operations.md`), nicht ueber HTTP im Netz. Der
-optionale Wartungstunnel (`make autossh`) uebertraegt nur den Gateway-Port und
-nur zu einem von dir eingetragenen Rechner.
+**5. Gateway-Zugriff.** Der Reverse-Tunnel uebertraegt ausschliesslich den
+LiteLLM-Port und bindet ihn auf dem Gateway an `127.0.0.1`. Externe Clients
+nutzen bis zur Einrichtung eines HTTPS-Endpunkts SSH-Portweiterleitung (siehe
+`docs/gateway-access.md`), nicht unverschluesseltes HTTP im Netz.
 
 ## Was noch fehlt (offene Aufgaben)
 

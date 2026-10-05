@@ -26,6 +26,7 @@ nav:
   - Geschwindigkeit: performance.md
   - Beobachtung: monitoring.md
   - Sicherheit: security.md
+  - Gateway-Teamzugriff: gateway-access.md
   - Sicherung und Rueckgabe: backup-restore.md
   - Fehlerbilder: troubleshooting.md
   - Status: status.md

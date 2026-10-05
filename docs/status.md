@@ -1,6 +1,6 @@
 # Projektstatus
 
-Stand: 2026-10-02, Review- und Ausbauphase
+Stand: 2026-10-05, Gateway-Reverse-Tunnel in Umsetzung
 
 ## Done
 
@@ -22,6 +22,9 @@ Stand: 2026-10-02, Review- und Ausbauphase
 * Alloy sammelt Container-Protokolle inklusive Pennyroyal (Labels `container`,
   `image`, `job`), damit die Logsuche pro Dienst funktioniert.
 * Gateway-Kette (PostgreSQL, LiteLLM, Open WebUI, Homepage) laeuft ohne GPU.
+* Reverse-SSH-Tunnel zum Azure-Gateway ist als loopback-only Dienst vorbereitet;
+  oeffentliche HTTPS-Freigabe bleibt bis DNS-/Zertifikats- und Azure-NSG-Klaerung
+  deaktiviert (siehe `docs/gateway-access.md`).
 * Alle Zugangswerte sind Zufallswerte ausserhalb von Git; die alten
   Standard-Passwoerter sind aus dem Code entfernt, `make validate` prueft darauf.
 * Deployment-Pfade sind vereinheitlicht: eine Installationsregel in `lib/units.sh`,
@@ -84,8 +87,7 @@ Stand: 2026-10-02, Review- und Ausbauphase
 2. PLE auf einer echten NVMe-Partition messen gegen die Loop-Datei (`PLE_BLOCK_DEVICE`).
 3. DCGM-Exporter gegen nvidia-smi messen, danach Entscheidung welches bleibt.
 4. Seccomp-Profil schreiben, das nur io_uring zulaesst (statt `unconfined`).
-5. Komodo und Wartungstunnel erst mit echten Zugangsdaten aktivieren
-   (`make komodo`, `make autossh`).
+5. Komodo erst mit echten Zugangsdaten aktivieren (`make komodo`).
 6. Woechentliche Regel aus Backup + Pruefung (`./scripts/restore.sh --check`).
 7. KVM/libvirt als getrennte Phase, ohne GPU-Durchreichung.
 8. Web-Verwaltung (Cockpit oder Podman Desktop) bewerten - erst nach Klärung der

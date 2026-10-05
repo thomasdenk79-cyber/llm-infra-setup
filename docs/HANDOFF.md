@@ -88,9 +88,10 @@ Fuer die Skalierungsmessung gibt es das Profil `c16`: 16 aufgenommene Anfragen, 
 3. `backup.sh`: Tarntel fuer `~/.local/share/llm-infra/grafana` scheitert an
    Rechten ( png/pdf ) und ZFS-Snapshot braucht Berechtigung - loesen.
 4. Eigenes Seccomp-Profil statt `unconfined` fuer den Inferenz-Container.
-5. Komodo und Wartungstunnel erst mit echten Zielangaben aktivieren
-   (`make komodo`, `make autossh`).
- 6. Virtueller Gateway-Schluessel pro Agent + Test (Auftragstext Abschnitt 22/40-8).
+5. Komodo erst mit echten Zugangsdaten aktivieren (`make komodo`).
+6. Gateway-Teamzugang: Reverse-Tunnel und fuenf persoenliche LiteLLM-Virtual-Keys
+   pruefen; oeffentliche HTTPS-Freigabe erst nach DNS-/NSG-Klaerung
+   (`docs/gateway-access.md`).
  7. spaeter: zweites Modell, Azure-Fallback, KVM - siehe `AGENTS.md`.
  8. Turbo-Varianten A-D sind vorbereitet, aber **keine einzige ist getestet**
     (kein Build, kein Start, kein Benchmark). Auftrag und Ablauf:

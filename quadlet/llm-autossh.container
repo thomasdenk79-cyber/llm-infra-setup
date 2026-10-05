@@ -1,13 +1,27 @@
+# GENERIERT von scripts/61-install-autossh.sh.
+# Es wird nur EIN Schluessel eingelaesen, nicht der ganze ~/.ssh-Bestand.
 [Unit]
-Description=Reverse SSH tunnel to LiteLLM
+Description=Wartungstunnel zum LiteLLM-Gateway
 After=network-online.target litellm.service
+
 [Container]
-Image=docker.io/library/alpine:3.20
+Image=localhost/llm-autossh:local
 ContainerName=llm-autossh
-AddHost=host.containers.internal:host-gateway
-Volume=%h/.ssh:/root/.ssh:ro
-Exec=sh -c "apk add --no-cache autossh openssh-client && exec autossh -M 0 -N -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes -i /root/.ssh/id_ed25519 -p 22 -R 127.0.0.1:4000:host.containers.internal:4000 llm@example.net"
+Network=host
+Volume=%h/.ssh/llm_gateway_reverse_ed25519:/ssh/id_ed25519:ro,Z
+Volume=%h/.local/share/llm-infra/ssh/known_hosts:/ssh/known_hosts:ro,Z
+Environment=AUTOSSH_GATETIME=0
+Exec=-M 0 -N -o BatchMode=yes -o IdentitiesOnly=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes \
+    -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/ssh/known_hosts \
+    -i /ssh/id_ed25519 -p 22 \
+    -R 127.0.0.1:4000:127.0.0.1:4000 \
+    azureuser@20.73.54.102
+
 [Service]
-Restart=always
+Restart=on-failure
+RestartSec=60
+StartLimitIntervalSec=600
+StartLimitBurst=10
+
 [Install]
 WantedBy=default.target
