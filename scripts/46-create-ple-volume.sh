@@ -131,7 +131,10 @@ if [[ "$(stat -c %u "${PLE_NATIVE_MOUNT}")" != "$(id -u)" ]]; then
   sudo chown "$(id -u):$(id -g)" "${PLE_NATIVE_MOUNT}"
 fi
 
-line="${device} ${PLE_NATIVE_MOUNT} ext4 noatime,nodiratime,nofail,x-systemd.automount 0 2"
+# This mount is a hard prerequisite for the Pennyroyal user service.  An
+# automount can remain a system-manager autofs placeholder while the user
+# container starts, causing the runtime to see an empty /ple directory.
+line="${device} ${PLE_NATIVE_MOUNT} ext4 noatime,nodiratime,nofail 0 2"
 if ! grep -Fqx -- "${line}" /etc/fstab; then
   if grep -Fq -- "${PLE_NATIVE_MOUNT}" /etc/fstab; then
     echo "WARNUNG: /etc/fstab hat bereits einen anderen Eintrag fuer ${PLE_NATIVE_MOUNT}; bitte pruefen." >&2
