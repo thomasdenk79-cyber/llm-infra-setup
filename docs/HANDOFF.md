@@ -858,3 +858,14 @@ dynamisch). Skript-Abschnitt 7 prueft Selbst-Aussperrung und liefert
 Portal-Wortlaut + az-Befehl. Offen: Kreise von martin, johannes, holger
 ergaenzen (sonst ohne Tunnel-Ausgang), NSG im Portal umsetzen, 3000/8080
 loeschen.
+
+## Notiz 2026-10-05T14:05:00+02:00 – Browser-Zugang mit Login statt Tunnel
+
+Caddy bedient jetzt Grafana (`/grafana/`, Unterpfad via GF_SERVER_SERVE_FROM_SUB_PATH)
+und Homepage (`/`) hinter Basic-Auth pro Person (`~/.config/llm-infra/gateway-web-auth/`),
+LiteLLM bleibt `/v1` mit Token. TLS auf `tls internal` umgestellt
+(Stammzertifikat `state/gateway/caddy-root.crt` verteilt werden). Entra-ID
+fuer Grafana vorbereitet (Skript-Abschnitt 9; App-Registrierung fehlt noch,
+Umleitungs-URI https://edipoc-gateway.westeurope.cloudapp.azure.com/login/azuread).
+Offen: NSG auf allow-ssh-cachyos (22) + allow-web-team (80/443 aus
+Zscaler+Eigene) umstellen, 3000/8080 loeschen; Team-Passwoerter verteilen.

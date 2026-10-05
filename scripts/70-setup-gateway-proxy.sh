@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 # Oeffentlicher HTTPS-Zugang (nur Port 443) auf der Azure-Gateway-VM.
 #
-# Richtet dort Caddy als Reverse-Proxy ein: ausschliesslich die LiteLLM-API
-# unter /v1 (Zugriffsschutz = persoenlicher Virtual Key). Grafana, Homepage
-# und alle anderen Pfade bleiben nur per SSH-Tunnel (ssh -L) erreichbar.
+# Richtet dort Caddy als Reverse-Proxy ein (alles nur ueber Port 443):
+#   /v1, /health/...  -> LiteLLM      (Schutz = persoenlicher Virtual Key)
+#   /grafana/         -> Grafana      (Schutz = Basic-Auth pro Person;
+#                                       optional Entra-ID-Login in Grafana)
+#   /                 -> Homepage     (Schutz = Basic-Auth pro Person)
+# Basic-Auth-Passwoerter liegen lokal unter
+# ~/.config/llm-infra/gateway-web-auth/<benutzer>.txt (0600), nie in Git.
 # Zusaetzlich bekommt die lokale CachyOS-Maschine einen eigenen
 # Verwaltungs-Schluessel fuer die Gateway-VM.
 #
@@ -45,6 +49,16 @@ source "${env_file}"
 : "${GATEWAY_LITELLM_PORT:=4000}"
 : "${GATEWAY_HOST_KEY_FINGERPRINT:=}"
 : "${GATEWAY_ALLOWED_SSH_CIDRS:=}"
+: "${GATEWAY_ALLOWED_WEB_CIDRS:=${GATEWAY_ALLOWED_SSH_CIDRS}}"
+: "${GATEWAY_TEAM_USERS:=owner}"
+: "${GATEWAY_GRAFANA_PORT:=3000}"
+: "${GATEWAY_HOMEPAGE_PORT:=3002}"
+: "${GATEWAY_TLS:=internal}"
+: "${GATEWAY_AZUREAD_TENANT_ID:=}"
+: "${GATEWAY_AZUREAD_CLIENT_ID:=}"
+: "${GATEWAY_AZUREAD_CLIENT_SECRET:=}"
+: "${GATEWAY_AZUREAD_ALLOWED_DOMAINS:=siemens.com}"
+auth_store="${HOME}/.config/llm-infra/gateway-web-auth"
 
 [[ -n "${GATEWAY_HOST}" && "${GATEWAY_HOST}" != example.net ]] || {
   echo "ABBRUCH: GATEWAY_HOST ist nicht gesetzt. Naechster Befehl: \${EDITOR:-nano} config/gateway.env" >&2; exit 1; }
@@ -142,31 +156,72 @@ else
   echo "Caddy ist NICHT installiert (wird beim normalen Lauf installiert)."
 fi
 
-echo "=== 4. Konfiguration erzeugen und anwenden ==="
-# Oeffentlich erreichbar (NSG 443 offen)? Nur dann kann Let's Encrypt via
-# TLS-ALPN ein vertrauenswuerdiges Zertifikat ausstellen. Solange die
-# Netzwerkregel fehlt, bleibt tls internal (Nutzer dann mit -k bzw.
-# installiertem Caddy-Stammzertifikat).
-nsg_offen=nein
-if timeout 6 bash -c "cat < /dev/null > /dev/tcp/${GATEWAY_HOST}/443" 2>/dev/null; then
-  nsg_offen=ja
-fi
+echo "=== 4. Team-Zugangsdaten (Basic-Auth fuer Grafana und Homepage) ==="
+install -d -m 0700 "${auth_store}"
+read -r u0 _ <<<"${GATEWAY_TEAM_USERS}"
+for u in ${GATEWAY_TEAM_USERS}; do
+  f="${auth_store}/${u}.txt"
+  if [[ ! -f "${f}" ]]; then
+    if [[ "${mode}" == "--check" || "${mode}" == "--dry-run" ]]; then
+      echo "Passwort-Datei fehlt (wird im echten Lauf angelegt): ${f}"
+      continue
+    fi
+    pw="$(openssl rand -hex 12)"
+    printf '%s\n' "${pw}" > "${f}"; chmod 0600 "${f}"
+    log "Neues Basic-Auth-Passwort fuer '${u}' angelegt: ${f} (einmalig anzeigen: cat ${f})"
+  fi
+done
+
+echo "=== 5. Konfiguration erzeugen und anwenden ==="
+# TLS-Modus: internal = Caddy-eigene CA (Team installiert das Stammzertifikat,
+# noetig sobald die NSG 443 auf eigene Kreise beschraenkt ist und Let's
+# Encrypt nicht mehr erreichbar ist). letsencrypt = vertrauenswuerdig,
+# erfordert oeffentlich erreichbaren Port 443 (auch fuer die Erneuerung).
 site="${GATEWAY_DNS_NAME:-${GATEWAY_HOST}}"
 [[ "${site}" == *"://"* ]] || site="https://${site}"
 tls_directive="tls internal"; global_tail=""
-if [[ -n "${GATEWAY_DNS_NAME}" && "${nsg_offen}" == ja ]]; then
-  tls_directive=""; [[ -n "${GATEWAY_ACME_EMAIL}" ]] && global_tail="email ${GATEWAY_ACME_EMAIL}"
-  log "Port 443 ist oeffentlich erreichbar: automatisches Let's-Encrypt-Zertifikat fuer ${GATEWAY_DNS_NAME}"
-elif [[ -n "${GATEWAY_DNS_NAME}" ]]; then
-  log "WARNUNG: DNS-Name gesetzt, aber Port 443 ist von aussen nicht erreichbar (Azure-NSG)."
-  log "Es wird einstweilen 'tls internal' verwendet. NSG oeffnen und erneut ausfuehren fuer Let's Encrypt."
-fi
+nsg_offen=nein
+if timeout 6 bash -c "cat < /dev/null > /dev/tcp/${GATEWAY_HOST}/443" 2>/dev/null; then nsg_offen=ja; fi
+case "${GATEWAY_TLS}" in
+  internal)
+    [[ -n "${GATEWAY_DNS_NAME}" ]] || {
+      echo "ABBRUCH: GATEWAY_TLS=internal braucht GATEWAY_DNS_NAME (Curl sendet kein SNI fuer blosse IP-Adressen)." >&2
+      echo "Naechster Befehl: Azure-DNS-Label setzen und GATEWAY_DNS_NAME in config/gateway.env eintragen." >&2; exit 1; } ;;
+  letsencrypt)
+    [[ -n "${GATEWAY_DNS_NAME}" ]] || { echo "ABBRUCH: GATEWAY_TLS=letsencrypt braucht GATEWAY_DNS_NAME." >&2; exit 1; }
+    tls_directive=""; [[ -n "${GATEWAY_ACME_EMAIL}" ]] && global_tail="email ${GATEWAY_ACME_EMAIL}"
+    if [[ "${nsg_offen}" != ja ]]; then
+      echo "WARNUNG: Port 443 ist von hier nicht erreichbar - Let's Encrypt braucht oeffentlich erreichbares 443." >&2
+    fi ;;
+  auto)
+    if [[ -n "${GATEWAY_DNS_NAME}" && "${nsg_offen}" == ja ]]; then
+      tls_directive=""; [[ -n "${GATEWAY_ACME_EMAIL}" ]] && global_tail="email ${GATEWAY_ACME_EMAIL}"
+    fi ;;
+  *) echo "ABBRUCH: GATEWAY_TLS='${GATEWAY_TLS}' unbekannt (internal|letsencrypt|auto)." >&2; exit 1 ;;
+esac
 render_dir="${root}/state/gateway"; install -d -m 0700 "${render_dir}"
+users_block="${render_dir}/team-users.block"
+: > "${users_block}"
+for u in ${GATEWAY_TEAM_USERS}; do
+  f="${auth_store}/${u}.txt"
+  if [[ -f "${f}" ]]; then
+    pw="$(head -n1 "${f}")"
+    hash="$(printf '%s\n' "${pw}" | gw 'IFS= read -r p && caddy hash-password --plaintext "$p"' | tail -n1)"
+    [[ -n "${hash}" ]] || { echo "ABBRUCH: caddy hash-password fehlgeschlagen fuer ${u}." >&2; exit 1; }
+    printf '\t\t\t%s %s\n' "${u}" "${hash}" >> "${users_block}"
+  else
+    printf '\t\t\t# %s: Passwortdatei fehlt\n' "${u}" >> "${users_block}"
+  fi
+done
 rendered="${render_dir}/Caddyfile"
 sed -e "s|__SITE__|${site}|g" -e "s|__TLS__|${tls_directive}|g" \
     -e "s|__GLOBAL_TAIL__|${global_tail}|g" -e "s|__LITELLM_PORT__|${GATEWAY_LITELLM_PORT}|g" \
-    "${root}/gateway/Caddyfile.template" > "${rendered}"
-echo "Gerendert: ${rendered} (Site: ${site}, TLS: ${tls_directive:-automatisch})"
+    -e "s|__GRAFANA_PORT__|${GATEWAY_GRAFANA_PORT}|g" -e "s|__HOMEPAGE_PORT__|${GATEWAY_HOMEPAGE_PORT}|g" \
+    "${root}/gateway/Caddyfile.template" > "${render_dir}/.Caddyfile.step1"
+awk -v ub="${users_block}" '{ if ($0 ~ /^[[:space:]]*__TEAM_USERS__[[:space:]]*$/) { while ((getline l<ub)>0) print l; close(ub) } else print }' \
+    "${render_dir}/.Caddyfile.step1" > "${rendered}"
+rm -f "${render_dir}/.Caddyfile.step1"
+echo "Gerendert: ${rendered} (Site: ${site}, TLS: ${tls_directive:-automatisch}, Team: ${GATEWAY_TEAM_USERS})"
 if [[ "${mode}" == "--check" ]]; then
   echo "--- aktuelles /etc/caddy/Caddyfile (Read-only) ---"
   gw 'sudo test -r /etc/caddy/Caddyfile && sudo cat /etc/caddy/Caddyfile || echo "kein /etc/caddy/Caddyfile"'
@@ -201,7 +256,7 @@ systemctl is-active caddy
 REMOTE
 fi
 
-echo "=== 5. Tests auf dem Gateway (Loopback ueber 443) ==="
+echo "=== 6. Tests auf dem Gateway (Loopback ueber 443) ==="
 test_host="${GATEWAY_DNS_NAME:-${GATEWAY_HOST}}"; test_host="${test_host#*://}"
 if [[ "${mode}" == "--dry-run" ]]; then
   echo "Uebersprungen (--dry-run)."
@@ -210,11 +265,25 @@ else
   c1="$(gw "curl -sk -o /dev/null -w '%{http_code}' --resolve '${test_host}:443:127.0.0.1' 'https://${test_host}/health/liveliness'" || true)"
   c2="$(gw "curl -sk -o /dev/null -w '%{http_code}' --resolve '${test_host}:443:127.0.0.1' 'https://${test_host}/v1/models'" || true)"
   c3="$(gw "curl -sk -o /dev/null -w '%{http_code}' --resolve '${test_host}:443:127.0.0.1' 'https://${test_host}/'" || true)"
-  echo "liveliness: ${c1} (erwartet 200) | /v1/models ohne Token: ${c2} (erwartet 401) | /: ${c3} (erwartet 404)"
+  c4="$(gw "curl -sk -o /dev/null -w '%{http_code}' --resolve '${test_host}:443:127.0.0.1' 'https://${test_host}/grafana/'" || true)"
+  echo "liveliness: ${c1} (200) | /v1 ohne Token: ${c2} (401) | / ohne Basic: ${c3} (401) | /grafana/ ohne Basic: ${c4} (401)"
+  if [[ -n "${u0:-}" && -f "${auth_store}/${u0}.txt" ]]; then
+    pw0="$(head -n1 "${auth_store}/${u0}.txt")"
+    ch="$(printf 'user = "%s:%s"\n' "${u0}" "${pw0}" | gw "curl -sk -o /dev/null -w '%{http_code}' --config - --resolve '${test_host}:443:127.0.0.1' 'https://${test_host}/'" || true)"
+    cg="$(printf 'user = "%s:%s"\n' "${u0}" "${pw0}" | gw "curl -sk -o /dev/null -w '%{http_code}' --config - --resolve '${test_host}:443:127.0.0.1' 'https://${test_host}/grafana/'" || true)"
+    echo "mit Team-Login (${u0}): Homepage ${ch} (200) | Grafana ${cg} (302 auf Login)"
+  fi
   gw "ss -tlnp | grep -E ':(80|443|3000|3002|4000) ' || echo 'Achtung: kein 443-Listener'"
+  if [[ "${tls_directive}" == "tls internal" ]]; then
+    rootcrt="${render_dir}/caddy-root.crt"
+    if gw 'sudo cat /var/lib/caddy/.local/share/caddy/pki/authorities/local/root.crt >/dev/null 2>&1'; then
+      gw 'sudo cat /var/lib/caddy/.local/share/caddy/pki/authorities/local/root.crt' > "${rootcrt}" && chmod 0600 "${rootcrt}"
+      echo "Caddy-Stammzertifikat: ${rootcrt} (Team einmalig als vertrauenswuerdig installieren, sonst -k)"
+    fi
+  fi
 fi
 
-echo "=== 6. Externer Test von CachyOS ==="
+echo "=== 7. Externer Test von CachyOS ==="
 if [[ "${mode}" == "--dry-run" ]]; then
   echo "Uebersprungen (--dry-run)."
 elif curl -k -m 8 -o /dev/null -sL "https://${test_host}/health/liveliness" 2>/dev/null; then
@@ -230,7 +299,7 @@ Danach erneut: ./scripts/70-setup-gateway-proxy.sh --check
 MSG
 fi
 
-echo "=== 7. Zugangsschutz Port 22 (Azure-NSG) ==="
+echo "=== 8. Zugangsschutz Port 22 und 443 (Azure-NSG) ==="
 own_ip="$(curl -s -m 8 https://api.ipify.org 2>/dev/null || true)"
 [[ -n "${own_ip}" ]] || own_ip="$(curl -s -m 8 https://ifconfig.me/ip 2>/dev/null || true)"
 echo "Aktuelle oeffentliche IP dieser CachyOS-Maschine: ${own_ip:-unbekannt}"
@@ -254,21 +323,64 @@ PY
          if [[ "${mode}" != "--check" && "${mode}" != "--dry-run" ]]; then exit 1; fi
     fi
   fi
-  echo "Jede weitere Person mit Grafana/Homepage-Tunnel (martin, johannes, holger)"
-  echo "braucht ihren Netz-Kreis in GATEWAY_ALLOWED_SSH_CIDRS - Schluessel allein reicht nicht."
+  echo "Port 22 braucht nur noch CachyOS (Tunnel+Verwaltung) und der Betreiber."
+  echo "Das Team erreicht Grafana/Homepage/LiteLLM ueber Port 443 (Quelle: WEB-Kreise)."
+  # Prueft nach einem NSG-Lockdown, ob Port 22 von hier ueberhaupt durchkommt.
+  if timeout 6 bash -c "cat < /dev/null > /dev/tcp/${GATEWAY_HOST}/22" 2>/dev/null; then
+    echo "Port-22-Test von dieser Maschine: erreichbar."
+  else
+    echo "ACHTUNG: Port 22 ist von dieser Maschine nicht erreichbar - die NSG-Regel" >&2
+    echo "passt nicht zur aktuellen IP ${own_ip:-?} (Neueinwahl?). Autossh-Tunnel steht still." >&2
+    echo "Heilung im Azure-PORTAL: Quelle der SSH-Regel auf ${own_ip:-<aktuelle IP>}/32 setzen." >&2
+  fi
   echo
   echo "Umsetzung im Azure-PORTAL (NSG der VM edipoc-gateway, RG-EDIPOC-WEU):"
-  echo "  Eingehende Sicherheitsregeln: 'SSH (22)' Quelle von 'Any' auf diese Kreise stellen:"
-  sed 's/[^0-9A-Za-z.,/ ]/ /g; s/^ *//; s/ *$//' <<<"${GATEWAY_ALLOWED_SSH_CIDRS//,/}" | tr ' ' '\n' | grep . | sed 's/^/    - /'
-  echo "  Port 443 bleibt Quelle 'Any' (Schutz = persoenlicher LiteLLM-Token)."
-  echo "  Ports 3000 und 8080: Internetregeln loeschen (Dienste binden nur Loopback)."
+  echo "  Regel 'allow-ssh-cachyos' TCP 22, Quelle:"
+  tr ',;' '  ' <<<"${GATEWAY_ALLOWED_SSH_CIDRS}" | tr ' ' '\n' | grep -E '^[0-9][0-9.]+/[0-9]+$' | sed 's/^/    - /'
+  echo "  Regel 'allow-web-team' TCP 443 (plus 80 fuer HTTP->HTTPS), Quelle:"
+  tr ',;' '  ' <<<"${GATEWAY_ALLOWED_WEB_CIDRS}" | tr ' ' '\n' | grep -E '^[0-9][0-9.]+/[0-9]+$' | sed 's/^/    - /'
+  echo "  Beide Regeln ausserdem um weitere Betreiber-IPs erweitern, falls von anderen Netzen verwaltet wird."
+  echo "  Loeschen: jede Regel mit Quelle 'Any' auf 22/3000/8080; 443 nur 'Any' wenn GATEWAY_TLS=letsencrypt."
   echo "Mit Azure-CLI (auf einem Rechner mit 'az login'), NSG-Namen vorher pruefen:"
   echo "  az network nsg rule update -g RG-EDIPOC-WEU --nsg-name <NSG-NAME> \\"
-  echo "    --name default-allow-ssh --source-address-prefixes ${GATEWAY_ALLOWED_SSH_CIDRS// /,}"
+  echo "    --name allow-ssh-cachyos --source-address-prefixes $(tr ',;' '  ' <<<"${GATEWAY_ALLOWED_SSH_CIDRS}" | tr -s ' ' '\n' | grep -E '^[0-9][0-9.]+/[0-9]+$' | paste -sd, -)"
+  echo "  az network nsg rule update -g RG-EDIPOC-WEU --nsg-name <NSG-NAME> \\"
+  echo "    --name allow-web-team --destination-port-ranges 80-443 --source-address-prefixes $(tr ',;' '  ' <<<"${GATEWAY_ALLOWED_WEB_CIDRS}" | tr -s ' ' '\n' | grep -E '^[0-9][0-9.]+/[0-9]+$' | paste -sd, -)"
 else
   echo "Keine GATEWAY_ALLOWED_SSH_CIDRS gesetzt - Port 22 ist weiterhin 'Any'. Empfehlung:"
   echo "  In config/gateway.env eigene IP ${own_ip:-<aktuell>}/33 eintragen,"
   echo "  dazu die Netz-Kreise von martin, johannes, holger, dann erneut ausfuehren."
+fi
+echo "=== 9. Entra-ID-Login fuer Grafana (optional) ==="
+grafana_env="${HOME}/.config/llm-infra/grafana.env"
+if [[ -n "${GATEWAY_AZUREAD_TENANT_ID}" && -n "${GATEWAY_AZUREAD_CLIENT_ID}" && -n "${GATEWAY_AZUREAD_CLIENT_SECRET}" ]]; then
+  desired="$(printf '%s\n' \
+    "GF_AUTH_AZUREAD_ENABLED=true" \
+    "GF_AUTH_AZUREAD_NAME=Entra-ID" \
+    "GF_AUTH_AZUREAD_TENANT_ID=${GATEWAY_AZUREAD_TENANT_ID}" \
+    "GF_AUTH_AZUREAD_CLIENT_ID=${GATEWAY_AZUREAD_CLIENT_ID}" \
+    "GF_AUTH_AZUREAD_CLIENT_SECRET=${GATEWAY_AZUREAD_CLIENT_SECRET}" \
+    "GF_AUTH_AZUREAD_ALLOW_SIGN_UP=true" \
+    "GF_AUTH_AZUREAD_ALLOWED_DOMAINS=${GATEWAY_AZUREAD_ALLOWED_DOMAINS}" \
+    "GF_AUTH_OAUTH_AUTO_ASSIGN_ROLE=true" \
+    "GF_USERS_DEFAULT_ORG_ROLE=Viewer")"
+  if [[ -f "${grafana_env}" && "$(cat "${grafana_env}")" == "${desired}" ]]; then
+    echo "Grafana-Entra-Konfiguration unveraendert: ${grafana_env}"
+  elif [[ "${mode}" == "--check" || "${mode}" == "--dry-run" ]]; then
+    echo "Entra-Werte gesetzt, aber noch nicht angewendet (Modus ${mode:-apply} aendert sie)."
+  else
+    install -d -m 0700 "${HOME}/.config/llm-infra"
+    printf '%s\n' "${desired}" > "${grafana_env}.new"
+    chmod 0600 "${grafana_env}.new"
+    mv "${grafana_env}.new" "${grafana_env}"
+    log "Grafana neu gestartet (nur Grafana, keine Runtime): Entra-Login aktiv"
+    systemctl --user restart grafana.service
+  fi
+else
+  echo "Entra-ID noch nicht konfiguriert (Grund: Basic-Auth genuegt vorerst)."
+  echo "Fuer den Siemens-Login braucht es eine Azure-App-Registrierung (Entra ID) mit"
+  echo "Umleitungs-URI https://${test_host:-<fqdn>}/login/azuread - dann in"
+  echo "config/gateway.env ausfuellen: GATEWAY_AZUREAD_TENANT_ID, _CLIENT_ID, _CLIENT_SECRET."
 fi
 echo
 echo "Fertig. Naechste Schritte:"
@@ -277,6 +389,7 @@ if [[ -z "${tls_directive}" ]]; then
 else
   echo "  * Client (Team, nur Token): curl -k https://${test_host}/v1/models -H 'Authorization: Bearer <persoenlicher-key>'  (selbst signiert: -k oder Caddy-Stammzertifikat installieren)"
 fi
-echo "  * Grafana/Homepage pro Person per Tunnel: ssh -i <eigener-key> -N -L 3000:127.0.0.1:3000 -L 3002:127.0.0.1:3002 ${GATEWAY_SSH_USER}@${GATEWAY_HOST}"
+echo "  * Team im Browser: https://${test_host}/ (Homepage) und https://${test_host}/grafana/  (Login: ${GATEWAY_TEAM_USERS} - Passwoerter: cat ${auth_store}/<name>.txt)"
+echo "  * Admin-Browserlogin fuer den Betreiber: wie Team plus Grafana-Login 'admin' (./scripts/show-credentials.sh)"
 echo "  * Verwaltung der VM: ssh -i ${admin_key} ${GATEWAY_SSH_USER}@${GATEWAY_HOST}"
 echo "  * Statuspruefung jederzeit: ./scripts/70-setup-gateway-proxy.sh --check"

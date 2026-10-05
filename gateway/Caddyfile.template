@@ -2,14 +2,17 @@
 # Gateway editieren - Aenderungen gehoeren in diese Vorlage und config/gateway.env.
 #
 # Platzhalter (werden lokal eingesetzt):
-#   __SITE__          DNS-Name (automatisches Let's Encrypt) oder https://<IP> (tls internal)
-#   __TLS__           "tls internal" ohne DNS-Namen, sonst leer
-#   __GLOBAL_TAIL__   optional "email <adresse>" fuer Let's Encrypt
-#   __LITELLM_PORT__  Loopback-Port des LiteLLM-Reverse-Tunnels auf dem Gateway
+#   __SITE__            DNS-Name oder https://<IP>
+#   __TLS__             "tls internal" oder leer (automatisches Let's Encrypt)
+#   __GLOBAL_TAIL__     optional "email <adresse>" fuer Let's Encrypt
+#   __LITELLM_PORT__    Loopback-Port des LiteLLM-Tunnels auf dem Gateway
+#   __GRAFANA_PORT__    Loopback-Port des Grafana-Tunnels
+#   __HOMEPAGE_PORT__   Loopback-Port des Homepage-Tunnels
+#   __TEAM_USERS__      Zeilen "benutzer <bcrypt-hash>" fuer basic_auth
 #
-# Freigabe: ausschliesslich die LiteLLM-API unter /v1 und die beiden
-# Health-Pfade. Grafana, Homepage und alle anderen Pfade antworten mit 404
-# und bleiben nur per SSH-Tunnel (ssh -L) erreichbar.
+# Freigaben: /v1 (LiteLLM, Schutz = persoenlicher Virtual Key), /grafana/
+# (Grafana im Unterpfad, zusaetzlich Basic-Auth pro Person) und der Rest als
+# Homepage hinter Basic-Auth. Ohne gaeltige Basic-Zugangsdaten antwortet 401.
 
 {
 	admin off
@@ -25,7 +28,20 @@ __SITE__ {
 		reverse_proxy 127.0.0.1:__LITELLM_PORT__
 	}
 
+	@grafana path /grafana /grafana/*
+	handle @grafana {
+		basic_auth {
+			__TEAM_USERS__
+		}
+		reverse_proxy 127.0.0.1:__GRAFANA_PORT__
+	}
+
 	handle {
-		respond "Nur die LiteLLM-API ist ueber diesen Endpunkt freigegeben. Grafana und Homepage sind ausschliesslich per SSH-Tunnel erreichbar." 404
+		basic_auth {
+			__TEAM_USERS__
+		}
+		reverse_proxy 127.0.0.1:__HOMEPAGE_PORT__ {
+			header_up Host {upstream_hostport}
+		}
 	}
 }

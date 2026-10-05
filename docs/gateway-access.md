@@ -2,17 +2,16 @@
 
 ## Verbindung
 
-Der Gateway auf `20.73.54.102` wird per Reverse-SSH-Tunnel mit LiteLLM, Grafana
-und Homepage auf CachyOS verbunden. Der dedizierte SSH-Schluessel darf am
-Gateway nur Loopback-Reverse-Forwards bereitstellen; die drei Dienste werden
-nicht an der oeffentlichen Netzwerkschnittstelle gebunden.
-Der verifizierte SSH-Host-Key-Fingerprint (ED25519) lautet
-`SHA256:rDkL6da/9HUzecqAq5JS0TB1lhQh8F3fKsdA85AbjGo`.
+Der Gateway auf `20.73.54.102` (`edipoc-gateway.westeurope.cloudapp.azure.com`)
+wird per Reverse-SSH-Tunnel mit LiteLLM, Grafana und Homepage auf CachyOS
+verbunden. Der dedizierte Tunnel-Schluessel darf am Gateway nur
+Loopback-Reverse-Forwards bereitstellen; die drei Dienste binden dort
+ausschliesslich auf `127.0.0.1`. Der verifizierte SSH-Host-Key-Fingerprint
+(ED25519) lautet `SHA256:rDkL6da/9HUzecqAq5JS0TB1lhQh8F3fKsdA85AbjGo`.
 
-Die LiteLLM-API ist zusaetzlich oeffentlich ueber HTTPS/443 freigegeben
-(unten, Abschnitt Oeffentliche HTTPS-Freigabe); dafuer genuegt der
-persoenliche Virtual Key. Fuer Grafana und Homepage bleibt jeder Nutzer auf
-einen eigenen SSH-Zugang zum Gateway angewiesen:
+Der taegliche Zugang ist HTTPS/443 ueber Caddy (Abschnitt
+"Oeffentliche HTTPS-Freigabe"). Der SSH-Tunnel bleibt die
+Notfall-/Verwaltungsroute:
 
 ```bash
 ssh -i "$HOME\.ssh\id_rsa" -N `
@@ -22,18 +21,14 @@ ssh -i "$HOME\.ssh\id_rsa" -N `
   azureuser@20.73.54.102
 ```
 
-Solange das SSH-Fenster offen ist, sind die Dienste erreichbar:
+| Dienst | 443-Weg (normal) | Tunnel-Weg (Notfall) |
+|---|---|---|
+| LiteLLM API | `https://<fqdn>/v1` + Token | `http://127.0.0.1:4000/v1` |
+| Grafana | `https://<fqdn>/grafana/` + Basic-Auth | `http://127.0.0.1:3000` |
+| Homepage | `https://<fqdn>/` + Basic-Auth | `http://127.0.0.1:3002` |
 
-| Dienst | Adresse auf dem Client |
-|---|---|
-| LiteLLM API | `http://127.0.0.1:4000/v1` (alternativ oeffentlich ueber HTTPS/443) |
-| Grafana | `http://127.0.0.1:3000` |
-| Homepage | `http://127.0.0.1:3002` |
-
-Der API-Token wird als Bearer-Token bzw. `OPENAI_API_KEY` gesetzt. Grafana
-verwendet seine eigenen Zugangsdaten, nicht den LiteLLM-Token. Der SSH-Tunnel
-verschluesselt die Verbindung zwischen Client und Gateway; der Reverse-Tunnel
-verschluesselt die Verbindung zwischen Gateway und CachyOS.
+Der API-Token wird als Bearer-Token bzw. `OPENAI_API_KEY` gesetzt. Die
+Basic-Auth-Passwoerter sind nicht der LiteLLM-Token.
 
 ## Virtual Keys
 
@@ -51,57 +46,67 @@ groesseren Freigabe abgestimmt werden.
 
 ## Oeffentliche HTTPS-Freigabe (in Betrieb seit 2026-10-05)
 
-Die LiteLLM-API ist ueber die Azure-Gateway-VM oeffentlich auf Port 443
-erreichbar; der Zugriffsschutz ist der persoenliche Virtual Key. Eingerichtet
-und idempotent nachziehbar mit `./scripts/70-setup-gateway-proxy.sh`
-(`make gateway-proxy`, Status: `make gateway-proxy-check`).
+Alles laeuft ueber **eine** Port-443-Regel der Azure-NSG; Caddy 2.11 auf der VM
+entscheidet nach Pfad. Eingerichtet und idempotent nachziehbar mit
+`./scripts/70-setup-gateway-proxy.sh` (`make gateway-proxy`,
+Status `make gateway-proxy-check`).
 
-* Oeffentlicher Endpunkt: `https://edipoc-gateway.westeurope.cloudapp.azure.com/v1`
-* Reverse-Proxy: Caddy 2.11 auf der VM, Let's-Encrypt-Zertifikat ueber
-  TLS-ALPN (port 443 genuegt). Die Konfiguration liegt versioniert in
-  `gateway/Caddyfile.template`; Werte in `config/gateway.env` (nicht in Git).
-* Freigegebene Pfade: nur `/v1/*`, `/health/liveliness`, `/health/readiness`.
-  Alles andere antwortet 404 - Grafana, Homepage und etwaige Verwaltungs-
-  oberflaechen sind oeffentlich nicht erreichbar.
-* Der Proxy leitet auf `127.0.0.1:4000`; dort endet der Reverse-Tunnel von
-  CachyOS. An der oeffentlichen Schnittstelle der VM lauscht nur Caddy.
+* `/v1/*`, `/health/liveliness`, `/health/readiness` -> LiteLLM
+  (`127.0.0.1:4000`). Schutz: persoenlicher Virtual Key, ohne Token 401.
+* `/grafana/` -> Grafana (`127.0.0.1:3000`) im Unterpfad
+  (`GF_SERVER_SERVE_FROM_SUB_PATH`). Schutz: Basic-Auth pro Person **und**
+  Grafana-Login.
+* `/` (restliche Pfade) -> Homepage (`127.0.0.1:3002`). Schutz: Basic-Auth
+  pro Person. Ohne gueltige Zugangsdaten antwortet 401.
+* Team-Namen in `GATEWAY_TEAM_USERS`; Passwoerter erzeugt das Skript einmalig
+  in `~/.config/llm-infra/gateway-web-auth/<name>.txt` (0600) - niemals in
+  Git, Tickets oder Chats.
+* TLS: mit `GATEWAY_TLS=internal` stellt Caddy eine eigene CA aus (passt zur
+  beschraenkten NSG). Das Stammzertifikat liegt nach dem Setup unter
+  `state/gateway/caddy-root.crt` und muss auf den Client-Rechnern einmalig als
+  vertrauenswuerdig installiert werden (sonst Browser-Warnung/`-k`).
+  Alternative `GATEWAY_TLS=letsencrypt`: vertrauenswuerdig, erfordert aber
+  dauerhaft oeffentlich erreichbares 443 (auch fuer die Erneuerung).
+* Verwaltungs-Schluessel der CachyOS-Maschine:
+  `~/.ssh/llm_gateway_reverse_ed25519` (Tunnel, `permitlisten`-beschraenkt)
+  und `~/.ssh/llm_gateway_admin_ed25519` (VM-Verwaltung).
 
-Der API-Zugriff fuer ein Teammitglied (kein Tunnel noetig, nur der persoenliche
-Schluessel aus `~/.config/llm-infra/team-api-tokens/`):
+## Entra-ID-Login (geplant)
 
-```bash
-curl https://edipoc-gateway.westeurope.cloudapp.azure.com/v1/models \
-  -H "Authorization: Bearer <persoenlicher-key>"
-```
+On-Premises-Active-Directory (LDAP) ist von der Azure-VM aus nicht erreichbar
+(Siemens-Firewall) - die praxistaugliche Bruicke ist **Entra ID** als
+cloudseitiges Spiegelbild des Firmen-AD (GID/E-Mail bleiben dieselben).
+Dafuer fehlt nur eine Azure-App-Registrierung:
 
-Grafana und Homepage erfordern weiterhin den zusaetzlichen SSH-Tunnel pro
-Person (siehe Abschnitt Verbindung). Die Verwaltungs-Schluessel der
-CachyOS-Maschine: `~/.ssh/llm_gateway_reverse_ed25519` (Tunnel, am Gateway mit
-`permitlisten` eingeschraenkt) und `~/.ssh/llm_gateway_admin_ed25519`
-(VM-Verwaltung; wird vom Skript erzeugt und hinterlegt).
+1. Entra ID -> App-Registrierungen -> Neue Registrierung; Kontotyp
+   "Nur Organisiation".
+2. Umleitungs-URI (Web): `https://edipoc-gateway.westeurope.cloudapp.azure.com/login/azuread`.
+3. Zertifikat/Geheimnis anlegen; Tenant-ID, Client-ID und Geheimnis in
+   `config/gateway.env` eintragen (`GATEWAY_AZUREAD_*`).
+4. `./scripts/70-setup-gateway-proxy.sh` erneut laufen lassen - es schreibt
+   `~/.config/llm-infra/grafana.env` (0600) und startet nur Grafana neu.
 
-## Nachziehen der Absicherung (offen)
+Danach genuegt in Grafana der Entra-Button; die Basic-Auth bleibt als
+zweite Schicht vor dem Proxy. Die LiteLLM-API laeuft weiter rein per Token
+(Maschinenzugriff passt nicht in Browser-OAuth).
 
-* aktiver Stand der Azure-NSG (2026-10-05): eine Regel laesst TCP 22, 443 und
-  80 aus den Siemens-/Zscaler-Kreisen Muenchen `147.161.168.0/22`,
-  `147.161.176.0/23`, `147.161.250.0/23` durch (deckt die Kollegen im Buero
-  ab). fuer CachyOS zusaetzlich der Vodafone-Kabel-Pool
-  `92.208.0.0/15` (RIPE-Objekt `VFDE-IP-SERVICE-01`, enthaelt die aktuelle
-  Maschine `92.209.14.229/32`). Rest von `Any` auf 22 entfernen; 3000/8080
-  ganz löschen; 443 kann fuer das Team offen bleiben (Schutz = Token) oder
-  auf dieselben Kreise gesetzt werden.
-* Die Kreise sind Spiegelbildlich in `GATEWAY_ALLOWED_SSH_CIDRS`
-  (config/gateway.env, nicht in Git) gepflegt; das Setup-Skript zeigt zu
-  jeder Regel den Portal-Wortlaut und den Azure-CLI-Befehl und warnt vor
-  Selbst-Aussperrung, wenn die eigene oeffentliche IP fehlt.
-* oeffentliche IP nach einer Einwahl-Aenderung neu bestimmen und nachziehen:
-  `curl -s https://api.ipify.org` (Vodafone vergibt die Adresse dynamisch;
-  der /15-Pool deckt die meisten Faelle ab, ein Blockwechsel ausserhalb
-  erfordert eine zusatzliche Zeile).
-* wichtig: Jeder Kollege mit Grafana/Homepage-Tunnel (martin, johannes,
-  holger) benoetigt seinen Netz-Kreis in der NSG-Regel; ohne Eintrag sperrt
-  die Netzwerkregel aus, unabhaengig von seinem SSH-Schluessel.
-* LiteLLM-Rollenrechtest pruefen: oeffentlich soll nur die Chat-API dienen,
-  nicht die Verwaltungs-API (Schluesselverwaltung bleibt localhost-only).
-* Fuehrt ein Betreiber die Azure-CLI (`az`), kann das Skript die NSG-Regel
-  pruefen statt sie nur zu testen.
+## Brandmauer-Regeln (Azure-NSG)
+
+Zielzustand, vom Skript in Abschnitt 8 immer aktuell angezeigt
+(Portal-Wortlaut plus `az`-Befehl):
+
+| Regel | Port | Quelle |
+|---|---|---|
+| `allow-ssh-cachyos` | 22 | nur `GATEWAY_ALLOWED_SSH_CIDRS` (CachyOS, aktuell `92.209.14.229/32`) |
+| `allow-web-team` | 80, 443 | nur `GATEWAY_ALLOWED_WEB_CIDRS` (Zscaler Muenchen `147.161.168.0/22`, `147.161.176.0/23`, `147.161.250.0/23` + eigene Netze) |
+| loeschen | 3000, 8080 | keine Internetregel noetig - die VM-Dienste binden nur Loopback |
+
+* Kein `Any` mehr auf Port 22. Das Team benoetigt ihn nicht mehr: Grafana und
+  Homepage laufen ueber 443 mit Login.
+* Oeffentliche IP der CachyOS-Maschine nach Neueinwahl pruefen und nachziehen:
+  `curl -s https://api.ipify.org`; das Skript warnt bei
+  Selbst-Aussperrung (`make gateway-proxy-check`).
+* Bei `GATEWAY_TLS=letsencrypt` muss 443 zusaetzlich auf `Any`, sonst
+  scheitert die Zertifikatserneuerung.
+* LiteLLM-Rollenrechte pruefen: oeffentlich dient nur die Chat-API unter
+  `/v1`; Schluesselverwaltung bleibt localhost-only.

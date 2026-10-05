@@ -1,5 +1,28 @@
 # Aenderungsprotokoll
 
+## Unveroeffentlicht (Browser-Zugang mit Login, 2026-10-05)
+
+* Caddy-Pfadfreigaben erweitert: Grafana laeuft im Unterpfad `/grafana/`
+  (`GF_SERVER_SERVE_FROM_SUB_PATH` in der Quadlet-Unit), Homepage bedient `/`;
+  beide hinter Basic-Auth pro Person (`GATEWAY_TEAM_USERS`, Passwoerter
+  0600 in `~/.config/llm-infra/gateway-web-auth/`, bcrypt-Hashes erzeugt
+  `caddy hash-password` auf der Gateway-VM). LiteLLM bleibt `/v1` mit
+  Virtual Key.
+* `GATEWAY_TLS` waehlbar: `internal` (Standard, passt zur beschraenkten NSG;
+  Stammzertifikat wird nach `state/gateway/caddy-root.crt` geholt) oder
+  `letsencrypt` (oeffentlich erreichbares 443 erforderlich).
+* Entra-ID-Vorbereitung: Skript-Abschnitt 9 schreibt bei gesetzten
+  `GATEWAY_AZUREAD_*`-Werten `~/.config/llm-infra/grafana.env` (0600) und
+  startet nur Grafana neu; Anleitung fuer die App-Registrierung in
+  `docs/gateway-access.md`. On-Prem-AD ist von der VM aus nicht erreichbar,
+  Entra ID ist die vorgegebene Bruicke.
+* NSG-Empfehlung neu geschnitten: Port 22 nur noch CachyOS
+  (`GATEWAY_ALLOWED_SSH_CIDRS`), Browser-Dienste ueber 443/80 aus
+  `GATEWAY_ALLOWED_WEB_CIDRS`; Team braucht keinen SSH-Zugang mehr.
+* Getestet: `/` und `/grafana/` 401 ohne Login, mit Login 200 bzw. 302;
+  `/v1` mit Token 200; Homepage-Backend verlangt `header_up Host
+  {upstream_hostport}` (sonst 400).
+
 ## Unveroeffentlicht (SSH-Zugangsbeschraenkung, 2026-10-05)
 
 * `scripts/70-setup-gateway-proxy.sh` bekommt den Abschnitt

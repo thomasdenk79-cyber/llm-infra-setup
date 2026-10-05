@@ -11,6 +11,10 @@ Volume=%h/.local/share/llm-infra/grafana:/var/lib/grafana:Z,U
 Volume=@CONFIG_ROOT@/config/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro,Z
 Environment=GF_AUTH_ANONYMOUS_ENABLED=false
 Environment=GF_SECURITY_ADMIN_USER=admin
+Environment=GF_SERVER_DOMAIN=edipoc-gateway.westeurope.cloudapp.azure.com
+Environment=GF_SERVER_ROOT_URL=https://edipoc-gateway.westeurope.cloudapp.azure.com/grafana/
+Environment=GF_SERVER_SERVE_FROM_SUB_PATH=true
+EnvironmentFile=-%h/.config/llm-infra/grafana.env
 Secret=grafana_admin_password,type=env,target=GF_SECURITY_ADMIN_PASSWORD
 
 [Service]

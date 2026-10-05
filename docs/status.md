@@ -26,10 +26,11 @@ Stand: 2026-10-05, Gateway-Zugang: oeffentliches 443 fuer LiteLLM in Betrieb
   LiteLLM, Grafana und Homepage sind dort nur an Loopback gebunden. Fuenf
   separate Virtual Keys sind lokal mit Modus `0600` gespeichert.
 * Oeffentlicher HTTPS-Zugang auf Port 443 ist in Betrieb: Caddy auf der VM
-  (`scripts/70-setup-gateway-proxy.sh`), nur LiteLLM unter `/v1` mit
-  Let's-Encrypt-Zertifikat, Grafana/Homepage bleiben Tunnel-pflichtig.
-  NSG war zum Test weit geoeffnet; Rueckfahrt auf 22/443 ist offen
-  (siehe `docs/gateway-access.md`).
+  (`scripts/70-setup-gateway-proxy.sh`) bedient nur fuer die Team-Netze
+  erreichbar: LiteLLM `/v1` (Token), Grafana `/grafana/` und Homepage `/`
+  (Basic-Auth pro Person); tls-internal-Zertifikat, Entra-ID vorbereitet.
+  NSG-Rueckfahrt auf `allow-ssh-cachyos` (22) und `allow-web-team`
+  (80/443 aus Zscaler+Eigene) ist offen (siehe `docs/gateway-access.md`).
 * Alle Zugangswerte sind Zufallswerte ausserhalb von Git; die alten
   Standard-Passwoerter sind aus dem Code entfernt, `make validate` prueft darauf.
 * Deployment-Pfade sind vereinheitlicht: eine Installationsregel in `lib/units.sh`,
