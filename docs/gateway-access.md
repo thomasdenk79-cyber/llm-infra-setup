@@ -82,9 +82,18 @@ CachyOS-Maschine: `~/.ssh/llm_gateway_reverse_ed25519` (Tunnel, am Gateway mit
 
 ## Nachziehen der Absicherung (offen)
 
-* Azure-NSG war zum Teststart weit geoeffnet (22, 80?, 443, 3000, 8080). Nach
-  dem Testlauf auf 22 und 443 zurueckfahren; 3000/8080 brauchen keine
-  Internetregel, die Dienste binden am Gateway nur Loopback.
+* Azure-NSG war zum Teststart weit geoeffnet (22, 443, 3000, 8080). Plan:
+  Port 22 von Quelle `Any` auf die eigenen Netze einschraenken, 3000/8080
+  ganz entfernen, 443 bleibt `Any` (Schutz = Token). Die erlaubten Kreise
+  stehen in `GATEWAY_ALLOWED_SSH_CIDRS` (config/gateway.env, nicht in Git);
+  das Setup-Skript zeigt zu jeder Regel den Portal-Wortlaut und den
+  Azure-CLI-Befehl und warnt vor Selbst-Aussperrung, wenn die eigene
+  oeffentliche IP fehlt. Aktuell hinterlegt: CachyOS `92.209.14.229/32`
+  (Vodafone-Pool, kann sich aendern - dann IP nachschlagen und nachziehen:
+  `curl -s https://api.ipify.org`).
+* wichtig: Jeder Kollege mit Grafana/Homepage-Tunnel (martin, johannes,
+  holger) benoetigt seinen Netz-Kreis in der NSG-Regel; ohne Eintrag sperrt
+  die Netzwerkregel aus, unabhaengig von seinem SSH-Schluessel.
 * LiteLLM-Rollenrechtest pruefen: oeffentlich soll nur die Chat-API dienen,
   nicht die Verwaltungs-API (Schluesselverwaltung bleibt localhost-only).
 * Fuehrt ein Betreiber die Azure-CLI (`az`), kann das Skript die NSG-Regel

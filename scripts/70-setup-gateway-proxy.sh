@@ -44,6 +44,7 @@ source "${env_file}"
 : "${GATEWAY_ACME_EMAIL:=}"
 : "${GATEWAY_LITELLM_PORT:=4000}"
 : "${GATEWAY_HOST_KEY_FINGERPRINT:=}"
+: "${GATEWAY_ALLOWED_SSH_CIDRS:=}"
 
 [[ -n "${GATEWAY_HOST}" && "${GATEWAY_HOST}" != example.net ]] || {
   echo "ABBRUCH: GATEWAY_HOST ist nicht gesetzt. Naechster Befehl: \${EDITOR:-nano} config/gateway.env" >&2; exit 1; }
@@ -229,6 +230,46 @@ Danach erneut: ./scripts/70-setup-gateway-proxy.sh --check
 MSG
 fi
 
+echo "=== 7. Zugangsschutz Port 22 (Azure-NSG) ==="
+own_ip="$(curl -s -m 8 https://api.ipify.org 2>/dev/null || true)"
+[[ -n "${own_ip}" ]] || own_ip="$(curl -s -m 8 https://ifconfig.me/ip 2>/dev/null || true)"
+echo "Aktuelle oeffentliche IP dieser CachyOS-Maschine: ${own_ip:-unbekannt}"
+if [[ -n "${GATEWAY_ALLOWED_SSH_CIDRS}" ]]; then
+  echo "Erlaubte SSH-Kreise laut config/gateway.env: ${GATEWAY_ALLOWED_SSH_CIDRS}"
+  if [[ -n "${own_ip}" ]]; then
+    need_cmd python3 'Python fehlt. Jetzt ausfuehren: make tools'
+    if GATEWAY_ALLOWED_SSH_CIDRS="${GATEWAY_ALLOWED_SSH_CIDRS}" own_ip="${own_ip}" python3 - <<'PY'
+import ipaddress, os, sys
+ip = ipaddress.ip_address(os.environ["own_ip"])
+nets = [c.strip() for c in os.environ["GATEWAY_ALLOWED_SSH_CIDRS"].replace(",", " ").split() if c.strip()]
+try:
+    sys.exit(0 if any(ip in ipaddress.ip_network(n) for n in nets) else 1)
+except ValueError as exc:
+    print(f"Ungueltiger CIDR-Eintrag: {exc}", file=sys.stderr); sys.exit(2)
+PY
+    then echo "Der eigene Zugriff (diese Maschine) ist abgedeckt."
+    else echo "ACHTUNG: Die eigene IP ${own_ip} fehlt in GATEWAY_ALLOWED_SSH_CIDRS." >&2
+         echo "Nach dem NSG-Lockdown ist diese Maschine ausgesperrt (auch der Autossh-Tunnel!)." >&2
+         echo "Naechster Befehl: \${EDITOR:-nano} config/gateway.env  # IP ergaenzen, dann erneut laufen lassen" >&2
+         if [[ "${mode}" != "--check" && "${mode}" != "--dry-run" ]]; then exit 1; fi
+    fi
+  fi
+  echo "Jede weitere Person mit Grafana/Homepage-Tunnel (martin, johannes, holger)"
+  echo "braucht ihren Netz-Kreis in GATEWAY_ALLOWED_SSH_CIDRS - Schluessel allein reicht nicht."
+  echo
+  echo "Umsetzung im Azure-PORTAL (NSG der VM edipoc-gateway, RG-EDIPOC-WEU):"
+  echo "  Eingehende Sicherheitsregeln: 'SSH (22)' Quelle von 'Any' auf diese Kreise stellen:"
+  sed 's/[^0-9A-Za-z.,/ ]/ /g; s/^ *//; s/ *$//' <<<"${GATEWAY_ALLOWED_SSH_CIDRS//,/}" | tr ' ' '\n' | grep . | sed 's/^/    - /'
+  echo "  Port 443 bleibt Quelle 'Any' (Schutz = persoenlicher LiteLLM-Token)."
+  echo "  Ports 3000 und 8080: Internetregeln loeschen (Dienste binden nur Loopback)."
+  echo "Mit Azure-CLI (auf einem Rechner mit 'az login'), NSG-Namen vorher pruefen:"
+  echo "  az network nsg rule update -g RG-EDIPOC-WEU --nsg-name <NSG-NAME> \\"
+  echo "    --name default-allow-ssh --source-address-prefixes ${GATEWAY_ALLOWED_SSH_CIDRS// /,}"
+else
+  echo "Keine GATEWAY_ALLOWED_SSH_CIDRS gesetzt - Port 22 ist weiterhin 'Any'. Empfehlung:"
+  echo "  In config/gateway.env eigene IP ${own_ip:-<aktuell>}/33 eintragen,"
+  echo "  dazu die Netz-Kreise von martin, johannes, holger, dann erneut ausfuehren."
+fi
 echo
 echo "Fertig. Naechste Schritte:"
 if [[ -z "${tls_directive}" ]]; then

@@ -849,3 +849,12 @@ SSH-Tunnel-pflichtig. CachyOS hat zusaetzlich einen Verwaltungs-Schluessel
 `~/.ssh/llm_gateway_admin_ed25519`. Getestet: 200/401/404 und Token-Zugriff
 auf `qwen3.8-flash-next`. NSG ist bewusst im Testzustand weit offen -
 Rueckfahrt auf 22/443 nach Testende ist offen (Punkt 6).
+
+## Notiz 2026-10-05T13:25:00+02:00 – Port-22-Lockdown vorbereitet
+
+NSG-Regel fuer SSH soll von `Any` auf eigene Netze: `GATEWAY_ALLOWED_SSH_CIDRS`
+in config/gateway.env (aktuell CachyOS `92.209.14.229/32`, Vodafone-Pool,
+dynamisch). Skript-Abschnitt 7 prueft Selbst-Aussperrung und liefert
+Portal-Wortlaut + az-Befehl. Offen: Kreise von martin, johannes, holger
+ergaenzen (sonst ohne Tunnel-Ausgang), NSG im Portal umsetzen, 3000/8080
+loeschen.

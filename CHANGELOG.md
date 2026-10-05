@@ -1,5 +1,16 @@
 # Aenderungsprotokoll
 
+## Unveroeffentlicht (SSH-Zugangsbeschraenkung, 2026-10-05)
+
+* `scripts/70-setup-gateway-proxy.sh` bekommt den Abschnitt
+  "Zugangsschutz Port 22": neue Variable `GATEWAY_ALLOWED_SSH_CIDRS`
+  (config/gateway.env), Anzeige der eigenen oeffentlichen IP,
+  harte Warnung plus Abbruch bei Selbst-Aussperrung, Portal-Wortlaut und
+  Azure-CLI-Befehl zum Anpassen der NSG-Regel. Port 443 bleibt offen
+  (Schutz = persoenlicher Token); 3000/8080 sollen aus der NSG verschwinden.
+* Hinweis dokumentiert: Grafana/Homepage-Tunnel der Kollegen erfordern deren
+  Netz-Kreise in der NSG, nicht nur ihre SSH-Schluessel.
+
 ## Unveroeffentlicht (Gateway-443-Zugang, 2026-10-05)
 
 * Neues `scripts/70-setup-gateway-proxy.sh` (`make gateway-proxy`,
