@@ -39,11 +39,15 @@ und den Betreiber mit einer funktionierenden Client-Anleitung uebergeben.
   `~/.config/llm-infra/team-api-tokens/{owner,thomas,martin,johannes,holger}.key`
   (Modus `0600`). Niemals Werte ausgeben, in Logs schreiben oder committen.
   `make team-api-keys` ist idempotent und behaelt vorhandene Dateien.
-* Lokale Commits: `4d68f72` und `9ab713e`. Ein Push scheiterte an fehlender
+* Lokale Commits: `4d68f72`, `9ab713e` und `4816481`. Der letzte Commit ergaenzt
+  Grafana und Homepage im Tunnel. Ein Push scheiterte an fehlender
   GitHub-Anmeldung. Keine Credentials erfinden, konfigurieren oder umgehen;
   push nur, wenn der Betreiber bereits eine sichere, verfuegbare Anmeldung hat.
-* Die aktuellen Aenderungen fuer die drei Forwards sind noch nicht committed.
-  Pruefe `git status`; committe nur die zu dieser Aufgabe gehoerenden Dateien.
+* Der Tunnel und die drei Forwards sind eingerichtet. Bei Start des Agents war
+  der Worktree nur durch diese bestehenden, nicht zugehoerigen Aenderungen
+  geaendert: `config/homepage/services.yaml`, `docs/operations.md` und
+  `quadlet/dozzle.container`. Vor jedem Schritt erneut `git status` lesen und
+  diese Aenderungen unangetastet lassen.
 
 ## Sicherheit und Grenzen
 
@@ -63,16 +67,19 @@ und den Betreiber mit einer funktionierenden Client-Anleitung uebergeben.
 
 ## Vorgehen
 
-1. Live-Stand pruefen: `systemctl --user is-active llm-autossh.service`,
-   `podman ps`, Gateway-Listener auf `127.0.0.1:3000`, `:3002`, `:4000`.
-2. Mit der vorhandenen Konfiguration `./scripts/61-install-autossh.sh --check`
-   testen. Bei Fehlern zuerst Ursache und Gateway-SSH-Logs lesen; keine
-   Host-Key-Pruefung abschalten und keine Schluessel neu erzeugen.
-3. Nur wenn die Quadlet-Unit vom Generator abweicht, `make autossh` ausfuehren,
-   dann den Tunnel-Dienst (nicht die Inferenzruntime) kontrolliert neu starten.
-   Danach alle drei Gateway-Listener und Health-/HTTP-Status pruefen.
+1. Read-only verifizieren: `systemctl --user is-active llm-autossh.service`,
+   `podman ps` und die Gateway-Listener auf `127.0.0.1:3000`, `:3002`, `:4000`.
+   Wenn alles aktiv ist, nicht neu bauen oder neu starten.
+2. Die installierte Unit mit `quadlet/llm-autossh.container` vergleichen.
+   `./scripts/61-install-autossh.sh --check` kann die Schluesselauth pruefen.
+   Bei Fehlern zuerst Ursache und Gateway-SSH-Logs lesen; keine Host-Key-
+   Pruefung abschalten und keine Schluessel neu erzeugen.
+3. Falls ein Forward fehlt, sicherstellen, dass Generator und Quadlet
+   uebereinstimmen, dann nur `llm-autossh.service` kontrolliert neu starten
+   (niemals die Inferenzruntime). Danach alle drei Listener und HTTP-Status
+   pruefen.
 4. Pruefen, dass jede Token-Datei existiert, Modus `0600` hat und nicht von Git
-   verfolgt wird. API-Zugriff je Token testen, ohne den Token oder Antwortinhalte
+   verfolgt wird. API-Zugriff je Token testen, ohne Token oder Antwortinhalte
    auszugeben. Keine neuen Keys erzeugen, wenn die vorhandenen gueltig sind.
 5. Die Clientanleitung muss fuer Windows PowerShell diese Verbindung zeigen
    (Terminal offen lassen):
@@ -94,7 +101,9 @@ und den Betreiber mit einer funktionierenden Client-Anleitung uebergeben.
    scheitern; diese weder zuruecksetzen noch mitcommitten.
 7. `CHANGELOG.md`, `docs/status.md`, `docs/HANDOFF.md`,
    `docs/gateway-access.md`, `docs/operations.md`, den Generator und die
-   generierte Unit konsistent halten. Nur relevante Dateien committen.
+   generierte Unit konsistent halten. Nur bei echten Aenderungen relevante
+   Dateien committen; bestehende lokale Aenderungen niemals in einen
+   Sammel-Commit aufnehmen.
 
 Am Ende dem Betreiber knapp mitteilen: genaue Clientbefehle, Dienst-URLs,
 Speicherorte der persoenlichen Token-Dateien, Tests, Commit-ID und ob ein Push
