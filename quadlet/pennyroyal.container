@@ -4,6 +4,8 @@
 Description=Pennyroyal SGLang RTX PRO 6000 runtime
 After=network-online.target
 Wants=llm-inference-network.service
+# The NVMe PLE table lives on a separate filesystem; wait for its mount after boot.
+RequiresMountsFor=/srv/llm/ple-native
 # Cold start loads ~50 GB of weights and then warms CUDA graphs; plan minutes.
 TimeoutStartSec=3600
 
