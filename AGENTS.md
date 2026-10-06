@@ -1,5 +1,13 @@
 # Agentenleitfaden fuer dieses Repository
 
+## Archiv-/WSL-Hinweis 2026-10-06
+
+Dieser Branch ist ein gesicherter Versuch, keine aktive Produktions- oder
+WSL-Installationsanweisung. Die liegengebliebene Aenderung
+`TURBO_SPECULATIVE=off` wird bewusst erhalten. Keine Container/Runner starten.
+Aktuelle Uebergabe: Basis-Branch `turbo-c6-production`, Datei
+`docs/WSL-MIGRATION.md`; Source-Fork: `qwen38-flash-next-sm120/copilot-sm120`.
+
 ## Zweck
 
 Versionierte Quelle der Wahrheit fuer die lokale LLM-Infrastruktur: CachyOS/Arch,
