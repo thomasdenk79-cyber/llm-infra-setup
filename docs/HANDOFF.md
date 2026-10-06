@@ -2,6 +2,21 @@ Zuletzt gesichert: 2026-10-04T19:58:10+02:00 durch `scripts/session-checkpoint.s
 
 # Arbeitsstand und Uebergabe
 
+## Aktuelle Uebergabe 2026-10-06
+
+Dieser Worktree war die laufende Pennyroyal-Referenz, Health 200. Profil:
+Kontext 524288, MR6/Mamba36, FP8-KV, NVMe-PLE, HiCache 16 dezimal GB,
+mem_fraction 0.981. Angefordert 1048576 KV-Tokens, tatsaechlich 1041472.
+Die Laufzeit wurde durch die Backup-Arbeit nicht neu gestartet.
+
+Die alten Resume-Anweisungen sind Historie: keine Runner-Queue aktivieren.
+WSL-Migrationsanker, deployed Podman-Units und Konfigurationen liegen im
+Basis-Repo auf Branch `turbo-c6-production`:
+`docs/WSL-MIGRATION.md` und `docs/migration/20261006/`.
+Der neue Source-Fork ist das private Repo `qwen38-flash-next-sm120`,
+Branch `copilot-sm120`; dessen gemischte Messergebnisse sind nicht promoviert.
+Secrets und ignorierte Laufzeitbelege bleiben im lokalen vertraulichen ZIP.
+
 **Diese Seite ist der Fortsetzungsanker.** Wenn eine Sitzung abreisst, der Rechner
 neu startet oder ein anderer Agent uebernimmt: hier steht, was gilt. Regel aus
 `AGENTS.md`: Nach jedem abgeschlossenen Schritt `./scripts/session-checkpoint.sh`

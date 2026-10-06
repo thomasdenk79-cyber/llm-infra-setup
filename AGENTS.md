@@ -1,5 +1,16 @@
 # Agentenleitfaden fuer dieses Repository
 
+## WSL-Uebergabe 2026-10-06: Vorrang vor altem Runner-Resume
+
+Dieser Branch bleibt die Produktionsreferenz; keine Fork-Promotion.
+Zuerst `docs/HANDOFF.md` und im Basis-Worktree
+`../llm-infra-setup/docs/WSL-MIGRATION.md` lesen. Die vollstaendige aktuelle
+Podman-/Konfigurationsaufnahme liegt auf `turbo-c6-production` unter
+`docs/migration/20261006/`. Alte Runner-/Watchdog-/Supervisor-Anweisungen unten
+sind fuer die Uebernahme ausgesetzt. Keinen alten Task automatisch starten.
+Die neue Source-Fork-Arbeit liegt in `../qwen38-flash-next-sm120`.
+Unter WSL keine Arch-/ZFS-/GRUB-/GPU-Treiber-Skripte blind ausfuehren.
+
 ## Zweck
 
 Versionierte Quelle der Wahrheit fuer die lokale LLM-Infrastruktur: CachyOS/Arch,
