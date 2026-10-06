@@ -124,8 +124,22 @@ MSG
 fi
 
 sudo install -d -m 0755 "${PLE_NATIVE_MOUNT}"
-if ! mountpoint -q "${PLE_NATIVE_MOUNT}"; then
+# mountpoint(1) also returns success for an automount placeholder.  That left
+# Pennyroyal with an empty /ple tree after boot even though the zvol existed.
+# Require the actual zvol as the top mount and repair a stale/placeholder mount.
+mounted_source="$(findmnt -n -o SOURCE -T "${PLE_NATIVE_MOUNT}" 2>/dev/null || true)"
+if [[ "${mounted_source}" != "${device}" ]]; then
+  if [[ -n "${mounted_source}" ]]; then
+    sudo umount "${PLE_NATIVE_MOUNT}" || sudo umount -l "${PLE_NATIVE_MOUNT}"
+  fi
   sudo mount -o noatime,nodiratime "${device}" "${PLE_NATIVE_MOUNT}"
+else
+  # A previous manual repair can leave the same filesystem stacked twice.
+  # Keep the fstab/systemd mount and avoid accumulating another layer.
+  mount_options="$(findmnt -n -o OPTIONS -T "${PLE_NATIVE_MOUNT}" 2>/dev/null || true)"
+  if [[ "${mount_options}" != *noatime* || "${mount_options}" != *nodiratime* ]]; then
+    sudo mount -o remount,noatime,nodiratime "${PLE_NATIVE_MOUNT}"
+  fi
 fi
 if [[ "$(stat -c %u "${PLE_NATIVE_MOUNT}")" != "$(id -u)" ]]; then
   sudo chown "$(id -u):$(id -g)" "${PLE_NATIVE_MOUNT}"
