@@ -1,0 +1,54 @@
+# GENERIERT von scripts/52-install-sglang-turbo-upstream-ple.sh.
+# Vergleichsdienst: Port 8003, keine Aenderung am Produktionsdienst.
+[Unit]
+Description=SGLang Turbo r24 upstream recipe with SSD PLE comparison
+After=network-online.target
+Wants=llm-inference-network.service
+
+[Container]
+Image=localhost/sglang-qwen38fn-sm120-turbo:r24-pr36567-variant-a
+ContainerName=sglang-turbo-upstream-ple
+Network=llm-inference.network
+PublishPort=127.0.0.1:8003:8001
+AddDevice=nvidia.com/gpu=all
+PodmanArgs=--ipc=host --security-opt=seccomp=/home/z000g9hu/work/llm-infra-setup-turbo-upstream/config/turbo/seccomp-io-uring.json
+Volume=/srv/llm/models:/models:ro
+Volume=/srv/llm/cache/sglang-turbo:/cache:U,Z
+Volume=/home/z000g9hu/work/llm-infra-setup-turbo-upstream/config/turbo/serve-qwen38-flash-next-c6-upstream-ple.sh:/opt/turbo/serve-c6.sh:ro,Z
+Environment=TARGET_MODEL=/models/Qwen3.8-Flash-Next-NVFP4
+Environment=SGLANG_QWEN4_PLE_NVME_PATH=/models/Qwen3.8-Flash-Next-NVFP4
+Environment=SGLANG_QWEN4_PLE_NVME_BACKEND=io_uring
+Environment=SGLANG_QWEN4_PLE_NVME_CACHE_PAGES=0
+Environment=SGLANG_RUST_BUILD_MODE=auto
+Environment=RUSTUP_TOOLCHAIN=stable
+Environment=RUSTUP_OFFLINE=1
+Environment=SGLANG_PORT=8001
+# A bleibt fuer NVMe-PLE standardmaessig eager: kein geerbtes Full-Graph-Flag
+# darf den nativen Null-Stub aufzeichnen und PLE-Werte verfälschen.
+Environment=TURBO_CUDA_GRAPH=off
+Environment=TURBO_CUDA_GRAPH_BACKEND_DECODE=breakable
+Environment=TURBO_SLEEP_ON_IDLE=on
+Environment=SGLANG_SM120_ONLINE_MXFP8=true
+Environment=SGLANG_MM_PREPROCESS_DEVICE=cpu
+Environment=MAX_RUNNING_REQUESTS=6
+Environment=MAX_MAMBA_CACHE_SIZE=27
+Environment=MAX_TOTAL_TOKENS=1048576
+Environment=HICACHE_SIZE_GB=8
+Environment=MEM_FRACTION_STATIC=0.98
+Environment=HF_HOME=/cache/huggingface
+HealthCmd=python3 -c "import sys,urllib.request;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8001/health',timeout=8).status==200 else 1)"
+HealthInterval=30s
+HealthTimeout=15s
+HealthRetries=4
+HealthStartPeriod=2400s
+Exec=/opt/turbo/serve-c6.sh
+
+[Service]
+Restart=on-failure
+RestartSec=30
+KillMode=mixed
+TimeoutStartSec=3600
+TimeoutStopSec=180
+
+[Install]
+WantedBy=default.target

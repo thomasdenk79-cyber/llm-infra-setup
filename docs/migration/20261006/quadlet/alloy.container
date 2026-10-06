@@ -1,0 +1,18 @@
+[Unit]
+Description=Grafana Alloy log collector
+After=llm-observability-network.service loki.service
+
+[Container]
+Image=docker.io/grafana/alloy:v1.10.2
+Network=llm-observability.network
+NetworkAlias=alloy
+Volume=/home/z000g9hu/work/llm-infra-setup-pennyroyal/config/monitoring/alloy.alloy:/etc/alloy/config.alloy:ro,Z
+Volume=%t/podman/podman.sock:/var/run/docker.sock:ro
+Exec=run /etc/alloy/config.alloy
+
+[Service]
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=default.target

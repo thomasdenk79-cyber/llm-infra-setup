@@ -1,0 +1,25 @@
+# Prometheus sammelt Metriken. Es hängt absichtlich an beiden Netzen:
+# im Observability-Netz erreicht es Loki/Grafana/Exporter, im Inferenz-Netz die
+# Runtime (pennyroyal:8001/metrics) - ohne dass die Runtime exponiert wird.
+[Unit]
+Description=Prometheus metrics collector
+After=llm-observability-network.service
+
+[Container]
+Image=docker.io/prom/prometheus:v3.5.0
+Network=llm-observability.network
+Network=llm-inference.network
+PublishPort=127.0.0.1:9090:9090
+AddHost=host.containers.internal:host-gateway
+Volume=%h/.local/share/llm-infra/prometheus:/prometheus:Z,U
+Volume=/home/z000g9hu/work/llm-infra-setup-pennyroyal/config/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro,Z
+Volume=/home/z000g9hu/work/llm-infra-setup-pennyroyal/config/monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro,Z
+# Fuer zusaetzliche Metriken (GPU-Zustaende, eigene Host-Kennzahlen).
+Exec=--config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --storage.tsdb.retention.time=30d
+
+[Service]
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=default.target

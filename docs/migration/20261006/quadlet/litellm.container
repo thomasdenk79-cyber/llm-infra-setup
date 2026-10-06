@@ -1,0 +1,22 @@
+# GENERIERT von scripts/60-install-gateway.sh - dort ändern, nicht hier.
+[Unit]
+Description=LiteLLM API gateway
+After=sglang-turbo-c6.service
+Wants=llm-inference-network.service
+[Container]
+Image=ghcr.io/berriai/litellm:v1.101.0
+ContainerName=litellm
+Network=llm-inference.network
+PublishPort=127.0.0.1:4000:4000
+EnvironmentFile=%h/.config/llm-infra/gateway.env
+Environment=LITELLM_CONFIG=/etc/litellm/config.yaml
+Environment=LITELLM_LOCAL_MODEL_COST_MAP=True
+Volume=/home/z000g9hu/work/llm-infra-setup-pennyroyal/config/litellm.yaml:/etc/litellm/config.yaml:ro,Z
+Exec=--config /etc/litellm/config.yaml --port 4000 --host 0.0.0.0
+[Service]
+Restart=on-failure
+RestartSec=15
+LogRateLimitIntervalSec=30s
+LogRateLimitBurst=20
+[Install]
+WantedBy=default.target

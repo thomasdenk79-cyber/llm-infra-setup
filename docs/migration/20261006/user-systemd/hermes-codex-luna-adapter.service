@@ -1,0 +1,17 @@
+[Unit]
+Description=Hermes Codex GPT-6 Luna fallback adapter
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/z000g9hu/work/hermes-team-workspace
+EnvironmentFile=-%h/.hermes/.env
+Environment=CODEX_LUNA_WORKDIR=/home/z000g9hu/work/hermes-team-workspace
+Environment=PATH=/home/z000g9hu/.npm-global/bin:/home/z000g9hu/.local/bin:/usr/local/bin:/usr/bin:/bin
+Environment=CODEX_LUNA_ADAPTER_PORT=4010
+ExecStart=/usr/bin/env python3 /home/z000g9hu/work/hermes-team-workspace/scripts/codex_luna_adapter.py
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

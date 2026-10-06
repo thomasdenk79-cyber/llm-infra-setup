@@ -6,7 +6,7 @@
 #
 # Alle Ablaeufe sind Skripte im Ordner scripts/ - nichts muss von Hand getippt
 # werden. Details in README.md und docs/.
-.PHONY: help setup setup-check preflight install tools nvidia-driver kwin-egpu podman zfs model model-verify pennyroyal turbo-c6-install turbo-c6 ple-nvme verify-ple gateway litellm open-webui homepage portal autossh gateway-proxy gateway-proxy-check team-api-keys komodo postgres monitoring gpu-exporter collector watchdog watchdog-off gitops gitops-auto gitops-off tune tune-plan tune-conservative tune-sweet tune-sweet-an tune-c6 tune-c6-an tune-maxkv tune-maxkv-an tune-c16 tune-c16-an tune-rollback ple-native ple-copy ple-check ple-cache ple-warm gpu-frei gpu-frei-an gpu-frei-aus quality quality-lang quality-vergleich deploy deploy-all deploy-non-gpu deploy-ready apply-units wait healthcheck health backup restore doctor bench bench-normal bench-long validate drift ci status docs docs-build pre-commit-install checkpoint ungesichert tui rotate-secrets show-credentials
+.PHONY: help setup setup-check preflight install tools nvidia-driver kwin-egpu podman zfs host-power-stability model model-verify pennyroyal turbo-c6-install turbo-c6 ple-nvme verify-ple gateway litellm open-webui homepage portal autossh gateway-proxy gateway-proxy-check team-api-keys komodo postgres monitoring gpu-exporter collector watchdog watchdog-off gitops gitops-auto gitops-off tune tune-plan tune-conservative tune-sweet tune-sweet-an tune-c6 tune-c6-an tune-maxkv tune-maxkv-an tune-c16 tune-c16-an tune-rollback ple-native ple-copy ple-check ple-cache ple-warm gpu-frei gpu-frei-an gpu-frei-aus quality quality-lang quality-vergleich deploy deploy-all deploy-non-gpu deploy-ready apply-units wait healthcheck health backup restore doctor bench bench-normal bench-long validate drift ci status docs docs-build pre-commit-install checkpoint ungesichert tui rotate-secrets show-credentials
 
 help:
 	@echo 'llm-infra-setup - verfuegbare Befehle'
@@ -18,6 +18,7 @@ help:
 	@echo '  make preflight         Host-Zustand erfassen (state/preflight-report.txt)'
 	@echo '  make install           fehlende Pakete installieren (braucht sudo)'
 	@echo '  make zfs               Modell-Dataset anlegen bzw.pruefen'
+	@echo '  make host-power-stability  PCIe/Thunderbolt-Runtime-PM fuer eGPU deaktivieren'
 	@echo '  make nvidia-driver     NVIDIA open DKMS einrichten (danach Neustart)'
 	@echo '  make podman            rootless Podman, Linger, CDI, GPU-Test'
 	@echo '  make model             Modell herunterladen (fortsetzbar)'
@@ -89,6 +90,8 @@ podman:
 	./scripts/30-nvidia-podman.sh
 zfs:
 	./scripts/20-zfs-setup.sh
+host-power-stability:
+	./scripts/host-power-stability.sh --install
 validate:
 	./scripts/validate.sh
 drift:

@@ -82,6 +82,9 @@ if [[ ! -f "${root}/config/host.env" ]]; then
 fi
 status 'started'
 
+# --- Phase 0: eGPU/Thunderbolt host stability -------------------------------
+do_step host-power-stability make host-power-stability
+
 # --- Phase 1: Speicher ------------------------------------------------------
 do_step zfs make zfs
 

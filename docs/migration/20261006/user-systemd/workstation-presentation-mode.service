@@ -1,0 +1,10 @@
+[Unit]
+Description=Workstation presentation mode (no idle, sleep or lid action)
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/systemd-inhibit --what=idle:sleep:handle-lid-switch:handle-power-key --mode=block --why=WorkstationPresentationMode /usr/bin/sleep infinity
+Restart=always
+
+[Install]
+WantedBy=default.target

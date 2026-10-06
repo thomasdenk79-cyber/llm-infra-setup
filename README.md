@@ -1,5 +1,9 @@
 # llm-infra-setup
 
+**WSL/P16-Gen2-Uebernahme:** zuerst [WSL-MIGRATION](docs/WSL-MIGRATION.md)
+lesen. Die folgenden Installationsbefehle sind fuer den bisherigen
+CachyOS/Arch-Host, nicht fuer einen ungeprueften WSL-Neuaufbau.
+
 Lokale, reproduzierbare LLM-Infrastruktur: CachyOS/Arch, NVIDIA RTX PRO 6000,
 ZFS, rootless Podman, Pennyroyal/SGLang mit `Qwen3.8-Flash-Next-NVFP4`.
 

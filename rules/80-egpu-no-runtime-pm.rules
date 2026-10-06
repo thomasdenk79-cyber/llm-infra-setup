@@ -1,0 +1,3 @@
+# eGPU/Thunderbolt stability: do not runtime-suspend PCI or Thunderbolt devices.
+ACTION=="add", SUBSYSTEM=="pci", ATTR{power/control}="on"
+ACTION=="add", SUBSYSTEM=="thunderbolt", ATTR{power/control}="on"

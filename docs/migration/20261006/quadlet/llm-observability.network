@@ -1,0 +1,5 @@
+[Unit]
+Description=LLM observability network
+
+[Network]
+NetworkName=llm-observability

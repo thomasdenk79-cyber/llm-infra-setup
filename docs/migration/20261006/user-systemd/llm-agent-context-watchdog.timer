@@ -1,0 +1,10 @@
+[Unit]
+Description=Poll LLM agent context pressure
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=15s
+Unit=llm-agent-context-watchdog.service
+
+[Install]
+WantedBy=timers.target

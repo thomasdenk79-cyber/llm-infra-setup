@@ -1,0 +1,1442 @@
+{
+  "captured_at": "2026-10-06T17:39:25.052437+00:00",
+  "files": [
+    {
+      "source": "/home/z000g9hu/.config/containers/systemd/alloy.container",
+      "snapshot": "quadlet/alloy.container",
+      "snapshot_sha256": "9f86e0f4900d06fdb79c521a975a156d7fd0e500be686b633694f4044944659d",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/containers/systemd/dozzle.container",
+      "snapshot": "quadlet/dozzle.container",
+      "snapshot_sha256": "5e57493bc3b8623bbcc8dd0f1f9d2dc77441617a16af5909d6b65342e25062a5",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/containers/systemd/grafana.container",
+      "snapshot": "quadlet/grafana.container",
+      "snapshot_sha256": "78c8a3668c8f9c7d2b942d7d361d1f7733a708df9ff149e83fd7273bd58c0036",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/containers/systemd/homepage.container",
+      "snapshot": "quadlet/homepage.container",
+      "snapshot_sha256": "8bbb0c84a070e1de63a2be04e8d2d1b803dee0f39d3f14f15b1eb4bb17fa8931",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/containers/systemd/litellm-postgres.container",
+      "snapshot": "quadlet/litellm-postgres.container",
+      "snapshot_sha256": "658e2ba67c3f7fc7b5164678b798e60609acdaac71ec52085c752382206b0427",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/containers/systemd/litellm.container",
+      "snapshot": "quadlet/litellm.container",
+      "snapshot_sha256": "441b36714eabf23c7fadb46f23ab54f10399c730a2aeab96445607281a124963",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/containers/systemd/llm-autossh.container",
+      "snapshot": "quadlet/llm-autossh.container",
+      "snapshot_sha256": "45f24c5d7046391dda05f686a01730a4f8ad4c4d2516d0032afb58205ffb377e",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/containers/systemd/llm-gpu-exporter.container",
+      "snapshot": "quadlet/llm-gpu-exporter.container",
+      "snapshot_sha256": "57c8dc4b9747bf2113b394ecaff6e084b410c59f854c8a02459fcdc3a5859c21",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/containers/systemd/llm-inference.network",
+      "snapshot": "quadlet/llm-inference.network",
+      "snapshot_sha256": "bc4360f379e0dde23f1be36b5566e29237161d50f3bf4ad57587dfab91d5fe2b",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/containers/systemd/llm-node-exporter.container",
+      "snapshot": "quadlet/llm-node-exporter.container",
+      "snapshot_sha256": "780b012128ea65a744023f9c3368d8aaecf1d4a96786af6c73f3aae585a71f06",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/containers/systemd/llm-observability.network",
+      "snapshot": "quadlet/llm-observability.network",
+      "snapshot_sha256": "82234dc178702eed985a382baa3ca99491ff38d6d63380b3f10c6da3ccb43e05",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/containers/systemd/loki.container",
+      "snapshot": "quadlet/loki.container",
+      "snapshot_sha256": "72011bec1a218f6e1046abeb4832e36fd180876a4a43ef509aabef06ca942054",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/containers/systemd/open-webui.container",
+      "snapshot": "quadlet/open-webui.container",
+      "snapshot_sha256": "b3ac5fd05b2aaa8aa0c134ac56b09b9d89e3b67dee3ef58f66498952ae6d70a2",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/containers/systemd/pennyroyal.container",
+      "snapshot": "quadlet/pennyroyal.container",
+      "snapshot_sha256": "e952c3966e864d9741b0fdd4af36695fa2b8dcf64b22d1d28fba5a8eccbbd3ba",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/containers/systemd/prometheus.container",
+      "snapshot": "quadlet/prometheus.container",
+      "snapshot_sha256": "84856175261e48fff9ec683877466d2da2525636665d6fa651c530e8796f34c2",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/containers/systemd/sglang-turbo-c6.container",
+      "snapshot": "quadlet/sglang-turbo-c6.container",
+      "snapshot_sha256": "c0d570faa0cf610294ed0941b669aefdb7b5a584716520e29a6dacad6a3d8e93",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/containers/systemd/sglang-turbo-upstream-ple.container",
+      "snapshot": "quadlet/sglang-turbo-upstream-ple.container",
+      "snapshot_sha256": "62a9bf1e607e5784717bfb8e26bd87216faceb27fd82fb33f1e6e4249148ef23",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/containers/systemd/sglang-turbo-variant-b.container",
+      "snapshot": "quadlet/sglang-turbo-variant-b.container",
+      "snapshot_sha256": "1316dfc558bbb911f1a00c204b0381f7ed232c401e8b5b9b17286796a087a574",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/containers/systemd/sglang-turbo-variant-d.container",
+      "snapshot": "quadlet/sglang-turbo-variant-d.container",
+      "snapshot_sha256": "dd0f799a6e5bf85bda7ce1b7e7d729479e3051187198bfbbbce7b4e1a32fd687",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/systemd/user/hermes-codex-luna-adapter.service",
+      "snapshot": "user-systemd/hermes-codex-luna-adapter.service",
+      "snapshot_sha256": "fcb44216c88d3777469015517ad103510145abef824b6b026940c7733b159883",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/systemd/user/hermes-gateway.service",
+      "snapshot": "user-systemd/hermes-gateway.service",
+      "snapshot_sha256": "e4474ca5a198dd39dc7683008fef88466a1e19ca602de285fcff6f8b6f846326",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/systemd/user/llm-agent-context-watchdog.service",
+      "snapshot": "user-systemd/llm-agent-context-watchdog.service",
+      "snapshot_sha256": "3ef87da425b5a94450152d5e488a828486976480d489b3102cb1749afe78d43d",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/systemd/user/llm-agent-context-watchdog.timer",
+      "snapshot": "user-systemd/llm-agent-context-watchdog.timer",
+      "snapshot_sha256": "4e4e1fbf5e0237420a947d49d5d43a2ccc59024965a8bd1606039a9e287cc044",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/systemd/user/llm-infra-collect-facts.service",
+      "snapshot": "user-systemd/llm-infra-collect-facts.service",
+      "snapshot_sha256": "8580927f1f4aedc41afd1305734a44e89f4e5cb8537eb94284e076bf3595a31c",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/systemd/user/llm-infra-collect-facts.timer",
+      "snapshot": "user-systemd/llm-infra-collect-facts.timer",
+      "snapshot_sha256": "f895adbd7eb4ff2477e3bbc4342795861c2e04ecd8b60afdc725b21c64c458ca",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/systemd/user/qwen-runner-supervisor.service",
+      "snapshot": "user-systemd/qwen-runner-supervisor.service",
+      "snapshot_sha256": "c571578384881fec14b7152df7192d63ec8de380eeb039432d8433d6f59e1862",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/systemd/user/workstation-presentation-mode.service",
+      "snapshot": "user-systemd/workstation-presentation-mode.service",
+      "snapshot_sha256": "393515c61b54e1119785abf4d18cdbe8deb97039362c459e39bfcd43b663d3ad",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/llm-infra/homepage/bookmarks.yaml",
+      "snapshot": "homepage/bookmarks.yaml",
+      "snapshot_sha256": "ef1b8ea2eef8cf979efd17e98d7d459e3d8e6f7c14f8ddaa225f4c220c886489",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/llm-infra/homepage/custom.css",
+      "snapshot": "homepage/custom.css",
+      "snapshot_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/llm-infra/homepage/custom.js",
+      "snapshot": "homepage/custom.js",
+      "snapshot_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/llm-infra/homepage/docker.yaml",
+      "snapshot": "homepage/docker.yaml",
+      "snapshot_sha256": "bd4462e132bed6c83f0ddf5e4f4c17696361adb756b7fc401ac34e598c150721",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/llm-infra/homepage/kubernetes.yaml",
+      "snapshot": "homepage/kubernetes.yaml",
+      "snapshot_sha256": "ab24eee8c7e3f50499b2e1d0c7cbbc2f499a10f1b5fad9e4cbf597ed9ee7a0f0",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/llm-infra/homepage/proxmox.yaml",
+      "snapshot": "homepage/proxmox.yaml",
+      "snapshot_sha256": "26df3bc661fc28fc1399b0419f8dc69af4b49771b7db0f8e6e947115868c3b1c",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/llm-infra/homepage/services.yaml",
+      "snapshot": "homepage/services.yaml",
+      "snapshot_sha256": "34bc58c5596ba225f6fb02074aed71de855e117dd74fccc87a39ab3c94987150",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/llm-infra/homepage/settings.yaml",
+      "snapshot": "homepage/settings.yaml",
+      "snapshot_sha256": "972d57d0d28c1dbd3d77e079445822a1371eb8ba8effd7cd9c5c5ce800665b04",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/.config/llm-infra/homepage/widgets.yaml",
+      "snapshot": "homepage/widgets.yaml",
+      "snapshot_sha256": "cd3a32985acbd68d5f7685b5a8625503bbeb5475ca2d078b44ea7132911da46e",
+      "redacted_keys": []
+    },
+    {
+      "source": "/etc/nginx/nginx.conf",
+      "snapshot": "nginx/nginx.conf",
+      "snapshot_sha256": "db4ec51d474ccad73c75884cef979bd687b641fd1c91ba17ea8234b53e3cc984",
+      "redacted_keys": []
+    },
+    {
+      "source": "/etc/nginx/conf.d/llm-https.conf",
+      "snapshot": "nginx/conf.d/llm-https.conf",
+      "snapshot_sha256": "b2074e405f0b5d41f1189a190735e29f97b9ebed0f15fc1738f7fea2981888e8",
+      "redacted_keys": []
+    },
+    {
+      "source": "/etc/nginx/conf.d/llm-https.conf.bak-20261004",
+      "snapshot": "nginx/conf.d/llm-https.conf.bak-20261004",
+      "snapshot_sha256": "e286f34ed658aa3855c2e16eaf16b25c01cc1e14c36f10f54205a085bd8df802",
+      "redacted_keys": []
+    },
+    {
+      "source": "/etc/nginx/conf.d/llm-https.conf.bak.20261004233429",
+      "snapshot": "nginx/conf.d/llm-https.conf.bak.20261004233429",
+      "snapshot_sha256": "ba9b8a3fe0fdaa8514d4ca4d7cc4d8cdabab00e1248cc133014f0ffd6f382824",
+      "redacted_keys": []
+    },
+    {
+      "source": "/etc/nginx/conf.d/llm-https.conf.bak.20261004233700",
+      "snapshot": "nginx/conf.d/llm-https.conf.bak.20261004233700",
+      "snapshot_sha256": "89801cb7fc95c8eaa1bef9f26694e566657f91fa772ebf0dac55804f4507c640",
+      "redacted_keys": []
+    },
+    {
+      "source": "/etc/nginx/conf.d/llm-https.conf.bak.20261004233913",
+      "snapshot": "nginx/conf.d/llm-https.conf.bak.20261004233913",
+      "snapshot_sha256": "61aabe532901d5f8dca4bf7d603fde8ee171fb2dc75e7828fd2a116a4f1d7e3b",
+      "redacted_keys": []
+    },
+    {
+      "source": "/etc/nginx/conf.d/llm-https.conf.before-path-fix",
+      "snapshot": "nginx/conf.d/llm-https.conf.before-path-fix",
+      "snapshot_sha256": "ba9b8a3fe0fdaa8514d4ca4d7cc4d8cdabab00e1248cc133014f0ffd6f382824",
+      "redacted_keys": []
+    },
+    {
+      "source": "/etc/nginx/conf.d/llm-ui.conf",
+      "snapshot": "nginx/conf.d/llm-ui.conf",
+      "snapshot_sha256": "e723640b450dc97b403536fefac703a3628d49a4a297d7c22e7bc631d8bfe02c",
+      "redacted_keys": []
+    },
+    {
+      "source": "/etc/nginx/conf.d/llm-ui.conf.before-path-fix",
+      "snapshot": "nginx/conf.d/llm-ui.conf.before-path-fix",
+      "snapshot_sha256": "8637f6cdf6ec9adee4a4af4f09eba5c14a788ec78f0a85bf47f8dd153b4b101c",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/work/llm-infra-setup/config/autossh.env",
+      "snapshot": "env-examples/llm-infra-setup/autossh.env.example",
+      "snapshot_sha256": "15711fed2f6242973ba2253780a6a022c491294b0a161e73048cfd7568c6621f",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/work/llm-infra-setup/config/gateway.env",
+      "snapshot": "env-examples/llm-infra-setup/gateway.env.example",
+      "snapshot_sha256": "494e046bb619106c4ae01abf73cdd8d8b7cd3af78f660b903a115ec5d564afbd",
+      "redacted_keys": [
+        "GATEWAY_ADMIN_KEY",
+        "GATEWAY_AZUREAD_CLIENT_SECRET"
+      ]
+    },
+    {
+      "source": "/home/z000g9hu/work/llm-infra-setup/config/host.env",
+      "snapshot": "env-examples/llm-infra-setup/host.env.example",
+      "snapshot_sha256": "eeec3dfcb3478bf78984354b1ed9b2280aae5176d860ee445c6120d4e3fa2800",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/work/llm-infra-setup-pennyroyal/config/host.env",
+      "snapshot": "env-examples/llm-infra-setup-pennyroyal/host.env.example",
+      "snapshot_sha256": "17e9d5c8ef9328221ba9a184a4625fe221b191ec32f89456430401cc3ebf3671",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/work/llm-infra-setup-turbo-upstream/config/host.env",
+      "snapshot": "env-examples/llm-infra-setup-turbo-upstream/host.env.example",
+      "snapshot_sha256": "eeec3dfcb3478bf78984354b1ed9b2280aae5176d860ee445c6120d4e3fa2800",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/work/llm-infra-setup-variant-b/config/host.env",
+      "snapshot": "env-examples/llm-infra-setup-variant-b/host.env.example",
+      "snapshot_sha256": "eeec3dfcb3478bf78984354b1ed9b2280aae5176d860ee445c6120d4e3fa2800",
+      "redacted_keys": []
+    },
+    {
+      "source": "/home/z000g9hu/work/llm-infra-setup-variant-d/config/host.env",
+      "snapshot": "env-examples/llm-infra-setup-variant-d/host.env.example",
+      "snapshot_sha256": "eeec3dfcb3478bf78984354b1ed9b2280aae5176d860ee445c6120d4e3fa2800",
+      "redacted_keys": []
+    }
+  ],
+  "private_missing": [],
+  "notes": [],
+  "podman": {
+    "containers": [
+      {
+        "name": "systemd-dozzle",
+        "state": "running",
+        "image": "docker.io/amir20/dozzle:v8.14.7",
+        "image_id": "a7405966dd5cbfcf4803c405227f7c4be1f7e1de1a15c0ca27af1725dbc66510",
+        "pod": "",
+        "environment_names": [
+          "DOZZLE_BASE",
+          "HOME",
+          "HOSTNAME",
+          "PATH",
+          "container"
+        ],
+        "runtime_environment": {},
+        "mounts": [
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/run/user/1000/podman/podman.sock",
+            "Destination": "/var/run/docker.sock",
+            "RW": false,
+            "Options": [
+              "nosuid",
+              "nodev",
+              "rbind"
+            ]
+          }
+        ],
+        "ports": {
+          "8080/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "8080"
+            }
+          ]
+        },
+        "networks": [
+          "llm-observability"
+        ],
+        "network_mode": "bridge",
+        "restart_policy": {
+          "Name": "no",
+          "MaximumRetryCount": 0
+        },
+        "privileged": false
+      },
+      {
+        "name": "llm-gpu-exporter",
+        "state": "running",
+        "image": "docker.io/utkuozdemir/nvidia_gpu_exporter:1.4.0",
+        "image_id": "e1e75b7faff6dfac47e3988064004d7702cc5ce38b154e2333f5b4365a13c49c",
+        "pod": "",
+        "environment_names": [
+          "HOME",
+          "HOSTNAME",
+          "NVIDIA_CTK_LIBCUDA_DIR",
+          "NVIDIA_VISIBLE_DEVICES",
+          "PATH",
+          "container"
+        ],
+        "runtime_environment": {},
+        "mounts": [],
+        "ports": {
+          "9835/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "9835"
+            }
+          ]
+        },
+        "networks": [
+          "llm-observability"
+        ],
+        "network_mode": "bridge",
+        "restart_policy": {
+          "Name": "no",
+          "MaximumRetryCount": 0
+        },
+        "privileged": false
+      },
+      {
+        "name": "systemd-prometheus",
+        "state": "running",
+        "image": "docker.io/prom/prometheus:v3.5.0",
+        "image_id": "a3bc50fcb50fb1409287c32773d8fe799f6cad5511c4ba3e2e851784e7a05026",
+        "pod": "",
+        "environment_names": [
+          "HOME",
+          "HOSTNAME",
+          "PATH",
+          "container"
+        ],
+        "runtime_environment": {},
+        "mounts": [
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/home/z000g9hu/work/llm-infra-setup/config/monitoring/prometheus.yml",
+            "Destination": "/etc/prometheus/prometheus.yml",
+            "RW": false,
+            "Options": [
+              "rbind"
+            ]
+          },
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/home/z000g9hu/work/llm-infra-setup/config/monitoring/alerts.yml",
+            "Destination": "/etc/prometheus/alerts.yml",
+            "RW": false,
+            "Options": [
+              "rbind"
+            ]
+          },
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/home/z000g9hu/.local/share/llm-infra/prometheus",
+            "Destination": "/prometheus",
+            "RW": true,
+            "Options": [
+              "rbind"
+            ]
+          }
+        ],
+        "ports": {
+          "9090/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "9090"
+            }
+          ]
+        },
+        "networks": [
+          "llm-inference",
+          "llm-observability"
+        ],
+        "network_mode": "bridge",
+        "restart_policy": {
+          "Name": "no",
+          "MaximumRetryCount": 0
+        },
+        "privileged": false
+      },
+      {
+        "name": "llm-homepage",
+        "state": "running",
+        "image": "ghcr.io/gethomepage/homepage:v2.4.0",
+        "image_id": "f9df31dbc93ffd53463bb52ad893835269919cc5037054a8bf2eb9340ac77195",
+        "pod": "",
+        "environment_names": [
+          "HOME",
+          "HOMEPAGE_ALLOWED_HOSTS",
+          "HOSTNAME",
+          "NODE_ENV",
+          "NODE_VERSION",
+          "PATH",
+          "PORT",
+          "YARN_VERSION",
+          "container"
+        ],
+        "runtime_environment": {},
+        "mounts": [
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/home/z000g9hu/.config/llm-infra/homepage",
+            "Destination": "/app/config",
+            "RW": true,
+            "Options": [
+              "rbind"
+            ]
+          }
+        ],
+        "ports": {
+          "3000/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "3002"
+            }
+          ]
+        },
+        "networks": [
+          "llm-observability"
+        ],
+        "network_mode": "bridge",
+        "restart_policy": {
+          "Name": "no",
+          "MaximumRetryCount": 0
+        },
+        "privileged": false
+      },
+      {
+        "name": "systemd-loki",
+        "state": "running",
+        "image": "docker.io/grafana/loki:3.5.2",
+        "image_id": "9db2b58a344525ed92af4c90d3e5c54117cfbc045b73488cc87c286ef8c16c7d",
+        "pod": "",
+        "environment_names": [
+          "HOME",
+          "HOSTNAME",
+          "PATH",
+          "SSL_CERT_FILE",
+          "container"
+        ],
+        "runtime_environment": {},
+        "mounts": [
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/home/z000g9hu/work/llm-infra-setup/config/monitoring/loki.yml",
+            "Destination": "/etc/loki/config.yml",
+            "RW": false,
+            "Options": [
+              "rbind"
+            ]
+          },
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/home/z000g9hu/.local/share/llm-infra/loki",
+            "Destination": "/loki",
+            "RW": true,
+            "Options": [
+              "rbind"
+            ]
+          }
+        ],
+        "ports": {
+          "3100/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "3100"
+            }
+          ]
+        },
+        "networks": [
+          "llm-observability"
+        ],
+        "network_mode": "bridge",
+        "restart_policy": {
+          "Name": "no",
+          "MaximumRetryCount": 0
+        },
+        "privileged": false
+      },
+      {
+        "name": "litellm-postgres",
+        "state": "running",
+        "image": "docker.io/library/postgres:16.4",
+        "image_id": "6b14e73a48cf2518aeb37e8b758a907473bcc72727297a7353a665afa069ef10",
+        "pod": "",
+        "environment_names": [
+          "GOSU_VERSION",
+          "HOME",
+          "HOSTNAME",
+          "LANG",
+          "PATH",
+          "PGDATA",
+          "PG_MAJOR",
+          "PG_VERSION",
+          "POSTGRES_DB",
+          "POSTGRES_PASSWORD",
+          "POSTGRES_USER",
+          "container"
+        ],
+        "runtime_environment": {},
+        "mounts": [
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/home/z000g9hu/.local/share/llm-infra/postgres",
+            "Destination": "/var/lib/postgresql/data",
+            "RW": true,
+            "Options": [
+              "rbind"
+            ]
+          }
+        ],
+        "ports": {
+          "5432/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "5432"
+            }
+          ]
+        },
+        "networks": [
+          "llm-inference"
+        ],
+        "network_mode": "bridge",
+        "restart_policy": {
+          "Name": "no",
+          "MaximumRetryCount": 0
+        },
+        "privileged": false
+      },
+      {
+        "name": "open-webui",
+        "state": "running",
+        "image": "ghcr.io/open-webui/open-webui:v0.11.4",
+        "image_id": "8719e348fa22da550b1b4911ce4e3baf9b994614270cc0a99f2db4c2e690b286",
+        "pod": "",
+        "environment_names": [
+          "ANONYMIZED_TELEMETRY",
+          "AUXILIARY_EMBEDDING_MODEL",
+          "DOCKER",
+          "DO_NOT_TRACK",
+          "ENABLE_OPENAI_API",
+          "ENABLE_SIGNUP",
+          "ENV",
+          "GPG_KEY",
+          "HF_HOME",
+          "HOME",
+          "HOSTNAME",
+          "LANG",
+          "OLLAMA_BASE_URL",
+          "OPENAI_API_BASE_URL",
+          "OPENAI_API_KEY",
+          "PATH",
+          "PORT",
+          "PYTHONUNBUFFERED",
+          "PYTHON_SHA256",
+          "PYTHON_VERSION",
+          "RAG_EMBEDDING_MODEL",
+          "RAG_RERANKING_MODEL",
+          "SCARF_NO_ANALYTICS",
+          "SENTENCE_TRANSFORMERS_HOME",
+          "TIKTOKEN_CACHE_DIR",
+          "TIKTOKEN_ENCODING_NAME",
+          "USE_AUXILIARY_EMBEDDING_MODEL_DOCKER",
+          "USE_CUDA_DOCKER",
+          "USE_CUDA_DOCKER_VER",
+          "USE_EMBEDDING_MODEL_DOCKER",
+          "USE_OLLAMA_DOCKER",
+          "USE_RERANKING_MODEL_DOCKER",
+          "USE_SLIM_DOCKER",
+          "UV_LINK_MODE",
+          "WEBUI_BUILD_VERSION",
+          "WEBUI_SECRET_KEY",
+          "WHISPER_MODEL",
+          "WHISPER_MODEL_DIR",
+          "container"
+        ],
+        "runtime_environment": {},
+        "mounts": [
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/home/z000g9hu/.local/share/llm-infra/open-webui",
+            "Destination": "/app/backend/data",
+            "RW": true,
+            "Options": [
+              "rbind"
+            ]
+          }
+        ],
+        "ports": {
+          "8080/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "3001"
+            }
+          ]
+        },
+        "networks": [
+          "llm-inference"
+        ],
+        "network_mode": "bridge",
+        "restart_policy": {
+          "Name": "no",
+          "MaximumRetryCount": 0
+        },
+        "privileged": false
+      },
+      {
+        "name": "llm-autossh",
+        "state": "running",
+        "image": "localhost/llm-autossh:local",
+        "image_id": "8b0514989d3db3b0271ba6ce428687f2a9f2e90eb987e6c580a3f9cccb1a650f",
+        "pod": "",
+        "environment_names": [
+          "AUTOSSH_GATETIME",
+          "HOME",
+          "HOSTNAME",
+          "PATH",
+          "container"
+        ],
+        "runtime_environment": {},
+        "mounts": [
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/home/z000g9hu/.ssh/llm_gateway_reverse_ed25519",
+            "Destination": "/ssh/id_ed25519",
+            "RW": false,
+            "Options": [
+              "rbind"
+            ]
+          },
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/home/z000g9hu/.local/share/llm-infra/ssh/known_hosts",
+            "Destination": "/ssh/known_hosts",
+            "RW": false,
+            "Options": [
+              "rbind"
+            ]
+          }
+        ],
+        "ports": {},
+        "networks": [
+          "host"
+        ],
+        "network_mode": "host",
+        "restart_policy": {
+          "Name": "no",
+          "MaximumRetryCount": 0
+        },
+        "privileged": false
+      },
+      {
+        "name": "systemd-alloy",
+        "state": "running",
+        "image": "docker.io/grafana/alloy:v1.10.2",
+        "image_id": "622a4a32abf81c17ba21319a3df84da9f133e9bf0a23a48e2e741359fa242e40",
+        "pod": "",
+        "environment_names": [
+          "ALLOY_DEPLOY_MODE",
+          "HOME",
+          "HOSTNAME",
+          "PATH",
+          "container"
+        ],
+        "runtime_environment": {},
+        "mounts": [
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/home/z000g9hu/work/llm-infra-setup/config/monitoring/alloy.alloy",
+            "Destination": "/etc/alloy/config.alloy",
+            "RW": false,
+            "Options": [
+              "rbind"
+            ]
+          },
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/run/user/1000/podman/podman.sock",
+            "Destination": "/var/run/docker.sock",
+            "RW": false,
+            "Options": [
+              "nosuid",
+              "nodev",
+              "rbind"
+            ]
+          }
+        ],
+        "ports": {},
+        "networks": [
+          "llm-observability"
+        ],
+        "network_mode": "bridge",
+        "restart_policy": {
+          "Name": "no",
+          "MaximumRetryCount": 0
+        },
+        "privileged": false
+      },
+      {
+        "name": "systemd-grafana",
+        "state": "running",
+        "image": "docker.io/grafana/grafana:12.1.1",
+        "image_id": "0a7de979b3131ff29c2cdd8ffd040ee63cdfc863f70ec3902eec6c47edfc32fd",
+        "pod": "",
+        "environment_names": [
+          "GF_AUTH_ANONYMOUS_ENABLED",
+          "GF_PATHS_CONFIG",
+          "GF_PATHS_DATA",
+          "GF_PATHS_HOME",
+          "GF_PATHS_LOGS",
+          "GF_PATHS_PLUGINS",
+          "GF_PATHS_PROVISIONING",
+          "GF_SECURITY_ADMIN_PASSWORD",
+          "GF_SECURITY_ADMIN_USER",
+          "GF_SERVER_ROOT_URL",
+          "GF_SERVER_SERVE_FROM_SUB_PATH",
+          "HOME",
+          "HOSTNAME",
+          "PATH",
+          "container"
+        ],
+        "runtime_environment": {},
+        "mounts": [
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/home/z000g9hu/.local/share/llm-infra/grafana",
+            "Destination": "/var/lib/grafana",
+            "RW": true,
+            "Options": [
+              "rbind"
+            ]
+          },
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/home/z000g9hu/work/llm-infra-setup/config/monitoring/grafana/provisioning",
+            "Destination": "/etc/grafana/provisioning",
+            "RW": false,
+            "Options": [
+              "rbind"
+            ]
+          }
+        ],
+        "ports": {
+          "3000/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "3000"
+            }
+          ]
+        },
+        "networks": [
+          "llm-observability"
+        ],
+        "network_mode": "bridge",
+        "restart_policy": {
+          "Name": "no",
+          "MaximumRetryCount": 0
+        },
+        "privileged": false
+      },
+      {
+        "name": "litellm",
+        "state": "running",
+        "image": "ghcr.io/berriai/litellm:v1.101.0",
+        "image_id": "4f7d3bcac0f79c352e152968c416c086d3751d636c1171b03d25798ea5576601",
+        "pod": "",
+        "environment_names": [
+          "DATABASE_URL",
+          "HOME",
+          "HOSTNAME",
+          "LITELLM_CONFIG",
+          "LITELLM_LOCAL_MODEL_COST_MAP",
+          "LITELLM_MASTER_KEY",
+          "LITELLM_SALT_KEY",
+          "PATH",
+          "PRISMA_BINARY_CACHE_DIR",
+          "PRISMA_CLI_PATH",
+          "PRISMA_CLI_QUERY_ENGINE_TYPE",
+          "PRISMA_OFFLINE_MODE",
+          "SSL_CERT_FILE",
+          "container"
+        ],
+        "runtime_environment": {},
+        "mounts": [
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/home/z000g9hu/work/llm-infra-setup-pennyroyal/config/litellm.yaml",
+            "Destination": "/etc/litellm/config.yaml",
+            "RW": false,
+            "Options": [
+              "rbind"
+            ]
+          }
+        ],
+        "ports": {
+          "4000/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "4000"
+            }
+          ]
+        },
+        "networks": [
+          "llm-inference"
+        ],
+        "network_mode": "bridge",
+        "restart_policy": {
+          "Name": "no",
+          "MaximumRetryCount": 0
+        },
+        "privileged": false
+      },
+      {
+        "name": "infallible_aryabhata",
+        "state": "running",
+        "image": "docker.io/prom/node-exporter:v1.8.2",
+        "image_id": "71dc9668b154bd072420bf69f59140ceeac04b88cf300bfa24053eb02a04f169",
+        "pod": "",
+        "environment_names": [
+          "HOME",
+          "HOSTNAME",
+          "PATH",
+          "container"
+        ],
+        "runtime_environment": {},
+        "mounts": [],
+        "ports": {
+          "9100/tcp": null
+        },
+        "networks": [],
+        "network_mode": "pasta",
+        "restart_policy": {
+          "Name": "no",
+          "MaximumRetryCount": 0
+        },
+        "privileged": false
+      },
+      {
+        "name": "funny_colden",
+        "state": "running",
+        "image": "docker.io/prom/node-exporter:v1.9.1",
+        "image_id": "255ec253085fb105696533b31864a5e3b64f1f1e2147b5ec368100cbf3ec9b80",
+        "pod": "",
+        "environment_names": [
+          "HOME",
+          "HOSTNAME",
+          "PATH",
+          "container"
+        ],
+        "runtime_environment": {},
+        "mounts": [
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/",
+            "Destination": "/host",
+            "RW": false,
+            "Options": [
+              "rbind"
+            ]
+          }
+        ],
+        "ports": {
+          "9100/tcp": null
+        },
+        "networks": [],
+        "network_mode": "pasta",
+        "restart_policy": {
+          "Name": "no",
+          "MaximumRetryCount": 0
+        },
+        "privileged": true
+      },
+      {
+        "name": "nifty_swanson",
+        "state": "running",
+        "image": "docker.io/prom/node-exporter:v1.9.1",
+        "image_id": "255ec253085fb105696533b31864a5e3b64f1f1e2147b5ec368100cbf3ec9b80",
+        "pod": "",
+        "environment_names": [
+          "HOME",
+          "HOSTNAME",
+          "PATH",
+          "container"
+        ],
+        "runtime_environment": {},
+        "mounts": [
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/",
+            "Destination": "/host",
+            "RW": false,
+            "Options": [
+              "rbind"
+            ]
+          }
+        ],
+        "ports": {
+          "19100/tcp": [
+            {
+              "HostIp": "0.0.0.0",
+              "HostPort": "19100"
+            }
+          ],
+          "9100/tcp": null
+        },
+        "networks": [],
+        "network_mode": "pasta",
+        "restart_policy": {
+          "Name": "no",
+          "MaximumRetryCount": 0
+        },
+        "privileged": true
+      },
+      {
+        "name": "llm-node-exporter",
+        "state": "running",
+        "image": "docker.io/prom/node-exporter:v1.9.1",
+        "image_id": "255ec253085fb105696533b31864a5e3b64f1f1e2147b5ec368100cbf3ec9b80",
+        "pod": "",
+        "environment_names": [
+          "HOME",
+          "HOSTNAME",
+          "PATH",
+          "container"
+        ],
+        "runtime_environment": {},
+        "mounts": [
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/",
+            "Destination": "/host",
+            "RW": false,
+            "Options": [
+              "rbind"
+            ]
+          },
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/home/z000g9hu/.local/share/llm-infra/node-exporter/textfile",
+            "Destination": "/var/lib/node_exporter/textfile",
+            "RW": false,
+            "Options": [
+              "rbind"
+            ]
+          }
+        ],
+        "ports": {
+          "9100/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "9100"
+            }
+          ]
+        },
+        "networks": [
+          "llm-observability"
+        ],
+        "network_mode": "bridge",
+        "restart_policy": {
+          "Name": "no",
+          "MaximumRetryCount": 0
+        },
+        "privileged": false
+      },
+      {
+        "name": "pennyroyal",
+        "state": "running",
+        "image": "ghcr.io/jpezzulli/sglang-rtxpro6000@sha256:c36a326dcb6a99e12ffdc89ae2f2ca0365a02fb3c72ed8b18f88d63cdc7f5a8c",
+        "image_id": "a7a6124990ad3347c9e4a3010ad1f5f8665c397dfe6afedf89684aa4df7c3756",
+        "pod": "",
+        "environment_names": [
+          "CACHE_BASE",
+          "CARGO_BUILD_JOBS",
+          "CARGO_INCREMENTAL",
+          "CARGO_PROFILE_RELEASE_DEBUG",
+          "CC",
+          "CMAKE_BUILD_PARALLEL_LEVEL",
+          "CUDACXX",
+          "CUDAHOSTCXX",
+          "CUDA_HOME",
+          "CXX",
+          "FLASHINFER_NINJA_JOBS",
+          "FLASHINFER_NVCC_THREADS",
+          "HF_HOME",
+          "HOME",
+          "HOSTNAME",
+          "LD_LIBRARY_PATH",
+          "MAX_JOBS",
+          "MAX_MAMBA_CACHE_SIZE",
+          "MAX_RUNNING_REQUESTS",
+          "MAX_TOTAL_TOKENS",
+          "NIXL_STORAGE_BASE",
+          "NVCC_CCBIN",
+          "NVIDIA_CTK_LIBCUDA_DIR",
+          "NVIDIA_DRIVER_CAPABILITIES",
+          "NVIDIA_VISIBLE_DEVICES",
+          "PATH",
+          "PENNY_BUILD_JOBS",
+          "PENNY_CUDA_GRAPH_MAX_BS",
+          "PENNY_ENABLE_MEMORY_SAVER",
+          "PENNY_HICACHE_SIZE_GB",
+          "PENNY_PLE_BACKEND",
+          "PENNY_PLE_NVME_MODEL",
+          "PENNY_SLEEP_ON_IDLE",
+          "PYTHONDONTWRITEBYTECODE",
+          "PYTHONUNBUFFERED",
+          "SGLANG_ENABLE_HEALTH_ENDPOINT_GENERATION",
+          "SGLANG_MM_PREPROCESS_DEVICE",
+          "SGLANG_SM120_ONLINE_MXFP8",
+          "TARGET_MODEL",
+          "TORCHINDUCTOR_COMPILE_THREADS",
+          "TORCH_CUDA_ARCH_LIST",
+          "UV_LINK_MODE",
+          "UV_NO_CACHE",
+          "UV_PYTHON_INSTALL_DIR",
+          "XDG_CACHE_HOME",
+          "container"
+        ],
+        "runtime_environment": {
+          "TARGET_MODEL": "/models/Qwen3.8-Flash-Next-NVFP4",
+          "MAX_RUNNING_REQUESTS": "6",
+          "PENNY_HICACHE_SIZE_GB": "16",
+          "SGLANG_ENABLE_HEALTH_ENDPOINT_GENERATION": "false",
+          "SGLANG_SM120_ONLINE_MXFP8": "true",
+          "MAX_JOBS": "4",
+          "PENNY_PLE_BACKEND": "nvme",
+          "MAX_MAMBA_CACHE_SIZE": "36",
+          "PENNY_CUDA_GRAPH_MAX_BS": "6",
+          "PENNY_SLEEP_ON_IDLE": "0",
+          "PENNY_BUILD_JOBS": "4",
+          "MAX_TOTAL_TOKENS": "1048576",
+          "SGLANG_MM_PREPROCESS_DEVICE": "cpu",
+          "NIXL_STORAGE_BASE": "/nixl",
+          "PENNY_PLE_NVME_MODEL": "/ple/Qwen3.8-Flash-Next-PLE-NVME",
+          "PENNY_ENABLE_MEMORY_SAVER": "0"
+        },
+        "mounts": [
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/srv/llm/ple-native",
+            "Destination": "/ple",
+            "RW": false,
+            "Options": [
+              "rbind"
+            ]
+          },
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/home/z000g9hu/work/llm-infra-setup-pennyroyal/config/pennyroyal/serve-flash-next-frspec.sh",
+            "Destination": "/opt/pennyroyal/configs/pennyroyal/serve-flash-next-frspec.sh",
+            "RW": false,
+            "Options": [
+              "rbind"
+            ]
+          },
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/home/z000g9hu/work/llm-infra-setup-pennyroyal/config/pennyroyal/ple-backend.sh",
+            "Destination": "/opt/pennyroyal/configs/pennyroyal/ple-backend.sh",
+            "RW": false,
+            "Options": [
+              "rbind"
+            ]
+          },
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/srv/llm/models",
+            "Destination": "/models",
+            "RW": false,
+            "Options": [
+              "rbind"
+            ]
+          },
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/srv/llm/cache/pennyroyal",
+            "Destination": "/cache",
+            "RW": true,
+            "Options": [
+              "rbind"
+            ]
+          },
+          {
+            "Type": "bind",
+            "Name": null,
+            "Source": "/srv/llm/nixl",
+            "Destination": "/nixl",
+            "RW": true,
+            "Options": [
+              "rbind"
+            ]
+          }
+        ],
+        "ports": {
+          "8001/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "8001"
+            }
+          ]
+        },
+        "networks": [
+          "llm-inference"
+        ],
+        "network_mode": "bridge",
+        "restart_policy": {
+          "Name": "no",
+          "MaximumRetryCount": 0
+        },
+        "privileged": false
+      }
+    ],
+    "pods": [],
+    "networks": [
+      {
+        "name": "llm-inference",
+        "driver": "bridge",
+        "network_interface": "podman1",
+        "subnets": [
+          {
+            "subnet": "10.89.0.0/24",
+            "gateway": "10.89.0.1"
+          }
+        ],
+        "ipv6_enabled": false,
+        "internal": false,
+        "dns_enabled": true
+      },
+      {
+        "name": "llm-observability",
+        "driver": "bridge",
+        "network_interface": "podman3",
+        "subnets": [
+          {
+            "subnet": "10.89.2.0/24",
+            "gateway": "10.89.2.1"
+          }
+        ],
+        "ipv6_enabled": false,
+        "internal": false,
+        "dns_enabled": true
+      },
+      {
+        "name": "llm-test",
+        "driver": "bridge",
+        "network_interface": "podman2",
+        "subnets": [
+          {
+            "subnet": "10.89.1.0/24",
+            "gateway": "10.89.1.1"
+          }
+        ],
+        "ipv6_enabled": false,
+        "internal": false,
+        "dns_enabled": true
+      },
+      {
+        "name": "podman",
+        "driver": "bridge",
+        "network_interface": "podman0",
+        "subnets": [
+          {
+            "subnet": "10.88.0.0/16",
+            "gateway": "10.88.0.1"
+          }
+        ],
+        "ipv6_enabled": false,
+        "internal": false,
+        "dns_enabled": false
+      }
+    ],
+    "volumes": [],
+    "secret_names": [
+      "grafana_admin_password"
+    ],
+    "images": [
+      {
+        "Id": "0a7de979b3131ff29c2cdd8ffd040ee63cdfc863f70ec3902eec6c47edfc32fd",
+        "Digest": "sha256:a1701c2180249361737a99a01bc770db39381640e4d631825d38ff4535efa47d",
+        "RepoTags": [
+          "docker.io/grafana/grafana:12.1.1"
+        ],
+        "RepoDigests": [
+          "docker.io/grafana/grafana@sha256:5749a0e982878aedaa2d320ed14d3bdce7a040a938f482258670009d419a597f",
+          "docker.io/grafana/grafana@sha256:a1701c2180249361737a99a01bc770db39381640e4d631825d38ff4535efa47d"
+        ]
+      },
+      {
+        "Id": "255ec253085fb105696533b31864a5e3b64f1f1e2147b5ec368100cbf3ec9b80",
+        "Digest": "sha256:d00a542e409ee618a4edc67da14dd48c5da66726bbd5537ab2af9c1dfc442c8a",
+        "RepoTags": [
+          "docker.io/prom/node-exporter:v1.9.1"
+        ],
+        "RepoDigests": [
+          "docker.io/prom/node-exporter@sha256:863b62ff9f392b6f472e22b4b670ad1cabb66b3042502ebd4b2cd192733e1bce",
+          "docker.io/prom/node-exporter@sha256:d00a542e409ee618a4edc67da14dd48c5da66726bbd5537ab2af9c1dfc442c8a"
+        ]
+      },
+      {
+        "Id": "4f7d3bcac0f79c352e152968c416c086d3751d636c1171b03d25798ea5576601",
+        "Digest": "sha256:d295634e09c648dcdb72c4cc2dd226f5fb87823a73e88cbbed6f205e4deb044b",
+        "RepoTags": [
+          "ghcr.io/berriai/litellm:v1.101.0"
+        ],
+        "RepoDigests": [
+          "ghcr.io/berriai/litellm@sha256:266180fbdfc833c0e16a8c546e1cc814e5854eefd6523afc133416388efdf3ff",
+          "ghcr.io/berriai/litellm@sha256:d295634e09c648dcdb72c4cc2dd226f5fb87823a73e88cbbed6f205e4deb044b"
+        ]
+      },
+      {
+        "Id": "622a4a32abf81c17ba21319a3df84da9f133e9bf0a23a48e2e741359fa242e40",
+        "Digest": "sha256:bcf27f18c4402869af112fb39e35e1db3804a404686f4caa20bdf77814219223",
+        "RepoTags": [
+          "docker.io/grafana/alloy:v1.10.2"
+        ],
+        "RepoDigests": [
+          "docker.io/grafana/alloy@sha256:42e29c240f08dc166e1a64c485846f1db810d50d45d3a5c96968fa51e166959e",
+          "docker.io/grafana/alloy@sha256:bcf27f18c4402869af112fb39e35e1db3804a404686f4caa20bdf77814219223"
+        ]
+      },
+      {
+        "Id": "6b14e73a48cf2518aeb37e8b758a907473bcc72727297a7353a665afa069ef10",
+        "Digest": "sha256:e62fbf9d3e2b49816a32c400ed2dba83e3b361e6833e624024309c35d334b412",
+        "RepoTags": [
+          "docker.io/library/postgres:16.4"
+        ],
+        "RepoDigests": [
+          "docker.io/library/postgres@sha256:9a70e4d1c03a5066080292db2dd95ee3965d3651316e21989fa0935afb8ce8ca",
+          "docker.io/library/postgres@sha256:e62fbf9d3e2b49816a32c400ed2dba83e3b361e6833e624024309c35d334b412"
+        ]
+      },
+      {
+        "Id": "71dc9668b154bd072420bf69f59140ceeac04b88cf300bfa24053eb02a04f169",
+        "Digest": "sha256:4032c6d5bfd752342c3e631c2f1de93ba6b86c41db6b167b9a35372c139e7706",
+        "RepoTags": [
+          "docker.io/prom/node-exporter:v1.8.2"
+        ],
+        "RepoDigests": [
+          "docker.io/prom/node-exporter@sha256:065914c03336590ebed517e7df38520f0efb44465fde4123c3f6b7328f5a9396",
+          "docker.io/prom/node-exporter@sha256:4032c6d5bfd752342c3e631c2f1de93ba6b86c41db6b167b9a35372c139e7706"
+        ]
+      },
+      {
+        "Id": "8719e348fa22da550b1b4911ce4e3baf9b994614270cc0a99f2db4c2e690b286",
+        "Digest": "sha256:9591b13f13843c7721c2b8eaf7382846c81b3ffe126526d1888d1fed50c6a33f",
+        "RepoTags": [
+          "ghcr.io/open-webui/open-webui:v0.11.4"
+        ],
+        "RepoDigests": [
+          "ghcr.io/open-webui/open-webui@sha256:332438e079ad23bb11b0ab278b43e7c98b50e8cec14b0840281644e8a289f49f",
+          "ghcr.io/open-webui/open-webui@sha256:9591b13f13843c7721c2b8eaf7382846c81b3ffe126526d1888d1fed50c6a33f"
+        ]
+      },
+      {
+        "Id": "8b0514989d3db3b0271ba6ce428687f2a9f2e90eb987e6c580a3f9cccb1a650f",
+        "Digest": "sha256:6e043f5f1a94ca3f806b3ea8c5da74baff372e63f5081e75f3c9b83e81bf77d9",
+        "RepoTags": [
+          "localhost/llm-autossh:local"
+        ],
+        "RepoDigests": [
+          "localhost/llm-autossh@sha256:6e043f5f1a94ca3f806b3ea8c5da74baff372e63f5081e75f3c9b83e81bf77d9"
+        ]
+      },
+      {
+        "Id": "9db2b58a344525ed92af4c90d3e5c54117cfbc045b73488cc87c286ef8c16c7d",
+        "Digest": "sha256:d0a95e651bb7d0a5a6468035c5b49c52f4678d90d598f853c06716bca102686b",
+        "RepoTags": [
+          "docker.io/grafana/loki:3.5.2"
+        ],
+        "RepoDigests": [
+          "docker.io/grafana/loki@sha256:d0a95e651bb7d0a5a6468035c5b49c52f4678d90d598f853c06716bca102686b",
+          "docker.io/grafana/loki@sha256:d12ab5b1cd7ac58c1c0ea8cb43e0d151d1d5bee1cb897c7e7eaf225adae07928"
+        ]
+      },
+      {
+        "Id": "a3bc50fcb50fb1409287c32773d8fe799f6cad5511c4ba3e2e851784e7a05026",
+        "Digest": "sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996",
+        "RepoTags": [
+          "docker.io/prom/prometheus:v3.5.0"
+        ],
+        "RepoDigests": [
+          "docker.io/prom/prometheus@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996",
+          "docker.io/prom/prometheus@sha256:8672a850efe2f9874702406c8318704edb363587f8c2ca88586b4c8fdb5cea24"
+        ]
+      },
+      {
+        "Id": "a7405966dd5cbfcf4803c405227f7c4be1f7e1de1a15c0ca27af1725dbc66510",
+        "Digest": "sha256:ca0e25216d1d934f7b16274b765c853565e7ce8bb7edff26e30177e57c9ba038",
+        "RepoTags": [
+          "docker.io/amir20/dozzle:v8.14.7"
+        ],
+        "RepoDigests": [
+          "docker.io/amir20/dozzle@sha256:86fc4ecb4ea9c58b16ba267b03dd6ae07f1249fa6e554293f6025480fb521c57",
+          "docker.io/amir20/dozzle@sha256:ca0e25216d1d934f7b16274b765c853565e7ce8bb7edff26e30177e57c9ba038"
+        ]
+      },
+      {
+        "Id": "a7a6124990ad3347c9e4a3010ad1f5f8665c397dfe6afedf89684aa4df7c3756",
+        "Digest": "sha256:81d4d3d19b21e30b895f57e3628a8dd82c02a52c17e6234f5f3ea7836fd31fb3",
+        "RepoTags": [
+          "ghcr.io/jpezzulli/sglang-rtxpro6000:v2.5.3"
+        ],
+        "RepoDigests": [
+          "ghcr.io/jpezzulli/sglang-rtxpro6000@sha256:81d4d3d19b21e30b895f57e3628a8dd82c02a52c17e6234f5f3ea7836fd31fb3",
+          "ghcr.io/jpezzulli/sglang-rtxpro6000@sha256:c36a326dcb6a99e12ffdc89ae2f2ca0365a02fb3c72ed8b18f88d63cdc7f5a8c"
+        ]
+      },
+      {
+        "Id": "e1e75b7faff6dfac47e3988064004d7702cc5ce38b154e2333f5b4365a13c49c",
+        "Digest": "sha256:6620ccf02aa36e46ee453a388de069ca2231fca64e2b7e07d0c37cd12a516764",
+        "RepoTags": [
+          "docker.io/utkuozdemir/nvidia_gpu_exporter:1.4.0"
+        ],
+        "RepoDigests": [
+          "docker.io/utkuozdemir/nvidia_gpu_exporter@sha256:01e0fddcf9fb6594154b2c96c04eff99bea441a4840a4e4964a3cbc6fb974003",
+          "docker.io/utkuozdemir/nvidia_gpu_exporter@sha256:6620ccf02aa36e46ee453a388de069ca2231fca64e2b7e07d0c37cd12a516764"
+        ]
+      },
+      {
+        "Id": "f9df31dbc93ffd53463bb52ad893835269919cc5037054a8bf2eb9340ac77195",
+        "Digest": "sha256:643bd0be730d40f69d58028a55d1a896739333e8815786df42bc97f109ecbe61",
+        "RepoTags": [
+          "ghcr.io/gethomepage/homepage:v2.4.0"
+        ],
+        "RepoDigests": [
+          "ghcr.io/gethomepage/homepage@sha256:1c7732541505c18a8f6e82fc6afbcdbed7316491bcc538930d518381056c4b56",
+          "ghcr.io/gethomepage/homepage@sha256:643bd0be730d40f69d58028a55d1a896739333e8815786df42bc97f109ecbe61"
+        ]
+      }
+    ]
+  },
+  "service_state": "Id=pennyroyal.service\nActiveState=active\nFragmentPath=/run/user/1000/systemd/generator/pennyroyal.service\nSourcePath=/home/z000g9hu/.config/containers/systemd/pennyroyal.container\nUnitFileState=generated\n\nId=litellm.service\nActiveState=active\nFragmentPath=/run/user/1000/systemd/generator/litellm.service\nSourcePath=/home/z000g9hu/.config/containers/systemd/litellm.container\nUnitFileState=generated\n\nId=qwen-runner-supervisor.service\nActiveState=active\nFragmentPath=/home/z000g9hu/.config/systemd/user/qwen-runner-supervisor.service\nSourcePath=\nUnitFileState=enabled\n\nId=hermes-gateway.service\nActiveState=active\nFragmentPath=/home/z000g9hu/.config/systemd/user/hermes-gateway.service\nSourcePath=\nUnitFileState=enabled\n\nId=hermes-codex-luna-adapter.service\nActiveState=active\nFragmentPath=/home/z000g9hu/.config/systemd/user/hermes-codex-luna-adapter.service\nSourcePath=\nUnitFileState=enabled\n\nId=llm-agent-context-watchdog.timer\nActiveState=active\nFragmentPath=/home/z000g9hu/.config/systemd/user/llm-agent-context-watchdog.timer\nSourcePath=\nUnitFileState=enabled\n",
+  "legacy_stop_marker_exists": true
+}

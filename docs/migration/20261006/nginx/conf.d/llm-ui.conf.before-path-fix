@@ -1,0 +1,10 @@
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+map $http_referer $spa_backend {
+    default "";
+    ~*^https://(192\.168\.0\.198|cachyos-x8664(\.local)?|cachyos2)(:[0-9]+)?/portal/ http://127.0.0.1:3002;
+    ~*^https://(192\.168\.0\.198|cachyos-x8664(\.local)?|cachyos2)(:[0-9]+)?/webui/ http://127.0.0.1:3001;
+}

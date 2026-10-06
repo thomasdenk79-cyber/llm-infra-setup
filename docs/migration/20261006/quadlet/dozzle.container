@@ -6,7 +6,6 @@ After=llm-observability-network.service
 Image=docker.io/amir20/dozzle:v8.14.7
 Network=llm-observability.network
 NetworkAlias=dozzle
-Environment=DOZZLE_BASE=/logs
 PublishPort=127.0.0.1:8080:8080
 Volume=%t/podman/podman.sock:/var/run/docker.sock:ro
 

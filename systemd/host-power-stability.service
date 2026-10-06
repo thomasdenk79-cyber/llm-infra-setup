@@ -1,0 +1,11 @@
+[Unit]
+Description=Keep PCIe Thunderbolt eGPU power states active
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/host-power-stability.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

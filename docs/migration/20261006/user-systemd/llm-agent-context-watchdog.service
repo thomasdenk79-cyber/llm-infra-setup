@@ -1,0 +1,7 @@
+[Unit]
+Description=LLM agent context and KV pressure watchdog
+After=sglang-turbo-c6.service
+
+[Service]
+Type=oneshot
+ExecStart=/home/z000g9hu/work/llm-infra-setup/scripts/agent-context-watchdog.sh

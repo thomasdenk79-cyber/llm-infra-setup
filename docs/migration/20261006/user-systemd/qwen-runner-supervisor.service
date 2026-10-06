@@ -1,0 +1,17 @@
+[Unit]
+Description=Qwen Fork Runner Supervisor
+After=network-online.target hermes-gateway.service
+Wants=network-online.target
+
+[Service]
+Environment=PATH=%h/.local/bin:%h/.npm-global/bin:/usr/local/bin:/usr/bin
+Type=simple
+WorkingDirectory=%h/work/qwen38-flash-next-blackwell
+ExecStart=%h/work/qwen38-flash-next-blackwell/scripts/runner-supervisor.sh
+Restart=always
+RestartSec=15
+KillMode=mixed
+TimeoutStopSec=30
+
+[Install]
+WantedBy=default.target

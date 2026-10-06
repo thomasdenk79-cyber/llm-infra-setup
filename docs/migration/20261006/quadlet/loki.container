@@ -1,0 +1,19 @@
+[Unit]
+Description=Loki log aggregation
+After=llm-observability-network.service
+
+[Container]
+Image=docker.io/grafana/loki:3.5.2
+Network=llm-observability.network
+NetworkAlias=loki
+PublishPort=127.0.0.1:3100:3100
+Volume=%h/.local/share/llm-infra/loki:/loki:Z,U
+Volume=/home/z000g9hu/work/llm-infra-setup-pennyroyal/config/monitoring/loki.yml:/etc/loki/config.yml:ro,Z
+Exec=-config.file=/etc/loki/config.yml
+
+[Service]
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=default.target

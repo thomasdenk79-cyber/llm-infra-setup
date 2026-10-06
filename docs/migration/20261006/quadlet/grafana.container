@@ -1,0 +1,23 @@
+[Unit]
+Description=Grafana dashboards
+After=llm-observability-network.service prometheus.service loki.service
+
+[Container]
+Image=docker.io/grafana/grafana:12.1.1
+Network=llm-observability.network
+NetworkAlias=grafana
+PublishPort=127.0.0.1:3000:3000
+Volume=%h/.local/share/llm-infra/grafana:/var/lib/grafana:Z,U
+Volume=/home/z000g9hu/work/llm-infra-setup-pennyroyal/config/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro,Z
+Environment=GF_AUTH_ANONYMOUS_ENABLED=false
+Environment=GF_SECURITY_ADMIN_USER=admin
+Environment=GF_SERVER_ROOT_URL=https://192.168.0.198/grafana/
+Environment=GF_SERVER_SERVE_FROM_SUB_PATH=true
+Secret=grafana_admin_password,type=env,target=GF_SECURITY_ADMIN_PASSWORD
+
+[Service]
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=default.target

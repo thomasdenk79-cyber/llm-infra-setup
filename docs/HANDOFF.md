@@ -2,6 +2,24 @@ Zuletzt gesichert: 2026-10-04T19:04:25+02:00 durch `scripts/session-checkpoint.s
 
 # Arbeitsstand und Uebergabe
 
+## Vorrangiger Stand 2026-10-06: Backup und WSL-Uebernahme
+
+Die folgenden aelteren Status-/Tuningabschnitte bleiben Historie. Aktueller
+Fortsetzungsanker: [WSL-MIGRATION.md](WSL-MIGRATION.md), mit deployed
+Podman-Konfigurationen unter `migration/20261006/` und Repo-/Branch-Manifest
+unter `migration/20261006/repositories.json`.
+
+Pennyroyal war bei der Aufnahme aktiv/Health 200. Die alte Runner-Queue bleibt
+pausiert (`state/STOP` im Runner-Repo); der installierte Supervisor war dennoch
+aktiv und darf auf dem Ziel nicht automatisch reaktiviert werden. Neuer
+Source-Fork: `qwen38-flash-next-sm120`, Branch `copilot-sm120`. Keine LKG-
+Promotion, keine weiteren GPU-Experimente waehrend dieser Sicherung.
+
+Der bestehende lokale eGPU-Power-Fix, LAN-URLs, Prometheus-Intervall und
+Dozzle-Base-Pfad werden als vorgefundener Arbeitsstand gesichert, nicht als
+WSL-kompatible Installation freigegeben. Geheimnisse und Laufzeitdaten liegen
+im separaten lokalen ZIP mit `howto.md`, niemals im oeffentlichen Repo.
+
 **Diese Seite ist der Fortsetzungsanker.** Wenn eine Sitzung abreisst, der Rechner
 neu startet oder ein anderer Agent uebernimmt: hier steht, was gilt. Regel aus
 `AGENTS.md`: Nach jedem abgeschlossenen Schritt `./scripts/session-checkpoint.sh`

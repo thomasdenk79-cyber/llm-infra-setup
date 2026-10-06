@@ -1,5 +1,26 @@
 # Agentenleitfaden fuer dieses Repository
 
+## Aktuelle Uebergabe: WSL/P16 Gen2 (2026-10-06)
+
+Zuerst `docs/WSL-MIGRATION.md`, `docs/HANDOFF.md` und
+`docs/migration/20261006/inventory.json` lesen. Dieser Abschnitt ersetzt die
+historische Runner-Neustartanweisung unten: **Runner/Watchdog/Supervisor nicht
+automatisch starten und keine alte Queue fortsetzen.** Die Fork-Arbeit liegt
+jetzt in `../qwen38-flash-next-sm120`, Branch `copilot-sm120`, mit cloudgesteuertem
+Foreground-Handover. GPU-Exklusivitaet und Health-200-Restore bleiben Pflicht.
+
+Der Betreiber will alle Branches, Altstaende und uncommittierten Arbeiten als
+Backup erhalten, nicht zusammenmergen oder als produktiv freigeben. Deployed
+Quadlets und Konfigurationen sind unter `docs/migration/20261006/` archiviert;
+dies ist kein automatisch zu installierendes Verzeichnis. Die laufenden
+Container und installierten Units koennen auf unterschiedliche Worktrees zeigen.
+Keine historischen GPU-Varianten gleichzeitig installieren/starten.
+
+Unter WSL keine Arch-/GRUB-/ZFS-/udev-/Treiber- oder eGPU-Power-Skripte blind
+ausfuehren, insbesondere nicht `./setup.sh`. Ziel-GPU/VRAM/RAM und WSL-Podman-
+Unterstuetzung zuerst ermitteln. Das oeffentliche Repo enthaelt keine Secrets;
+das separate lokale Migrations-ZIP ist vertraulich und bleibt ausserhalb Git.
+
 ## Zweck
 
 Versionierte Quelle der Wahrheit fuer die lokale LLM-Infrastruktur: CachyOS/Arch,

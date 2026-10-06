@@ -1,0 +1,29 @@
+# GENERIERT von scripts/61-install-autossh.sh.
+# Es wird nur EIN Schluessel eingelaesen, nicht der ganze ~/.ssh-Bestand.
+[Unit]
+Description=Wartungstunnel zum LiteLLM-Gateway
+After=network-online.target litellm.service
+
+[Container]
+Image=localhost/llm-autossh:local
+ContainerName=llm-autossh
+Network=host
+Volume=%h/.ssh/llm_gateway_reverse_ed25519:/ssh/id_ed25519:ro,Z
+Volume=%h/.local/share/llm-infra/ssh/known_hosts:/ssh/known_hosts:ro,Z
+Environment=AUTOSSH_GATETIME=0
+Exec=-M 0 -N -o BatchMode=yes -o IdentitiesOnly=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes \
+    -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/ssh/known_hosts \
+    -i /ssh/id_ed25519 -p 22 \
+    -R 127.0.0.1:4000:127.0.0.1:4000 \
+    -R 127.0.0.1:3000:127.0.0.1:3000 \
+    -R 127.0.0.1:3002:127.0.0.1:3002 \
+    azureuser@20.73.54.102
+
+[Service]
+Restart=on-failure
+RestartSec=60
+StartLimitIntervalSec=600
+StartLimitBurst=10
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,16 @@
+title: LLM Infrastructure
+startUrl: http://127.0.0.1:3002
+theme: dark
+color: slate
+language: de
+headerStyle: clean
+layout:
+  Chat & RAG:
+    style: row
+    columns: 3
+  Verwaltung:
+    style: row
+    columns: 3
+  Monitoring:
+    style: row
+    columns: 4

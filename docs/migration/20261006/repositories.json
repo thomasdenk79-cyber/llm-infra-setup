@@ -1,0 +1,443 @@
+{
+  "captured_at": "2026-10-06T17:44:52.865528+00:00",
+  "scope": "13 worktrees, 9 unique repositories. HEADs are capture anchors, not all final backup documentation commits. Final local ZIP receipt verifies owned refs; clean research HEAD commits were confirmed through the upstream API.",
+  "repositories": [
+    {
+      "path": "cachyos-kvm-lab",
+      "head": "7d5097e7b4481eb3609266c0bb5eda124f54ebd9",
+      "branch": "main",
+      "common_git_directory": "/home/z000g9hu/work/cachyos-kvm-lab/.git",
+      "remotes": {
+        "origin": "https://github.com/thomasdenk79-cyber/cachyos-kvm-lab.git"
+      },
+      "local_refs": {
+        "refs/heads/main": "7d5097e7b4481eb3609266c0bb5eda124f54ebd9"
+      }
+    },
+    {
+      "path": "hermes-team-workspace",
+      "head": "7a56ae9fbca0acf99a5070fece7d2d0d79f503f1",
+      "branch": "main",
+      "common_git_directory": "/home/z000g9hu/work/hermes-team-workspace/.git",
+      "remotes": {
+        "origin": "https://github.com/thomasdenk79-cyber/hermes-team-workspace.git"
+      },
+      "local_refs": {
+        "refs/heads/main": "7a56ae9fbca0acf99a5070fece7d2d0d79f503f1"
+      }
+    },
+    {
+      "path": "llm-infra-setup",
+      "head": "a0c1f544158a40e31aae0c5c746aaa72c299b204",
+      "branch": "turbo-c6-production",
+      "common_git_directory": "/home/z000g9hu/work/llm-infra-setup/.git",
+      "remotes": {
+        "origin": "https://github.com/thomasdenk79-cyber/llm-infra-setup.git"
+      },
+      "local_refs": {
+        "refs/heads/main": "2735fe1c496337c6624ace1904d2e081048439dd",
+        "refs/heads/pennyroyal-plugin-variant": "697b26f275f35096cdbcba724bbffa1d630aa1fe",
+        "refs/heads/turbo-c6-penny-ssd-experimental": "dafe115344d78f209b2590355b0422b3800420ba",
+        "refs/heads/turbo-c6-production": "a0c1f544158a40e31aae0c5c746aaa72c299b204",
+        "refs/heads/turbo-upstream-ple-graph": "22affbb7c67af8eece0f7a98e39da73b685d33a3",
+        "refs/heads/variant-b-mmap-pagecache": "508a05ca586b1c9d212df06df7e39b0dd5121221",
+        "refs/heads/variant-d-staging-double-buffer": "2627b315e7ec0f0c505f458114886536977107a9",
+        "refs/tags/variant-a-passing-20261004T031925Z": "ec7c564c812dfdeebe784dd01298b89e803223aa",
+        "refs/tags/variant-a-passing-20261004T042236Z": "a81b00193097072bcc7cbc20057330adf5433845",
+        "refs/tags/variant-a-passing-20261004T083740Z": "b7b58bd5747ce804cd7ee378f92f4a88ab846996",
+        "refs/tags/variant-a-passing-20261004T102337Z": "871d266d1b5b8163460b256e55f56a316fdf06c6",
+        "refs/tags/variant-a-passing-20261004T111935Z": "6503012d428977838e523f15825e7ededcac7e61",
+        "refs/tags/variant-b-passing-20261004T113829Z": "34aa745960024e1f7f508b5e5ead474c007ea817",
+        "refs/tags/variant-d-passing-20261004T065241Z": "227664bafc3e149a7490dd30a3192b9a108121b3"
+      }
+    },
+    {
+      "path": "llm-infra-setup-pennyroyal",
+      "head": "697b26f275f35096cdbcba724bbffa1d630aa1fe",
+      "branch": "pennyroyal-plugin-variant",
+      "common_git_directory": "/home/z000g9hu/work/llm-infra-setup/.git",
+      "remotes": {
+        "origin": "https://github.com/thomasdenk79-cyber/llm-infra-setup.git"
+      },
+      "local_refs": {
+        "refs/heads/main": "2735fe1c496337c6624ace1904d2e081048439dd",
+        "refs/heads/pennyroyal-plugin-variant": "697b26f275f35096cdbcba724bbffa1d630aa1fe",
+        "refs/heads/turbo-c6-penny-ssd-experimental": "dafe115344d78f209b2590355b0422b3800420ba",
+        "refs/heads/turbo-c6-production": "a0c1f544158a40e31aae0c5c746aaa72c299b204",
+        "refs/heads/turbo-upstream-ple-graph": "22affbb7c67af8eece0f7a98e39da73b685d33a3",
+        "refs/heads/variant-b-mmap-pagecache": "508a05ca586b1c9d212df06df7e39b0dd5121221",
+        "refs/heads/variant-d-staging-double-buffer": "2627b315e7ec0f0c505f458114886536977107a9",
+        "refs/tags/variant-a-passing-20261004T031925Z": "ec7c564c812dfdeebe784dd01298b89e803223aa",
+        "refs/tags/variant-a-passing-20261004T042236Z": "a81b00193097072bcc7cbc20057330adf5433845",
+        "refs/tags/variant-a-passing-20261004T083740Z": "b7b58bd5747ce804cd7ee378f92f4a88ab846996",
+        "refs/tags/variant-a-passing-20261004T102337Z": "871d266d1b5b8163460b256e55f56a316fdf06c6",
+        "refs/tags/variant-a-passing-20261004T111935Z": "6503012d428977838e523f15825e7ededcac7e61",
+        "refs/tags/variant-b-passing-20261004T113829Z": "34aa745960024e1f7f508b5e5ead474c007ea817",
+        "refs/tags/variant-d-passing-20261004T065241Z": "227664bafc3e149a7490dd30a3192b9a108121b3"
+      }
+    },
+    {
+      "path": "llm-infra-setup-turbo-upstream",
+      "head": "22affbb7c67af8eece0f7a98e39da73b685d33a3",
+      "branch": "turbo-upstream-ple-graph",
+      "common_git_directory": "/home/z000g9hu/work/llm-infra-setup/.git",
+      "remotes": {
+        "origin": "https://github.com/thomasdenk79-cyber/llm-infra-setup.git"
+      },
+      "local_refs": {
+        "refs/heads/main": "2735fe1c496337c6624ace1904d2e081048439dd",
+        "refs/heads/pennyroyal-plugin-variant": "697b26f275f35096cdbcba724bbffa1d630aa1fe",
+        "refs/heads/turbo-c6-penny-ssd-experimental": "dafe115344d78f209b2590355b0422b3800420ba",
+        "refs/heads/turbo-c6-production": "a0c1f544158a40e31aae0c5c746aaa72c299b204",
+        "refs/heads/turbo-upstream-ple-graph": "22affbb7c67af8eece0f7a98e39da73b685d33a3",
+        "refs/heads/variant-b-mmap-pagecache": "508a05ca586b1c9d212df06df7e39b0dd5121221",
+        "refs/heads/variant-d-staging-double-buffer": "2627b315e7ec0f0c505f458114886536977107a9",
+        "refs/tags/variant-a-passing-20261004T031925Z": "ec7c564c812dfdeebe784dd01298b89e803223aa",
+        "refs/tags/variant-a-passing-20261004T042236Z": "a81b00193097072bcc7cbc20057330adf5433845",
+        "refs/tags/variant-a-passing-20261004T083740Z": "b7b58bd5747ce804cd7ee378f92f4a88ab846996",
+        "refs/tags/variant-a-passing-20261004T102337Z": "871d266d1b5b8163460b256e55f56a316fdf06c6",
+        "refs/tags/variant-a-passing-20261004T111935Z": "6503012d428977838e523f15825e7ededcac7e61",
+        "refs/tags/variant-b-passing-20261004T113829Z": "34aa745960024e1f7f508b5e5ead474c007ea817",
+        "refs/tags/variant-d-passing-20261004T065241Z": "227664bafc3e149a7490dd30a3192b9a108121b3"
+      }
+    },
+    {
+      "path": "llm-infra-setup-variant-b",
+      "head": "508a05ca586b1c9d212df06df7e39b0dd5121221",
+      "branch": "variant-b-mmap-pagecache",
+      "common_git_directory": "/home/z000g9hu/work/llm-infra-setup/.git",
+      "remotes": {
+        "origin": "https://github.com/thomasdenk79-cyber/llm-infra-setup.git"
+      },
+      "local_refs": {
+        "refs/heads/main": "2735fe1c496337c6624ace1904d2e081048439dd",
+        "refs/heads/pennyroyal-plugin-variant": "697b26f275f35096cdbcba724bbffa1d630aa1fe",
+        "refs/heads/turbo-c6-penny-ssd-experimental": "dafe115344d78f209b2590355b0422b3800420ba",
+        "refs/heads/turbo-c6-production": "a0c1f544158a40e31aae0c5c746aaa72c299b204",
+        "refs/heads/turbo-upstream-ple-graph": "22affbb7c67af8eece0f7a98e39da73b685d33a3",
+        "refs/heads/variant-b-mmap-pagecache": "508a05ca586b1c9d212df06df7e39b0dd5121221",
+        "refs/heads/variant-d-staging-double-buffer": "2627b315e7ec0f0c505f458114886536977107a9",
+        "refs/tags/variant-a-passing-20261004T031925Z": "ec7c564c812dfdeebe784dd01298b89e803223aa",
+        "refs/tags/variant-a-passing-20261004T042236Z": "a81b00193097072bcc7cbc20057330adf5433845",
+        "refs/tags/variant-a-passing-20261004T083740Z": "b7b58bd5747ce804cd7ee378f92f4a88ab846996",
+        "refs/tags/variant-a-passing-20261004T102337Z": "871d266d1b5b8163460b256e55f56a316fdf06c6",
+        "refs/tags/variant-a-passing-20261004T111935Z": "6503012d428977838e523f15825e7ededcac7e61",
+        "refs/tags/variant-b-passing-20261004T113829Z": "34aa745960024e1f7f508b5e5ead474c007ea817",
+        "refs/tags/variant-d-passing-20261004T065241Z": "227664bafc3e149a7490dd30a3192b9a108121b3"
+      }
+    },
+    {
+      "path": "llm-infra-setup-variant-d",
+      "head": "2627b315e7ec0f0c505f458114886536977107a9",
+      "branch": "variant-d-staging-double-buffer",
+      "common_git_directory": "/home/z000g9hu/work/llm-infra-setup/.git",
+      "remotes": {
+        "origin": "https://github.com/thomasdenk79-cyber/llm-infra-setup.git"
+      },
+      "local_refs": {
+        "refs/heads/main": "2735fe1c496337c6624ace1904d2e081048439dd",
+        "refs/heads/pennyroyal-plugin-variant": "697b26f275f35096cdbcba724bbffa1d630aa1fe",
+        "refs/heads/turbo-c6-penny-ssd-experimental": "dafe115344d78f209b2590355b0422b3800420ba",
+        "refs/heads/turbo-c6-production": "a0c1f544158a40e31aae0c5c746aaa72c299b204",
+        "refs/heads/turbo-upstream-ple-graph": "22affbb7c67af8eece0f7a98e39da73b685d33a3",
+        "refs/heads/variant-b-mmap-pagecache": "508a05ca586b1c9d212df06df7e39b0dd5121221",
+        "refs/heads/variant-d-staging-double-buffer": "2627b315e7ec0f0c505f458114886536977107a9",
+        "refs/tags/variant-a-passing-20261004T031925Z": "ec7c564c812dfdeebe784dd01298b89e803223aa",
+        "refs/tags/variant-a-passing-20261004T042236Z": "a81b00193097072bcc7cbc20057330adf5433845",
+        "refs/tags/variant-a-passing-20261004T083740Z": "b7b58bd5747ce804cd7ee378f92f4a88ab846996",
+        "refs/tags/variant-a-passing-20261004T102337Z": "871d266d1b5b8163460b256e55f56a316fdf06c6",
+        "refs/tags/variant-a-passing-20261004T111935Z": "6503012d428977838e523f15825e7ededcac7e61",
+        "refs/tags/variant-b-passing-20261004T113829Z": "34aa745960024e1f7f508b5e5ead474c007ea817",
+        "refs/tags/variant-d-passing-20261004T065241Z": "227664bafc3e149a7490dd30a3192b9a108121b3"
+      }
+    },
+    {
+      "path": "qwen38-flash-next-blackwell",
+      "head": "0edc59c3a56551343a9a52e79b443883be36147f",
+      "branch": "main",
+      "common_git_directory": "/home/z000g9hu/work/qwen38-flash-next-blackwell/.git",
+      "remotes": {
+        "origin": "https://github.com/thomasdenk79-cyber/qwen38-flash-next-blackwell.git"
+      },
+      "local_refs": {
+        "refs/heads/main": "0edc59c3a56551343a9a52e79b443883be36147f",
+        "refs/tags/candidate-run-20261005T122921Z-TEST-C1BENCH-2": "96213d471ec2402762a0eecd520fb42bdd769c0d",
+        "refs/tags/candidate-run-20261005T130627Z-TEST-C1BENCH-3": "c15fa0e169fbe846db0a85f04c688bdf75e63c01",
+        "refs/tags/candidate-run-20261005T142038Z-TEST-LKG-SUITE": "f283ca0e3eaedb41a5af45b17b27ed04b802064c",
+        "refs/tags/candidate-run-20261005T160503Z-TEST-CTX512K": "890218d5156fb77ce60bd96e268425bb3c41e1ae",
+        "refs/tags/candidate-run-20261005T191041Z-OOM-001": "949430709bbb241faae0a5f32cb7d9050f6d4f44",
+        "refs/tags/candidate-run-20261006T001420Z-TEST-CTX512K": "f25aafe311cd863dd71bcdeb1d44834aa8ce716c",
+        "refs/tags/candidate-run-20261006T001420Z-TEST-CTX512K-anchored": "8da9473703d1f63d85addd64853c78e184842e80",
+        "refs/tags/candidate-run-20261006T104350Z-TEST-CTX1M": "0edc59c3a56551343a9a52e79b443883be36147f"
+      }
+    },
+    {
+      "path": "qwen38-flash-next-sm120",
+      "head": "d2fb46ff56e61349fa7752d13ad7a6d3dedd685d",
+      "branch": "copilot-sm120",
+      "common_git_directory": "/home/z000g9hu/work/qwen38-flash-next-sm120/.git",
+      "remotes": {
+        "origin": "https://github.com/thomasdenk79-cyber/qwen38-flash-next-sm120.git",
+        "pennyroyal": "https://github.com/jpezzulli/sglang-rtxpro6000.git"
+      },
+      "local_refs": {
+        "refs/heads/copilot-sm120": "d2fb46ff56e61349fa7752d13ad7a6d3dedd685d",
+        "refs/heads/pennyroyal-main-sm120-final": "529b57c69b6038621134c73841cb102691d50352",
+        "refs/tags/pennyroyal-v2.1.0": "230f3ce5e3da2cb33281c7b26b33ee2d939de5cd",
+        "refs/tags/pennyroyal-v2.1.1": "15c842c00781d29101d3f34b131b3de39a9a35dd",
+        "refs/tags/pennyroyal-v2.1.2": "de7ac436190119e89af4dfdeb7566162198f758f",
+        "refs/tags/pennyroyal-v2.3.0": "dfb49076568027cec45bfee25821323fdbbad88c",
+        "refs/tags/pennyroyal-v2.3.1": "55c44438ab6bc50e3fc0f7b797356b8c0b92efe3",
+        "refs/tags/pennyroyal-v2.3.1.1": "ccabd15479a5d46ffef6d1dd28a6e1f01aa05199",
+        "refs/tags/pennyroyal-v2.4.0": "94324164715b45386de1789070ceb258333d08cc",
+        "refs/tags/pennyroyal-v2.4.1": "5c1ee9ef99bf28a5cfba624854440c86a82b6c56",
+        "refs/tags/pennyroyal-v2.5.0": "1773180e260ca3770dcb0d304589aa6ac2cf2bcd",
+        "refs/tags/pennyroyal-v2.5.1": "dbc1e9befcb278d4b6623b64dedd44ecf53ea6e2",
+        "refs/tags/pennyroyal-v2.5.2": "8f0bb949c6d59ea8c74095bd12b23da8356b6e47",
+        "refs/tags/pennyroyal-v2.5.3": "0a94cf74b1e1bf80e601271243bbf1019b5811ac",
+        "refs/tags/pennyroyal-v2.5.3-setup1": "e465affe373ad164e6014f1420f0883046fd498e",
+        "refs/tags/qwen38-dflash2-pro6000-20260824": "ecff46cc657027a0df5eabcc4268188f7b2c57a1",
+        "refs/tags/sglang-rtxpro6000-20260827": "4bda3875bdb2201da6dda88095baeafc58fe12f4"
+      }
+    },
+    {
+      "path": "research/sglang",
+      "head": "284cda01fb2c029892c421844fb1e1fe90f930e1",
+      "branch": "main",
+      "common_git_directory": "/home/z000g9hu/work/research/sglang/.git",
+      "remotes": {
+        "origin": "https://github.com/sgl-project/sglang.git"
+      },
+      "local_refs": {
+        "refs/heads/main": "284cda01fb2c029892c421844fb1e1fe90f930e1",
+        "refs/tags/gateway-v0.1.5": "3646f6bb3e42ef31b29e4bae3244a14333a2ba9b",
+        "refs/tags/gateway-v0.1.6": "9b5de6cb069ba7af66de45762dab489941ad0947",
+        "refs/tags/gateway-v0.1.7": "aee0ef52f52c279c0195427721bcf6b232dc1b1a",
+        "refs/tags/gateway-v0.1.8": "39decec10b3438b9612abccca0d8d27b0b222a56",
+        "refs/tags/gateway-v0.1.9": "500b15c96074a9226f5e37df2aa397583bf4b68c",
+        "refs/tags/gateway-v0.2.0": "74737b2863e8c2a90a8eb45f7b6b3ca764a108e4",
+        "refs/tags/gateway-v0.2.1": "8a801ee38d46aa57aa15fc5de74c3bdc36f26f81",
+        "refs/tags/gateway-v0.2.2": "62377548426e9b7a7fa3e5900d547c3702474881",
+        "refs/tags/gateway-v0.2.3": "172c71a23dd96a9e5a7cbf69b4da10d33f151581",
+        "refs/tags/gateway-v0.2.4": "de4f9c7a20caed03c4d99fd5ebf58246f6735ca4",
+        "refs/tags/gateway-v0.3.0": "f2e4d4e397c06141d05cf85a30579efe0ce54961",
+        "refs/tags/gateway-v0.3.1": "404329ae730680f9a5c0fb18f17b5dbc74d77f6f",
+        "refs/tags/v0.1.10": "a49dc52bfa1e04f7713644266b0992e8e977a2bb",
+        "refs/tags/v0.1.11": "f6bfe3aaff6fc9c80ed632646c8db06f4a6c0048",
+        "refs/tags/v0.1.12": "624b21e742f2bfc493b30ca17e7c86ca9255e1e6",
+        "refs/tags/v0.1.13": "4aa5dd2c5f1e386e8bf7d9c6309dc414e2fded7e",
+        "refs/tags/v0.1.14": "51104cd405a9573a872e846ba4d85a4298f92c4f",
+        "refs/tags/v0.1.15": "72bb3443880d5a7e382cb9783a8231021e130ae2",
+        "refs/tags/v0.1.16": "e0ae5d42ecdd06a749969f28b67df688e9edec8b",
+        "refs/tags/v0.1.17": "e8a2327d523ce646edf400a2c6da647ca7d8c645",
+        "refs/tags/v0.1.18": "2f11936f953e3b7fab698c45054c6893f98c62e4",
+        "refs/tags/v0.1.19": "ad872feb14738d2974a434c2d6bfccf8c0ee0062",
+        "refs/tags/v0.1.20": "5d264a90ac5154d8e368ee558337dd3dd92e720b",
+        "refs/tags/v0.1.21": "56f5fc4ab5e1d9e270dcdab5f1d6f67e6785eebe",
+        "refs/tags/v0.1.22": "2b4c64627727eaf8c14c56d3695c53fd9832a084",
+        "refs/tags/v0.1.23": "444a02441a50f87d86c406901b3726b323a3fc0f",
+        "refs/tags/v0.1.24": "459abad2615e09f4e1bd28313b60fb1ada12c432",
+        "refs/tags/v0.1.3": "2ccd9fd8c5331ee5bd53185772d7ed615a3a8c30",
+        "refs/tags/v0.1.5": "22ec7bc2a1a0849870323cffa98cf7abf7d416ff",
+        "refs/tags/v0.1.6": "cc3ada983f6445f98a88fa890a8130f40eb0f2af",
+        "refs/tags/v0.1.7": "723f0421638b8a0ee72ff0a84eed283946753ed6",
+        "refs/tags/v0.1.8": "c70b3cfa9e3a06b129eef4e2a0b32d67a3c7eb33",
+        "refs/tags/v0.1.9": "6dceab4d1786a6b94dfcbd2bc4030caa4cb3b0ba",
+        "refs/tags/v0.2.0": "1a491d00cb765c62864ecbd60b0357dc81b4371e",
+        "refs/tags/v0.2.10": "141e8c71a31eb24041a373141c5d3da3b92938d8",
+        "refs/tags/v0.2.11": "dc9d06d886151707f97d0b78095df9de262fd3c9",
+        "refs/tags/v0.2.12": "b0ad0c1bc8787937a7df5bc0487af1e9db6efb5e",
+        "refs/tags/v0.2.13": "5bd953749b520070a5b72b5b99b9a92853698685",
+        "refs/tags/v0.2.14": "c5fe11a8e175d48b00b32aafd7412953180314e4",
+        "refs/tags/v0.2.14.post1": "f25f4dfde5af9a81be52c1ba6d99cc2ac5cca179",
+        "refs/tags/v0.2.14.post2": "13ac95b8946ff0bc62527567931bdf647cc43c5e",
+        "refs/tags/v0.2.15": "9999442756cf34a298933d2e072bd07493346d52",
+        "refs/tags/v0.2.5": "5bd06b45992e850548e0520c4cb4b46493f68ab9",
+        "refs/tags/v0.2.6": "bc1154c399b3350e502adb56320e1bf1b00d2750",
+        "refs/tags/v0.2.7": "1edd4e07d6ad52f4f63e7f6beaa5987c1e1cf621",
+        "refs/tags/v0.2.8": "e4d3333c6c9841f139222ea675a4f29241362f49",
+        "refs/tags/v0.2.9": "30a9b2ef203329110477dd10cf3ff45df0c2e8f4",
+        "refs/tags/v0.2.9.post1": "b906c015926c9064e086dd1f378e705330076da3",
+        "refs/tags/v0.3.0": "5ab9418f5b4c9ad1a90d72a803331d9a0b26d13e",
+        "refs/tags/v0.3.1.post1": "90a26be31cea2e15c26ef5e91b296bc76a75004c",
+        "refs/tags/v0.3.1.post2": "5ce55aee15311802b7f57caf80eb278e4d8453f4",
+        "refs/tags/v0.3.1.post3": "82136eb0b58cf93c953b9f701360aa1fe4718c14",
+        "refs/tags/v0.3.2": "37c5899fc2100de1c9afd51a7b1977b2f8185a28",
+        "refs/tags/v0.3.3": "7b69d91b4f94a73f6b8fa3a86de3a910a16dc645",
+        "refs/tags/v0.3.3.post1": "00c7e6368bbf598da9af5443f24353e8ff2a6fd0",
+        "refs/tags/v0.3.4": "087257ea032a8a8fb74798aba7a35a8314d9a4f4",
+        "refs/tags/v0.3.4.post1": "1f26e8b8e4c8b884e59036dccd87929b2af592f9",
+        "refs/tags/v0.3.4.post2": "30643fed7f92be32540dfcdf9e4310e477ce0f6d",
+        "refs/tags/v0.3.5": "65859754f1463ce280bbaaf68d04797705849240",
+        "refs/tags/v0.3.5.post1": "f407fcf9ef0ef637deb6b62cd9044e1778c53b89",
+        "refs/tags/v0.3.5.post2": "32c9a7ec11b8dde282f637614f7f8e51a2f20b11",
+        "refs/tags/v0.3.6": "9a00e6f453e764c0b286e2a62f652a1202c0bf9c",
+        "refs/tags/v0.3.6.post1": "ac5a0f048870364126c7c97ed8660306be58609d",
+        "refs/tags/v0.3.6.post2": "fed4c6946acd476ab94cad85a1210900a3ae6076",
+        "refs/tags/v0.3.6.post3": "fae4e5e99a93f8f5e7fa462833754c91ecbea1c2",
+        "refs/tags/v0.4.0": "f8b0326934bacb7a7d4eba68fb6eddebaa6ff751",
+        "refs/tags/v0.4.0.post1": "e5f227c0ee9f491ed8a625733314e7218988e744",
+        "refs/tags/v0.4.0.post2": "8f4d04e5403510fdea9d6ab83fc67f3e07ea4e32",
+        "refs/tags/v0.4.1": "efc52f85e2d5c9b31545d4092f2b361b6ff04d67",
+        "refs/tags/v0.4.1.post1": "ef5b0ff90b526e4f8dc301553f3a1ce04e9dd71d",
+        "refs/tags/v0.4.1.post2": "3ccf566b0d4941a446353b14b5251ac9a30090a4",
+        "refs/tags/v0.4.1.post3": "03d5fbfd441ad1b03feb66a4d1cbb03088399eff",
+        "refs/tags/v0.4.1.post4": "2f0d3864962343ce894b7abc705b876028f2c668",
+        "refs/tags/v0.4.1.post5": "f624901cdd5da4ad6ffa20a5c29561dcbac0eb4a",
+        "refs/tags/v0.4.1.post6": "b3e99dfb2292ee9de83ca1a29800dff900da19af",
+        "refs/tags/v0.4.1.post7": "e94fb7cb1094f1210c0ab92a31bcc848e2c2cf7a",
+        "refs/tags/v0.4.10": "023288645b80fb41b3eed55fd413dd69a7904593",
+        "refs/tags/v0.4.10.post1": "33f0de337d978b37c63b98575b4962c6e6479e8c",
+        "refs/tags/v0.4.10.post2": "8cd344586e09669432d35c678b7cc208c0a6f47e",
+        "refs/tags/v0.4.2": "4ab43cfb3ebfe1b8a77d90ac7f64afef82a4dbdc",
+        "refs/tags/v0.4.2.post1": "cf0f7eafe69a7bb2aebf2c6c6ac361be8d4ccfe6",
+        "refs/tags/v0.4.2.post2": "7aad8d1854010de2cdfd057524d44fe538b160e1",
+        "refs/tags/v0.4.2.post3": "c1f5f99f607d01900d3974ea779588ebce75693b",
+        "refs/tags/v0.4.2.post4": "cddb1cdf8fd85538003990dd12ab4f686d3da064",
+        "refs/tags/v0.4.3": "e0b9a423c8413c486f8e6a2c168cd3e6e7a74589",
+        "refs/tags/v0.4.3.post1": "e782eb7e6a9af1e4b81adf7459f737b29fb388ea",
+        "refs/tags/v0.4.3.post2": "a5375adc3a8f87040a632f0b5aeb19c336ff87fc",
+        "refs/tags/v0.4.3.post3": "fc671f66c14a431295b8f2581cc2d55372d5044c",
+        "refs/tags/v0.4.3.post4": "9c58e68b4c18a2d0876b9c2b8706cd6e783e4e1c",
+        "refs/tags/v0.4.4": "6aaeb84872f096df1b4ed78cbe6ba5ef8435f5ed",
+        "refs/tags/v0.4.4.post1": "ba80c102f9b48411ffb03ca9898f608e483ace48",
+        "refs/tags/v0.4.4.post2": "1099f6c9748752eee30081d3eaed4cf64a708f45",
+        "refs/tags/v0.4.4.post3": "19e96e5923019e4a216f14c9d7abaad47014f81c",
+        "refs/tags/v0.4.4.post4": "35e0856b9042a24c50ac1f9422075daeda2b42ba",
+        "refs/tags/v0.4.5": "57f99608f4fdea03e0450f51a6fcabe726409f25",
+        "refs/tags/v0.4.5.post1": "5b5c7237c8ffdb30f08bf11258126c08189ab8e1",
+        "refs/tags/v0.4.5.post2": "fbdc94ba59ec89dd6f19cc3351c2419d5152a96d",
+        "refs/tags/v0.4.5.post3": "b9c87e781dd1e061090ce5e99eca2d6cc448b97f",
+        "refs/tags/v0.4.6": "84022c0e563c9b519fa16bf0eb7f9d750a728531",
+        "refs/tags/v0.4.6.post1": "dcae1fb2cd2def2a2eb4919c21f74e91d888d161",
+        "refs/tags/v0.4.6.post2": "9858113c336f4565a0a35f9a990cdada0de1988f",
+        "refs/tags/v0.4.6.post3": "678d8cc98768cfda795bd60c05e6ab84576fb0bd",
+        "refs/tags/v0.4.6.post4": "16267d4fa721b3e8c11e9b3d41f5d53fa8bedaf1",
+        "refs/tags/v0.4.6.post5": "7e257cd666c0d639626487987ea8e590da1e9395",
+        "refs/tags/v0.4.7": "4f723edd3baf3823eddfb9d6426548daba17c687",
+        "refs/tags/v0.4.7.post1": "f9dc9dd28b53888f96f1953d6bb56085063dd913",
+        "refs/tags/v0.4.8": "7c3a12c0002e33fed1e72f4157e74a64a998f251",
+        "refs/tags/v0.4.8.post1": "69183f8808ec82d55e366324c1fb0564e65366a4",
+        "refs/tags/v0.4.9": "ec5f9c6269c18e88cd3141be56369cbd23cf4d64",
+        "refs/tags/v0.4.9.post1": "066f4ec91f7becd1d490745c856c4a57ede9d1ca",
+        "refs/tags/v0.4.9.post2": "eb118d88c47d95f0006506ea7abeb0bd51a780b5",
+        "refs/tags/v0.4.9.post3": "01c000043c96e50d3bd33416cf26d394834729cc",
+        "refs/tags/v0.4.9.post4": "2272c2a5b5025b3c7aae9291cbf3e5cb868556dd",
+        "refs/tags/v0.4.9.post5": "45bc170b36ebdb74496e66260bde209ba7687ea8",
+        "refs/tags/v0.4.9.post6": "6478831be9af43cf6aa85a112805cad85b5a4fbb",
+        "refs/tags/v0.5.0rc0": "9020f7fc3202c6999d4d1d10d7043f92bb045b40",
+        "refs/tags/v0.5.0rc1": "7b56e494bed2246daaaabbdbe12462d91010135f",
+        "refs/tags/v0.5.0rc2": "fab0f6e77dd70f3f4d0d974896739e6b4ca8b2dd",
+        "refs/tags/v0.5.1": "97a38ee85ba62e268bde6388f1bf8edfe2ca9d76",
+        "refs/tags/v0.5.1.post1": "e0ab167db04d30ccf55ddfa59b3a44a32f39484e",
+        "refs/tags/v0.5.1.post2": "e3e97a120bf7caebc1fad10880782900209d9cb4",
+        "refs/tags/v0.5.1.post3": "bc80dc4ce0ae5a97b8a58faa1d8b8cfbb56e21f5",
+        "refs/tags/v0.5.10": "1519acf37c23f2189adb93f57ca9cd2db1bebf18",
+        "refs/tags/v0.5.10.post1": "94f03a39dbd39edfc2b118b5357bbbadaaa9ad28",
+        "refs/tags/v0.5.10rc0": "1115dbf213521b9229445516a7a252583368d5cc",
+        "refs/tags/v0.5.11": "563ba216311ad17cb6a012a97f19b341a27de664",
+        "refs/tags/v0.5.12": "25f2e430acb914c793307a5139b9b2a2055a2547",
+        "refs/tags/v0.5.12.post1": "d8fcd14a62ddea9f08e5a2afff0f819bfbc0204a",
+        "refs/tags/v0.5.13": "cba18f4d8090d23e9273e663db2a0b3b2e39f117",
+        "refs/tags/v0.5.13.post1": "1ec9d4b7b73cf2dffd18b7cdf21a31a8ce27e00f",
+        "refs/tags/v0.5.14": "4289f36ef960fad8268a6b94935686e792a81432",
+        "refs/tags/v0.5.15": "d80c135a4f961a5118959de022934fc2dc598c21",
+        "refs/tags/v0.5.15.post1": "658e0a942ec771aeeef1b1adf4180764cacd79b2",
+        "refs/tags/v0.5.16": "d21f3c3a10606ba3c7bf43f981496da0a7d620cd",
+        "refs/tags/v0.5.17": "b6a09f38fcc5e96574324b4acc19d421c539cfc6",
+        "refs/tags/v0.5.18": "ff4c6e641d9f9bb174d34ff651c01c114aea8e40",
+        "refs/tags/v0.5.19": "59f20bffdde59a35cc628372d85d20a979f6271b",
+        "refs/tags/v0.5.2": "b0d25e72c401f37b55d689ddbf05b8c583afe854",
+        "refs/tags/v0.5.20": "d158602ff1d2cb953196c95158c488d503d2470c",
+        "refs/tags/v0.5.21": "7337b27853377544a322fd4390df332d8ca7d8cb",
+        "refs/tags/v0.5.2rc0": "16e56ea69312129bddc85baed9432cd74e1ef827",
+        "refs/tags/v0.5.2rc1": "18f91eb639084825717c0e3c3c7273492812ab71",
+        "refs/tags/v0.5.2rc2": "fa9c82d339626d293ea0286d92a776294300e834",
+        "refs/tags/v0.5.3": "a4a3d8239365d2fc16e2dc707605373ea3f35ded",
+        "refs/tags/v0.5.3.post1": "758b887ad19df35bc31f570e898696c90745a3af",
+        "refs/tags/v0.5.3.post2": "baf277a9bfd17669a1b1956d3bdbc24c3678a65b",
+        "refs/tags/v0.5.3.post3": "85ebeecf0694bdb94ace25319775d4b060baf655",
+        "refs/tags/v0.5.3rc0": "86a32bb5cd50ae1f06fddea9db2633f2f469482e",
+        "refs/tags/v0.5.3rc1": "1ba137e98fa2fef7dcd976f1d8573dc5cd0152a8",
+        "refs/tags/v0.5.3rc2": "0b13cbb7c991d6edff831517a5c0bc0ba8b7f02d",
+        "refs/tags/v0.5.4": "1053e1be17ac1220acce874f80435d765c15aab9",
+        "refs/tags/v0.5.4.post1": "55d75e11bd32b6cabd03065afaa140fc3d969c69",
+        "refs/tags/v0.5.4.post2": "41c10e67fcae6ac50dfe283655bdf545d224cba9",
+        "refs/tags/v0.5.4.post3": "09938e1f82334a98c124ae3352d893480963775f",
+        "refs/tags/v0.5.5": "0c006b8809cd99e1f95926401a2823dd952641c8",
+        "refs/tags/v0.5.5.post1": "303cc957e62384044dfa8e52d7d8af8abe12f0ac",
+        "refs/tags/v0.5.5.post2": "ebaf86d441447cb37dac92b7bd0838832fcdef48",
+        "refs/tags/v0.5.5.post3": "7b2fb3d47c9dc43367c6fd3bf9396f7ba45e6883",
+        "refs/tags/v0.5.6": "7ae368efde14f0b2abe769a5fbb99b8154b2a9b7",
+        "refs/tags/v0.5.6.post1": "6abb8051e801d970ba952fa77606f0cce16f9922",
+        "refs/tags/v0.5.6.post2": "5c8bd8b51b53b9b39eb1edec582ee43b21002106",
+        "refs/tags/v0.5.7": "6b29ccdd5a57249aa39efdcbc1aeafb5839d6577",
+        "refs/tags/v0.5.8": "96fc67e78aa11e82620ed693fa637334a273f933",
+        "refs/tags/v0.5.8.post1": "defd761cd04dee9e9eaf11150c2354b8bc8d82a9",
+        "refs/tags/v0.5.9": "8e9ed11dc00b7661d2a738a3ed75164fb967010e"
+      },
+      "upstream_head_commit_verified": true,
+      "remote_refs_since_advanced": [
+        "refs/heads/main"
+      ]
+    },
+    {
+      "path": "research/sglang-flashnext-sm120",
+      "head": "67d2f9234fa45ae1339f0d53cd37cb695e9c6493",
+      "branch": "main",
+      "common_git_directory": "/home/z000g9hu/work/research/sglang-flashnext-sm120/.git",
+      "remotes": {
+        "origin": "https://github.com/gabrielolympie/sglang-flashnext-sm120.git"
+      },
+      "local_refs": {
+        "refs/heads/main": "67d2f9234fa45ae1339f0d53cd37cb695e9c6493"
+      },
+      "upstream_head_commit_verified": true,
+      "remote_refs_since_advanced": []
+    },
+    {
+      "path": "research/sglang-rtxpro6000",
+      "head": "f9c4a89cd87b62751decfd732db7250f6315020b",
+      "branch": "pennyroyal-main-sm120-final",
+      "common_git_directory": "/home/z000g9hu/work/research/sglang-rtxpro6000/.git",
+      "remotes": {
+        "origin": "https://github.com/jpezzulli/sglang-rtxpro6000.git"
+      },
+      "local_refs": {
+        "refs/heads/pennyroyal-main-sm120-final": "f9c4a89cd87b62751decfd732db7250f6315020b",
+        "refs/tags/pennyroyal-v2.1.0": "230f3ce5e3da2cb33281c7b26b33ee2d939de5cd",
+        "refs/tags/pennyroyal-v2.1.1": "15c842c00781d29101d3f34b131b3de39a9a35dd",
+        "refs/tags/pennyroyal-v2.1.2": "de7ac436190119e89af4dfdeb7566162198f758f",
+        "refs/tags/pennyroyal-v2.3.0": "dfb49076568027cec45bfee25821323fdbbad88c",
+        "refs/tags/pennyroyal-v2.3.1": "55c44438ab6bc50e3fc0f7b797356b8c0b92efe3",
+        "refs/tags/pennyroyal-v2.3.1.1": "ccabd15479a5d46ffef6d1dd28a6e1f01aa05199",
+        "refs/tags/pennyroyal-v2.4.0": "94324164715b45386de1789070ceb258333d08cc",
+        "refs/tags/pennyroyal-v2.4.1": "5c1ee9ef99bf28a5cfba624854440c86a82b6c56",
+        "refs/tags/pennyroyal-v2.5.0": "1773180e260ca3770dcb0d304589aa6ac2cf2bcd",
+        "refs/tags/pennyroyal-v2.5.1": "dbc1e9befcb278d4b6623b64dedd44ecf53ea6e2",
+        "refs/tags/pennyroyal-v2.5.2": "8f0bb949c6d59ea8c74095bd12b23da8356b6e47",
+        "refs/tags/pennyroyal-v2.5.3": "0a94cf74b1e1bf80e601271243bbf1019b5811ac",
+        "refs/tags/pennyroyal-v2.5.3-setup1": "e465affe373ad164e6014f1420f0883046fd498e",
+        "refs/tags/qwen38-dflash2-pro6000-20260824": "ecff46cc657027a0df5eabcc4268188f7b2c57a1",
+        "refs/tags/sglang-rtxpro6000-20260827": "4bda3875bdb2201da6dda88095baeafc58fe12f4"
+      },
+      "upstream_head_commit_verified": true,
+      "remote_refs_since_advanced": [
+        "refs/heads/pennyroyal-main-sm120-final"
+      ]
+    },
+    {
+      "path": "workstation-setup",
+      "head": "164548ffef3a3049cc16debb89cb4a1735a12d97",
+      "branch": "main",
+      "common_git_directory": "/home/z000g9hu/work/workstation-setup/.git",
+      "remotes": {
+        "origin": "https://github.com/thomasdenk79-cyber/workstation-setup.git"
+      },
+      "local_refs": {
+        "refs/heads/main": "164548ffef3a3049cc16debb89cb4a1735a12d97",
+        "refs/tags/win11-siemens-hello-working-fixed-2026-09-29": "8b0564c99586b3ba64cb3314eda275f67c40d4e2"
+      }
+    }
+  ]
+}

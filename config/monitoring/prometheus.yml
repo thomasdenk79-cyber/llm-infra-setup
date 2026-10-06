@@ -1,8 +1,8 @@
 # Prometheus-Konfiguration. Alle Targets sind Container-Namen im respective
 # Netz von Prometheus; Host-Kennzahlen kommen über den node_exporter-Container.
 global:
-  scrape_interval: 15s
-  evaluation_interval: 15s
+  scrape_interval: 60s
+  evaluation_interval: 60s
   external_labels:
     stack: llm-infra
 
@@ -11,6 +11,7 @@ rule_files:
 
 scrape_configs:
   - job_name: prometheus
+    scrape_interval: 60s
     static_configs:
       - targets: ["localhost:9090"]
 
@@ -25,6 +26,7 @@ scrape_configs:
         labels: { gpu: rtx-pro-6000 }
 
   - job_name: pennyroyal
+    scrape_interval: 60s
     metrics_path: /metrics
     static_configs:
       - targets: ["pennyroyal:8001"]

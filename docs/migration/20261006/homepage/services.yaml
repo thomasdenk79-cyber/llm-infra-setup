@@ -6,16 +6,12 @@
 - Verwaltung:
     - Komodo:
         icon: komodo.png
-        href: http://127.0.0.1:8120
-        description: Lokaler Komodo-Periphery-Endpunkt
+        href: https://komodo.example.net
+        description: Host- und Containerverwaltung
     - Dozzle:
         icon: dozzle.png
         href: https://192.168.0.198/logs/
-        description: Live-Pod-Logs im Browser
-    - Runtime-Logs:
-        icon: grafana.png
-        href: https://192.168.0.198/grafana/d/llm-infra-runtime-logs/runtime-logs?orgId=1&from=now-6h&to=now&refresh=10s
-        description: Pennyroyal und SGLang, alte und neue Pods
+        description: Live-Containerlogs
     - Repository:
         icon: github.png
         href: https://github.com/thomasdenk79-cyber/llm-infra-setup
@@ -28,4 +24,4 @@
     - Loki:
         icon: loki.png
         href: https://192.168.0.198/grafana/d/llm-infra-logs/logs?orgId=1&from=now-6h&to=now&refresh=30s
-        description: Strukturierte Logs nach Dienst
+        description: Logs und Abfragen

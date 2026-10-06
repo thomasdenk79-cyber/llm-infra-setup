@@ -1,0 +1,19 @@
+# GENERIERT von scripts/65-install-gpu-exporter.sh (GPU_EXPORTER=nvidia-smi).
+[Unit]
+Description=NVIDIA GPU exporter (nvidia-smi)
+After=llm-observability-network.service
+
+[Container]
+Image=docker.io/utkuozdemir/nvidia_gpu_exporter:1.4.0
+ContainerName=llm-gpu-exporter
+Network=llm-observability.network
+PublishPort=127.0.0.1:9835:9835
+AddDevice=nvidia.com/gpu=all
+Exec=--web.listen-address=0.0.0.0:9835
+
+[Service]
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=default.target

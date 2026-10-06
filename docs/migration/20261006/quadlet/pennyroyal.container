@@ -1,0 +1,57 @@
+# GENERIERT von scripts/50-install-pennyroyal.sh - bitte dort ändern, nicht hier.
+# Änderung wirksam machen: ./scripts/apply-runtime-unit.sh
+[Unit]
+Description=Pennyroyal SGLang RTX PRO 6000 runtime
+After=network-online.target
+Wants=llm-inference-network.service
+# The NVMe PLE table lives on a separate filesystem; wait for its mount after boot.
+RequiresMountsFor=/srv/llm/ple-native
+
+[Container]
+Image=ghcr.io/jpezzulli/sglang-rtxpro6000:v2.5.3@sha256:c36a326dcb6a99e12ffdc89ae2f2ca0365a02fb3c72ed8b18f88d63cdc7f5a8c
+ContainerName=pennyroyal
+# The runtime stays single-homed on the inference network. Prometheus is attached
+# to both networks and pulls /metrics from here; see docs/architecture.md.
+Network=llm-inference.network
+PublishPort=127.0.0.1:8001:8001
+AddDevice=nvidia.com/gpu=all
+PodmanArgs=--security-opt=seccomp=unconfined
+Volume=/srv/llm/models:/models:ro
+Volume=/srv/llm/cache/pennyroyal:/cache:U,Z
+Volume=/srv/llm/nixl:/nixl:U,Z
+Volume=/srv/llm/ple-native:/ple:ro,Z
+Volume=/home/z000g9hu/work/llm-infra-setup-pennyroyal/config/pennyroyal/serve-flash-next-frspec.sh:/opt/pennyroyal/configs/pennyroyal/serve-flash-next-frspec.sh:ro,Z
+Volume=/home/z000g9hu/work/llm-infra-setup-pennyroyal/config/pennyroyal/ple-backend.sh:/opt/pennyroyal/configs/pennyroyal/ple-backend.sh:ro,Z
+Environment=HF_HOME=/cache/huggingface
+Environment=TARGET_MODEL=/models/Qwen3.8-Flash-Next-NVFP4
+Environment=CACHE_BASE=/cache
+Environment=NIXL_STORAGE_BASE=/nixl
+Environment=PENNY_HICACHE_SIZE_GB=16
+Environment=PENNY_PLE_BACKEND=nvme
+Environment=SGLANG_SM120_ONLINE_MXFP8=true
+Environment=PENNY_PLE_NVME_MODEL=/ple/Qwen3.8-Flash-Next-PLE-NVME
+Environment=PENNY_SLEEP_ON_IDLE=0
+Environment=MAX_RUNNING_REQUESTS=6
+Environment=MAX_MAMBA_CACHE_SIZE=36
+Environment=MAX_TOTAL_TOKENS=1048576
+Environment=PENNY_CUDA_GRAPH_MAX_BS=6
+Environment=PENNY_ENABLE_MEMORY_SAVER=0
+# python3 exists in the runtime image; curl is not guaranteed.
+HealthCmd=python3 -c "import sys,urllib.request;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8001/health',timeout=8).status==200 else 1)"
+HealthInterval=30s
+HealthTimeout=15s
+HealthRetries=4
+HealthStartPeriod=1800s
+Exec=next
+
+[Service]
+TimeoutStartSec=3600
+Restart=on-failure
+RestartSec=30
+# A live but hanging server is restarted by the external watchdog, because
+# systemd cannot observe the Podman health state: scripts/runtime-watchdog.sh.
+KillMode=mixed
+TimeoutStopSec=180
+
+[Install]
+WantedBy=default.target

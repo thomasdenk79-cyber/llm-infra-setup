@@ -34,6 +34,10 @@ systemctl --user list-timers --no-pager
 podman ps --format '{{.Names}}\t{{.Status}}'
 ```
 
+## LAN-Weboberflaechen
+
+Ueber Nginx sind die Oberflaechen im LAN per HTTPS erreichbar: `https://192.168.0.198/portal/`, `/grafana/` und `/logs/`; Open WebUI laeuft unter `https://192.168.0.198:8443/`, da es Root-relative URLs benoetigt. Der alte Pfad `/webui/` auf Port 443 leitet zum dedizierten HTTPS-Port 8443 weiter. LAN-Clients duerfen die Ports 80, 443 und 8443 erreichen; alle Anwendungsports bleiben auf Loopback.
+
 ## Zugang und Adapter
 
 | Zweck | Adresse | Hinweis |
