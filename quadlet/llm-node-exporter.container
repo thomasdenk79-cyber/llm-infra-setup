@@ -7,13 +7,13 @@ Description=Prometheus node exporter (host metrics)
 After=llm-observability-network.service
 
 [Container]
-Image=docker.io/prom/node-exporter:v1.8.2
+Image=docker.io/prom/node-exporter:v1.9.1
 ContainerName=llm-node-exporter
 Network=llm-observability.network
 PublishPort=127.0.0.1:9100:9100
 Volume=/:/host:ro,rslave
 Volume=%h/.local/share/llm-infra/node-exporter/textfile:/var/lib/node_exporter/textfile:ro,Z
-Exec=--path.rootfs=/host --web.listen-address=0.0.0.0:9100 --collector.zfs --collector.textfile.directory=/var/lib/node_exporter/textfile --collector.netdev.device-exclude=^(lo|veth|tap|docker|podman|cni|br-|wg|tun)
+Exec=--path.rootfs=/host --web.listen-address=0.0.0.0:9100 --collector.textfile.directory=/var/lib/node_exporter/textfile --collector.netdev.device-exclude=^(lo|veth|tap|docker|podman|cni|br-|wg|tun)
 
 [Service]
 Restart=on-failure

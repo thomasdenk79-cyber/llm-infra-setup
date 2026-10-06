@@ -10,10 +10,13 @@ Network=llm-inference.network
 PublishPort=127.0.0.1:4000:4000
 EnvironmentFile=%h/.config/llm-infra/gateway.env
 Environment=LITELLM_CONFIG=/etc/litellm/config.yaml
+Environment=LITELLM_LOCAL_MODEL_COST_MAP=True
 Volume=@CONFIG_ROOT@/config/litellm.yaml:/etc/litellm/config.yaml:ro,Z
 Exec=--config /etc/litellm/config.yaml --port 4000 --host 0.0.0.0
 [Service]
 Restart=on-failure
 RestartSec=15
+LogRateLimitIntervalSec=30s
+LogRateLimitBurst=20
 [Install]
 WantedBy=default.target

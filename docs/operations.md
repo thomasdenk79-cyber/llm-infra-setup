@@ -149,3 +149,20 @@ geprueft werden sollte:
 findmnt /srv/llm/ple-ext4 >/dev/null && echo PLE ok || ./scripts/47-setup-ple-storage.sh
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8001/health
 ```
+
+## Modellroute `auto` und Healthchecks
+
+Hermes und OpenCode verwenden den stabilen LiteLLM-Modellnamen `auto`. LiteLLM
+zeigt `auto` standardmaessig auf `http://pennyroyal:8001/v1`; Forks werden nur
+ueber den kontrollierten Runner-Handover aktiviert. SGLang registriert sich
+nicht selbst bei LiteLLM.
+
+LiteLLM prueft Deployments nicht im Hintergrund (`background_health_checks: false`).
+Die aktive Route wird spaeter durch den Route-Controller des Runners gesetzt;
+damit gibt es keine konkurrierenden Probe-Schleifen. `health_check_interval: 60`
+ist als Sicherheitswert hinterlegt.
+
+Der node-exporter-ZFS-Collector bleibt deaktiviert, weil die aktuelle Linux-
+Kstat-Darstellung von `memory_available_bytes` von node-exporter v1.8.2 nicht
+als Integer gelesen werden kann. Die Host-ZFS-Metriken kommen weiterhin aus dem
+Textfile-Collector (`scripts/collect-host-facts.sh`).

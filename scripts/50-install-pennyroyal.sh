@@ -86,8 +86,6 @@ After=network-online.target
 Wants=llm-inference-network.service
 # The NVMe PLE table lives on a separate filesystem; wait for its mount after boot.
 RequiresMountsFor=$(dirname "${PENNY_PLE_NVME_MODEL}")
-# Cold start loads ~50 GB of weights and then warms CUDA graphs; plan minutes.
-TimeoutStartSec=3600
 
 [Container]
 Image=${image_ref}
@@ -121,6 +119,7 @@ HealthStartPeriod=${PENNY_HEALTH_START_SECONDS}s
 Exec=next
 
 [Service]
+TimeoutStartSec=3600
 Restart=on-failure
 RestartSec=30
 # A live but hanging server is restarted by the external watchdog, because
