@@ -1,5 +1,28 @@
 # llm-infra-setup
 
+**Live-Demos (echte Terminal-Mitschnitte):**
+
+![Stack-Status](docs/media/stack-status.gif)
+
+![Morning Brief](docs/media/morning-brief.gif)
+
+## Architektur
+
+```mermaid
+flowchart LR
+  A[Agenten: hermes / opencode / copilot] -->|OpenAI-API| L[LiteLLM :4000]
+  H[Menschen: Open WebUI :3001] --> L
+  L --> P[Pennyroyal sglang-Fork :8001]
+  P --> G[(RTX PRO 6000 Blackwell)]
+  P -. sglang:* .-> PR[Prometheus :9090]
+  C[12 Podman-Container] --> AL[Alloy] --> LO[Loki :3100]
+  PR --> GR[Grafana :3000]
+  LO --> GR
+  F[collect-host-facts.timer 30s] -->|Textfile| PR
+  M[morning-brief 06:30] --> B[briefs/*.md + Homepage]
+
+> Status: beta (Siemens Inner Source)\n
+
 Lokale, reproduzierbare LLM-Infrastruktur: CachyOS/Arch, NVIDIA RTX PRO 6000,
 ZFS, rootless Podman, Pennyroyal/SGLang mit `Qwen3.8-Flash-Next-NVFP4`.
 
