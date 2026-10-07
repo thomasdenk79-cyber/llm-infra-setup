@@ -52,7 +52,7 @@ for name in MAX_RUNNING_REQUESTS MAX_MAMBA_CACHE_SIZE MAX_TOTAL_TOKENS; do
   fi
 done
 # b) Werte, die unser Startskript selbst unter ihrem PENNY_-Namen liest
-for name in PENNY_CUDA_GRAPH_MAX_BS PENNY_ENABLE_MEMORY_SAVER PENNY_USE_EXPANDABLE_SEGMENTS; do
+for name in PENNY_CUDA_GRAPH_MAX_BS PENNY_ENABLE_MEMORY_SAVER PENNY_USE_EXPANDABLE_SEGMENTS PENNY_MEM_FRACTION_STATIC; do
   if [[ -n "${!name:-}" ]]; then
     CAP_ENV+="Environment=${name}=${!name}"$'\n'
   fi

@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-07T13:11:08+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-07T14:33:39+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -457,3 +457,7 @@ WSL-Pennyroyal-Speicherdiagnose und kontrollierter Wiederholungsversuch vorberei
 ## Notiz 2026-10-07T13:11:08+02:00
 
 WSL-Pennyroyal-Speicherdiagnose und kontrollierter Wiederholungsversuch vorbereitet
+
+## Notiz 2026-10-07T14:33:39+02:00
+
+Pennyroyal:

@@ -10,7 +10,7 @@ ContainerName=llm-homepage
 Network=llm-observability.network
 PublishPort=127.0.0.1:3002:3000
 Environment=HOMEPAGE_ALLOWED_HOSTS=127.0.0.1:3002,localhost:3002
-Volume=%h/.config/llm-infra/homepage:/app/config:Z,U
+Volume=%h/work/llm-infra-setup/config/homepage:/app/config:Z,U
 
 [Service]
 Restart=on-failure

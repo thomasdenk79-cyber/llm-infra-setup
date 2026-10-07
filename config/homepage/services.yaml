@@ -10,7 +10,7 @@
 - Verwaltung:
     - Komodo:
         icon: komodo.png
-        href: https://komodo.example.net
+        href: http://127.0.0.1
         description: Host- und Containerverwaltung
     - Dozzle:
         icon: dozzle.png
@@ -33,3 +33,12 @@
         icon: loki.png
         href: http://127.0.0.1:3100
         description: Logs und Abfragen
+- Wissen:
+    - Doku & Handbuch:
+        icon: markdown.png
+        href: https://github.com/thomasdenk79-cyber/llm-infra-setup/tree/main/docs
+        description: Monitoring, CMDB, Betriebsregeln
+    - CMDB:
+        icon: list.png
+        href: https://github.com/thomasdenk79-cyber/llm-infra-setup/blob/main/docs/cmdb.yaml
+        description: Was laeuft wo mit welcher API

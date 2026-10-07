@@ -1,0 +1,31 @@
+# CMDB - Service-Karten fuer Agenten und Menschen (config-as-doc)
+# Regel: ein Eintrag pro Dienst; Antworten ist wichtiger als Schaue.
+services:
+  pennyroyal:
+    what: "SGLang-Fork 'Pennyroyal' v2.5.3+turbo-Patches - Speed-optimierte
+      Runtime fuer Qwen3.8-Flash-Next auf Blackwell (RTX PRO 6000)"
+    where: "CachyOS-WSL (Lenovo ThinkPad P16 Gen2), Podman quadlet
+      quadlet/pennyroyal.container, Image sha-gepinnt (jpezzulli/sglang-rtxpro6000)"
+    api: "http://127.0.0.1:8001/v1 (OpenAI-kompatibel; internal: pennyroyal:8001)"
+    model: "RadixArk/Qwen3.8-Flash-Next-NVFP4, modelopt_fp4, kv fp8_e4m3,
+      ctx 524288 via YaRN 2.0, mem_fraction 0.98, max_running_requests 8,
+      chunked_prefill 4096, PLE-NVME (per-layer embeddings ausgelagert)"
+    consumers: ["litellm (einziger Frontdoor-Client)", "hermes (agent)",
+      "opencode (agent)", "open-webui (menschen)", "copilot BYOK"]
+    routed_via: "LiteLLM :4000/v1, model_name qwen3.8-flash-next;
+      Master-Key via LLM_INFRA_API_KEY (Windows: ~\\.config\\llm-infra\\llm-env.ps1)"
+    health: "/health live, /get_server_info Fakten, /metrics sglang:*,
+      Prometheus-Job 'pennyroyal'"
+    tuning_open: "max_running_requests 8 = Engpass bei Kollegen-Keys;
+      chunked_prefill 4096 vs. 8192/16384 A/B ueber benchmark.sh"
+  litellm:
+    what: "OpenAI-kompatibles Gateway (v1.101.0) - Routing, Keys, Spend-Logs"
+    where: "Podman quadlet, config/litellm.yaml, Postgres-Lager (litellm-postgres)"
+    api: "http://127.0.0.1:4000/v1; Master-Key in gateway.env"
+    consumers: ["alle Agenten + open-webui + morning-brief"]
+    next: "Team-Virtual-Keys mit Budget fuer Kollegen (offen, Besitzerentscheid)"
+  observability:
+    what: "Prometheus+Loki+Alloy+Grafana+Dozzle, Host-Fakten via Textfile-Timer"
+    where: "quadlet/*.container, config/monitoring/ (Dashboards provisiert)"
+    api: "Grafana :3000, Prometheus :9090, Loki :3100, Dozzle :8080"
+    docs: "docs/monitoring.md (Datengrenzen + Fixes)"

@@ -1,0 +1,34 @@
+---
+# Homepage info widgets - https://gethomepage.dev/configs/info-widgets/
+# News-Feeds = "was gibt's Neues an Forks/Modellen" - Kurz gehalten:
+# nur Quellen, die die eigenen Runtimes + Modellwelt abdecken.
+
+- resources:
+    cpu: true
+    memory: true
+    disk: /
+
+- search:
+    provider: duckduckgo
+    target: _blank
+
+- rss:
+    html: false
+    limit: 15
+    refreshInterval: 900000
+    feeds:
+      # eigener Stack: Fork-/Runtime-Releases
+      - type: rss
+        source: https://github.com/sgl-project/sglang/releases.atom
+      - type: rss
+        source: https://github.com/ggml-org/llama.cpp/releases.atom
+      - type: rss
+        source: https://github.com/vllm-project/vllm/releases.atom
+      - type: rss
+        source: https://github.com/BerriAI/litellm/releases.atom
+      # Modell- und Forschungsnews
+      - type: rss
+        source: https://huggingface.co/blog/feed.xml
+      # Community-Puls
+      - type: reddit
+        source: LocalLLaMA
