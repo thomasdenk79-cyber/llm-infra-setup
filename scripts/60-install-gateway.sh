@@ -32,7 +32,7 @@ cat > "$root/config/litellm.yaml" <<YAML
 model_list:
   - model_name: qwen3.8-flash-next
     litellm_params:
-      model: openai/qwen3.8-flash-next
+      model: openai/pennyroyal
       api_base: ${PENNYROYAL_BASE_URL}
       api_key: "os.environ/LITELLM_MASTER_KEY"
 general_settings:

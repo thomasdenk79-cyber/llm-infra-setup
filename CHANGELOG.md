@@ -1,5 +1,15 @@
 # Aenderungsprotokoll
 
+## Diagnose WSL/Pennyroyal (2026-10-07)
+
+* WSL-Startwerte fuer Loader, OMP, Torch-Compile und Build auf je 4 begrenzt;
+  HiCache von 32 auf den Projektstandard 8 GiB zurueckgesetzt. Das ist ein
+  konservativer Diagnoselauf, keine Leistungsoptimierung.
+* Ein Startfehler war nachweislich kein OOM: PyTorch beendete sich mit Exit 1,
+  weil `CUDA_VISIBLE_DEVICES=1` im Container kein CUDA-Geraet sichtbar machte.
+* Kernel-Journal und Coredumpctl zeigten keine OOM-Kills oder Core Dumps.
+  Prometheus erfasst Host-RAM/Swap, aber keine Pennyroyal-Container-RAM-Zeitreihe.
+
 ## Unveroeffentlicht (Review- und Ausbauphase, 2026-10-02)
 
 Behoben (Zustand des Rechners war betroffen):

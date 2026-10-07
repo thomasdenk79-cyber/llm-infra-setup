@@ -12,6 +12,7 @@ root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 source "${root}/lib/common.sh"
 [[ -f "${root}/config/host.env" ]] && source "${root}/config/host.env"
 : "${GPU_EXPORTER:=nvidia-smi}"
+: "${GPU_CDI_DEVICE:=nvidia.com/gpu=all}"
 install -d -m 0755 "${root}/quadlet"
 case "${GPU_EXPORTER}" in
   nvidia-smi)
@@ -27,7 +28,7 @@ Image=${GPU_EXPORTER_IMAGE}
 ContainerName=llm-gpu-exporter
 Network=llm-observability.network
 PublishPort=127.0.0.1:9835:9835
-AddDevice=nvidia.com/gpu=all
+AddDevice=${GPU_CDI_DEVICE}
 Exec=--web.listen-address=0.0.0.0:9835
 
 [Service]
@@ -52,7 +53,7 @@ Image=${GPU_EXPORTER_IMAGE}
 ContainerName=llm-gpu-exporter
 Network=llm-observability.network
 PublishPort=127.0.0.1:9400:9400
-AddDevice=nvidia.com/gpu=all
+AddDevice=${GPU_CDI_DEVICE}
 PodmanArgs=--pid=host --cap-add SYS_ADMIN
 Exec=-a
 

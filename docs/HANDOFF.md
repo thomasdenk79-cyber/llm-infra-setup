@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-03T14:21:08+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-07T13:11:08+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -6,6 +6,63 @@ Zuletzt gesichert: 2026-10-03T14:21:08+02:00 durch `scripts/session-checkpoint.s
 neu startet oder ein anderer Agent uebernimmt: hier steht, was gilt. Regel aus
 `AGENTS.md`: Nach jedem abgeschlossenen Schritt `./scripts/session-checkpoint.sh`
 (a ktualisiert diese Seite, committet, pusht). Das Repository ist das Backup.
+
+## Aktuelle WSL-Stichprobe (2026-10-07)
+
+Diese Laufzeitbeobachtung ist eine Stichprobe, kein dauerhafter Healthcheck:
+
+* `llmlogs` liest jetzt direkt Journald und nutzt dessen native
+  Severity-Farben, wie `journalctl` selbst. Damit fallen doppelte rohe
+  Podman-Streams weg. `llmlogs llm-node-exporter` zeigt den Exporter gezielt;
+  `NO_COLOR=1` deaktiviert ANSI.
+* In der gelesenen Ausgabe meldete `llm-node-exporter` wiederholt doppelte
+  Host-Dateisystem-Metriken unter `/run/user`. Das ist ein echter Exporter-
+  Fehler, nicht ein Fehler der Farbausgabe. Mit
+  `llmlogs pennyroyal litellm open-webui` laesst sich der Exporter aus der
+  Anzeige ausschliessen. Der Exporter-Endpunkt und Prometheus-Target sollten
+  separat geprueft werden.
+* Laufende Podman-Container in der Stichprobe: `llm-node-exporter`,
+  `systemd-dozzle`, `llm-gpu-exporter`, `systemd-loki`, `llm-homepage`,
+  `systemd-alloy`, `litellm-postgres`, `systemd-grafana`, `litellm`,
+  `open-webui` und `systemd-prometheus`. Pennyroyal war nicht in der frueheren
+  Stichprobe; der aktuelle Lauf kann abweichen.
+* `systemd-prometheus` ist die verwaltete Prometheus-Instanz. Der zeitweise
+  sichtbare Name `frosty_gagarin` gehoerte zu einer kurzlebigen, automatisch
+  benannten Podman-Instanz und war bei der Folgestichprobe verschwunden.
+* Ein Pennyroyal-Startversuch meldete, dass PyTorch bei
+  `CUDA_VISIBLE_DEVICES=1` null CUDA-Geraete sieht, und endete mit
+  `status=1/FAILURE`. Die aktuelle Quadlet- und Containerumgebung waehlt nun
+  die RTX PRO 6000 per GPU-UUID; der Container blieb beim letzten Check im
+  Zustand `starting`. `/health` war noch nicht erreichbar. Das Terminal ist
+  nicht die Ursache; keinen weiteren Kaltstart ausloesen, bis dieser
+  Ladevorgang geklaert ist.
+* Diagnose 2026-10-07: der konkrete Exit 1 um 04:03 war der fehlende CUDA-
+  Zugriff bei `CUDA_VISIBLE_DEVICES=1`, nicht Speichermangel. In den letzten
+  24 Stunden wurden im Kernel-Journal keine OOM-Kills und in `coredumpctl`
+  keine Core Dumps gefunden. Eine Prometheus-Stichprobe zeigte 179,4 GB
+  WSL-RAM gesamt, 119,9 GB verfuegbar und 32 GiB freien Swap; systemd meldete
+  fuer Pennyroyal eine cgroup-Spitze von 82,1 GB. Das spricht gegen einen
+  belegten WSL-RAM-Ueberlauf, beweist aber nicht, dass es zu keinem anderen
+  Zeitpunkt Druck gab. Grafana hat Host-RAM/Swap-Zeitreihen, aber keine
+  Pennyroyal-spezifische Container-RAM-Zeitreihe.
+* Fuer den naechsten kontrollierten Start sind Loader, OMP/BLAS, Compile und
+  Build auf je 4 Threads/Jobeinstellungen sowie HiCache auf 8 GiB gesetzt
+  (zuvor 28/32 und 32 GiB). VRAM-, Kontext- und Modellparameter bleiben
+  unveraendert. Health/Start mit diesen Werten ist noch nicht bestaetigt.
+* Grafana unter `127.0.0.1:3000` meldete Health 200. Das Admin-Passwort wurde
+  lokal auf einen Standardwert zurueckgesetzt und die Anmeldung geprueft.
+  Vor einer Netzfreigabe sofort ein eigenes starkes Passwort setzen. Zugangswerte
+  bleiben ausserhalb des Repositories. Ein Secret-Wechsel allein aendert bei
+  bestehender Grafana-DB nicht den gespeicherten Passwort-Hash; siehe
+  `docs/operations.md`.
+* Open WebUI verwendet fuer lokales Whisper `faster-whisper` mit `base` auf
+  CPU. Das separate Windows-Programm Whisper Local ist fuer Terminal-Diktat
+  eingerichtet: `large-v3-turbo`, Deutsch, CUDA/FP16 auf der Windows RTX PRO
+  6000. **Ctrl+Win** diktiert in das aktive Fenster, sendet aber nicht selbst
+  Enter.
+* Fish ist installiert, Bash bleibt die CachyOS-WSL-Standardshell. Die
+  interaktive Bash hat einen ANSI-Prompt. `llmlogs` nutzt die Journal-
+  Prioritaetsfarben statt eigener Wortsuche.
 
 ## 1. Sofortlage (Kurzfassung fuer den naechsten Leser)
 
@@ -392,3 +449,11 @@ Vorschlag gegen diese Unit und das bestehende PLE-/NIXL-Layout vergleichen.
 ## Notiz 2026-10-03T14:21:08+02:00
 
 C6-Start auf Nutzerwunsch vor Ready gestoppt; generierte Unit mit Online-FP8/6/36/1M dokumentiert, keine Benchmarkdaten
+
+## Notiz 2026-10-07T13:10:43+02:00
+
+WSL-Pennyroyal-Speicherdiagnose und kontrollierter Wiederholungsversuch vorbereitet
+
+## Notiz 2026-10-07T13:11:08+02:00
+
+WSL-Pennyroyal-Speicherdiagnose und kontrollierter Wiederholungsversuch vorbereitet

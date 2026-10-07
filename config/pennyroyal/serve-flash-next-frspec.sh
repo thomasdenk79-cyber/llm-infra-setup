@@ -58,6 +58,11 @@ SPEC_EAGLE_TOPK="${PENNY_SPEC_EAGLE_TOPK:-1}"
 SPEC_NUM_DRAFT_TOKENS="${PENNY_SPEC_NUM_DRAFT_TOKENS:-4}"
 SLEEP_ON_IDLE="${PENNY_SLEEP_ON_IDLE:-1}"
 ENABLE_MFU_METRICS="${PENNY_ENABLE_MFU_METRICS:-0}"
+WEIGHT_LOADER_DROP_CACHE_AFTER_LOAD="${PENNY_WEIGHT_LOADER_DROP_CACHE_AFTER_LOAD:-0}"
+case "$WEIGHT_LOADER_DROP_CACHE_AFTER_LOAD" in
+  0|1) ;;
+  *) echo "PENNY_WEIGHT_LOADER_DROP_CACHE_AFTER_LOAD must be 0 or 1, got '$WEIGHT_LOADER_DROP_CACHE_AFTER_LOAD'" >&2; exit 1 ;;
+esac
 for value_name in MEM_FRACTION_STATIC SPEC_NUM_STEPS SPEC_EAGLE_TOPK SPEC_NUM_DRAFT_TOKENS SLEEP_ON_IDLE; do
   case "${!value_name}" in
     ''|*[!0-9.]*) echo "${value_name} muss eine Zahl sein, erhalten: '${!value_name}'" >&2; exit 1 ;;
@@ -151,10 +156,10 @@ export TORCH_HOME="$CACHE_BASE/torch" TORCHINDUCTOR_CACHE_DIR="$CACHE_BASE/torch
 export TRITON_CACHE_DIR="$CACHE_BASE/triton" CUDA_CACHE_PATH="$CACHE_BASE/cuda"
 export FLASHINFER_WORKSPACE_BASE="$CACHE_BASE/flashinfer"
 export SGLANG_CACHE_DIR="$CACHE_BASE/sglang" SGLANG_JIT_CACHE_DIR="$CACHE_BASE/sglang/jit"
-# TorchMemorySaver cannot initialize while expandable_segments is enabled.
-# Keep the allocator hint for normal runs, but remove it for the explicit
-# memory-saver profile so the runtime reaches model loading successfully.
-if [[ "${PENNY_ENABLE_MEMORY_SAVER:-0}" == 1 ]]; then
+# WSL's CUDA/NCCL worker crashes with CUDA_ERROR_UNKNOWN if PyTorch's
+# expandable_segments allocator is enabled (reproduced at init_process_group).
+# Keep it opt-in; the WSL host profile sets PENNY_USE_EXPANDABLE_SEGMENTS=0.
+if [[ "${PENNY_ENABLE_MEMORY_SAVER:-0}" == 1 || "${PENNY_USE_EXPANDABLE_SEGMENTS:-0}" != 1 ]]; then
   unset PYTORCH_CUDA_ALLOC_CONF
 else
   export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
@@ -162,7 +167,13 @@ fi
 export SGLANG_NUMA_BIND_V2=false SGLANG_ALLOW_OVERWRITE_LONGER_CONTEXT_LEN=1
 export SGLANG_MAMBA_CONV_DTYPE="$MAMBA_CONV_DTYPE"
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-4}" MKL_NUM_THREADS="${MKL_NUM_THREADS:-4}"
+export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-4}" NUMEXPR_NUM_THREADS="${NUMEXPR_NUM_THREADS:-4}"
 export TOKENIZERS_PARALLELISM=false
+LOADER_THREADS="${PENNY_LOADER_THREADS:-4}"
+if [[ ! "${LOADER_THREADS}" =~ ^[1-9][0-9]*$ ]]; then
+  echo "PENNY_LOADER_THREADS must be a positive integer" >&2
+  exit 1
+fi
 
 # TP selects a topology, it never grants GPUs: refuse to launch when the
 # requested ranks (plus a dedicated cuda:N preprocessor) exceed what is
@@ -179,7 +190,7 @@ configure_max_total_tokens "${MAX_TOTAL_TOKENS:-824384}"
 TARGET_OVERRIDES='{"text_config":{"rope_parameters":{"mrope_interleaved":true,"mrope_section":[11,11,10],"rope_type":"yarn","rope_theta":10000000,"partial_rotary_factor":0.25,"factor":2.0,"original_max_position_embeddings":262144}}}'
 printf 'Pennyroyal profile: Flash-Next FR-Spec\n  runtime: %s\n  target: %s\n  token map: %s\n  cache root: %s\n  NIXL root: %s\n' \
   "$SGLANG_EXE" "$TARGET_MODEL" "$TOKEN_MAP" "$CACHE_BASE" "$NIXL_STORAGE_BASE"
-echo "Stellgroessen: mem_fraction=${MEM_FRACTION_STATIC} chunked_prefill=${CHUNKED_PREFILL_SIZE} spec=${SPEC_NUM_STEPS}/${SPEC_EAGLE_TOPK}/${SPEC_NUM_DRAFT_TOKENS} sleep_on_idle=${SLEEP_ON_IDLE} mfu=${ENABLE_MFU_METRICS} graph_max_bs=${PENNY_CUDA_GRAPH_MAX_BS:-Standard} memory_saver=${PENNY_ENABLE_MEMORY_SAVER:-0} hicache=${HICACHE_SIZE_GB} ple=${PENNY_PLE_BACKEND:-auto}"
+echo "Stellgroessen: mem_fraction=${MEM_FRACTION_STATIC} chunked_prefill=${CHUNKED_PREFILL_SIZE} spec=${SPEC_NUM_STEPS}/${SPEC_EAGLE_TOPK}/${SPEC_NUM_DRAFT_TOKENS} sleep_on_idle=${SLEEP_ON_IDLE} mfu=${ENABLE_MFU_METRICS} graph_max_bs=${PENNY_CUDA_GRAPH_MAX_BS:-Standard} memory_saver=${PENNY_ENABLE_MEMORY_SAVER:-0} hicache=${HICACHE_SIZE_GB} ple=${PENNY_PLE_BACKEND:-auto} loader_threads=${LOADER_THREADS} drop_cache_after_load=${WEIGHT_LOADER_DROP_CACHE_AFTER_LOAD} omp_threads=${OMP_NUM_THREADS} compile_threads=${TORCHINDUCTOR_COMPILE_THREADS} build_jobs=${PENNY_BUILD_JOBS}"
 echo "Verifying the pinned FR-Spec map and tokenizer..."
 read -r TOKEN_MAP_SHA _ < <(sha256sum "$TOKEN_MAP")
 [[ "$TOKEN_MAP_SHA" == becfa41d394b86c26c632bea8f3c6ea64bbb76d7b238d8673c06afae21269f25 ]] || {
@@ -236,6 +247,7 @@ echo "NIXL FILE namespace: $NIXL_STORAGE"
 
 launch_args=(serve \
   --model-path "$TARGET_MODEL" \
+  --model-loader-extra-config "{\"enable_multithread_load\":true,\"num_threads\":${LOADER_THREADS}}" \
   --load-format safetensors \
   --served-model-name pennyroyal \
   --host 0.0.0.0 --port 8001 --tp "$TP_SIZE" \
@@ -258,6 +270,9 @@ launch_args=(serve \
   --speculative-eagle-topk "${SPEC_EAGLE_TOPK}" --speculative-num-draft-tokens "${SPEC_NUM_DRAFT_TOKENS}" \
   --speculative-draft-model-quantization unquant \
   --speculative-token-map "$TOKEN_MAP" --watchdog-timeout 1800)
+if [[ "$WEIGHT_LOADER_DROP_CACHE_AFTER_LOAD" == 1 ]]; then
+  launch_args+=(--weight-loader-drop-cache-after-load)
+fi
 if (( HICACHE_SIZE_GB > 0 )); then
   launch_args+=(--enable-hierarchical-cache --hicache-size "$HICACHE_SIZE_GB" \
     --hicache-host-memory-mode cache --hicache-write-policy write_through \

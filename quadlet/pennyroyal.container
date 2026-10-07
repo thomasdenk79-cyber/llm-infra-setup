@@ -4,8 +4,6 @@
 Description=Pennyroyal SGLang RTX PRO 6000 runtime
 After=network-online.target
 Wants=llm-inference-network.service
-# Cold start loads ~50 GB of weights and then warms CUDA graphs; plan minutes.
-TimeoutStartSec=3600
 
 [Container]
 Image=ghcr.io/jpezzulli/sglang-rtxpro6000:v2.5.3@sha256:c36a326dcb6a99e12ffdc89ae2f2ca0365a02fb3c72ed8b18f88d63cdc7f5a8c
@@ -16,24 +14,50 @@ Network=llm-inference.network
 PublishPort=127.0.0.1:8001:8001
 AddDevice=nvidia.com/gpu=all
 PodmanArgs=--security-opt=seccomp=unconfined
-Volume=/srv/llm/models:/models:ro
-Volume=/srv/llm/cache/pennyroyal:/cache:U,Z
-Volume=/srv/llm/nixl:/nixl:U,Z
-Volume=/srv/llm/ple-native:/ple:ro,Z
+Volume=/home/z000g9hu/models:/models:ro
+Volume=/home/z000g9hu/.local/share/llm-infra/cache/pennyroyal:/cache:U,Z
+Volume=/home/z000g9hu/.local/share/llm-infra/nixl:/nixl:U,Z
+Volume=/home/z000g9hu/.local/share/llm-infra/ple:/ple:ro,Z
 Volume=@CONFIG_ROOT@/config/pennyroyal/serve-flash-next-frspec.sh:/opt/pennyroyal/configs/pennyroyal/serve-flash-next-frspec.sh:ro,Z
 Environment=HF_HOME=/cache/huggingface
 Environment=TARGET_MODEL=/models/Qwen3.8-Flash-Next-NVFP4
 Environment=CACHE_BASE=/cache
 Environment=NIXL_STORAGE_BASE=/nixl
-Environment=PENNY_HICACHE_SIZE_GB=16
+Environment=CUDA_DEVICE_ORDER=PCI_BUS_ID
+# WSL CUDA UUID masking survives index remapping after driver reconnects.
+# SGLang sees only Blackwell at logical cuda:0; CDI supplies shared /dev/dxg.
+Environment=CUDA_VISIBLE_DEVICES=GPU-780d3589-9811-40ec-db66-93a9146697f3
+Environment=OMP_NUM_THREADS=4
+Environment=MKL_NUM_THREADS=4
+Environment=OPENBLAS_NUM_THREADS=4
+Environment=NUMEXPR_NUM_THREADS=4
+Environment=MAX_JOBS=4
+Environment=PENNY_BUILD_JOBS=4
+Environment=TORCHINDUCTOR_COMPILE_THREADS=4
+Environment=CMAKE_BUILD_PARALLEL_LEVEL=4
+Environment=CARGO_BUILD_JOBS=4
+Environment=FLASHINFER_NINJA_JOBS=4
+Environment=FLASHINFER_NVCC_THREADS=1
+Environment=TORCH_HOME=/cache/torch
+Environment=TORCHINDUCTOR_CACHE_DIR=/cache/torchinductor
+Environment=TRITON_CACHE_DIR=/cache/triton
+Environment=CUDA_CACHE_PATH=/cache/cuda
+Environment=FLASHINFER_WORKSPACE_BASE=/cache/flashinfer
+Environment=SGLANG_CACHE_DIR=/cache/sglang
+Environment=SGLANG_JIT_CACHE_DIR=/cache/sglang/jit
+Environment=PENNY_LOADER_THREADS=1
+Environment=PENNY_HICACHE_SIZE_GB=0
 Environment=PENNY_PLE_BACKEND=nvme
-Environment=SGLANG_SM120_ONLINE_MXFP8=true
+Environment=SGLANG_SM120_ONLINE_MXFP8=false
 Environment=PENNY_PLE_NVME_MODEL=/ple/Qwen3.8-Flash-Next-PLE-NVME
-Environment=MAX_RUNNING_REQUESTS=6
-Environment=MAX_MAMBA_CACHE_SIZE=36
-Environment=MAX_TOTAL_TOKENS=1048576
-Environment=PENNY_CUDA_GRAPH_MAX_BS=6
-Environment=PENNY_ENABLE_MEMORY_SAVER=1
+Environment=SGLANG_HICACHE_TORCH_PINNED_ALLOC=1
+Environment=PENNY_WEIGHT_LOADER_DROP_CACHE_AFTER_LOAD=1
+Environment=MAX_RUNNING_REQUESTS=1
+Environment=MAX_MAMBA_CACHE_SIZE=8
+Environment=MAX_TOTAL_TOKENS=524288
+Environment=PENNY_CUDA_GRAPH_MAX_BS=1
+Environment=PENNY_ENABLE_MEMORY_SAVER=0
+Environment=PENNY_USE_EXPANDABLE_SEGMENTS=0
 # python3 exists in the runtime image; curl is not guaranteed.
 HealthCmd=python3 -c "import sys,urllib.request;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8001/health',timeout=8).status==200 else 1)"
 HealthInterval=30s
@@ -49,6 +73,7 @@ RestartSec=30
 # systemd cannot observe the Podman health state: scripts/runtime-watchdog.sh.
 KillMode=mixed
 TimeoutStopSec=180
+TimeoutStartSec=3600
 
 [Install]
 WantedBy=default.target

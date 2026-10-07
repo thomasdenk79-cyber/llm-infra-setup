@@ -11,15 +11,32 @@ source "${root}/lib/common.sh"
 source "${root}/lib/units.sh"
 source "${root}/lib/secrets.sh"
 [[ -f "${root}/config/host.env" ]] && source "${root}/config/host.env"
+[[ -f "${root}/config/model.env" ]] && source "${root}/config/model.env"
+: "${PENNY_PLE_BACKEND:=ram}"
 
 check() {
   local rc=0
   command -v nvidia-smi >/dev/null 2>&1 || { echo 'FEHLT: nvidia-smi. Naechster Schritt: make nvidia-driver, dann Neustart.' >&2; return 1; }
   nvidia-smi -L >/dev/null 2>&1 || { echo 'FEHLT: GPU nicht sichtbar. eGPU anstecken und neu starten.' >&2; rc=1; }
   nvidia-ctk cdi list >/dev/null 2>&1 || { echo 'FEHLT: NVIDIA-CDI. Naechster Schritt: make podman' >&2; rc=1; }
+  if [[ -n "${PENNY_CUDA_VISIBLE_DEVICES:-}" ]] && ! nvidia-smi -L | grep -Fq "${PENNY_CUDA_VISIBLE_DEVICES}"; then
+    echo 'FEHLT: konfigurierte CUDA-GPU-UUID ist nicht sichtbar.' >&2; rc=1
+  fi
   "${root}/scripts/42-verify-model.sh" >/dev/null 2>&1 || { echo 'FEHLT: Modell unvollstaendig. Naechster Schritt: make model' >&2; rc=1; }
-  "${root}/scripts/47-setup-ple-storage.sh" --verify >/dev/null 2>&1 || { echo 'FEHLT: PLE-Speicher. Naechster Schritt: make ple-nvme' >&2; rc=1; }
+  if [[ "${PENNY_PLE_BACKEND}" == nvme ]]; then
+    "${root}/scripts/47-setup-ple-storage.sh" --verify >/dev/null 2>&1 || { echo 'FEHLT: PLE-Speicher. Naechster Schritt: make ple-nvme' >&2; rc=1; }
+  fi
   return "${rc}"
+}
+
+# WSL stores all mutable runtime state in the user's ext4 home. Creating the
+# bind-mount roots here makes a fresh deployment independent of native /srv/ZFS.
+prepare_wsl_storage() {
+  install -d -m 0755 \
+    "${LLM_MODELS_DIR:-${HOME}/models}" \
+    "${LLM_CACHE_DIR:-${HOME}/.local/share/llm-infra/cache}/pennyroyal" \
+    "${LLM_NIXL_DIR:-${HOME}/.local/share/llm-infra/nixl}" \
+    "${HOME}/.local/share/llm-infra/ple"
 }
 
 if [[ "${1:-}" == "--check" ]]; then
@@ -34,8 +51,12 @@ check || {
   exit 1
 }
 
-run "${root}/scripts/47-setup-ple-storage.sh"
-run "${root}/scripts/48-prepare-ple-nvme.sh"
+prepare_wsl_storage
+
+  if [[ "${PENNY_PLE_BACKEND}" == nvme ]]; then
+    run "${root}/scripts/47-setup-ple-storage.sh"
+    run "${root}/scripts/48-prepare-ple-nvme.sh"
+  fi
 run "${root}/scripts/50-install-pennyroyal.sh"
 run "${root}/scripts/63-install-postgres.sh"
 run "${root}/scripts/60-install-gateway.sh"

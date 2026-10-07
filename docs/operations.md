@@ -103,6 +103,21 @@ Nie zwei Dinge gleichzeitig aendern (Modell und Bild, oder Treiber und Bild).
 ./scripts/show-credentials.sh           # aktuelle Werte anzeigen
 ```
 
+Grafana speichert den Admin-Hash zusaetzlich in seiner Datenbank. Ein
+erneuertes Podman-Secret allein setzt ein bereits initialisiertes Konto daher
+nicht zurueck. Wenn nach dem Secret-Wechsel die Anmeldung weiterhin scheitert,
+das neue Passwort aus der lokalen Zugangsdatei nehmen und im laufenden
+Container angleichen:
+
+```bash
+systemctl --user restart grafana.service
+podman exec systemd-grafana grafana cli admin reset-admin-password '<neues Passwort>'
+```
+
+Kein Passwort in Git oder in einer Shell-History ablegen. Ein temporaer
+gesetztes Standardpasswort sofort durch ein eigenes Zufallspasswort ersetzen;
+die Grafana-Portbindung auf `127.0.0.1` macht ein Standardpasswort nicht sicher.
+
 ## Mehrere Sitzungen gleichzeitig
 
 Zwei Grenzen der Laufzeit (Anzeige mit `./scripts/doctor.sh`, Punkt 9):
@@ -131,6 +146,39 @@ make collector       # Host-Kennzahlen sofort sammeln und Timer aktivieren
 make watchdog        # Waechter einschalten (warnt standardmaessig nur)
 make bench normal 4  # 4 gleichzeitige Anfragen
 ```
+
+### Logs mit `llmlogs`
+
+`llmlogs` liest die Journald-Eintraege der LLM-/Agent-Units. Die Podman-
+Container verwenden den Journald-Logtreiber, daher erscheinen Containerlogs
+bereits dort; zusaetzliche `podman logs`-Streams wuerden sie doppelt und ohne
+Journald-Formatierung ausgeben. Nur bestimmte Dienste:
+
+```bash
+llmlogs                              # letzte Stunde, dann weiter folgen
+llmlogs pennyroyal litellm open-webui
+llmlogs llm-node-exporter            # nur den Host-Exporter ansehen
+llmlogs --no-follow --since 30m --lines 300
+NO_COLOR=1 llmlogs                   # ANSI-Farben abschalten
+```
+
+Im interaktiven Terminal nutzt `llmlogs` dieselbe native, nach Journal-
+Prioritaet formatierte Ausgabe wie `journalctl` direkt. Zum Beispiel liefert
+`llmlogs --no-follow --lines 24 pennyroyal` denselben kompakten Stil wie
+`journalctl --user -u pennyroyal.service -n 24 --no-pager`. `NO_COLOR=1`,
+`TERM=dumb` oder Ausgabe ohne TTY deaktiviert Farben. Der Befehl zeigt
+standardmaessig nur die ausgewaehlten LLM-/Agent-Units; einen Exporter gezielt
+pruefen mit `llmlogs llm-node-exporter`. `Ctrl-C` beendet den Live-Follow.
+
+Ein Exporterfehler in der Ausgabe stammt vom Dienst, nicht von `llmlogs`.
+Insbesondere koennen doppelte Dateisystemmetriken fuer `/run/user` die
+node_exporter-Scrapes beeintraechtigen; den Prometheus-Targetstatus unter
+`http://127.0.0.1:9090/targets` pruefen.
+
+Open WebUI's lokale Spracherkennung ist davon unabhaengig: der CachyOS-Container
+nutzt `faster-whisper` mit `base` auf CPU. Windows-Diktat in Terminal/Wave
+laeuft separat ueber Whisper Local und `large-v3-turbo` auf CUDA; Details zur
+lokalen Tastenkombination stehen in `wsl-setup/docs/CACHYOS-WSL.md`.
 
 ## Wenn es klemmt
 

@@ -1,6 +1,33 @@
 # Projektstatus
 
-Stand: 2026-10-02, Review- und Ausbauphase
+Stand: 2026-10-07, Review- und Ausbauphase
+
+## Aktuelle WSL-Stichprobe (2026-10-07)
+
+Der Gateway-, Chat- und Beobachtungsstack lief in der CachyOS-WSL-Stichprobe.
+`llm-node-exporter` protokollierte doppelte Dateisystem-Metriken unter
+`/run/user`; das ist ein echter Exporterfehler und separat zu untersuchen.
+Ein frueherer Pennyroyal-Startversuch scheiterte mit `CUDA_VISIBLE_DEVICES=1`,
+weil PyTorch null sichtbare CUDA-Geraete meldete. Die aktuelle Quadlet-
+Konfiguration verwendet eine GPU-UUID; der Container lief beim letzten Check
+noch im Zustand `starting`, und `/health` war noch nicht erreichbar. Das ist
+unabhaengig von Shellfarben oder Fish; keinen weiteren Kaltstart ausloesen,
+solange der Ladevorgang laeuft.
+Die Fehlerprotokolle enthalten fuer diesen Exit keinen OOM: Kernel-Journal
+und `coredumpctl` waren leer. Prometheus zeigte in einer Stichprobe 119,9 GB
+verfuegbaren WSL-RAM und den vollen 32-GiB-Swap; Pennyroyals systemd-cgroup
+hatte eine gemeldete Spitze von 82,1 GB. Der Host-Verlauf ist daher kein
+Beleg fuer RAM-Erschoepfung. Container-RAM wird von der aktuellen Grafana-
+Konfiguration nicht historisiert. Fuer den naechsten Start sind CPU-Threads
+und Loader auf 4, HiCache auf 8 GiB zurueckgestellt; Ergebnis noch offen.
+Einzelheiten zu Laufzeitnamen und Grafana stehen in [`HANDOFF.md`](HANDOFF.md).
+Aeltere Laufzeitangaben weiter unten sind historische Messungen, kein
+Live-Healthcheck.
+
+`llmlogs` zeigt die systemd-Journald-Eintraege im nativen Format mit den
+Journal-Prioritaetsfarben und vermeidet doppelte, rohe Podman-Streams.
+`NO_COLOR=1` deaktiviert Farben; Bedienung:
+[`operations.md`](operations.md#logs-mit-llmlogs).
 
 ## Done
 

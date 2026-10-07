@@ -97,6 +97,12 @@ und schiebt sie zu Loki. Suche in Grafana (Explore, Datenquelle Loki):
 {job="containerlogs"} |= "CUDA out of memory"   ueber alle Container
 ```
 
+Fuer eine terminalbasierte Live-Ansicht im nativen, farbigen Journalformat
+gibt es ausserdem `llmlogs`. Containerlogs laufen ueber den Journald-Treiber;
+der Befehl vermeidet doppelte, rohe `podman logs`-Ausgaben. Beispiele und
+`NO_COLOR`:
+`docs/operations.md#logs-mit-llmlogs`.
+
 Voraussetzung: `systemctl --user enable --now podman.socket` (macht `make podman`).
 
 ## Alarme

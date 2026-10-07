@@ -4,7 +4,7 @@ root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 source "${root}/lib/common.sh"
 [[ -f "${root}/config/host.env" ]] && source "${root}/config/host.env"
 [[ -f "${root}/config/model.env" ]] && source "${root}/config/model.env"
-: "${LLM_MODELS_DIR:=/srv/llm/models}"
+: "${LLM_MODELS_DIR:=${HOME}/models}"
 : "${MODEL_ID:=RadixArk/Qwen3.8-Flash-Next-NVFP4}"
 target="${LLM_MODELS_DIR}/$(basename "${MODEL_ID}")"
 [[ -f "${target}/config.json" ]] || { log "Missing config.json in ${target}"; exit 1; }
