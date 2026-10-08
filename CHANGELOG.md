@@ -1,4 +1,10 @@
 # Aenderungsprotokoll
+## 2026-10-08 – Bonsai 2 als LiteLLM-Fallback
+
+- Bonsai 2 27B PTQ1_0 wird auf der RTX 3500 Ada durch Prism-llama.cpp als rootless WSL-Quadlet auf Port 8082 bereitgestellt (8192 Kontext, Q8-KV).
+- LiteLLM-Fallback unter separatem Modellnamen `bonsai-2-27b`; die Primaergruppe `qwen3.8-flash-next` verweist ueber `router_settings.fallbacks` darauf. Generator nutzt optionalen `FALLBACK_API_KEY` aus der lokalen Runtime-Environment-Datei; kein Key-Wert im Git.
+- Verifikation: `make validate` bestanden; separater Proxy mit totem Primaer gab eine Bonsai-Completion zurueck (45,1 Token/s). Live-Gateway neu gestartet, Health 200; Pennyroyal ebenfalls Health 200. Blackwell-VRAM blieb bei ca. 93,2 GiB.
+
 ## 2026-10-08 – Grafana: Dashboards zeigen wieder Daten
 
 - Ursache: Prometheus-Container ohne Netz-Alias `prometheus`; die

@@ -2,6 +2,14 @@
 
 Stand: 2026-10-07, Review- und Ausbauphase
 
+## Bonsai 2 als LiteLLM-Fallback (2026-10-08)
+
+Bonsai 2 27B PTQ1_0 laeuft als rootless Quadlet-Container `bonsai.service` in CachyOS/WSL auf der RTX 3500 Ada. OpenAI-kompatibler Port: 8082; Kontext: 8192 Token mit Q8-KV-Cache. Die LiteLLM-Gruppe `qwen3.8-flash-next` bleibt primaer Pennyroyal und faellt bei Fehlern auf das separate Deployment `bonsai-2-27b` zurueck. Die Laufzeitquelle ist `~/work/llm-infra-setup`; Modelladresse/Name liegen in der lokalen `config/host.env`, der nicht-authentifizierende lokale llama-server erhaelt nur einen Dummy-Key aus `~/.config/llm-infra/gateway.env`.
+
+Verifiziert: HTTP-Health 200 fuer Pennyroyal, LiteLLM und Bonsai; Chat-Completion vom Bonsai; eine isolierte LiteLLM-Testinstanz mit absichtlich nicht erreichbarem Primaer-Endpunkt routete eine Anfrage mit dem primaeren Alias auf Bonsai (`FALLBACK VERIFIZIERT`, 45,1 Token/s). LiteLLM wurde danach mit der neuen Konfiguration neu gestartet und meldete wieder Health 200. Bonsai-Quadlet ist aktiv und in `default.target.wants` verknuepft. GPU-Stichprobe: Ada rund 10,8 GiB belegt; Blackwell rund 93,2 GiB, keine messbare Zusatzbelegung durch Bonsai.
+
+Der Fallback gilt fuer Clients, die `qwen3.8-flash-next` ueber diesen LiteLLM-Gateway anfragen; direkte Pennyroyal-Aufrufe umgehen ihn. Nach bis zu drei Primaer-Retries wird Bonsai verwendet; nach 60 s Cooldown kann der Primaer erneut versucht werden. Siehe `HANDOFF.md` und `CHANGELOG.md`.
+
 ## Aktuelle WSL-Stichprobe (2026-10-07)
 
 Der Gateway-, Chat- und Beobachtungsstack lief in der CachyOS-WSL-Stichprobe.

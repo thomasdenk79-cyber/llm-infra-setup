@@ -2,6 +2,14 @@ Zuletzt gesichert: 2026-10-07T14:33:39+02:00 durch `scripts/session-checkpoint.s
 
 # Arbeitsstand und Uebergabe
 
+## Laufender Bonsai-Fallback (2026-10-08)
+
+* `bonsai.service` laeuft rootless via Quadlet in CachyOS/WSL; Modelldatei `~/models/bonsai/Ternary-Bonsai-2-27B-PTQ1_0.gguf`, PTQ1_0, 8192 Kontext, Q8-KV, Port 8082. CUDA ist auf Ada-Geraet 0 begrenzt; Speicheranstieg nur auf Ada beobachtet, Blackwell bleibt Pennyroyal vorbehalten.
+* LiteLLM `qwen3.8-flash-next` hat `bonsai-2-27b` als explizites Fallback. Fallback-Deployment steht separat im Modellkatalog, Routing erfolgt nur ueber `router_settings.fallbacks` (kein 50/50 Load-Balancing). Nach 3 Retries / 5 s wird Bonsai versucht; Primaer-Cooldown 60 s.
+* Der Gateway-Generator liest optionale Credentials aus `~/.config/llm-infra/gateway.env`; echte Zugangswerte werden nicht in YAML geschrieben. `config/host.env` bleibt lokal; Vorlage `config/host.env.example` dokumentiert die noetigen Variablen.
+* 2026-10-08 ca. 10:43: LiteLLM neu gestartet, danach Gateway/Pennyroyal/Bonsai Health 200. Isolierter End-to-End-Failover-Test mit absichtlich totem Primaer meldete `model=bonsai-2-27b`, Antwort `FALLBACK VERIFIZIERT`, 45,1 Token/s. Laufende Bonsai-Antwort zuvor ~48 Token/s. Kein Neustart von Pennyroyal.
+* Referenz: `docs/status.md`, `CHANGELOG.md`. Kein Commit erstellt; Aenderungen bleiben lokal im aktiven WSL-Repo `~/work/llm-infra-setup`.
+
 **Diese Seite ist der Fortsetzungsanker.** Wenn eine Sitzung abreisst, der Rechner
 neu startet oder ein anderer Agent uebernimmt: hier steht, was gilt. Regel aus
 `AGENTS.md`: Nach jedem abgeschlossenen Schritt `./scripts/session-checkpoint.sh`
