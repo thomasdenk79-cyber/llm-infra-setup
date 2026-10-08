@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-08T12:37:24+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-08T13:03:30+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -481,3 +481,7 @@ Doku: Gateway-Abschnitt in operations.md auf Drei-Stufen-Kette Pennyroyal->Bonsa
 ## Notiz 2026-10-08T12:37:24+02:00
 
 Gateway-haertung: 401-Root-Cause (keylose Tests auf /health|/metrics) -> liveliness; healthcheck/llmctl/doctor fixed; litellm-watchdog+timer 5m mit GPU-Lock-Guard und Loopsperre; failover-drill :4013 KETTE OK (22,2s->bonsai, luna 1,73s); Doku operations/troubleshooting/monitoring/CHANGELOG.
+
+## Notiz 2026-10-08T13:03:30+02:00
+
+Siemens LLM: deepseek-v4.1-flash + siemens-qwen-3.8-27b als waehlbare LiteLLM-Modelle; Secret-Provisionierung 0600 aus externem Keyfile; nicht im automatischen Fallback wegen gemessener Cloud-Latenz

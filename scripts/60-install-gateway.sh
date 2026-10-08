@@ -41,10 +41,10 @@ WantedBy=default.target
 UNIT
 install -d "$root/config"
 cat > "$root/config/litellm.yaml" <<YAML
-# Dreistufige Failover-Kette fuer qwen3.8-flash-next:
-#   1. Pennyroyal auf der Blackwell (primaer),
-#   2. Bonsai 2 27B auf der RTX 3500 Ada (lokaler Notbetrieb, ~45 tok/s),
-#   3. Luna ueber ChatGPT-Plus-OAuth (letzter Halt, wenn lokal gar nichts geht).
+# Lokale automatische Kette qwen -> bonsai -> luna.
+# Siemens-Modelle sind separat waehlbar fuer Reviews/Benchmarks, NICHT im Fallback:
+# Latenztest 08.10.2026: DeepSeek 16.9s, Siemens-Qwen 123.4s; Cloud-Latenz soll
+# lokale Requests nicht unerwartet blockieren.
 # Schluessel: master/db aus ~/.config/llm-infra/gateway.env; FALLBACK_API_KEY
 # ist ein Dummy, den der lokale llama-server nicht prueft; Luna braucht keinen
 # Schluessel - das Geraet-Login legt das Token unter /etc/chatgpt-tokens ab.
@@ -66,6 +66,16 @@ model_list:
       mode: responses
     litellm_params:
       model: chatgpt/gpt-6-luna
+  - model_name: deepseek-v4.1-flash
+    litellm_params:
+      model: openai/deepseek-v4.1-flash
+      api_base: https://api.siemens.com/llm/v1
+      api_key: "os.environ/SIEMENS_LLM_API_KEY"
+  - model_name: siemens-qwen-3.8-27b
+    litellm_params:
+      model: openai/qwen-3.8-27b
+      api_base: https://api.siemens.com/llm/v1
+      api_key: "os.environ/SIEMENS_LLM_API_KEY"
 router_settings:
   num_retries: 3
   retry_after: 5
