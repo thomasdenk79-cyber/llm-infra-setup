@@ -126,8 +126,9 @@ for p in sorted(pathlib.Path('config/monitoring/grafana/provisioning/dashboards'
     if not d.get('uid'):
         print(f'DASHBOARD FEHLER {p}: uid fehlt (Provisioning braucht uid)'); bad = 1
     for panel in d.get('panels', []):
-        if panel.get('type') == 'row':
-            continue          # Reihen-Ueberschriften enthalten per Definition keine Anfrage
+        if panel.get('type') in ('row', 'text'):
+            continue          # Reihen-Ueberschriften und reine Text-Panels (z.B.
+                              # Datengrenze-Hinweise) enthalten per Definition keine Anfrage
         if not panel.get('targets'):
             print(f'DASHBOARD FEHLER {p}: Panel ohne Anfrage: {panel.get("title")}'); bad = 1
 print(f'{len(list(pathlib.Path("config/monitoring/grafana/provisioning/dashboards").glob("*.json")))} Dashboards geprueft')
