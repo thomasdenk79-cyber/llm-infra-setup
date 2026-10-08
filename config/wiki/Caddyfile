@@ -1,0 +1,16 @@
+# GENERIERT von scripts/60-install-wiki.sh - dort ändern, nicht hier.
+{
+	admin off
+	auto_https off
+}
+:8000 {
+	encode gzip
+	root * /srv
+	file_server {
+		index index.html
+	}
+	handle_errors {
+		rewrite * /404.html
+		file_server
+	}
+}

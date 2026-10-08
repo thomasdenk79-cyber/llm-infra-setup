@@ -1,4 +1,8 @@
 - Chat & RAG:
+    - Wissens-Wiki:
+        icon: markdown.png
+        href: http://127.0.0.1:3003
+        description: Chronik, Erkenntnisse, Ergebnisse (Mensch + Agent)
     - Open WebUI:
         icon: open-webui.png
         href: http://127.0.0.1:3001

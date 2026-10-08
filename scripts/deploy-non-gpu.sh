@@ -18,6 +18,7 @@ run "${root}/scripts/63-install-postgres.sh"
 run "${root}/scripts/60-install-gateway.sh"
 run "${root}/scripts/60-install-open-webui.sh"
 run "${root}/scripts/60-install-homepage.sh"
+run "${root}/scripts/60-install-wiki.sh"
 ensure_base_credentials
 install -d -m 0755 "${HOME}/.local/share/llm-infra"/{postgres,open-webui,homepage/logs}
 prune_legacy_units
@@ -30,6 +31,7 @@ run "${root}/scripts/60-install-monitoring.sh"
 cat <<'NEXT'
 Fertig (ohne GPU).
   Portal        http://127.0.0.1:3002
+  Wiki          http://127.0.0.1:3003
   Chat          http://127.0.0.1:3001    ersten Account anlegen - der ist Admin
   Gateway       http://127.0.0.1:4000
   Dashboards    http://127.0.0.1:3000

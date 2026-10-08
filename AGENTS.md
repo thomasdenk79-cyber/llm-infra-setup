@@ -85,6 +85,7 @@ Das Repository ist das einzige Backup dieser Arbeit. Deshalb gilt fuer jeden Sch
 | `scripts/60-install-gateway.sh` | LiteLLM-Konfiguration und Unit |
 | `scripts/60-install-open-webui.sh` | Chat-Unit |
 | `scripts/60-install-homepage.sh` | Portal-Unit |
+| `scripts/60-install-wiki.sh` | Wiki-Portal (Caddy :3003) + Rebuild-Timer |
 | `scripts/60-install-monitoring.sh` | ganze Beobachtungsstufe inkl. Timer, `--check` |
 | `scripts/61-install-autossh.sh` | optionaler Wartungstunnel, nur ein Schluessel, kein `apk add` zur Laufzeit |
 | `scripts/62-install-komodo.sh` | optionale Periphery, bricht ohne echten Server ab |
@@ -105,6 +106,7 @@ Das Repository ist das einzige Backup dieser Arbeit. Deshalb gilt fuer jeden Sch
 | `scripts/benchmark.sh` + `benchmark_probe.py` | Messung von Vorlaufzeit und Schreibrate |
 | `scripts/backup.sh` / `scripts/restore.sh` | Sicherung und Rueckgabe inkl. Pruefsummentest |
 | `scripts/ensure-credentials.sh` / `show-credentials.sh` / `rotate-secrets.sh` | Zugangswerte |
+| `scripts/wiki-rebuild.sh` | Wiki-Inhalt bei neuen Commits neu bauen (Timer) |
 | `scripts/check-drift.sh` | committete Units gegen Generatoren pruefen |
 | `scripts/validate.sh` | Syntax, YAML/JSON, Quadlet, Geheimnisse, Pflichtdateien |
 | `scripts/backup-config.sh` | alt, ruft nur noch `backup.sh` auf |

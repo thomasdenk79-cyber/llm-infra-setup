@@ -25,6 +25,7 @@ if [[ "${check_only}" == 1 ]]; then
     unit_is_active "${unit}" || { printf 'FEHLT: %s laeuft nicht\n' "$(unit_service_name "${unit}")"; missing=1; }
   done
   systemctl --user is-active --quiet llm-infra-collect-facts.timer || { printf 'FEHLT: Kennzahlen-Timer laeuft nicht\n'; missing=1; }
+  systemctl --user is-active --quiet wiki-rebuild.timer || { printf 'FEHLT: Wiki-Rebuild-Timer laeuft nicht\n'; missing=1; }
   [[ "${missing}" == 0 ]] && printf 'OK: Beobachtung vollstaendig\n'
   exit "${missing}"
 fi
@@ -37,10 +38,11 @@ if [[ ! -f "${root}/quadlet/llm-gpu-exporter.container" ]]; then
 fi
 prune_legacy_units
 install_units "${OBSERVABILITY_UNITS[@]}"
-install_systemd_units "${HOME}/.config/systemd/user" llm-infra-collect-facts.service llm-infra-collect-facts.timer
+install_systemd_units "${HOME}/.config/systemd/user" llm-infra-collect-facts.service llm-infra-collect-facts.timer wiki-rebuild.service wiki-rebuild.timer
 systemd_reload
-start_units llm-observability.network loki.container prometheus.container grafana.container alloy.container dozzle.container llm-node-exporter.container llm-gpu-exporter.container homepage.container
+start_units llm-observability.network loki.container prometheus.container grafana.container alloy.container dozzle.container llm-node-exporter.container llm-gpu-exporter.container homepage.container wiki.container
 systemctl --user enable --now llm-infra-collect-facts.timer
+systemctl --user enable --now wiki-rebuild.timer
 run "${root}/scripts/collect-host-facts.sh" || log 'WARNUNG: erste Kennzahlensammlung fehlgeschlagen'
 cat <<'NEXT'
 Naechste Schritte

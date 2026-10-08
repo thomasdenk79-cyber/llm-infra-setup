@@ -28,6 +28,7 @@ OBSERVABILITY_UNITS=(
   llm-gpu-exporter.container
   llm-node-exporter.container
   homepage.container
+  wiki.container
 )
 # Optional units that need operator credentials before they make sense.
 OPTIONAL_UNITS=(llm-autossh.container komodo-periphery.container)

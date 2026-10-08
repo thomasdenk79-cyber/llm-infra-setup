@@ -1,0 +1,7 @@
+# GENERIERT von scripts/60-install-wiki.sh
+[Unit]
+Description=Hermes-Wiki neu bauen (nur bei neuen Commits)
+
+[Service]
+Type=oneshot
+ExecStart=/home/z000g9hu/work/llm-infra-setup/scripts/wiki-rebuild.sh

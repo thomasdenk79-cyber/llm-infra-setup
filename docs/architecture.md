@@ -32,6 +32,7 @@ Inferenz nutzt bewusst nur einen GPU-Kern (TP1). Details und Begruendung in
 | Alloy | - | llm-observability | Container-Protokolle zu Loki bringen | `quadlet/alloy.container` |
 | Dozzle | 8080 | llm-observability | Live-Protokolle im Browser | `quadlet/dozzle.container` |
 | Homepage (Portal) | 3002 | llm-observability | Einstiegseite fuer den Betreiber | `quadlet/homepage.container` |
+| Wiki (Caddy, statisch) | 3003 | llm-observability | Wissens-Wiki aus ~/work/hermes-wiki (Rebuild-Timer 30 min) | `quadlet/wiki.container` |
 | node_exporter | 9100 | llm-observability | CPU, RAM, Platte, ZFS, Host-Kennzahlen | `quadlet/llm-node-exporter.container` |
 | GPU-Exporter | 9835 | llm-observability | GPU-Temperatur, Takt, VRAM, Drosselung | `quadlet/llm-gpu-exporter.container` |
 

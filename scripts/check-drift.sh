@@ -31,6 +31,7 @@ run ./scripts/50-install-pennyroyal.sh
 run ./scripts/60-install-gateway.sh
 run ./scripts/60-install-open-webui.sh
 run ./scripts/60-install-homepage.sh
+run ./scripts/60-install-wiki.sh
 run ./scripts/63-install-postgres.sh
 run ./scripts/65-install-gpu-exporter.sh
 

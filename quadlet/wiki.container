@@ -1,0 +1,20 @@
+# GENERIERT von scripts/60-install-wiki.sh - dort ändern, nicht hier.
+[Unit]
+Description=LLM Infrastructure Hermes-Wissens-Wiki (statischer Build)
+After=llm-observability-network.service
+Wants=llm-observability-network.service
+
+[Container]
+Image=docker.io/library/caddy:2-alpine
+ContainerName=llm-wiki
+Network=llm-observability.network
+PublishPort=127.0.0.1:3003:8000
+Volume=%h/work/hermes-wiki/site:/srv:Z,ro
+Volume=@CONFIG_ROOT@/config/wiki/Caddyfile:/etc/caddy/Caddyfile:Z,ro
+
+[Service]
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=default.target

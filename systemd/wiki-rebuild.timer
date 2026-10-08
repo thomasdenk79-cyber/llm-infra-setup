@@ -1,0 +1,11 @@
+# GENERIERT von scripts/60-install-wiki.sh
+[Unit]
+Description=Hermes-Wiki regelmaessig auf neue Commits pruefen
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=30min
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target
