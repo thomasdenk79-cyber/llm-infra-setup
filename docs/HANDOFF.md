@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-08T13:03:30+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-08T13:41:08+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -485,3 +485,7 @@ Gateway-haertung: 401-Root-Cause (keylose Tests auf /health|/metrics) -> livelin
 ## Notiz 2026-10-08T13:03:30+02:00
 
 Siemens LLM: deepseek-v4.1-flash + siemens-qwen-3.8-27b als waehlbare LiteLLM-Modelle; Secret-Provisionierung 0600 aus externem Keyfile; nicht im automatischen Fallback wegen gemessener Cloud-Latenz
+
+## Notiz 2026-10-08T13:41:08+02:00
+
+Siemens Modellmessung n=3 je Modell dokumentiert; hohe Latenzvarianz; Opus/Sonnet-Zugriff und Claude-Code-Harness sauber abgegrenzt

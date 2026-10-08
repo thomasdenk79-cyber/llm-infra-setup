@@ -1,7 +1,8 @@
 # Lokale automatische Kette qwen -> bonsai -> luna.
 # Siemens-Modelle sind separat waehlbar fuer Reviews/Benchmarks, NICHT im Fallback:
-# Latenztest 08.10.2026: DeepSeek 16.9s, Siemens-Qwen 123.4s; Cloud-Latenz soll
-# lokale Requests nicht unerwartet blockieren.
+# Direkte 512-Token-API-Probe, 08.10.2026, n=3: DeepSeek median 31.81s
+# (16.24-72.13s), Siemens-Qwen median 20.11s (2.50-96.35s); hohe Varianz,
+# daher nicht in den interaktiven automatischen Fallback aufnehmen.
 # Schluessel: master/db aus ~/.config/llm-infra/gateway.env; FALLBACK_API_KEY
 # ist ein Dummy, den der lokale llama-server nicht prueft; Luna braucht keinen
 # Schluessel - das Geraet-Login legt das Token unter /etc/chatgpt-tokens ab.
