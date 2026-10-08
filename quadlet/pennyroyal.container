@@ -29,16 +29,16 @@ Environment=CUDA_DEVICE_ORDER=PCI_BUS_ID
 # WSL CUDA UUID masking survives index remapping after driver reconnects.
 # SGLang sees only Blackwell at logical cuda:0; CDI supplies shared /dev/dxg.
 Environment=CUDA_VISIBLE_DEVICES=GPU-780d3589-9811-40ec-db66-93a9146697f3
-Environment=OMP_NUM_THREADS=32
-Environment=MKL_NUM_THREADS=32
-Environment=OPENBLAS_NUM_THREADS=32
-Environment=NUMEXPR_NUM_THREADS=32
-Environment=MAX_JOBS=32
-Environment=PENNY_BUILD_JOBS=32
-Environment=TORCHINDUCTOR_COMPILE_THREADS=32
-Environment=CMAKE_BUILD_PARALLEL_LEVEL=32
-Environment=CARGO_BUILD_JOBS=32
-Environment=FLASHINFER_NINJA_JOBS=32
+Environment=OMP_NUM_THREADS=8
+Environment=MKL_NUM_THREADS=8
+Environment=OPENBLAS_NUM_THREADS=8
+Environment=NUMEXPR_NUM_THREADS=8
+Environment=MAX_JOBS=8
+Environment=PENNY_BUILD_JOBS=8
+Environment=TORCHINDUCTOR_COMPILE_THREADS=8
+Environment=CMAKE_BUILD_PARALLEL_LEVEL=8
+Environment=CARGO_BUILD_JOBS=8
+Environment=FLASHINFER_NINJA_JOBS=8
 Environment=FLASHINFER_NVCC_THREADS=1
 Environment=TORCH_HOME=/cache/torch
 Environment=TORCHINDUCTOR_CACHE_DIR=/cache/torchinductor
@@ -47,13 +47,13 @@ Environment=CUDA_CACHE_PATH=/cache/cuda
 Environment=FLASHINFER_WORKSPACE_BASE=/cache/flashinfer
 Environment=SGLANG_CACHE_DIR=/cache/sglang
 Environment=SGLANG_JIT_CACHE_DIR=/cache/sglang/jit
-Environment=PENNY_LOADER_THREADS=8
+Environment=PENNY_LOADER_THREADS=4
 Environment=PENNY_HICACHE_SIZE_GB=16
 Environment=PENNY_PLE_BACKEND=nvme
 Environment=SGLANG_SM120_ONLINE_MXFP8=false
 Environment=PENNY_PLE_NVME_MODEL=/ple/Qwen3.8-Flash-Next-PLE-NVME
 Environment=SGLANG_HICACHE_TORCH_PINNED_ALLOC=1
-Environment=PENNY_WEIGHT_LOADER_DROP_CACHE_AFTER_LOAD=0
+Environment=PENNY_WEIGHT_LOADER_DROP_CACHE_AFTER_LOAD=1
 Environment=PENNY_SLEEP_ON_IDLE=0
 Environment=MAX_RUNNING_REQUESTS=4
 Environment=MAX_MAMBA_CACHE_SIZE=16
@@ -61,7 +61,7 @@ Environment=PENNY_MAMBA_SLOTS_PER_REQUEST=4
 Environment=PENNY_CUDA_GRAPH_BS_DECODE=1,2,4
 Environment=PENNY_ENABLE_MEMORY_SAVER=0
 Environment=PENNY_USE_EXPANDABLE_SEGMENTS=0
-Environment=PENNY_MEM_FRACTION_STATIC=0.95
+Environment=PENNY_MEM_FRACTION_STATIC=0.97
 # python3 exists in the runtime image; curl is not guaranteed.
 HealthCmd=python3 -c "import sys,urllib.request;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8001/health',timeout=8).status==200 else 1)"
 HealthInterval=30s
@@ -71,6 +71,8 @@ HealthStartPeriod=1800s
 Exec=next
 
 [Service]
+# Refuse to start the reference while a candidate holds the GPU; log who started us.
+ExecStartPre=%h/forge/watchdog/reference-start-gate.sh
 Restart=on-failure
 RestartSec=30
 # A live but hanging server is restarted by the external watchdog, because

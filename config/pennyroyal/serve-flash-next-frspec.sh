@@ -216,6 +216,31 @@ TARGET_OVERRIDES='{"text_config":{"rope_parameters":{"mrope_interleaved":true,"m
 printf 'Pennyroyal profile: Flash-Next FR-Spec\n  runtime: %s\n  target: %s\n  token map: %s\n  cache root: %s\n  NIXL root: %s\n' \
   "$SGLANG_EXE" "$TARGET_MODEL" "$TOKEN_MAP" "$CACHE_BASE" "$NIXL_STORAGE_BASE"
 echo "Stellgroessen: mem_fraction=${MEM_FRACTION_STATIC} chunked_prefill=${CHUNKED_PREFILL_SIZE} max_prefill=${PENNY_MAX_PREFILL_TOKENS:-SGLang-default} spec=${SPEC_NUM_STEPS}/${SPEC_EAGLE_TOPK}/${SPEC_NUM_DRAFT_TOKENS} sleep_on_idle=${SLEEP_ON_IDLE} mfu=${ENABLE_MFU_METRICS} graph_batches=${GRAPH_BATCHES} memory_saver=${PENNY_ENABLE_MEMORY_SAVER:-0} hicache=${HICACHE_SIZE_GB} ple=${PENNY_PLE_BACKEND:-auto} loader_threads=${LOADER_THREADS} drop_cache_after_load=${WEIGHT_LOADER_DROP_CACHE_AFTER_LOAD} omp_threads=${OMP_NUM_THREADS} compile_threads=${TORCHINDUCTOR_COMPILE_THREADS} build_jobs=${PENNY_BUILD_JOBS}"
+
+# --- Identitaet + WSL-Workarounds: unmissable, damit jeder Start pruefbar ist ----
+{
+  echo "======================= PENNYROYAL START: IDENTITAET ======================="
+  if [[ -f /opt/sm120/build-info.json ]]; then
+    echo "variant : FORK sm120 (test fork)  $("${PYTHON:-python3}" -c "import json;d=json.load(open('/opt/sm120/build-info.json'));print(' '.join(f'{k}={d.get(k)}' for k in ('fork_version','channel','commit','dirty','base_ref','built_at')))" 2>/dev/null)"
+  else
+    echo "variant : ORIGINAL Pennyroyal v2.5.3 (jpezzulli/sglang-rtxpro6000, kein /opt/sm120 build-info)"
+  fi
+  echo "sglang  : $("${PYTHON:-python3}" -c 'import sglang;print(sglang.__version__)' 2>/dev/null)  (+g<sha> = git-Commit der Quelle; Basis d00d88efc8 = Release v2.5.3)"
+  echo "---------------------- WSL-WORKAROUNDS (effektive Werte) ---------------------"
+  echo "WSL erkannt                          : $(grep -qi microsoft /proc/version 2>/dev/null && echo ja || echo nein)"
+  echo "SGLANG_HICACHE_TORCH_PINNED_ALLOC    : ${SGLANG_HICACHE_TORCH_PINNED_ALLOC:-<nicht gesetzt>}   (1/true = torch cudaHostAlloc statt cudaHostRegister)"
+  echo "PENNY_USE_EXPANDABLE_SEGMENTS        : ${PENNY_USE_EXPANDABLE_SEGMENTS:-<nicht gesetzt>}   (muss 0 sein auf WSL)"
+  echo "PYTORCH_CUDA_ALLOC_CONF (effektiv)   : ${PYTORCH_CUDA_ALLOC_CONF:-<nicht gesetzt = expandable_segments AUS>}"
+  echo "PENNY_ENABLE_MEMORY_SAVER            : ${PENNY_ENABLE_MEMORY_SAVER:-0}"
+  echo "memlock (Bytes, /proc/self/limits)   : $(awk '/Max locked memory/ {print $4 " soft / " $5 " hard"}' /proc/self/limits 2>/dev/null)"
+  echo "/dev/shm                             : $(df -h /dev/shm 2>/dev/null | awk 'NR==2 {print $2 " gesamt, " $3 " belegt"}')"
+  echo "Host-RAM (MiB)                       : $(awk '/MemTotal|MemAvailable/ {printf "%s %d  ", $1, $2/1024}' /proc/meminfo)"
+  echo "---------------------- Last / Admission (effektive Werte) -------------------"
+  echo "max_running=${MAX_RUNNING_REQUESTS:-?} mamba_slots=${MAX_MAMBA_CACHE_SIZE:-?} slots/request-guard=${SLOTS_PER_REQUEST:-?} mem_fraction=${MEM_FRACTION_STATIC:-?} graph_bs=${GRAPH_BATCHES:-?} context=${PENNY_CONTEXT_LENGTH:-?}"
+  echo "threads omp=${OMP_NUM_THREADS:-?} mkl=${MKL_NUM_THREADS:-?} openblas=${OPENBLAS_NUM_THREADS:-?} numexpr=${NUMEXPR_NUM_THREADS:-?} | build_jobs=${PENNY_BUILD_JOBS:-?} max_jobs=${MAX_JOBS:-?} inductor=${TORCHINDUCTOR_COMPILE_THREADS:-?}"
+  echo "loader_threads=${LOADER_THREADS:-?} drop_cache_after_load=${WEIGHT_LOADER_DROP_CACHE_AFTER_LOAD:-?} hicache_gb=${HICACHE_SIZE_GB:-?} ple=${PENNY_PLE_BACKEND:-?}"
+  echo "==========================================================================="
+} >&2
 echo "Verifying the pinned FR-Spec map and tokenizer..."
 read -r TOKEN_MAP_SHA _ < <(sha256sum "$TOKEN_MAP")
 [[ "$TOKEN_MAP_SHA" == becfa41d394b86c26c632bea8f3c6ea64bbb76d7b238d8673c06afae21269f25 ]] || {
