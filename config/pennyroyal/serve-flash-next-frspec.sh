@@ -279,7 +279,7 @@ NIXL_STORAGE="$("$NAMESPACE_HELPER" \
   --field "hicache_mem_layout=page_first" \
   --field "mamba_ssm_dtype=$MAMBA_SSM_DTYPE" \
   --field "mamba_conv_dtype=$MAMBA_CONV_DTYPE" \
-  --field "max_mamba_cache_size=$MAX_MAMBA_CACHE_SIZE" \
+  --field "max_mamba_cache_size=${MAX_MAMBA_CACHE_SIZE:-auto}" \
   --field "max_running_requests=$MAX_RUNNING_REQUESTS" \
   --field "mamba_radix_cache_strategy=extra_buffer" \
   --field "mamba_track_interval=$MAMBA_TRACK_INTERVAL" \
@@ -295,6 +295,14 @@ NIXL_STORAGE="$("$NAMESPACE_HELPER" \
 export SGLANG_HICACHE_NIXL_BACKEND_STORAGE_DIR="$NIXL_STORAGE"
 echo "NIXL FILE namespace: $NIXL_STORAGE"
 
+# PENNY_MAMBA_CACHE_AUTO=1: SGLang sizes the Mamba state pool itself (no --max-mamba-cache-size).
+MAMBA_CACHE_ARGS=()
+if [[ "${PENNY_MAMBA_CACHE_AUTO:-0}" == 1 ]]; then
+  MAX_MAMBA_CACHE_SIZE=""
+else
+  MAMBA_CACHE_ARGS=(--max-mamba-cache-size "$MAX_MAMBA_CACHE_SIZE")
+fi
+
 launch_args=(serve \
   --model-path "$TARGET_MODEL" \
   --model-loader-extra-config "{\"enable_multithread_load\":true,\"num_threads\":${LOADER_THREADS}}" \
@@ -308,7 +316,7 @@ launch_args=(serve \
   --page-size "$PAGE_SIZE" --max-running-requests "$MAX_RUNNING_REQUESTS" \
   --chunked-prefill-size "$PREFILL_CHUNK_SIZE" "${PREFILL_ARGS[@]}" \
   --mamba-radix-cache-strategy extra_buffer --mamba-ssm-dtype "$MAMBA_SSM_DTYPE" \
-  --max-mamba-cache-size "$MAX_MAMBA_CACHE_SIZE" --gdn-mtp-cache-mode none \
+  "${MAMBA_CACHE_ARGS[@]}" --gdn-mtp-cache-mode none \
   --linear-attn-decode-backend flashinfer --linear-attn-prefill-backend flashinfer \
   --mamba-track-interval "$MAMBA_TRACK_INTERVAL" \
   "${PLE_ARGS[@]}" --trust-remote-code \
