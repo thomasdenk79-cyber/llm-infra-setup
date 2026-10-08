@@ -80,7 +80,7 @@ sandbox_mode = "danger-full-access"
 name = "Local LiteLLM / Pennyroyal"
 base_url = "http://127.0.0.1:4000/v1"
 env_key = "LLM_INFRA_API_KEY"
-wire_api = "chat"
+wire_api = "responses"
 # END llm-infra managed agent defaults'''
 if start in text and end in text:
     text = re.sub(re.escape(start) + r".*?" + re.escape(end), block, text, flags=re.S)
@@ -101,7 +101,7 @@ if [[ $- == *i* && -r "$HOME/work/llm-infra-setup/scripts/llm-env.sh" ]]; then
 fi
 if command -v copilot >/dev/null 2>&1; then
   copilot() {
-    if [[ -n "${LLM_INFRA_API_KEY:-}" ]] && curl -fsS --max-time 2 http://127.0.0.1:8001/health >/dev/null 2>&1; then
+    if [[ -n "${LLM_INFRA_API_KEY:-}" ]] && curl -fsS --max-time 2 http://127.0.0.1:4000/health/liveliness >/dev/null 2>&1 && curl -fsS --max-time 2 http://127.0.0.1:8001/health >/dev/null 2>&1; then
       COPILOT_PROVIDER_BASE_URL="${LLM_INFRA_BASE_URL}" COPILOT_PROVIDER_API_KEY="${LLM_INFRA_API_KEY}" \\
         COPILOT_MODEL=qwen3.8-flash-next command copilot --yolo "$@"
     else
@@ -140,7 +140,7 @@ data = yaml.safe_load(text) if text else {}
 data = data or {}
 model = data.setdefault("model", {})
 model.update({"provider": "custom", "default": "qwen3.8-flash-next",
-              "base_url": "http://127.0.0.1:4000/v1", "key_env": "LLM_INFRA_API_KEY"})
+              "base_url": "http://127.0.0.1:4000/v1", "api_mode": "chat_completions", "key_env": "LLM_INFRA_API_KEY"})
 data["fallback_providers"] = [{"provider": "copilot", "model": "gpt-6-luna"}]
 cfg.write_text(yaml.safe_dump(data, sort_keys=False, allow_unicode=True))
 cfg.chmod(0o600)

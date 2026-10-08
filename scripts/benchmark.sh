@@ -7,6 +7,7 @@
 #   ./scripts/benchmark.sh quick 4         4 gleichzeitige Anfragen
 #   ./scripts/benchmark.sh normal 4 20000  4 Anfragen mit ca. 20k Prompt-Token
 #   MIN_TOKENS=150 ./scripts/benchmark.sh  # Bruch bei zu geringer Geschwindigkeit
+#   BENCHMARK_BASE_URL=http://127.0.0.1:8001/v1 ./scripts/benchmark.sh  # direkt
 #
 # Warum zwei Zahlen?
 #   time_to_first_token      = Wartezeit, bis das erste Wort erscheint (Vorlauf)
@@ -21,13 +22,25 @@ root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 source "${root}/lib/common.sh"
 [[ -f "${root}/config/host.env" ]] && source "${root}/config/host.env"
 : "${PENNYROYAL_PORT:=8001}"
-: "${BENCHMARK_MODEL:=pennyroyal}"
 : "${MIN_TOKENS:=0}"
 profile="${1:-quick}"
 concurrency="${2:-1}"
 target_context_tokens="${3:-}"
 mkdir -p "${root}/state/benchmarks"
-base_url="http://127.0.0.1:${PENNYROYAL_PORT}/v1"
+if [[ -r "${HOME}/.config/llm-infra/gateway.env" \
+   && ( -z "${LLM_INFRA_BASE_URL:-}" || -z "${LLM_INFRA_API_KEY:-}" ) ]]; then
+  # shellcheck disable=SC1091
+  source "${root}/scripts/llm-env.sh"
+fi
+base_url="${BENCHMARK_BASE_URL:-${LLM_INFRA_BASE_URL:-http://127.0.0.1:${PENNYROYAL_PORT}/v1}}"
+metrics_url="${BENCHMARK_METRICS_URL:-http://127.0.0.1:${PENNYROYAL_PORT}/metrics}"
+api_key="${BENCHMARK_API_KEY:-${LLM_INFRA_API_KEY:-}}"
+[[ -n "${api_key}" ]] && export LLM_INFRA_API_KEY="${api_key}"
+default_model=qwen3.8-flash-next
+[[ "${base_url}" == "http://127.0.0.1:${PENNYROYAL_PORT}/v1" ]] && default_model=pennyroyal
+: "${BENCHMARK_MODEL:=${default_model}}"
+gpu_args=()
+[[ -n "${PENNY_GPU_UUID:-}" ]] && gpu_args+=(--gpu-uuid "${PENNY_GPU_UUID}")
 
 case "${profile}" in
   quick)  prompt='Erkläre ZFS in einem Satz.'; max_tokens=256; repeat=1 ;;
@@ -63,6 +76,7 @@ fi
 
 printf 'Aufwaermens (zaehlt nicht in die Messung) ...\n'
 "${root}/scripts/benchmark_probe.py" --base-url "${base_url}" --model "${BENCHMARK_MODEL}" \
+  --metrics-url "${metrics_url}" "${gpu_args[@]}" \
   --prompt 'Antworte mit genau einem Wort.' --max-tokens 8 >/dev/null 2>&1 || true
 
 ts="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -74,10 +88,11 @@ trap 'rm -rf "${workdir}"' EXIT
 printf 'Starte %s Anfrage(n) im Profil %s ...\n' "${concurrency}" "${profile}"
 wall_start="$(date +%s%3N)"
 for i in $(seq 1 "${concurrency}"); do
-  # Keep prompt length equivalent while preventing shared-prefix/KV reuse from
-  # making a parallel run look faster than independent requests.
-  request_prompt="${prompt} [benchmark-request-${i}]"
+  # A unique run/request prefix prevents prefix-cache hits across either
+  # concurrent requests or repeated benchmark runs.
+  request_prompt="[benchmark-${ts}-request-${i}] ${prompt}"
   "${root}/scripts/benchmark_probe.py" --base-url "${base_url}" --model "${BENCHMARK_MODEL}" \
+    --metrics-url "${metrics_url}" "${gpu_args[@]}" \
     --prompt "${request_prompt}" --prompt-repeat "${repeat}" --max-tokens "${max_tokens}" --sample-metrics \
     > "${workdir}/${i}.json" 2>"${workdir}/${i}.err" &
 done
@@ -142,6 +157,10 @@ Einordnung, warum Zahlen liegen, wie sie liegen: docs/performance.md
 Maschinenlesbar: $(basename "${json_out}")
 EOF2
 cat "${md_out}"
+if (( errors > 0 )); then
+  printf '\nBenchmark fehlgeschlagen: %s Anfrage(n) mit Fehler.\n' "${errors}" >&2
+  exit 1
+fi
 
 {
   f="${root}/state/benchmarks/history.csv"

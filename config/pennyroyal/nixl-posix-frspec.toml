@@ -1,0 +1,9 @@
+# HiCache L3 on WSL ext4: buffered file I/O with asynchronous io_uring.
+use_direct_io = false
+l3_cleaner_enabled = true
+l3_cleaner_high_watermark = 85.0
+l3_cleaner_low_watermark = 80.0
+
+[plugin.posix]
+active = true
+use_uring = "true"

@@ -52,7 +52,7 @@ for name in MAX_RUNNING_REQUESTS MAX_MAMBA_CACHE_SIZE MAX_TOTAL_TOKENS; do
   fi
 done
 # b) Werte, die unser Startskript selbst unter ihrem PENNY_-Namen liest
-for name in PENNY_CUDA_GRAPH_MAX_BS PENNY_ENABLE_MEMORY_SAVER PENNY_USE_EXPANDABLE_SEGMENTS PENNY_MEM_FRACTION_STATIC; do
+for name in PENNY_CUDA_GRAPH_MAX_BS PENNY_CUDA_GRAPH_BS_DECODE PENNY_ENABLE_MEMORY_SAVER PENNY_USE_EXPANDABLE_SEGMENTS PENNY_MEM_FRACTION_STATIC PENNY_CHUNKED_PREFILL_SIZE PENNY_MAX_PREFILL_TOKENS; do
   if [[ -n "${!name:-}" ]]; then
     CAP_ENV+="Environment=${name}=${!name}"$'\n'
   fi
@@ -101,10 +101,12 @@ Volume=${LLM_CACHE_DIR}/pennyroyal:/cache:U,Z
 Volume=${LLM_NIXL_DIR}:/nixl:U,Z
 Volume=$(dirname "${PENNY_PLE_NVME_MODEL}"):/ple:ro,Z
 Volume=@CONFIG_ROOT@/config/pennyroyal/serve-flash-next-frspec.sh:/opt/pennyroyal/configs/pennyroyal/serve-flash-next-frspec.sh:ro,Z
+Volume=@CONFIG_ROOT@/config/pennyroyal/nixl-posix-frspec.toml:/opt/pennyroyal/configs/pennyroyal/nixl-posix-frspec.toml:ro,Z
 Environment=HF_HOME=/cache/huggingface
 Environment=TARGET_MODEL=/models/$(basename "${MODEL_ID}")
 Environment=CACHE_BASE=/cache
 Environment=NIXL_STORAGE_BASE=/nixl
+Environment=NIXL_CONFIG=/opt/pennyroyal/configs/pennyroyal/nixl-posix-frspec.toml
 Environment=CUDA_DEVICE_ORDER=PCI_BUS_ID
 # WSL CUDA UUID masking survives index remapping after driver reconnects.
 # SGLang sees only Blackwell at logical cuda:0; CDI supplies shared /dev/dxg.

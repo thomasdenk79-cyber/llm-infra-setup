@@ -53,6 +53,15 @@ MEM_FRACTION_STATIC="${PENNY_MEM_FRACTION_STATIC:-0.981}"
 # PREFILL_CHUNK_SIZE and made every restart exit before SGLang started.
 PREFILL_CHUNK_SIZE="${PENNY_CHUNKED_PREFILL_SIZE:-4096}"
 CHUNKED_PREFILL_SIZE="$PREFILL_CHUNK_SIZE"
+PREFILL_ARGS=()
+if [[ -n "${PENNY_MAX_PREFILL_TOKENS:-}" ]]; then
+  if [[ ! "${PENNY_MAX_PREFILL_TOKENS}" =~ ^[1-9][0-9]*$ ]] \
+     || (( PENNY_MAX_PREFILL_TOKENS < PREFILL_CHUNK_SIZE )); then
+    echo "PENNY_MAX_PREFILL_TOKENS must be a positive integer >= PENNY_CHUNKED_PREFILL_SIZE" >&2
+    exit 1
+  fi
+  PREFILL_ARGS+=(--max-prefill-tokens "${PENNY_MAX_PREFILL_TOKENS}")
+fi
 SPEC_NUM_STEPS="${PENNY_SPEC_NUM_STEPS:-3}"
 SPEC_EAGLE_TOPK="${PENNY_SPEC_EAGLE_TOPK:-1}"
 SPEC_NUM_DRAFT_TOKENS="${PENNY_SPEC_NUM_DRAFT_TOKENS:-4}"
@@ -72,16 +81,31 @@ if (( SPEC_NUM_DRAFT_TOKENS < SPEC_NUM_STEPS + 1 )); then
   echo "PENNY_SPEC_NUM_DRAFT_TOKENS (${SPEC_NUM_DRAFT_TOKENS}) muss mindestens PENNY_SPEC_NUM_STEPS + 1 sein" >&2
   exit 1
 fi
-# Zeichnen fuer kleine Batchgroessen kostet Speicher, der dann dem
-# Zeichenspeicher (KV) fehlt. PENNY_CUDA_GRAPH_MAX_BS verkleinert die mitgezeichneten
-# Batchgroessen; PENNY_ENABLE_MEMORY_SAVER gibt ungenutzten Aktivierungsspeicher frei.
+# CUDA graph captures reserve memory otherwise available to the KV cache.
+# Use either a precise decode batch list or a maximum batch size, not both.
 CUDA_GRAPH_ARGS=()
-if [[ -n "${PENNY_CUDA_GRAPH_MAX_BS:-}" ]]; then
+if [[ -n "${PENNY_CUDA_GRAPH_BS_DECODE:-}" ]]; then
+  if [[ -n "${PENNY_CUDA_GRAPH_MAX_BS:-}" ]]; then
+    echo "Set only one of PENNY_CUDA_GRAPH_BS_DECODE and PENNY_CUDA_GRAPH_MAX_BS" >&2
+    exit 1
+  fi
+  IFS=, read -r -a CUDA_GRAPH_BS_DECODE <<< "$PENNY_CUDA_GRAPH_BS_DECODE"
+  previous_batch_size=0
+  for batch_size in "${CUDA_GRAPH_BS_DECODE[@]}"; do
+    if [[ ! "$batch_size" =~ ^[1-9][0-9]*$ ]] || (( batch_size <= previous_batch_size )); then
+      echo "PENNY_CUDA_GRAPH_BS_DECODE must be ascending, unique positive integers separated by commas" >&2
+      exit 1
+    fi
+    previous_batch_size="$batch_size"
+  done
+  CUDA_GRAPH_ARGS+=(--cuda-graph-bs-decode "${CUDA_GRAPH_BS_DECODE[@]}")
+elif [[ -n "${PENNY_CUDA_GRAPH_MAX_BS:-}" ]]; then
   if [[ ! "${PENNY_CUDA_GRAPH_MAX_BS}" =~ ^[1-9][0-9]*$ ]]; then
     echo "PENNY_CUDA_GRAPH_MAX_BS muss eine positive Zahl sein" >&2; exit 1
   fi
   CUDA_GRAPH_ARGS+=(--cuda-graph-max-bs "${PENNY_CUDA_GRAPH_MAX_BS}")
 fi
+GRAPH_BATCHES="${PENNY_CUDA_GRAPH_BS_DECODE:-max:${PENNY_CUDA_GRAPH_MAX_BS:-SGLang-default}}"
 if [[ "${PENNY_ENABLE_MEMORY_SAVER:-0}" == 1 ]]; then CUDA_GRAPH_ARGS+=(--enable-memory-saver); fi
 # --- Wachstum der Laufzeit -------------------------------------------------
 # Gemessen auf diesem Rechner (Logzeile "Decode batch ... mamba num: 4" bei einer
@@ -185,12 +209,13 @@ pennyroyal_check_tp_devices "$TP_SIZE" "$SGLANG_MM_PREPROCESS_DEVICE"
 # NVMe preflight imports Torch, Triton, FlashInfer and SGLang. Activate their
 # durable cache locations before selecting the optional backend.
 source "$SCRIPT_DIR/ple-backend.sh"
-configure_max_total_tokens "${MAX_TOTAL_TOKENS:-824384}"
+# Leave SGLang's KV capacity auto-sized unless the operator sets an explicit cap.
+configure_max_total_tokens "${MAX_TOTAL_TOKENS:-}"
 
 TARGET_OVERRIDES='{"text_config":{"rope_parameters":{"mrope_interleaved":true,"mrope_section":[11,11,10],"rope_type":"yarn","rope_theta":10000000,"partial_rotary_factor":0.25,"factor":2.0,"original_max_position_embeddings":262144}}}'
 printf 'Pennyroyal profile: Flash-Next FR-Spec\n  runtime: %s\n  target: %s\n  token map: %s\n  cache root: %s\n  NIXL root: %s\n' \
   "$SGLANG_EXE" "$TARGET_MODEL" "$TOKEN_MAP" "$CACHE_BASE" "$NIXL_STORAGE_BASE"
-echo "Stellgroessen: mem_fraction=${MEM_FRACTION_STATIC} chunked_prefill=${CHUNKED_PREFILL_SIZE} spec=${SPEC_NUM_STEPS}/${SPEC_EAGLE_TOPK}/${SPEC_NUM_DRAFT_TOKENS} sleep_on_idle=${SLEEP_ON_IDLE} mfu=${ENABLE_MFU_METRICS} graph_max_bs=${PENNY_CUDA_GRAPH_MAX_BS:-Standard} memory_saver=${PENNY_ENABLE_MEMORY_SAVER:-0} hicache=${HICACHE_SIZE_GB} ple=${PENNY_PLE_BACKEND:-auto} loader_threads=${LOADER_THREADS} drop_cache_after_load=${WEIGHT_LOADER_DROP_CACHE_AFTER_LOAD} omp_threads=${OMP_NUM_THREADS} compile_threads=${TORCHINDUCTOR_COMPILE_THREADS} build_jobs=${PENNY_BUILD_JOBS}"
+echo "Stellgroessen: mem_fraction=${MEM_FRACTION_STATIC} chunked_prefill=${CHUNKED_PREFILL_SIZE} max_prefill=${PENNY_MAX_PREFILL_TOKENS:-SGLang-default} spec=${SPEC_NUM_STEPS}/${SPEC_EAGLE_TOPK}/${SPEC_NUM_DRAFT_TOKENS} sleep_on_idle=${SLEEP_ON_IDLE} mfu=${ENABLE_MFU_METRICS} graph_batches=${GRAPH_BATCHES} memory_saver=${PENNY_ENABLE_MEMORY_SAVER:-0} hicache=${HICACHE_SIZE_GB} ple=${PENNY_PLE_BACKEND:-auto} loader_threads=${LOADER_THREADS} drop_cache_after_load=${WEIGHT_LOADER_DROP_CACHE_AFTER_LOAD} omp_threads=${OMP_NUM_THREADS} compile_threads=${TORCHINDUCTOR_COMPILE_THREADS} build_jobs=${PENNY_BUILD_JOBS}"
 echo "Verifying the pinned FR-Spec map and tokenizer..."
 read -r TOKEN_MAP_SHA _ < <(sha256sum "$TOKEN_MAP")
 [[ "$TOKEN_MAP_SHA" == becfa41d394b86c26c632bea8f3c6ea64bbb76d7b238d8673c06afae21269f25 ]] || {
@@ -256,7 +281,7 @@ launch_args=(serve \
   "${TOKEN_CAP_ARGS[@]}" --warmups=structured_output \
   --context-length "$CONTEXT_LENGTH" --json-model-override-args "$TARGET_OVERRIDES" \
   --page-size "$PAGE_SIZE" --max-running-requests "$MAX_RUNNING_REQUESTS" \
-  --chunked-prefill-size "$PREFILL_CHUNK_SIZE" \
+  --chunked-prefill-size "$PREFILL_CHUNK_SIZE" "${PREFILL_ARGS[@]}" \
   --mamba-radix-cache-strategy extra_buffer --mamba-ssm-dtype "$MAMBA_SSM_DTYPE" \
   --max-mamba-cache-size "$MAX_MAMBA_CACHE_SIZE" --gdn-mtp-cache-mode none \
   --linear-attn-decode-backend flashinfer --linear-attn-prefill-backend flashinfer \

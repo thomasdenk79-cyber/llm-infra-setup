@@ -89,6 +89,22 @@ Wege, das zu verbessern (in dieser Reihenfolge):
   das Modell braucht (siehe Abschnitt Arbeitsspeicher). Auf einem Rechner mit
   192 GiB RAM kann 32 oder 64 gesetzt werden.
 
+Der persistente HiCache-L3-Speicher ueber NIXL ist davon getrennt. Auf dem
+aktuellen WSL-ext4-Dateisystem ist `use_direct_io=false` mit `use_uring=true`
+konfiguriert: NIXL nutzt asynchrone io_uring-Aufrufe, waehrend Dateidaten den
+Linux-Page-Cache verwenden koennen. Das ist kein ZFS-ARC-Cache. Linux kann
+saubere Cache-Seiten bei Speicherdruck zurueckgewinnen; dieser Modus wird
+separat gegen `O_DIRECT` gemessen, nicht als automatisch schneller angenommen.
+
+### Prefill-Groesse abstimmen
+
+`PENNY_CHUNKED_PREFILL_SIZE` begrenzt die Token pro Prefill-Chunk.
+`PENNY_MAX_PREFILL_TOKENS` setzt SGLangs Obergrenze fuer einen Prefill-Batch
+(Standard im aktuellen Image: 16384) und muss mindestens so gross wie der
+Chunk sein. Fuer grosse Blackwell-Prefills schrittweise 8192 und 16384 als
+Chunkgroesse mit `PENNY_MAX_PREFILL_TOKENS=32768` messen; TTFT bzw.
+Prefill-Token/s und VRAM-Spitze fuer 32k- und 128k-Prompts erfassen.
+
 ### 3. Vorhersage (spekulative Ausfuehrung)
 
 Die Runtime nutzt NEXTN mit 3 Schritten, topk 1, 4 Entwurf-Token. Akzeptiert sie
@@ -235,6 +251,12 @@ Tabellengroesse und Speicher ein bis zwei Minuten:
 MIN_TOKENS=150 ./scripts/benchmark.sh normal   # bricht bei zu niedrigem Wert ab
 ```
 
+Wenn `~/.config/llm-infra/gateway.env` vorhanden ist, nutzt das Skript
+standardmaessig LiteLLM (`qwen3.8-flash-next`) samt Master-Key. Fuer einen
+direkten Lauf gegen SGLang: `BENCHMARK_BASE_URL=http://127.0.0.1:8001/v1`
+setzen. Die SGLang-Metriken und die konfigurierte GPU werden dabei weiterhin
+direkt am Runtime-Port bzw. anhand ihrer UUID erfasst.
+
 Vorbedingungen fuer eine saubere Zahl:
 
 * keine anderen Anfragen (kein Chatfenster, kein `opencode`),
@@ -329,9 +351,10 @@ Decode batch, #running-req: 1, ... mamba num: 4, mamba usage: 0.17 ...
 
 * `mamba num: 4` bei einer Anfrage = **vier Zustandsplaetze pro Anfrage**.
 * `mamba usage: 0.17` dazu passt auf 24 Plaetze gesamt (`MAX_MAMBA_CACHE_SIZE` = 24).
-* Folge: `MAX_RUNNING_REQUESTS` auf 8 zu setzen bringt nichts, solange die Plaetze
-  bei 24 bleiben (8 x 4 = 32 noetig). Das Startskript bricht in so einem Fall ab,
-  statt teuer zu starten (`PENNY_MAMBA_SLOTS_PER_REQUEST`, Standard 4).
+* Der Launcher leitet `MAX_MAMBA_CACHE_SIZE` nicht aus der Requestzahl ab. Sein
+  Kapazitaets-Guard rechnet konservativ mit 5 Plaetzen je Anfrage; fuer 8 Requests
+  sind daher 40 Plaetze noetig. Zu kleine explizite Werte werden vor dem Start
+  abgewiesen (`PENNY_MAMBA_SLOTS_PER_REQUEST`, Standard 5).
 
 Und weil `--mem-fraction-static` die statische Gesamtgroesse festlegt (98,1 % von
 97.887 MiB, gemessen noch 2262 MiB frei), gilt:
@@ -340,8 +363,9 @@ Und weil `--mem-fraction-static` die statische Gesamtgroesse festlegt (98,1 % vo
 |---|---|
 | `MAX_RUNNING_REQUESTS` | mehr Anfragen, aber ohne mehr Plaetze wirkungslos |
 | `MAX_MAMBA_CACHE_SIZE` | kostet Speicher, `max_total_num_tokens` sinkt |
-| `MAX_TOTAL_TOKENS` | Obergrenze; mehr geht nur, wenn Slots/Graphen weniger kosten |
+| `MAX_TOTAL_TOKENS` | explizite Obergrenze; leer lassen = KV-Kapazitaet automatisch nach GPU-Speicher bestimmen |
 | `PENNY_CUDA_GRAPH_MAX_BS` kleiner | gibt Zeichen-Speicher fuer KV frei |
+| `PENNY_CUDA_GRAPH_BS_DECODE` | zeichnet nur die angegebenen Decode-Batchgroessen statt 1 bis Maximum |
 | `PENNY_ENABLE_MEMORY_SAVER=1` | holt ungenutzten Aktivierungsspeicher zurueck |
 | `mem-fraction-static` hoher | etwas mehr Pool, weniger Reserve fuer Aktivierungen |
 
