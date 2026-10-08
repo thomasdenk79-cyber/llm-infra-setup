@@ -6,24 +6,34 @@
 # Schluessel: master/db aus ~/.config/llm-infra/gateway.env; FALLBACK_API_KEY
 # ist ein Dummy, den der lokale llama-server nicht prueft; Luna braucht keinen
 # Schluessel - das Geraet-Login legt das Token unter /etc/chatgpt-tokens ab.
-# Nach 3 Primaer-Retries (5s Abstand) koaltet Pennyroyal 60s aus und die Kette
-# uebernimmt; danach probiert der Router den Primaern zurueck.
+# Fail-fast (Messung 2026-10-08 auf Test-Instanz, Primaer tot): Mit globalem
+# num_retries=3 + OpenAI-SDK-max_retries kostete JEDE Anfrage ~22 s, weil bei nur
+# einem Deployment pro Modellname nie ein Cooldown greift. Deshalb sind Retries
+# fuer die lokalen Stufen (qwen, bonsai) AUS: Fehler -> sofort naechste Stufe
+# (<1 s). Luna (letzte Stufe) behaelt die globalen Retries.
 model_list:
   - model_name: qwen3.8-flash-next
     litellm_params:
       model: openai/pennyroyal
       api_base: http://pennyroyal:8001/v1
       api_key: "os.environ/LITELLM_MASTER_KEY"
+      num_retries: 0
+      max_retries: 0
+      timeout: 600
   - model_name: bonsai-2-27b
     litellm_params:
       model: openai/bonsai-2-27b
       api_base: http://bonsai:8082/v1
       api_key: "os.environ/FALLBACK_API_KEY"
+      num_retries: 0
+      max_retries: 0
+      timeout: 300
   - model_name: gpt-6-luna
     model_info:
       mode: responses
     litellm_params:
       model: chatgpt/gpt-6-luna
+      reasoning_effort: high
   - model_name: deepseek-v4.1-flash
     litellm_params:
       model: openai/deepseek-v4.1-flash
@@ -39,8 +49,11 @@ router_settings:
   retry_after: 5
   allowed_fails: 3
   cooldown_time: 60
+  context_window_fallbacks:
+    - bonsai-2-27b: ["gpt-6-luna"]
   fallbacks:
     - qwen3.8-flash-next: ["bonsai-2-27b", "gpt-6-luna"]
+    - bonsai-2-27b: ["gpt-6-luna"]
 general_settings:
   master_key: "os.environ/LITELLM_MASTER_KEY"
   database_url: "os.environ/DATABASE_URL"
