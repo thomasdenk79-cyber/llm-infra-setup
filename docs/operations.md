@@ -229,6 +229,9 @@ llmlogs pennyroyal litellm open-webui
 llmlogs llm-node-exporter            # nur den Host-Exporter ansehen
 llmlogs --no-follow --since 30m --lines 300
 NO_COLOR=1 llmlogs                   # ANSI-Farben abschalten
+llmlogs fork                         # SGLang-Test-Fork (Container flash-next-sm120, sonst neuestes candidate.log)
+llmlogs --fork-last --lines 300      # neuestes ~/forge/fork/artifacts/sm120/*/candidate.log
+llmlogs guard reference-start        # ~/forge/logs/guard.log und reference-start.log
 ```
 
 Im interaktiven Terminal nutzt `llmlogs` dieselbe native, nach Journal-
