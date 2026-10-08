@@ -209,7 +209,7 @@ fi
 # 12 Gateway und Beobachtung --------------------------------------------------
 title 'Gateway und Beobachtung'
 # /health antwortet nur mit gueltigem Schluessel; die Lebensanzeige nicht.
-if curl -fsS --max-time 5 "http://127.0.0.1:${LITELLM_PORT}/health/liveness" >/dev/null 2>&1; then
+if curl -fsS --max-time 5 "http://127.0.0.1:${LITELLM_PORT}/health/liveliness" >/dev/null 2>&1; then
   good 'Gateway (LiteLLM) antwortet'
 elif systemctl --user is-active --quiet litellm.service 2>/dev/null; then
   warn 'Gateway-Unit laeuft, aber die Lebensanzeige antwortet nicht.' 'journalctl --user -u litellm.service -n 60 --no-pager'

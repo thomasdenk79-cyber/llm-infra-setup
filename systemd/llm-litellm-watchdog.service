@@ -1,0 +1,8 @@
+[Unit]
+Description=llm-infra LiteLLM-Gateway-Waechter (keyless liveliness + 1-Token-Smoke)
+Wants=litellm.service
+
+[Service]
+Type=oneshot
+Nice=5
+ExecStart=@CONFIG_ROOT@/scripts/litellm-watchdog.sh check

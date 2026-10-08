@@ -51,8 +51,16 @@ def status():
     gateway = os.getenv('LITELLM_PORT', '4000')
     print(f'  API      http://127.0.0.1:{runtime}  '
           f'({"antwortet" if api_json(runtime, "/health") is not None else "keine Antwort"})')
+    # /health ist master-key-geschuetzt (401 ohne Bearer); die Lebensanzeige ist
+    # keyless und liefert Text statt JSON - deshalb separat pruefen.
+    gw_alive = False
+    try:
+        with urllib.request.urlopen(f'http://127.0.0.1:{gateway}/health/liveliness', timeout=6) as resp:
+            gw_alive = resp.status == 200
+    except Exception:
+        pass
     print(f'  Gateway  http://127.0.0.1:{gateway}  '
-          f'({"antwortet" if api_json(gateway, "/health") is not None else "keine Antwort"})')
+          f'({"antwortet" if gw_alive else "keine Antwort"})')
     metrics = api_json(runtime, '/metrics')
     if metrics is None:
         try:

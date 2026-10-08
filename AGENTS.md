@@ -92,6 +92,8 @@ Das Repository ist das einzige Backup dieser Arbeit. Deshalb gilt fuer jeden Sch
 | `scripts/65-install-gpu-exporter.sh` | GPU-Metriken (nvidia-smi oder dcgm) |
 | `scripts/collect-host-facts.sh` | Host-Kennzahlen als Textdatei fuer den node_exporter |
 | `scripts/runtime-watchdog.sh` | wacht ueber die Runtime, `--install`/`--uninstall` |
+| `scripts/litellm-watchdog.sh` | wacht ueber den Gateway (Liveliness+Smoke), `--install`/`--uninstall`/`--reset` |
+| `scripts/litellm-failover-drill.sh` | beweist die dreistufige Fallback-Kette im Wegwerf-Container |
 | `scripts/wait-for-runtime.sh` | auf die API warten, Zeit als Umgebungsvariable |
 | `scripts/deploy.sh` | nur Runtime |
 | `scripts/deploy-non-gpu.sh` | ohne GPU: Portal, Chat, Gateway, Beobachtung |

@@ -30,11 +30,27 @@ scrape_configs:
       - targets: ["pennyroyal:8001"]
         labels: { service: inference }
 
+  # Gateway-Liveliness: /health/liveliness ist der einzige keyless Endpunkt des
+  # Gateways. /health und /metrics sind master-key-geschuetzt; ein Scrape ohne
+  # Authorization ueberschwemmt das Journal mit 401 plus Python-Tracebacks
+  # ("No api key passed in." / "Malformed API Key... Bearer prefix"). Wer den
+  # Gateway als Prometheus-Target anlegt, nutzt ausschliesslich diesen Pfad.
+  # (Derzeit nicht scharf: der Node-Collector liefert llm_unit_active{unit=
+  # "litellm"} bereits als Up/Down-Ersatz - siehe config/monitoring/alerts.yml.)
+  #
+  # - job_name: litellm-liveliness
+  #   metrics_path: /health/liveliness
+  #   static_configs:
+  #     - targets: ["litellm:4000"]
+  #       labels: { service: gateway }
+
   # Gateway-Metriken sind vorbereitet, aber der offizielle LiteLLM-Container
-  # (Chainguard-Image) enthaelt kein prometheus-client; /metrics liefert dort 404.
-  # Freischalten: eigenes Image mit prometheus-client bauen, dann diesen Block
-  # auskommentieren und User=root im Prometheus-Quadlet setzen (Begruendung: die
-  # Schluesseldatei gehoert dem Betreiber). Anleitung: docs/monitoring.md
+  # (Chainguard-Image) enthaelt kein prometheus-client; /metrics liefert dort 404
+  # und zusaetzlich 401 ohne gueltigen Bearer (os.environ-Wert, nie als Klartext
+  # ins YAML). Freischalten: eigenes Image mit prometheus-client bauen, dann
+  # diesen Block auskommentieren und User=root im Prometheus-Quadlet setzen
+  # (Begruendung: die Schluesseldatei gehoert dem Betreiber). Anleitung:
+  # docs/monitoring.md
   #
   # - job_name: litellm
   #   metrics_path: /metrics

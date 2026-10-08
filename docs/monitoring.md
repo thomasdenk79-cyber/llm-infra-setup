@@ -30,7 +30,10 @@ node/gpu-exporter + Textfile-Collector.
 5. Grafana-Dashboards 02/04 bekennen ihre WSL-Datengrenze als Hinweis-Panel.
 
 ## Beobachtungsliste
-- litellm "Malformed API Key" vereinzelt (Client sendet Key ohne Bearer-
-  Praefix; Kandidat: Open-WebUI-Version-Probe). Taucht es gehaeuft auf: Loki
-  `job="litellm" |= "Malformed"` nach Client-IP durchsuchen.
+- litellm "Malformed API Key" / "No api key passed in." war die Welle
+  keyloser Prueflaeufer gegen /health und /metrics (beide master-key-
+  geschuetzt). Behoben 2026-10-08: interne Tests auf keyless
+  /health/liveliness umgestellt; Scrape-Vorlage dokumentiert. Taucht es
+  wieder auf: Loki `job="litellm" |= "Malformed"` nach Client-IP durchsuchen
+  und docs/troubleshooting.md#gateway-log-voll-401 no api key passed in --malformed-api-key folgen.
 - Alloy meldet nach Container-Recreates kurz "no such container" (selbstheilend).

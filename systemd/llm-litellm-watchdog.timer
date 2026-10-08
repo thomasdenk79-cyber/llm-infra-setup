@@ -1,0 +1,10 @@
+[Unit]
+Description=llm-infra LiteLLM-Gateway-Waechter Intervall (5 Minuten)
+
+[Timer]
+OnBootSec=180s
+OnUnitActiveSec=5min
+AccuracySec=15s
+
+[Install]
+WantedBy=timers.target

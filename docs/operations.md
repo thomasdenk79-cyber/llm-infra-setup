@@ -65,6 +65,63 @@ Geraet-Login legt seine Token unter `~/.config/llm-infra/chatgpt-tokens` ab,
 das der LiteLLM-Container als `/etc/chatgpt-tokens` einhaengt. Geaendert wird
 die Kette im Generator `scripts/60-install-gateway.sh`, nicht in der YAML.
 
+### Failover-Drill (wiederholbar, ohne laufende Anfragen)
+
+```bash
+./scripts/litellm-failover-drill.sh              # alle drei Stufen mit Zahlen
+./scripts/litellm-failover-drill.sh --no-luna    # nur bis Bonsai
+```
+
+Der Drill faehrt eine Kopie der Router-Konfiguration als Wegwerf-Container
+(`litellm-drill`, 127.0.0.1:4013) mit absichtlich totem Primaer (Port 4099) und
+misst je Stufe Zeit und Token/s. Das lebende Gateway und die GPU-Runtime bleiben
+unbertroffen. Letzter Lauf 2026-10-08 12:31: Kette nach totem Primaer in
+22,2 s auf `bonsai-2-27b` gerettet (2 Token, Antwort OK), Bonsai direkt 0,27 s,
+Luna direkt 1,73 s. Referenz der ersten bewiesenen Kette: 9,78 s Gesamt bei
+~45 tok/s auf Bonsai (Langmessung).
+
+### Waechter fuer den Gateway
+
+```bash
+./scripts/litellm-watchdog.sh --install     # systemd-Timer alle 5 Minuten
+./scripts/litellm-watchdog.sh --reset       # Loopsperre nach 3 Neustarts loesen
+```
+
+Der Timer `llm-litellm-watchdog.timer` prueft die keyless Lebensanzeige
+(`/health/liveliness`) plus einen 1-Token-Ruf durch den Router. Bei Ausfall:
+laufende Anfragen der Runtime abfragen (`sglang:num_running_reqs`), GPU-Sperre
+`${XDG_RUNTIME_DIR}/copilot-sm120-gpu.lock` per `flock -n` respektieren, dann
+und nur dann ausschliesslich `litellm.service` neu starten - nie die Runtime.
+Nach drei ergebnislosen Neustarts greift die Loopsperre. Protokoll:
+`state/litellm-watchdog/watchdog.log`. Das ist die Gateway-Ergaenzung zum
+Runtime-Waechter `scripts/runtime-watchdog.sh`; als Ueberwachungsluecke war er
+bislang ein M4-artiger Fall aus `docs/GRAFANA-DRIFT-AUDIT-2026-10-08.md`
+(Soll-Ist-Widerspruch ohne aktiven Nachweis).
+
+### Luna-Token: Persistenz und Geraet-Login
+
+Das ChatGPT-OAuth-Token liegt ausschliesslich unter
+`~/.config/llm-infra/chatgpt-tokens/` (Datei `auth.json`) und wird vom
+LiteLLM-Container als `/etc/chatgpt-tokens` eingehaengt. Frueher landete es im
+fluechtigen `/root/.config/litellm/chatgpt` des Containers und war nach jedem
+Neustart weg - das ist mit dem Volume behoben. Der ChatGPT-Geraet-Login
+(Device-Code) laeuft beim ersten Start oder wenn das Token ablaeuft; der
+Device-Code erscheint im Gateway-Journal. Laeuft der Refresh ohne neuen Code,
+ist das Token gesund (pruefen: `./scripts/litellm-failover-drill.sh --no-luna`
+weglassen und Stufe 3 ansehen). Erneuern: siehe
+`docs/troubleshooting.md#luna-token-abgelaufen`.
+
+### Monitoring gegen key-geschuetzte Endpunkte
+
+`/health` und `/metrics` des Gateways verlangen den Master-Key als
+`Authorization: Bearer ...`. Interne Pruefungen (healthcheck, Doctor,
+Prometheus-Scrape) richten sich deshalb ausschliesslich gegen das keyless
+`/health/liveliness`; andernfalls blaht jeder Scrape das Journal mit 401 plus
+Traceback ("No api key passed in." / "Malformed API Key ... Bearer prefix").
+Der vorbereitete, deaktivierte Scrape-Block in
+`config/monitoring/prometheus.yml` dokumentiert beide Wege (keyless Liveness,
+Bearer aus Secret-Datei - niemals Schluessel als Klartext im YAML).
+
 ## Modell austauschen
 
 ```bash

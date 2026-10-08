@@ -6,7 +6,7 @@
 #
 # Alle Ablaeufe sind Skripte im Ordner scripts/ - nichts muss von Hand getippt
 # werden. Details in README.md und docs/.
-.PHONY: help setup setup-check preflight install tools nvidia-driver kwin-egpu podman zfs model model-verify pennyroyal ple-nvme verify-ple gateway litellm open-webui homepage portal autossh komodo postgres monitoring gpu-exporter collector watchdog watchdog-off gitops gitops-auto gitops-off tune tune-plan tune-conservative tune-sweet tune-sweet-an tune-c6 tune-c6-an tune-maxkv tune-maxkv-an tune-c16 tune-c16-an tune-rollback ple-native ple-copy ple-check ple-cache ple-warm gpu-frei gpu-frei-an gpu-frei-aus quality quality-lang quality-vergleich deploy deploy-all deploy-non-gpu deploy-ready apply-units wait healthcheck health backup restore doctor bench bench-normal bench-long validate drift ci status docs docs-build pre-commit-install checkpoint ungesichert tui rotate-secrets show-credentials install-llmlogs llmlogs setup-agents
+.PHONY: help setup setup-check preflight install tools nvidia-driver kwin-egpu podman zfs model model-verify pennyroyal ple-nvme verify-ple gateway litellm open-webui homepage portal autossh komodo postgres monitoring gpu-exporter collector watchdog watchdog-off watchdog-gateway watchdog-gateway-off failover-drill gitops gitops-auto gitops-off tune tune-plan tune-conservative tune-sweet tune-sweet-an tune-c6 tune-c6-an tune-maxkv tune-maxkv-an tune-c16 tune-c16-an tune-rollback ple-native ple-copy ple-check ple-cache ple-warm gpu-frei gpu-frei-an gpu-frei-aus quality quality-lang quality-vergleich deploy deploy-all deploy-non-gpu deploy-ready apply-units wait healthcheck health backup restore doctor bench bench-normal bench-long validate drift ci status docs docs-build pre-commit-install checkpoint ungesichert tui rotate-secrets show-credentials install-llmlogs llmlogs setup-agents
 
 help:
 	@echo 'llm-infra-setup - verfuegbare Befehle'
@@ -35,6 +35,8 @@ help:
 	@echo '  make gpu-exporter      GPU-Metriken-Einheit erzeugen'
 	@echo '  make collector         Host-Kennzahlen (Timer alle 30 s)'
 	@echo '  make watchdog          Runtime-Waechter aktivieren (warnt nur)'
+	@echo '  make watchdog-gateway  Gateway-Waechter aktivieren (Timer 5 min)'
+	@echo '  make failover-drill    Failover-Kette in Wegwerf-Container durchmessen'
 	@echo '  make healthcheck       kurze Systempruefung'
 	@echo '  make backup            Konfiguration, Datenbank, ZFS-Snapshot'
 	@echo '  make restore           Wiederherstellungshilfe anzeigen'
@@ -139,6 +141,12 @@ watchdog:
 	./scripts/runtime-watchdog.sh --install
 watchdog-off:
 	./scripts/runtime-watchdog.sh --uninstall
+watchdog-gateway:
+	./scripts/litellm-watchdog.sh --install
+watchdog-gateway-off:
+	./scripts/litellm-watchdog.sh --uninstall
+failover-drill:
+	./scripts/litellm-failover-drill.sh
 tune-plan:
 	./scripts/apply-tuning.sh --nur-plan
 tune:

@@ -39,10 +39,17 @@ else
   warn 'ZFS-Werkzeuge nicht installiert'
 fi
 df -P /srv 2>/dev/null | awk 'NR==2 {gsub("%","",$5); if ($5+0>=90) {print "     [WARN]  /srv ist " $5 " % voll (Modell und PLE brauchen Platz)"; exit 1} else {print "     [OK]    /srv " $5 " % voll"} }' || bad=1
-if [[ "${LITELLM_PORT}" != disabled ]] && curl --fail --silent --max-time 3 "http://127.0.0.1:${LITELLM_PORT}/health" >/dev/null 2>&1; then
-  ok 'Gateway (LiteLLM) gesund'
-else
-  warn 'Gateway nicht erreichbar (optional)' 'make deploy-non-gpu'
+# /health ist durch den Master-Key geschuetzt und antwortet ohne Bearer mit 401 -
+# das waere ein false negative. Die Lebensanzeige /health/liveliness ist keyless.
+if [[ "${LITELLM_PORT}" != disabled ]]; then
+  gw_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 "http://127.0.0.1:${LITELLM_PORT}/health/liveliness" 2>/dev/null || echo 000)
+  if [[ "${gw_code}" == 200 ]]; then
+    ok 'Gateway (LiteLLM) gesund (liveliness keyless)'
+  elif [[ "${gw_code}" == 000 ]]; then
+    warn 'Gateway nicht erreichbar (optional)' 'make deploy-non-gpu'
+  else
+    warn "Gateway-Liveliness antwortet mit HTTP ${gw_code}" 'journalctl --user -u litellm.service -n 60 --no-pager'
+  fi
 fi
 if (( bad == 0 )); then
   echo 'SYSTEM HEALTHY'

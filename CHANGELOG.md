@@ -1,4 +1,48 @@
 # Aenderungsprotokoll
+## 2026-10-08 – Gateway-Haertung: Monitoring-Auth, Waechter, Drill
+
+- Root-Cause 401-Welle: interne Prueflaeufer ohne gueltigen Bearer trafen die
+  master-key-geschuetzten Endpunkte /health und /metrics: der Repo-eigene
+  healthcheck.sh und llmctl prueften /health (401 ohne Key -> "Gateway nicht
+  erreichbar" als false negative), doctor.sh nutzte den Liveness-Alias, dazu
+  Client-Sondierungen aus dem Inferenz-Netz (Open-WebUI-Muster /api/tags,
+  /props, /version unmittelbar vor jeder "Malformed"-Zeile; rotierende
+  Container-IPs 10.89.1.x). Folge: "No api key passed in." / "Malformed API
+  Key ... Bearer prefix" mit Traceback im Journal. Befund 12h-Journal: 57x
+  "No api key", 8x "Malformed". Kein aktiver Prometheus-Litellm-Target im
+  Live-Config (ueber /api/v1/targets verifiziert); /metrics liefert selbst mit
+  gueltigem Key 404 (Chainguard-Image ohne prometheus-client). Fix: alle
+  internen Tests auf das keyless /health/liveliness umgestellt
+  (healthcheck.sh zeigte "Gateway nicht erreichbar" als false negative trotz
+  200er Liveliness), Prometheus-Vorlage dokumentiert keyless Liveness-Scrape
+  und Bearer-nur-als-Secret-Datei. Keine Secretwerte im YAML (validate rc=0,
+  promtool SUCCESS).
+- Neu: scripts/litellm-watchdog.sh + systemd/llm-litellm-watchdog.{service,
+  timer} (5 min): Liveliness + 1-Token-Smoke; restartet bei Ausfall ausschliesslich
+  litellm.service, mit running_reqs-Schutz, GPU-Lock-Guard (flock -n auf
+  ${XDG_RUNTIME_DIR}/copilot-sm120-gpu.lock) und 3er-Loopsperre. Guard-Pfad
+  getestet (Sperre belegt -> keine Aktion, rc=0). Timer aktiv.
+- Neu: scripts/litellm-failover-drill.sh - Wegwerf-Container litellm-drill
+  (:4013) mit totem Primaer (:4099); beweist KETTE OK. Letzter Lauf:
+  kettenuebergabe 22,2s -> bonsai-2-27b (tok=2), bonsai direkt 0,27s, luna
+  direkt 1,73s (tok=5, 'Sure'). Erstbeweis der Kette: 9,78s gesamt, ~45 tok/s.
+  Luna braucht temperature-freie Anfragen (400 Bad Request sonst) - im Drill
+  beruecksichtigt.
+- Hermes-"Clean EOF, no finish_reason": zwei Klassen. (1) Restart-Artefakt:
+  die Warnungen 11:52:33/11:54:02/11:54:23 liegen unmittelbar um den
+  litellm-Neustart 11:51:39-11:51:53 (Streams, die den Container-Stopp
+  ueberlebten, enden sauber ohne Schlusspaket). (2) Vereinzelte Faelle ohne
+  Neustartfenster (11:40-11:50, 11:10, 09:13, 08:17) - ob clientseitige
+  Abort-Streams oder ein Upstream ohne finish_reason endet, bleibt offen;
+  kein Muster eines reproduzierbaren Kettendefekts.
+  Doku beschreibt die Unterscheidung (Neustartfenster pruefen, sonst Kette
+  per Drill durchmessen).
+- Doku: operations.md (Drill, Waechter, Luna-Token-Persistenz,
+  Monitoring-vs-Key-Endpunkte), troubleshooting.md (401-Klasse, Luna-Token,
+  Clean EOF), monitoring.md Beobachtungsliste aktualisiert.
+- Querverweis: schliesst eine M4-artige Luecke (Ist-vs-Soll ohne aktiven
+  Nachweis) aus docs/GRAFANA-DRIFT-AUDIT-2026-10-08.md; Audit selbst unveraendert.
+
 ## 2026-10-08 – Bonsai 2 als LiteLLM-Fallback
 
 - Bonsai 2 27B PTQ1_0 wird auf der RTX 3500 Ada durch Prism-llama.cpp als rootless WSL-Quadlet auf Port 8082 bereitgestellt (8192 Kontext, Q8-KV).

@@ -88,6 +88,62 @@ assemble-Funktion in `scripts/collect-host-facts.sh` fuegt sie automatisch ein.
 `sudo -n smartctl ...` braucht sudo ohne Passwortabfrage. Ohne diesen Zugang
 bleibt `llm_smart_available 0`; der Doctor meldet es.
 
+## Gateway-Log voll 401: "No api key passed in." / "Malformed API Key"
+
+Beide Meldungen sind dieselbe Fehlerklasse: ein interner Pruef- oder
+Scrape-Laeufer (Prometheus, healthcheck, TUI, Dashboard-Probe) ruft die
+master-key-geschuetzten Endpunkte `/health` oder `/metrics` ohne gueltigen
+`Authorization: Bearer ...` auf. Das Gateway selbst ist gesund; die
+Lebensanzeige `/health/liveliness` ist der einzige keyless Endpunkt und
+liefert immer 200 ohne Authentifizierung.
+
+```bash
+journalctl --user -u litellm.service --since -1h --no-pager | grep -E 'GET /health|GET /metrics' | tail
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:4000/health/liveliness   # 200 = Gateway ok
+```
+
+Regel: interne Tests immer gegen `/health/liveliness`; ein Prometheus-Scrape
+auf `/metrics` braucht den Bearer aus einer Secret-Datei
+(`authorization.credentials_file`, Vorbereitet in
+`config/monitoring/prometheus.yml`), nie Klartext im YAML. Vor dem Fix meldete
+auch `./scripts/healthcheck.sh` "Gateway nicht erreichbar", obwohl der
+Container lief - derselbe Grund (Test gegen `/health` statt Liveliness).
+
+## Luna-Token abgelaufen
+
+Stufe 3 antwortet nicht mehr oder das Journal zeigt einen neuen Device-Code:
+
+```bash
+journalctl --user -u litellm.service --since -30m --no-pager | grep -i -E 'device|code|chatgpt|token'
+ls -l ~/.config/llm-infra/chatgpt-tokens/    # auth.json muss existieren und erneuert werden
+```
+
+Den angezeigten Device-Code unter https://chat.openai.com/codex (oder dem vom
+Provider genannten Pfad) innerhalb der Gueltigkeit bestaetigen; das Token
+landet dann von selbst wieder im Volume-Ordner. War der Ordner leer oder
+gehorte das Token einem frueheren fluechtigen Containerpfad
+(`/root/.config/litellm/chatgpt`), hilft nur einmalig ein frischer Login -
+das Volume haelt das Token seit dem Fix auch über Gateway-Neustarts.
+
+## Client meldet "Clean EOF, no finish_reason" beim Stream
+
+Herkunft ist der Hermes-Client; er sieht einen sauber beendeten Stream ohne
+`finish_reason`. Das ist in dieser Infrastruktur erwartbar, wenn genau in dem
+Fenster `litellm.service` (oder die Runtime) neu gestartet wurde - etwa durch
+einen Deploy oder den Gateway-Waechter: laufende SSE-Streams werden beim
+Container-Stopp sauber geschlossen, ohne dass das Schlusspaket geschrieben
+wurde. Einmalige Warnungen kurz nach einem Neustart sind daher ein
+Restart-Artefakt, kein Fehler der Kette.
+
+```bash
+journalctl --user -u litellm.service --since -6h --no-pager | grep -E 'Stopped|Started' # Ueberlappung pruefen
+```
+
+Haufen sie sich OHNE Neustarts, ist ein Proxy/Timeout in der Kette verdaechtig:
+Runtime-Metriken (`sglang:num_running_reqs`), Bonsai-Log und Cooldown-Ereignisse
+im Gateway-Journal pruefen; notfalls mit
+`./scripts/litellm-failover-drill.sh` die Stufen durchmessen.
+
 ## Etwas wurde versehentlich von Hand geaendert
 
 Repo und Laeufer laufen auseinander:
