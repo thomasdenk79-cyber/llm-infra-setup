@@ -29,6 +29,10 @@
         icon: grafana.png
         href: http://127.0.0.1:3000
         description: Dashboards
+    - Agenten-Observatorium:
+        icon: grafana.png
+        href: http://127.0.0.1:3000/d/llm-infra-agent-observatorium
+        description: Dashboard 05 - Coding-Arme live (Kollegen-Demo)
     - Prometheus:
         icon: prometheus.png
         href: http://127.0.0.1:9090
