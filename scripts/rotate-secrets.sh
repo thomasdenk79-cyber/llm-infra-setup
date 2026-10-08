@@ -31,7 +31,9 @@ source "${SECRETS_DIR}/gateway.env"
 new_pg="$(random_secret 16)"
 new_master="sk-$(random_secret 24)"
 new_webui="$(random_secret 24)"
-new_grafana="$(random_secret 12)"
+# Grafana 12 erzwingt eine Passwort-Politik: reines Zufalls-Hex
+# (random_secret) wird abgelehnt. Deshalb Vorwort mit Mischung.
+new_grafana="Llm-Grafana-$(random_secret 6)"
 salt="${LITELLM_SALT_KEY:-$(random_secret 24)}"
 [[ "${also_salt}" == 1 ]] && salt="$(random_secret 24)"
 
@@ -99,9 +101,9 @@ chmod 0600 "${CREDENTIALS_FILE}"
 # Grafana merkt sich sein Admin-Passwort in der eigenen Datenbank; das Secret
 # wirkt nur beim allerersten Start. Deshalb zusaetzlich zuruecksetzen.
 if [[ "$(podman ps --format '{{.Names}}' 2>/dev/null || true)" == *grafana* ]]; then
-  podman exec grafana grafana cli admin reset-admin-password "${new_grafana}" >/dev/null 2>&1 \
+  podman exec systemd-grafana grafana cli admin reset-admin-password "${new_grafana}" >/dev/null 2>&1 \
     && log 'Grafana-Admin-Passwort gesetzt.' \
-    || log 'WARNUNG: Grafana-Passwort nicht gesetzt. Manuell: podman exec grafana grafana cli admin reset-admin-password <pw>'
+    || log 'WARNUNG: Grafana-Passwort nicht gesetzt. Manuell: podman exec systemd-grafana grafana cli admin reset-admin-password <pw>'
 fi
 
 echo 'Fertig. Dienste neu starten, damit die neuen Werte gelten:'

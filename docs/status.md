@@ -98,6 +98,43 @@ Journal-Prioritaetsfarben und vermeidet doppelte, rohe Podman-Streams.
 * Kapazitätsgrenzen fuer mehrere Sitzungen gemessen und dokumentiert
   (`docs/performance.md`: 524288 pro Anfrage, 824384 gemeinsam).
 
+## Behoben: Grafana-Dashboards ohne Daten (2026-10-08)
+
+Ursache war kein fehlender Stream, sondern die Anbindung der Dashboards an
+Prometheus: Der Datenquelle-Eintrag zeigte auf `http://prometheus:9090`, aber
+der Prometheus-Container hatte keinen Netz-Alias namens `prometheus` (nur den
+Namen `systemd-prometheus`). Grafana-Log ab 07:22: `dial tcp: lookup prometheus
+... no such host` bei jeder Panel-Abfrage - Prometheus selbst war healthy und
+lieferte alle Daten. Dazu zwei stille Folgefehler: Die Dashboards 02/03/04
+referenzierten die Datenquelle per UID `prometheus`/`loki` (existieren nicht),
+und 01 vertauschte die beiden Provisionierungs-UIDs.
+
+Behoben (alles im Repo, Idempotent):
+- `quadlet/prometheus.container`: `NetworkAlias=prometheus` - DNS-Name fuehrt
+  jetzt, wie von alloy/loki/grafana bereits genutzt.
+- `config/.../datasources.yml`: feste `uid:`-Felder (PBFA97CFB590B2093 /
+  P8E80F9AEF21F6940), damit Dashboard-UIDs bei Neuinstallationen stabil bleiben.
+- `config/.../dashboards/0*.json`: alle Panel-UIDs auf die provisionierten
+  gesetzt; PCIe-Panel auf `nvidia_smi_pcie_link_*` umgestellt (der
+  sysfs-Collector `llm_pcie_*` liefert in WSL keine Werte, GPU-nahe Messung
+  uebernimmt der gpu-exporter).
+- `scripts/rotate-secrets.sh`: `podman exec grafana` -> `systemd-grafana`
+  (falscher Containername, das Admin-Passwort wurde deshalb nie in der
+  Grafana-DB realiniert) und politiktaugliches Passwortformat (Grafana 12
+  lehnt reines Hex ab).
+- Live: Prometheus-Unit neu gerendert und Prometheus neu gestartet, Grafana
+  neu gestartet; das Grafana-DB-Admin-Passwort wurde auf ein politiktaugliches
+  Neues gesetzt und Podman-Secret + credentials.txt nachgezogen (DB, Secret
+  und Dokumentation tragen jetzt denselben Wert). Dashboard-Provider laedt die
+  JSONs alle 30 s nach.
+
+Datenstand danach: 79/95 Panel-Abfragen liefern ueber den Grafana-Datenquellen-
+Proxy Daten. Die 16 Luecken sind Umgebungs- und Sammler-Grenzen, keine
+Verdrahtungsfehler: ZFS/SMART-/PLE-Panels (04) und Taktfrequenz (03) liefern
+nur auf dem echten KVM-Host Werte (in WSL gibt es kein ZFS, keine NVMe-SMART,
+keine CPU-Frequenz-Skala); drei Loki-Panels pruefte ich direkt gegen Loki-API
+(siehe unten) - dort kommen Streams mit Linien an.
+
 ## Todo
 
 1. Runtime einmal neu starten, damit die neue Unit (Healthcheck, Observability-Netz

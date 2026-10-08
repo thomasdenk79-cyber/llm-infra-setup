@@ -57,7 +57,7 @@
       "id": 6853,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 5,
@@ -105,7 +105,7 @@
       "id": 68555,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 5,
@@ -153,7 +153,7 @@
       "id": 70689,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 5,
@@ -201,7 +201,7 @@
       "id": 62247,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 5,
@@ -249,7 +249,7 @@
       "id": 15434,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 5,
@@ -301,7 +301,7 @@
       "id": 36889,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 5,
@@ -353,7 +353,7 @@
       "id": 53975,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 8,
@@ -413,7 +413,7 @@
       "id": 61879,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 8,
@@ -479,7 +479,7 @@
       "id": 38114,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 8,
@@ -539,7 +539,7 @@
       "id": 79296,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 8,
@@ -599,7 +599,7 @@
       "id": 56624,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 8,
@@ -671,7 +671,7 @@
       "id": 61422,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 8,
@@ -743,7 +743,7 @@
       "id": 22040,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 7,
@@ -802,7 +802,7 @@
       "id": 95143,
       "datasource": {
         "type": "loki",
-        "uid": "loki"
+        "uid": "P8E80F9AEF21F6940"
       },
       "gridPos": {
         "h": 9,
@@ -826,7 +826,7 @@
           "queryType": "range",
           "datasource": {
             "type": "loki",
-            "uid": "loki"
+            "uid": "P8E80F9AEF21F6940"
           }
         }
       ]

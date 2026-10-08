@@ -1,11 +1,16 @@
 apiVersion: 1
+# uid ist fest geschrieben, damit die Dashboard-JSONs immer dieselbe Datenquelle
+# treffen. Ohne uid vergibt Grafana bei jeder Neuinstallation Zufalls-UIDs und
+# alle Panels zeigen "no data" (Panels referenzieren per uid).
 datasources:
   - name: Prometheus
+    uid: PBFA97CFB590B2093
     type: prometheus
     access: proxy
     url: http://prometheus:9090
     isDefault: true
   - name: Loki
+    uid: P8E80F9AEF21F6940
     type: loki
     access: proxy
     url: http://loki:3100

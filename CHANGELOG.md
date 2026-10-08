@@ -1,4 +1,23 @@
 # Aenderungsprotokoll
+## 2026-10-08 – Grafana: Dashboards zeigen wieder Daten
+
+- Ursache: Prometheus-Container ohne Netz-Alias `prometheus`; die
+  Grafana-Datenquelle `http://prometheus:9090` lief in einen DNS-Fehler
+  (`lookup prometheus ... no such host`), alle Panels "no data" obwohl alle
+  Scrape-Ziele `up` waren.
+- Zusatzfehler: Dashboard-JSONs referenzierten nicht-existente Datenquellen-UIDs
+  (`prometheus`, `loki`) bzw. vertauschte UIDs (01); `rotate-secrets.sh`
+  exec-te in den Container-Namen `grafana` statt `systemd-grafana` und konnte
+  das Admin-Passwort deshalb nie in der Grafana-DB realignen; Grafana 12
+  Passwort-Politik lehnte das generierte Hex-Passwort ab.
+- Fix: `NetworkAlias=prometheus` (quadlet + installierte Unit), feste
+  `uid:`-Felder in `datasources.yml`, alle Panel-UIDs normalisiert,
+  PCIe-Panel auf `nvidia_smi_pcie_link_*` umgestellt, rotate-secrets korrigiert.
+- Verifikation: 79/95 Panel-Abfragen liefern ueber `/api/ds/query` Daten
+  (vorher 0/95 ueber Prometheus-Proxy); Loki-Log-Panels direkt gegen
+  `/loki/api/v1/query_range` bestaetigt. Restluecken = WSL-Umgebungsgrenzen
+  (ZFS/SMART/Takt nur auf echtem Host), dokumentiert unter Datengrenze.
+
 
 ## Diagnose WSL/Pennyroyal (2026-10-07)
 

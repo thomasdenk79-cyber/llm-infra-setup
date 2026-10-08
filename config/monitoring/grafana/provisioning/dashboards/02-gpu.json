@@ -57,7 +57,7 @@
       "id": 91926,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 5,
@@ -105,7 +105,7 @@
       "id": 37209,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 5,
@@ -153,7 +153,7 @@
       "id": 72353,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 5,
@@ -201,7 +201,7 @@
       "id": 66809,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 5,
@@ -249,7 +249,7 @@
       "id": 76643,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 5,
@@ -305,7 +305,7 @@
       "id": 54509,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 5,
@@ -353,7 +353,7 @@
       "id": 66218,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 8,
@@ -425,7 +425,7 @@
       "id": 79406,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 8,
@@ -497,7 +497,7 @@
       "id": 76643,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 8,
@@ -563,7 +563,7 @@
       "id": 20920,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 8,
@@ -635,7 +635,7 @@
       "id": 75095,
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "PBFA97CFB590B2093"
       },
       "gridPos": {
         "h": 8,
@@ -682,25 +682,25 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "llm_pcie_link_width{device=~\"0000:22:.*\"}",
+          "expr": "nvidia_smi_pcie_link_width_current",
           "legendFormat": "Ist Breite",
           "instant": false
         },
         {
           "refId": "B",
-          "expr": "llm_pcie_link_width_max{device=~\"0000:22:.*\"}",
+          "expr": "nvidia_smi_pcie_link_width_max",
           "legendFormat": "Max Breite",
           "instant": false
         },
         {
           "refId": "C",
-          "expr": "llm_pcie_link_speed_gt{device=~\"0000:22:.*\"}",
+          "expr": "nvidia_smi_pcie_link_gen_current",
           "legendFormat": "Ist GT/s",
           "instant": false
         },
         {
           "refId": "D",
-          "expr": "llm_pcie_link_speed_gt_max{device=~\"0000:22:.*\"}",
+          "expr": "nvidia_smi_pcie_link_gen_max",
           "legendFormat": "Max GT/s",
           "instant": false
         }
@@ -712,7 +712,7 @@
       "id": 29463,
       "datasource": {
         "type": "loki",
-        "uid": "loki"
+        "uid": "P8E80F9AEF21F6940"
       },
       "gridPos": {
         "h": 9,
@@ -736,7 +736,7 @@
           "queryType": "range",
           "datasource": {
             "type": "loki",
-            "uid": "loki"
+            "uid": "P8E80F9AEF21F6940"
           }
         }
       ]
