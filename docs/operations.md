@@ -53,6 +53,18 @@ Loopback gebunden. Von einem anderen Rechner im Netz kommst du so hin:
 ssh -L 3000:127.0.0.1:3000 -L 3001:127.0.0.1:3001 deinrechner
 ```
 
+## Gateway-Fallback in drei Stufen
+
+Der Gateway (Modellalias `qwen3.8-flash-next`) failovert ueber eine dreistufige Kette: primaer
+Pennyroyal auf der Blackwell; nach drei Retries im Abstand von 5 s Stufe zwei,
+Bonsai 2 27B auf der RTX 3500 Ada (~45 tok/s); wenn lokal gar nichts geht,
+Stufe drei Luna ueber ChatGPT-Plus-OAuth. Nach 60 s Cooldown versucht der
+Router erneut den Primaer. Die Schluessel liegen in
+`~/.config/llm-infra/gateway.env`; Luna braucht keinen API-Schluessel - das
+Geraet-Login legt seine Token unter `~/.config/llm-infra/chatgpt-tokens` ab,
+das der LiteLLM-Container als `/etc/chatgpt-tokens` einhaengt. Geaendert wird
+die Kette im Generator `scripts/60-install-gateway.sh`, nicht in der YAML.
+
 ## Modell austauschen
 
 ```bash
