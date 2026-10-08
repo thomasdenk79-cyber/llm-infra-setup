@@ -2,7 +2,7 @@
 # Follow systemd and Podman logs for local models, gateways, and agents.
 set -Eeuo pipefail
 
-units=(pennyroyal litellm litellm-postgres open-webui hermes hermes-gateway)
+units=(pennyroyal litellm litellm-postgres open-webui bonsai hermes hermes-gateway)
 lines=100
 since=1h
 follow=1
