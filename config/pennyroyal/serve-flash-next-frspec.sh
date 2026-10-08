@@ -236,9 +236,39 @@ echo "Stellgroessen: mem_fraction=${MEM_FRACTION_STATIC} chunked_prefill=${CHUNK
   echo "/dev/shm                             : $(df -h /dev/shm 2>/dev/null | awk 'NR==2 {print $2 " gesamt, " $3 " belegt"}')"
   echo "Host-RAM (MiB)                       : $(awk '/MemTotal|MemAvailable/ {printf "%s %d  ", $1, $2/1024}' /proc/meminfo)"
   echo "---------------------- Last / Admission (effektive Werte) -------------------"
-  echo "max_running=${MAX_RUNNING_REQUESTS:-?} mamba_slots=${MAX_MAMBA_CACHE_SIZE:-?} slots/request-guard=${SLOTS_PER_REQUEST:-?} mem_fraction=${MEM_FRACTION_STATIC:-?} graph_bs=${GRAPH_BATCHES:-?} context=${PENNY_CONTEXT_LENGTH:-?}"
+  echo "max_running=${MAX_RUNNING_REQUESTS:-?} mamba_slots=${MAX_MAMBA_CACHE_SIZE:-auto} mamba_strategy=${PENNY_MAMBA_STRATEGY:-extra_buffer} slots/request-guard=${SLOTS_PER_REQUEST:-?} mem_fraction=${MEM_FRACTION_STATIC:-?} graph_bs=${GRAPH_BATCHES:-?} context=${PENNY_CONTEXT_LENGTH:-?}"
   echo "threads omp=${OMP_NUM_THREADS:-?} mkl=${MKL_NUM_THREADS:-?} openblas=${OPENBLAS_NUM_THREADS:-?} numexpr=${NUMEXPR_NUM_THREADS:-?} | build_jobs=${PENNY_BUILD_JOBS:-?} max_jobs=${MAX_JOBS:-?} inductor=${TORCHINDUCTOR_COMPILE_THREADS:-?}"
   echo "loader_threads=${LOADER_THREADS:-?} drop_cache_after_load=${WEIGHT_LOADER_DROP_CACHE_AFTER_LOAD:-?} hicache_gb=${HICACHE_SIZE_GB:-?} ple=${PENNY_PLE_BACKEND:-?}"
+  echo "==========================================================================="
+} >&2
+
+# --- Parameter-Vergleich: Original-Default <-> Fork/jetzt -------------------------
+{
+  row() { printf '%-40s | %-17s | %-24s | %s\n' "$1" "$2" "$3" "$4"; }
+  echo "=============== PARAMETER: ORIGINAL v2.5.3  <->  JETZT AKTIV ================"
+  row "Parameter" "Original-Default" "JETZT (effektiv)" "Bemerkung"
+  row "---------" "----------------" "----------------" "---------"
+  row "max_running_requests (MAX_RUNNING_REQUESTS)" "4" "${MAX_RUNNING_REQUESTS:-?}" "parallele Anfragen"
+  row "Mamba-Slots (MAX_MAMBA_CACHE_SIZE)" "24 (6/Req)" "${MAX_MAMBA_CACHE_SIZE:-auto}" "Turbo-Rezept: 4*Req+3"
+  row "Mamba-Strategie (PENNY_MAMBA_STRATEGY)" "extra_buffer" "${PENNY_MAMBA_STRATEGY:-extra_buffer}" "lazy = 1 Slot weniger/Req"
+  row "mem_fraction_static" "0.981" "${MEM_FRACTION_STATIC:-?}" "WSL braucht Reserve"
+  row "KV-Cache Tokens (MAX_TOTAL_TOKENS)" "automatisch" "${MAX_TOTAL_TOKENS:-automatisch}" "aus mem_fraction"
+  row "CUDA-Graph Batches" "max:6" "${GRAPH_BATCHES:-?}" "nur bis 4 Requests"
+  row "SGLANG_SM120_ONLINE_MXFP8 (Q1)" "aus (live=false)" "${SGLANG_SM120_ONLINE_MXFP8:-false}" "FP8-Umrechnung beim Laden"
+  row "SGLANG_ENABLE_SM120_LOWM_BF16_GEMM (X1)" "n/a (aus)" "${SGLANG_ENABLE_SM120_LOWM_BF16_GEMM:-false}" "FORK-Patch: kleine GEMMs"
+  row "SGLANG_FP8_W8A16_GEMV (X2)" "n/a (aus)" "${SGLANG_FP8_W8A16_GEMV:-false}" "FORK-Patch: lm_head 1-16 Zeilen"
+  row "SGLANG_ENABLE_GDN_PREFILL_PROJECTION_VIEWS (X3)" "n/a (aus)" "${SGLANG_ENABLE_GDN_PREFILL_PROJECTION_VIEWS:-false}" "FORK-Patch: Prefill GDN"
+  row "SGLANG_QSA_MQA_PREFILL_SPLIT_K (X4)" "n/a (1=aus)" "${SGLANG_QSA_MQA_PREFILL_SPLIT_K:-1}" "FORK-Patch: Prefill Split-K"
+  row "SGLANG_HICACHE_TORCH_PINNED_ALLOC (W2)" "0 (aus)" "${SGLANG_HICACHE_TORCH_PINNED_ALLOC:-0}" "WSL: torch-pinned statt HostRegister"
+  row "PENNY_USE_EXPANDABLE_SEGMENTS (W3)" "1 (an, Repo-Skript)" "${PENNY_USE_EXPANDABLE_SEGMENTS:-0}" "WSL: aus (sonst CUDA-Absturz)"
+  row "memlock-Limit (Bytes)" "64 MiB (Podman)" "$(awk '/Max locked memory/ {print $4}' /proc/self/limits 2>/dev/null)" "io_uring/NIXL braucht >64 KiB"
+  row "Threads OMP/MKL/BLAS/NUMEXPR" "4" "${OMP_NUM_THREADS:-?}" "weniger = weniger RAM-Druck"
+  row "Build-/JIT-Jobs" "4" "${PENNY_BUILD_JOBS:-?}" ""
+  row "Loader-Threads" "4" "${LOADER_THREADS:-?}" ""
+  row "drop_cache_after_load" "0" "${WEIGHT_LOADER_DROP_CACHE_AFTER_LOAD:-?}" "Page-Cache nach Laden leeren"
+  row "HiCache Host-Tier (GB)" "wie live: 16" "${HICACHE_SIZE_GB:-?}" "unveraendert"
+  row "Kontext (Tokens)" "524288 (live)" "${PENNY_CONTEXT_LENGTH:-524288}" "unveraendert (YaRN 2x)"
+  echo "(n/a = existiert im Original nicht; FORK-Patch = nur im Fork vorhanden, hier per Schalter aktiviert)"
   echo "==========================================================================="
 } >&2
 echo "Verifying the pinned FR-Spec map and tokenizer..."
@@ -315,7 +345,7 @@ launch_args=(serve \
   --context-length "$CONTEXT_LENGTH" --json-model-override-args "$TARGET_OVERRIDES" \
   --page-size "$PAGE_SIZE" --max-running-requests "$MAX_RUNNING_REQUESTS" \
   --chunked-prefill-size "$PREFILL_CHUNK_SIZE" "${PREFILL_ARGS[@]}" \
-  --mamba-radix-cache-strategy extra_buffer --mamba-ssm-dtype "$MAMBA_SSM_DTYPE" \
+  --mamba-radix-cache-strategy "${PENNY_MAMBA_STRATEGY:-extra_buffer}" --mamba-ssm-dtype "$MAMBA_SSM_DTYPE" \
   "${MAMBA_CACHE_ARGS[@]}" --gdn-mtp-cache-mode none \
   --linear-attn-decode-backend flashinfer --linear-attn-prefill-backend flashinfer \
   --mamba-track-interval "$MAMBA_TRACK_INTERVAL" \

@@ -1,12 +1,12 @@
 # GENERIERT von scripts/50-install-pennyroyal.sh - bitte dort ändern, nicht hier.
 # Änderung wirksam machen: ./scripts/apply-runtime-unit.sh
 [Unit]
-Description=Pennyroyal SGLang RTX PRO 6000 runtime
+Description=Pennyroyal runtime on RTX PRO 6000 (FORK sm120, all speed switches, mamba 19 lazy)
 After=network-online.target
 Wants=llm-inference-network.service
 
 [Container]
-Image=ghcr.io/jpezzulli/sglang-rtxpro6000:v2.5.3@sha256:c36a326dcb6a99e12ffdc89ae2f2ca0365a02fb3c72ed8b18f88d63cdc7f5a8c
+Image=localhost/flash-next-sm120:serving
 ContainerName=pennyroyal
 # The runtime stays single-homed on the inference network. Prometheus is attached
 # to both networks and pulls /metrics from here; see docs/architecture.md.
@@ -14,17 +14,17 @@ Network=llm-inference.network
 PublishPort=127.0.0.1:8001:8001
 AddDevice=nvidia.com/gpu=all
 PodmanArgs=--security-opt=seccomp=unconfined
+Ulimit=memlock=67108864:67108864
+Ulimit=nofile=1048576:1048576
 Volume=/home/z000g9hu/models:/models:ro
 Volume=/home/z000g9hu/.local/share/llm-infra/cache/pennyroyal:/cache:U,Z
 Volume=/home/z000g9hu/.local/share/llm-infra/nixl:/nixl:U,Z
 Volume=/home/z000g9hu/.local/share/llm-infra/ple:/ple:ro,Z
-Volume=@CONFIG_ROOT@/config/pennyroyal/serve-flash-next-frspec.sh:/opt/pennyroyal/configs/pennyroyal/serve-flash-next-frspec.sh:ro,Z
-Volume=@CONFIG_ROOT@/config/pennyroyal/nixl-posix-frspec.toml:/opt/pennyroyal/configs/pennyroyal/nixl-posix-frspec.toml:ro,Z
 Environment=HF_HOME=/cache/huggingface
 Environment=TARGET_MODEL=/models/Qwen3.8-Flash-Next-NVFP4
 Environment=CACHE_BASE=/cache
 Environment=NIXL_STORAGE_BASE=/nixl
-Environment=NIXL_CONFIG=/opt/pennyroyal/configs/pennyroyal/nixl-posix-frspec.toml
+Environment=NIXL_CONFIG=/opt/pennyroyal/configs/pennyroyal-live-wsl/nixl-posix-frspec.toml
 Environment=CUDA_DEVICE_ORDER=PCI_BUS_ID
 # WSL CUDA UUID masking survives index remapping after driver reconnects.
 # SGLang sees only Blackwell at logical cuda:0; CDI supplies shared /dev/dxg.
@@ -50,13 +50,20 @@ Environment=SGLANG_JIT_CACHE_DIR=/cache/sglang/jit
 Environment=PENNY_LOADER_THREADS=4
 Environment=PENNY_HICACHE_SIZE_GB=16
 Environment=PENNY_PLE_BACKEND=nvme
-Environment=SGLANG_SM120_ONLINE_MXFP8=false
 Environment=PENNY_PLE_NVME_MODEL=/ple/Qwen3.8-Flash-Next-PLE-NVME
 Environment=SGLANG_HICACHE_TORCH_PINNED_ALLOC=1
 Environment=PENNY_WEIGHT_LOADER_DROP_CACHE_AFTER_LOAD=1
 Environment=PENNY_SLEEP_ON_IDLE=0
 Environment=MAX_RUNNING_REQUESTS=4
-Environment=PENNY_MAMBA_CACHE_AUTO=1
+Environment=MAX_MAMBA_CACHE_SIZE=19
+Environment=PENNY_MAMBA_SLOTS_PER_REQUEST=4
+Environment=PENNY_MAMBA_STRATEGY=extra_buffer_lazy
+Environment=PENNY_CONTEXT_LENGTH=524288
+Environment=SGLANG_SM120_ONLINE_MXFP8=true
+Environment=SGLANG_ENABLE_SM120_LOWM_BF16_GEMM=true
+Environment=SGLANG_FP8_W8A16_GEMV=true
+Environment=SGLANG_ENABLE_GDN_PREFILL_PROJECTION_VIEWS=true
+Environment=SGLANG_QSA_MQA_PREFILL_SPLIT_K=64
 Environment=PENNY_CUDA_GRAPH_BS_DECODE=1,2,4
 Environment=PENNY_ENABLE_MEMORY_SAVER=0
 Environment=PENNY_USE_EXPANDABLE_SEGMENTS=0
@@ -67,7 +74,7 @@ HealthInterval=30s
 HealthTimeout=15s
 HealthRetries=4
 HealthStartPeriod=1800s
-Exec=next
+Exec=exec bash /opt/pennyroyal/configs/pennyroyal-live-wsl/serve-flash-next-frspec.sh
 
 [Service]
 # Refuse to start the reference while a candidate holds the GPU; log who started us.
