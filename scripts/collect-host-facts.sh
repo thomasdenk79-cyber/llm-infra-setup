@@ -133,7 +133,10 @@ fi
 
 # --- NVMe SMART (sudo noetig; ohne sudo nur llm_smart_available=0) ----------
 smart_ok=0
-if have smartctl; then
+# In WSL sind die Platten virtuelle VHDs ohne zugreifbare SMART-Daten; ein
+# sudo-Aufruf pro Geraet und 30s-Sekunde fluellt nur das Journal mit
+# Auth-Fehlern. Deshalb auf WSL-Hosts komplett ueberspringen.
+if have smartctl && ! grep -qi microsoft /proc/version; then
   for dev in /dev/nvme[0-9] /dev/sd[a-z]; do
     [[ -e "${dev}" ]] || continue
     json="$(sudo -n smartctl --json=c -a "${dev}" 2>/dev/null || true)"
