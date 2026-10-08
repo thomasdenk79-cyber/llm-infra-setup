@@ -10,26 +10,17 @@
 
 ```mermaid
 flowchart LR
-  A[Agenten: hermes / opencode / copilot] -->|OpenAI-API| L[LiteLLM :4000]
-  H[Menschen: Open WebUI :3001] --> L
-  L --> P[Pennyroyal sglang-Fork :8001]
-  P --> G[(RTX PRO 6000 Blackwell)]
-  P -. sglang:* .-> PR[Prometheus :9090]
-  C[12 Podman-Container] --> AL[Alloy] --> LO[Loki :3100]
-  PR --> GR[Grafana :3000]
-  LO --> GR
-  F[collect-host-facts.timer 30s] -->|Textfile| PR
-  M[morning-brief 06:30] --> B[briefs/*.md + Homepage]
-
-> Status: beta (Siemens Inner Source)\n
-
-Lokale, reproduzierbare LLM-Infrastruktur: CachyOS/Arch, NVIDIA RTX PRO 6000,
-ZFS, rootless Podman, Pennyroyal/SGLang mit `Qwen3.8-Flash-Next-NVFP4`.
-
-Alles ist Skript. Ein Neubau des Rechners braucht `git clone` und `./setup.sh`.
-
-## Neu hier? Zwei Befehle
-
+  agents["Agenten: hermes, opencode, copilot"] -->|"OpenAI-API"| litellm["LiteLLM Gateway, Port 4000"]
+  humans["Menschen: Open WebUI, Port 3001"] --> litellm
+  litellm --> pennyroyal["Pennyroyal sglang-Fork, Port 8001"]
+  pennyroyal --> gpu[("RTX PRO 6000 Blackwell")]
+  pennyroyal -.->|"sglang Metriken"| prom["Prometheus, Port 9090"]
+  podman["12 Podman-Container"] --> alloy["Alloy"]
+  alloy --> loki["Loki, Port 3100"]
+  prom --> grafana["Grafana, Port 3000"]
+  loki --> grafana
+  facts["collect-host-facts, 30s Timer"] -->|"Textfile"| prom
+  brief["morning-brief, 06:30 Cron"] -->|"Markdown"| home["Homepage"]
 ```bash
 ./setup.sh          # richtet alles ein; bei Bedarf mehrfach ausfuehren
 ./scripts/doctor.sh # zeigt, was nicht passt, und nennt den passenden Befehl
