@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-07T14:33:39+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-08T11:52:57+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -469,3 +469,7 @@ WSL-Pennyroyal-Speicherdiagnose und kontrollierter Wiederholungsversuch vorberei
 ## Notiz 2026-10-07T14:33:39+02:00
 
 Pennyroyal:
+
+## Notiz 2026-10-08T11:52:57+02:00
+
+Drei-Stufen-Fallback Pennyroyal->Bonsai->Luna: Generator+Quadlet+Config, Token-Volume persistiert, Live-Test HTTP 200 ohne neuen Device-Code

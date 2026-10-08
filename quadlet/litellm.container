@@ -15,6 +15,10 @@ Environment=LITELLM_CONFIG=/etc/litellm/config.yaml
 # mit ~10 kB Traceback pro Request - siehe MAX_STRING_LENGTH_STDOUT_LOG in
 # litellm/constants.py dieser Version).
 Environment=MAX_STRING_LENGTH_STDOUT_LOG=600
+# ChatGPT-OAuth-Token fuer den dritten Fallback (Luna). Bleibt lokal unter
+# dem Betreiber-Verzeichnis, nie in Git; Geraet-Login erzeugt es selbst.
+Environment=CHATGPT_TOKEN_DIR=/etc/chatgpt-tokens
+Volume=%h/.config/llm-infra/chatgpt-tokens:/etc/chatgpt-tokens:rw,Z
 Volume=@CONFIG_ROOT@/config/litellm.yaml:/etc/litellm/config.yaml:ro,Z
 Exec=--config /etc/litellm/config.yaml --port 4000 --host 0.0.0.0
 [Service]
