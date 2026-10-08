@@ -9,7 +9,9 @@ NetworkAlias=loki
 PublishPort=127.0.0.1:3100:3100
 Volume=%h/.local/share/llm-infra/loki:/loki:Z,U
 Volume=@CONFIG_ROOT@/config/monitoring/loki.yml:/etc/loki/config.yml:ro,Z
-Exec=-config.file=/etc/loki/config.yml
+# log.level als CLI-Flag (Loki 3.5.2 kennt log_level nicht in der config-Datei -
+# mit ihr crasht der Start). Drosselt die Info-Flut pro Grafana-Query.
+Exec=-config.file=/etc/loki/config.yml -log.level=warn
 
 [Service]
 Restart=on-failure
