@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-08T13:41:08+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-09T12:14:49+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -489,3 +489,7 @@ Siemens LLM: deepseek-v4.1-flash + siemens-qwen-3.8-27b als waehlbare LiteLLM-Mo
 ## Notiz 2026-10-08T13:41:08+02:00
 
 Siemens Modellmessung n=3 je Modell dokumentiert; hohe Latenzvarianz; Opus/Sonnet-Zugriff und Claude-Code-Harness sauber abgegrenzt
+
+## Notiz 2026-10-09T12:14:49+02:00
+
+pre-change: reinitialize WSL GPU link and tune LiteLLM failover/Bonsai KV memory
