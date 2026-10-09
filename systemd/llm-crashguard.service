@@ -1,0 +1,7 @@
+[Unit]
+Description=llm-infra Crashguard (Last-known-good-Rollback fuer Quadlet-Pods)
+
+[Service]
+Type=oneshot
+Nice=10
+ExecStart=@CONFIG_ROOT@/scripts/crashguard.sh check

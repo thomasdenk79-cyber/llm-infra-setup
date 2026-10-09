@@ -6,28 +6,47 @@
 # Schluessel: master/db aus ~/.config/llm-infra/gateway.env; FALLBACK_API_KEY
 # ist ein Dummy, den der lokale llama-server nicht prueft; Luna braucht keinen
 # Schluessel - das Geraet-Login legt das Token unter /etc/chatgpt-tokens ab.
-# Fail-fast (Messung 2026-10-08 auf Test-Instanz, Primaer tot): Mit globalem
-# num_retries=3 + OpenAI-SDK-max_retries kostete JEDE Anfrage ~22 s, weil bei nur
-# einem Deployment pro Modellname nie ein Cooldown greift. Deshalb sind Retries
-# fuer die lokalen Stufen (qwen, bonsai) AUS: Fehler -> sofort naechste Stufe
-# (<1 s). Luna (letzte Stufe) behaelt die globalen Retries.
+#
+# Timeout-Staffelung (Stand 09.10.2026):
+#   Erreichbarkeit ist bereits fail-fast: ein toter Upstream liefert sofort
+#   connection refused, die Connect-Phase ist im OpenAI-Client auf ~5 s
+#   fixiert; dafuer braucht es keine Konfiguration. Die Werte hier sind nur
+#   das Rueckfallnetz fuer die Generierung, nicht der primer Pruefpfad:
+#     timeout: 300 s        - Nicht-Streaming (Watchdog-Smoke, Compression-
+#                             Summarys; alles kleine Rufe).
+#     stream_timeout: 600 s - Streaming inkl. kaltem Megaprefill (1M Tokens
+#                             braucht real 2-5 min; >10 min = klar defekt).
+#   Hermes skaliert sein TTFB-Fenster clientseitig bereits nach Request-
+#   groesse; adaptive Faktor-2-bis-3-Abbruchlogik waer ein Feature-Request
+#   an LiteLLM, hier nicht konfigurierbar.
+#   disable_cooldowns: der naechste Request probiert Qwen sofort wieder,
+#   sobald Pennyroyal zurueck ist.
 model_list:
   - model_name: qwen3.8-flash-next
+    model_info:
+      max_input_tokens: 524288
     litellm_params:
       model: openai/pennyroyal
       api_base: http://pennyroyal:8001/v1
       api_key: "os.environ/LITELLM_MASTER_KEY"
-      num_retries: 0
-      max_retries: 0
-      timeout: 600
+      num_retries: 1
+      max_retries: 1
+      timeout: 300
+      stream_timeout: 600
   - model_name: bonsai-2-27b
+    # llama.cpp hard context is 262144; leave a small output/tool margin.
+    # LiteLLM pre-filters oversized requests and sends them to the recursive
+    # context fallback instead of producing repeated llama.cpp send_error lines.
+    model_info:
+      max_input_tokens: 250000
     litellm_params:
       model: openai/bonsai-2-27b
       api_base: http://bonsai:8082/v1
       api_key: "os.environ/FALLBACK_API_KEY"
-      num_retries: 0
-      max_retries: 0
+      num_retries: 1
+      max_retries: 1
       timeout: 300
+      stream_timeout: 600
   - model_name: gpt-6-luna
     model_info:
       mode: responses
@@ -46,9 +65,11 @@ model_list:
       api_key: "os.environ/SIEMENS_LLM_API_KEY"
 router_settings:
   num_retries: 3
-  retry_after: 5
-  allowed_fails: 3
-  cooldown_time: 60
+  retry_after: 0
+  allowed_fails: 1
+  cooldown_time: 1
+  disable_cooldowns: true
+  max_fallbacks: 2
   context_window_fallbacks:
     - bonsai-2-27b: ["gpt-6-luna"]
   fallbacks:
