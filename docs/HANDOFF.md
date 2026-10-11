@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-11T14:25:25+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-11T15:08:46+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -594,6 +594,37 @@ SSD-PLE vergleichen.
 * Die CachyOS-/WSL-/GPU-Konfiguration, das vorhandene Modell unter `/srv/ai`
   und die lokalen Secrets vor der Neuinstallation extern sichern.
 
+#### Lokales Modell-Backup auf externer SSD
+
+Das vollständige Modell `RadixArk-Qwen3.8-Flash-Next-NVFP4` ist bereits auf
+der externen SSD vorhanden:
+
+```text
+Quelle: /srv/ai/models/RadixArk-Qwen3.8-Flash-Next-NVFP4
+Backup: /run/media/z000g9hu/DATA_NTFS/HF-models/RadixArk-Qwen3.8-Flash-Next-NVFP4
+```
+
+Die SSD ist `/dev/sda3` (NTFS, Label `DATA_NTFS`) und wurde mit `ntfs3,force`
+gemountet. Ein `rsync --dry-run` meldete danach 682 Quelldateien, 682
+Backup-Dateien und `Number of regular files transferred: 0`; das Backup ist
+damit strukturell vollständig. Die Größenanzeige von NTFS (`319G`) kann von
+der logischen Modellgröße (`341.621.827.210` Bytes, etwa 281 GiB) abweichen.
+Fortsetzen/erneut prüfen:
+
+```bash
+rsync -a --human-readable --info=progress2 --partial \
+  /srv/ai/models/RadixArk-Qwen3.8-Flash-Next-NVFP4/ \
+  /run/media/z000g9hu/DATA_NTFS/HF-models/RadixArk-Qwen3.8-Flash-Next-NVFP4/
+```
+
+Andere Agenten sollen vor einem erneuten Hugging-Face-Download zuerst diesen
+lokalen Backup-Pfad prüfen. Ein späterer Restore kann per `rsync` zurück nach
+`/srv/ai/models/` erfolgen.
+
 ## Notiz 2026-10-11T14:25:25+02:00
 
 Handover vor CachyOS-Neuinstallation: RAM/VRAM-Befund, erfolgreicher C1-Lauf, Host-RAM-HiCache-Fehler und spaeterer CUDA-launch-failure-Stacktrace dokumentiert; Pennyroyal gestoppt.
+
+## Notiz 2026-10-11T15:08:46+02:00
+
+Externes Modell-Backup verifiziert: 682 Dateien auf DATA_NTFS/HF-models, rsync checksum dry-run ohne Transfers; Restore-Pfad im Handover dokumentiert.
