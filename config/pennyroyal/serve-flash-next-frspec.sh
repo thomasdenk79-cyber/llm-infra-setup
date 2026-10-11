@@ -26,7 +26,7 @@ NAMESPACE_HELPER="$REPO_ROOT/scripts/pennyroyal/derive_namespace.py"
 # host pool at size * 1e9 bytes), not GiB. An unset PENNY_HICACHE_SIZE_GB keeps
 # this recipe's qualified default. Zero disables the host HiCache tier for
 # low-RAM hosts; positive values reserve that many decimal GB.
-HICACHE_SIZE_GB="${PENNY_HICACHE_SIZE_GB:-32}"
+HICACHE_SIZE_GB="${PENNY_HICACHE_SIZE_GB:-8}"
 if [[ ! "$HICACHE_SIZE_GB" =~ ^(0|[1-9][0-9]*)$ ]]; then
   echo "PENNY_HICACHE_SIZE_GB must be 0 or a positive integer number of GB, got '$HICACHE_SIZE_GB'" >&2
   exit 1

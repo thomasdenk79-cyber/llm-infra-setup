@@ -48,7 +48,7 @@ Environment=FLASHINFER_WORKSPACE_BASE=/cache/flashinfer
 Environment=SGLANG_CACHE_DIR=/cache/sglang
 Environment=SGLANG_JIT_CACHE_DIR=/cache/sglang/jit
 Environment=PENNY_LOADER_THREADS=4
-Environment=PENNY_HICACHE_SIZE_GB=16
+Environment=PENNY_HICACHE_SIZE_GB=8
 Environment=PENNY_PLE_BACKEND=nvme
 Environment=PENNY_PLE_NVME_MODEL=/ple/Qwen3.8-Flash-Next-PLE-NVME
 Environment=SGLANG_HICACHE_TORCH_PINNED_ALLOC=1

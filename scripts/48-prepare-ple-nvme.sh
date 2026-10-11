@@ -6,7 +6,7 @@ source "${root}/lib/common.sh"
 : "${LLM_MODELS_DIR:=${HOME}/models}"
 : "${PENNYROYAL_IMAGE:=ghcr.io/jpezzulli/sglang-rtxpro6000:v2.5.3}"
 : "${PENNY_PLE_NVME_MODEL:=${HOME}/.local/share/llm-infra/ple/Qwen3.8-Flash-Next-PLE-NVME}"
-source_dir="${LLM_MODELS_DIR}/Qwen3.8-Flash-Next-NVFP4"
+source_dir="${PENNY_PLE_SOURCE_DIR:-${LLM_MODELS_DIR}/Qwen3.8-Flash-Next-NVFP4}"
 parent_dir="$(dirname -- "${PENNY_PLE_NVME_MODEL}")"
 command -v podman >/dev/null || { log 'podman is required'; exit 1; }
 [[ -d "${source_dir}" ]] || { log "model source missing: ${source_dir}"; exit 1; }
