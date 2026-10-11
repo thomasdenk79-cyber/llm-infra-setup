@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-09T12:14:49+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-10-11T14:25:25+02:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe
 
@@ -493,3 +493,107 @@ Siemens Modellmessung n=3 je Modell dokumentiert; hohe Latenzvarianz; Opus/Sonne
 ## Notiz 2026-10-09T12:14:49+02:00
 
 pre-change: reinitialize WSL GPU link and tune LiteLLM failover/Bonsai KV memory
+
+## Notiz 2026-10-11T14:25:00+02:00
+
+### Handover vor CachyOS-Neuinstallation
+
+Die laufende Infrastruktur wurde vor der Neuinstallation angehalten:
+`systemctl --user stop pennyroyal.service`. LiteLLM-/Hermes-Konfiguration,
+Gateway-Fallback und die lokalen Änderungen liegen im Git-Repository.
+
+#### Bewiesenes Routing
+
+Hermes ist auf `qwen3.8-flash-next` ueber `http://127.0.0.1:4000/v1`
+konfiguriert. Als Pennyroyal zuvor nicht startete, lieferte eine direkte
+LiteLLM-Anfrage mit diesem Alias `model: gpt-6-luna`; Ursache war die bewusst
+konfigurierte Kette `qwen3.8-flash-next -> bonsai-2-27b -> gpt-6-luna`.
+Nach erfolgreichem Pennyroyal-Start lief dieselbe Probe ueber LiteLLM mit
+`model: qwen3.8-flash-next`.
+
+#### Speicherbefund und offene Korrektur
+
+Der Rechner hat 197,5 GB RAM (188 GiB). Der fruehere Startfehler war
+Host-RAM, nicht VRAM:
+
+```text
+ValueError: Not enough host memory available. Requesting 26.56 GB but only have 25.34 GB free. Please reduce the size of the hierarchical cache.
+```
+
+Das war kein cgroup-Limit (`MemoryMax=infinity`). Beim Ladepeak lagen laut
+systemd 133,5 GB Prozess-RAM und 1,1 GB Swap-Peak an; die RAM-PLE-Konfiguration
+und der Modell-Lader liessen in diesem Moment nur 25,34 GB fuer den HiCache
+uebrig. `free` zeigte spaeter 197,5 GB total, 67,4 GB `MemAvailable`, davon
+10,8 GB wirklich frei und 81,2 GB Page Cache. Linux-Cache ist reclaimable,
+aber SGLang prueft den akut freien Host-Pool und reserviert nicht einfach
+gegen den gesamten theoretisch freien RAM.
+
+Die zwischenzeitlich erfolgreiche Konfiguration lief mit `HiCache: 8 GB` und
+`PENNY_PLE_BACKEND=ram`. Sie startete und erreichte fuer C1 gute Decode-Werte
+bis etwa 225 Token/s. Fuer die urspruenglich gewuenschte Kombination
+`HiCache=32 GB` muss die alte SSD-PLE-Strecke wiederhergestellt werden; die
+SSD-PLE-Datei war auf dem Rechner noch nicht vorbereitet. Der erste Versuch,
+das Overlay zu bauen, scheiterte nur an einem Namens-Mismatch:
+
+```text
+prepare_ple_nvme: [Errno 2] No such file or directory: '/models/Qwen3.8-Flash-Next-NVFP4'
+```
+
+Das vorhandene Modell heisst im aktiven `/srv`-Layout
+`RadixArk-Qwen3.8-Flash-Next-NVFP4`. `scripts/48-prepare-ple-nvme.sh` hat jetzt
+dafuer `PENNY_PLE_SOURCE_DIR` als explizite Quelle.
+
+#### Letzter Lauf: erfolgreich, dann spaeterer GPU-Abbruch
+
+Der Server war nach dem Start gesund und beantwortete `/health`. Ein C1-Lauf
+zeigte unter anderem:
+
+```text
+Decode batch, #running-req: 1, #full token: 143488, accept len: 2.38,
+accept rate: 0.46, cuda graph: True, gen throughput (token/s): 225.08
+Decode batch, #running-req: 1, #full token: 144320, accept len: 2.20,
+accept rate: 0.40, cuda graph: True, gen throughput (token/s): 209.72
+```
+
+Der spaetere Abbruch am 14:16:56 war ein anderer Fehler als der Startup-RAM-
+Fehler. Der relevante Stacktrace:
+
+```text
+Scheduler hit an exception
+  scheduler.event_loop_overlap()
+  scheduler.get_next_batch_to_run()
+  scheduler.get_new_batch_prefill()
+  new_batch.prepare_for_extend()
+  flatten_arrays_to_pinned_cpu(input_ids, _pin)
+  cpu_t.pin_memory()
+torch.AcceleratorError: CUDA error: unspecified launch failure
+Search for `cudaErrorLaunchFailure'
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+```
+
+Unmittelbar davor liefen Mamba-Reclaim/Match-Meldungen (`mamba_used=17`,
+`mamba_total=17`). Der Prozess beendete sich danach mit SIGQUIT; systemd
+meldete 109,5 GB Speicher-Peak und nur 112 KB Swap-Peak. Dieser Fehler ist
+VRAM-/CUDA-/asynchroner Kernel-Kontext und muss getrennt vom Host-HiCache-
+Problem untersucht werden. Fuer die naechste Sitzung zuerst reproduzieren mit
+`CUDA_LAUNCH_BLOCKING=1`, dann C1 ohne lange Prefill-Fortsetzung und mit
+SSD-PLE vergleichen.
+
+#### Aktueller Stand / naechste Schritte
+
+* Pennyroyal ist gestoppt; kein weiterer Analyse- oder Neustartlauf wurde
+  gestartet.
+* Repo-Defaults wurden auf `PENNY_HICACHE_SIZE_GB=8` gesetzt, damit der
+  RAM-PLE-Start robust bleibt; der aktive alte Startscript-Stand liegt unter
+  `/srv/ai/pennyroyal/config/config/` und wurde ebenfalls auf 8 gesetzt.
+* Fuer SSD-PLE zuerst Overlay korrekt erzeugen, z.B. mit
+  `PENNY_PLE_SOURCE_DIR=/srv/ai/models/RadixArk-Qwen3.8-Flash-Next-NVFP4`
+  und einem passenden `PENNY_PLE_NVME_MODEL` unter `/srv/ai/pennyroyal/ple`.
+  Danach aktive Unit auf `PENNY_PLE_BACKEND=nvme`, `/ple`-Mount und 32-GB-
+  HiCache umstellen und erst dann neu starten.
+* Die CachyOS-/WSL-/GPU-Konfiguration, das vorhandene Modell unter `/srv/ai`
+  und die lokalen Secrets vor der Neuinstallation extern sichern.
+
+## Notiz 2026-10-11T14:25:25+02:00
+
+Handover vor CachyOS-Neuinstallation: RAM/VRAM-Befund, erfolgreicher C1-Lauf, Host-RAM-HiCache-Fehler und spaeterer CUDA-launch-failure-Stacktrace dokumentiert; Pennyroyal gestoppt.
