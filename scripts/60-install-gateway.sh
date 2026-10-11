@@ -9,6 +9,14 @@ root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"; source "$root/lib
 [[ -f "$HOME/.config/llm-infra/gateway.env" ]] && source "$HOME/.config/llm-infra/gateway.env"
 : "${LITELLM_IMAGE:=ghcr.io/berriai/litellm:v1.101.0}"; : "${LITELLM_PORT:=4000}"; : "${PENNYROYAL_BASE_URL:=http://pennyroyal:8001/v1}"
 install -d "$root/quadlet"
+# Keep the shared credential file available to other clients, but do not pass
+# LITELLM_MASTER_KEY into this proxy: in LiteLLM even an empty value enables
+# the authentication middleware. The generated file contains no new secret.
+if [[ -f "$HOME/.config/llm-infra/gateway.env" ]]; then
+  awk '!/^LITELLM_MASTER_KEY=|^LLM_INFRA_API_KEY=/' \
+    "$HOME/.config/llm-infra/gateway.env" > "$HOME/.config/llm-infra/litellm.env"
+  chmod 600 "$HOME/.config/llm-infra/litellm.env"
+fi
 cat > "$root/quadlet/litellm.container" <<UNIT
 # GENERIERT von scripts/60-install-gateway.sh - dort ändern, nicht hier.
 [Unit]
@@ -20,7 +28,7 @@ Image=$LITELLM_IMAGE
 ContainerName=litellm
 Network=llm-inference.network
 PublishPort=127.0.0.1:$LITELLM_PORT:4000
-EnvironmentFile=%h/.config/llm-infra/gateway.env
+EnvironmentFile=%h/.config/llm-infra/litellm.env
 Environment=LITELLM_CONFIG=/etc/litellm/config.yaml
 # Kuerzt Python-Stacktraces im stdout-Log (LiteLLM v1.101 trunciert Logs ueber
 # diese env-Variable; ohne sie blaest ein einziger Upstream-Fehler das Journal
@@ -46,9 +54,11 @@ cat > "$root/config/litellm.yaml" <<YAML
 # Direkte 512-Token-API-Probe, 08.10.2026, n=3: DeepSeek median 31.81s
 # (16.24-72.13s), Siemens-Qwen median 20.11s (2.50-96.35s); hohe Varianz,
 # daher nicht in den interaktiven automatischen Fallback aufnehmen.
-# Schluessel: master/db aus ~/.config/llm-infra/gateway.env; FALLBACK_API_KEY
-# ist ein Dummy, den der lokale llama-server nicht prueft; Luna braucht keinen
-# Schluessel - das Geraet-Login legt das Token unter /etc/chatgpt-tokens ab.
+# Der Gateway ist absichtlich keyless: er ist nur auf 127.0.0.1 veroeffentlicht.
+# Die lokalen Upstreams bekommen einen Dummy-Key, weil das OpenAI-SDK sonst
+# bereits vor dem HTTP-Aufruf mit "api_key client option must be set" abbricht.
+# Luna braucht keinen API-Key - das Geraet-Login legt das Token unter
+# /etc/chatgpt-tokens ab.
 # Fail-fast (Messung 2026-10-08 auf Test-Instanz, Primaer tot): Mit globalem
 # num_retries=3 + OpenAI-SDK-max_retries kostete JEDE Anfrage ~22 s, weil bei nur
 # einem Deployment pro Modellname nie ein Cooldown greift. Deshalb sind Retries
@@ -56,24 +66,29 @@ cat > "$root/config/litellm.yaml" <<YAML
 # (<1 s). Luna (letzte Stufe) behaelt die globalen Retries.
 model_list:
   - model_name: qwen3.8-flash-next
+    model_info:
+      max_input_tokens: 524288
     litellm_params:
       model: openai/pennyroyal
       api_base: ${PENNYROYAL_BASE_URL}
-      api_key: "os.environ/LITELLM_MASTER_KEY"
+      api_key: "sk-local-pennyroyal"
       num_retries: 0
       max_retries: 0
       timeout: 600
   - model_name: bonsai-2-27b
+    model_info:
+      max_input_tokens: 250000
     litellm_params:
       model: openai/bonsai-2-27b
       api_base: http://bonsai:8082/v1
-      api_key: "os.environ/FALLBACK_API_KEY"
+      api_key: "sk-local-bonsai"
       num_retries: 0
       max_retries: 0
       timeout: 300
   - model_name: gpt-6-luna
     model_info:
       mode: responses
+      max_input_tokens: 272000
     litellm_params:
       model: chatgpt/gpt-6-luna
       reasoning_effort: high
@@ -98,7 +113,8 @@ router_settings:
     - qwen3.8-flash-next: ["bonsai-2-27b", "gpt-6-luna"]
     - bonsai-2-27b: ["gpt-6-luna"]
 general_settings:
-  master_key: "os.environ/LITELLM_MASTER_KEY"
   database_url: "os.environ/DATABASE_URL"
+litellm_settings:
+  drop_params: true
 YAML
 log 'LiteLLM Quadlet and config generated.'

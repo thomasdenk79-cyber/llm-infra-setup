@@ -59,11 +59,21 @@ Der Gateway (Modellalias `qwen3.8-flash-next`) failovert ueber eine dreistufige 
 Pennyroyal auf der Blackwell; nach drei Retries im Abstand von 5 s Stufe zwei,
 Bonsai 2 27B auf der RTX 3500 Ada (~45 tok/s); wenn lokal gar nichts geht,
 Stufe drei Luna ueber ChatGPT-Plus-OAuth. Nach 60 s Cooldown versucht der
-Router erneut den Primaer. Die Schluessel liegen in
-`~/.config/llm-infra/gateway.env`; Luna braucht keinen API-Schluessel - das
+Router erneut den Primaer. Der lokale Gateway ist keyless und wird nur an
+127.0.0.1 gebunden; die lokalen Upstreams erhalten interne Dummy-Werte, damit
+das OpenAI-SDK keinen externen API-Schluessel verlangt. Luna braucht keinen
+API-Schluessel - das
 Geraet-Login legt seine Token unter `~/.config/llm-infra/chatgpt-tokens` ab,
 das der LiteLLM-Container als `/etc/chatgpt-tokens` einhaengt. Geaendert wird
 die Kette im Generator `scripts/60-install-gateway.sh`, nicht in der YAML.
+
+### Effektive Kontextgrenzen und Routing-Nachweis
+
+LiteLLM kennt fuer die Kette jetzt 524288 Eingabe-Token fuer Qwen, 250000 fuer
+Bonsai und 272000 fuer Luna. Eine 1-Mio.-Token-Grenze ist nirgends eingestellt.
+Die Antwort enthaelt im Feld `model` den tatsaechlich verwendeten Deploymentnamen
+(`qwen3.8-flash-next`, `bonsai-2-27b` oder `gpt-6-luna`) - auch nach einem
+Fallback. Der Failover-Drill gibt dieses Feld explizit als `modell=...` aus.
 
 ### Failover-Drill (wiederholbar, ohne laufende Anfragen)
 

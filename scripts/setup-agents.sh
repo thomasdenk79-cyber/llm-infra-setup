@@ -38,7 +38,7 @@ config.setdefault("share", "disabled")
 config.setdefault("provider", {})["local-litellm"] = {
     "npm": "@ai-sdk/openai-compatible",
     "name": "Local LiteLLM / Pennyroyal",
-    "options": {"baseURL": "http://127.0.0.1:4000/v1", "apiKey": "{env:LLM_INFRA_API_KEY}"},
+    "options": {"baseURL": "http://127.0.0.1:4000/v1"},
     "models": {"qwen3.8-flash-next": {
         "name": "Qwen3.8 Flash-Next (local)", "tool_call": True,
         "limit": {"context": 500000, "output": 32000},
@@ -85,7 +85,14 @@ wire_api = "responses"
 if start in text and end in text:
     text = re.sub(re.escape(start) + r".*?" + re.escape(end), block, text, flags=re.S)
 else:
-    text = text.rstrip() + "\n\n" + block + "\n"
+    # TOML tables remain active until another table header. Insert the managed
+    # top-level block before the first existing table, not at EOF.
+    text = re.sub(r"(?m)^model\s*=.*\n", "", text, count=1)
+    match = re.search(r"(?m)^\[", text)
+    if match:
+        text = text[:match.start()].rstrip() + "\n\n" + block + "\n\n" + text[match.start():]
+    else:
+        text = text.rstrip() + "\n\n" + block + "\n"
 import tomllib
 tomllib.loads(text)
 codex.write_text(text)

@@ -8,7 +8,7 @@ Image=ghcr.io/berriai/litellm:v1.101.0
 ContainerName=litellm
 Network=llm-inference.network
 PublishPort=127.0.0.1:4000:4000
-EnvironmentFile=%h/.config/llm-infra/gateway.env
+EnvironmentFile=%h/.config/llm-infra/litellm.env
 Environment=LITELLM_CONFIG=/etc/litellm/config.yaml
 # Kuerzt Python-Stacktraces im stdout-Log (LiteLLM v1.101 trunciert Logs ueber
 # diese env-Variable; ohne sie blaest ein einziger Upstream-Fehler das Journal
