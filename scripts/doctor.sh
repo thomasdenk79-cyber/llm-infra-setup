@@ -308,6 +308,25 @@ else
   warn 'Noch kein Backup im Repo.' './scripts/backup.sh'
 fi
 
+# 14 Lokaler Zugang ueber Namen ------------------------------------------------
+title 'Lokaler Zugang ueber Namen'
+# Prueft den verwalteten Proxy und beide benannten Flaechen. curl laeuft ohne -k:
+# faellt die Verankerung der lokalen Caddy-CA weg, liefert die Abfrage 000 und
+# dieser Pruefpunkt schlaegt fehl, statt eine funktionsfreie Kachel zu melden.
+if systemctl --user is-active --quiet llm-proxy.service 2>/dev/null; then
+  good 'Lokaler Proxy (llm-proxy) laeuft'
+else
+  warn 'Lokaler Proxy laeuft nicht; die benannten Zugaege sind dann nicht erreichbar.' './scripts/74-setup-local-proxy.sh'
+fi
+for url in 'https://homepage.localhost/' 'https://grafana.localhost/grafana/'; do
+  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 6 "${url}" 2>/dev/null || printf '000')"
+  if [[ "${code}" == '200' ]]; then
+    good "Benannter Zugang antwortet: ${url}"
+  else
+    bad "Benannter Zugang antwortet nicht (${code}): ${url}" './scripts/74-setup-local-proxy.sh --check'
+  fi
+done
+
 # Abschluss -------------------------------------------------------------------
 printf '\n\033[1mErgebnis\033[0m\n'
 printf '  %d Pruefpunkte, %d Fehler, %d Warnungen\n' "${checks}" "${fails}" "${warns}"

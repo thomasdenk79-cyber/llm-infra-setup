@@ -231,6 +231,22 @@ emit "llm_infra_collect_timestamp_seconds $(date +%s)"
 
 # HELP/TYPE-Zeilen ergaenzen: der Textfile-Collector verwirft eine ganze Datei,
 # wenn nur eine einzige Familie keine Typangabe hat.
+# Lokaler HTTPS-Proxy (llm-proxy): eigene Kennzahl, weil AGENTS.md fuer jeden
+# neuen Dienst ein Metrikziel verlangt. Die Caddy-Admin-API liefert /metrics nur
+# auf ihrer eigenen Loopback-Schnittstelle (Versuch ueber einen inneren Lauscher
+# brachte 403), deshalb misst hier der bestehende Sammler die beiden benannten
+# URLs selbst - dasselbe Muster wie bei den PLE-Werten: gemessen, nicht geraten.
+proxy_homepage=0
+proxy_grafana=0
+if have curl && curl -fsS -m 5 -o /dev/null https://homepage.localhost/ 2>/dev/null; then
+  proxy_homepage=1
+fi
+if have curl && curl -fsS -m 5 -o /dev/null https://grafana.localhost/grafana/api/health 2>/dev/null; then
+  proxy_grafana=1
+fi
+emit "llm_local_proxy_homepage_up ${proxy_homepage}"
+emit "llm_local_proxy_grafana_up ${proxy_grafana}"
+
 if ! python3 "${root}/scripts/lib/assemble_textfile.py" "${raw}" > "${tmp}"; then
   printf 'FEHLER: Kennzahlen konnten nicht zusammengestellt werden.\n' >&2
   exit 1

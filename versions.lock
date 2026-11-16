@@ -29,7 +29,12 @@ alloy: v1.10.2
 alertmanager: v0.27.0
 alertmanager_image_digest: sha256:11f11916f8cdfb17c1da74b20deb2075d778357b4d60474d82453303f8d461f5
 dozzle: v8.14.7
-homepage: v2.4.0
+# Portal (gethomepage). 2.6.0 ist die erste Version dieses Setups mit Tabs
+# (layout.<gruppe>.tab) - die gepinnte 2.4.0 kennt keine Tab-Leiste. Digest ist
+# uber die Registry-API gemessen (docker-content-digest von manifest v2.6.0).
+homepage: v2.6.0
+homepage_image: ghcr.io/gethomepage/homepage:v2.6.0
+homepage_image_digest: sha256:3e38fe788223cb46a3ce1f046ef11667b40f7707fdca0dcbfa3f86c5c42bf1e8
 komodo_periphery: 2.3.3
 autossh_base_image: docker.io/library/alpine:3.20
 docs_tooling: mkdocs-material==9.8.1

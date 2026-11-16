@@ -1,17 +1,112 @@
-title: LLM Infrastructure
-subtitle: rootless Podman · lokaler Betrieb
-startUrl: http://127.0.0.1:3002
+---
+# LUNI Mission Control - Portal-Einstellungen (gethomepage/homepage v2.6.0).
+#
+# Gepinnte Version: ghcr.io/gethomepage/homepage:v2.6.0
+# (Digest in versions.lock, Bildreferenz in quadlet/homepage.container).
+# Der Sprung von v2.4.0 auf v2.6.0 war noetig, weil erst 2.6.0 Tabs kennt:
+# activeTab/setActiveTab und die Tab-Leiste stecken im ausgelieferten Build
+# (Chunk pages/index-*.js), in v2.4.0 fehlen sie ganz - dort war jede Gruppe
+# auf Einerseite gestapelt.
+#
+# Styles, die 2.6.0 wirklich liest (im ausgelieferten Build belegt, 2026-11-16):
+#   cardStyle "hairline"  -> inset-Ring statt Schatten
+#   blockStyle "refined"  -> bündige Blocks ohne Abgrenzungsrand
+#   statusStyle "dot"     -> Statuspunkt statt farbigem Rand
+#   headerStyle, useEqualHeights, fullWidth, maxGroupColumns, footer
+#
+# Abweichung von der Vorlage (gemessen, nicht geraten):
+#   * "subtitle" und "startUrl" rendert 2.6.0 nicht (je 0 Treffer im Build).
+#     Der Schluessel bleibt fuer die vom Betreiber gewuenschte Form stehen und
+#     ist wirkungslos; sichtbarer Text kommt aus "title".
+#   * "favicon" ist in 2.6.0 nur mit /app/public-Auslieferung sinnvoll; die
+#     Symbole liegen einzeln unter /icons/ (siehe 60-install-homepage.sh),
+#     deshalb zeigt der Schluessel dorthin und nicht auf ein CDN.
+#   * "font:" fehlt bewusst: ein Webfont waere ein externer Aufruf, und dieser
+#     Rechner soll ohne CDN auskommen.
+title: LUNI Mission Control
+subtitle: Selbst verwaltete LLM-Plattform · rootless Podman · RTX PRO 6000
+description: Beobachtung und Betrieb des LLM-Stapels auf diesem Rechner
+language: de
 theme: dark
 color: slate
-language: de
 headerStyle: clean
+cardStyle: hairline
+blockStyle: refined
+statusStyle: dot
+useEqualHeights: true
+fullWidth: true
+maxGroupColumns: 9
+favicon: /icons/luni-moon.svg
+footer:
+  bottom: "LUNI Mission Control · Laufzeit flash-next-v3 auf RTX PRO 6000 Blackwell · Zahlen live aus Prometheus (jobs vllm, gpu, node) · Dashboards: https://grafana.localhost/grafana/ · Anleitung: https://homepage.localhost/anleitung/"
+# layout: Reihenfolge der Schluessel = Reihenfolge der Tabs und Gruppen.
+#
+# WICHTIG: jeder Schluessel muss EXAKT dem Gruppennamen in services.yaml
+# entsprechen. Ein Tippfehler erzeugt keinen Tab mit Inhalt, sondern einen
+# leeren Abschnitt - deshalb prueft ./scripts/validate.sh beide Seiten
+# (make validate), und zwar in beide Richtungen.
 layout:
-  Chat & RAG:
+  LUNI:
+    tab: Dashboard
+    style: row
+    columns: 1
+  KPI-Band:
+    tab: Dashboard
+    style: row
+    columns: 9
+  Chart-Zeile:
+    tab: Dashboard
     style: row
     columns: 4
-  Verwaltung:
+  System - GPUs:
+    tab: Dashboard
+    style: row
+    columns: 1
+  System - Wacht:
+    tab: Dashboard
+    style: row
+    columns: 1
+  LLM - Laufzeit:
+    tab: LLM
+    style: row
+    columns: 2
+  LLM - Latenz:
+    tab: LLM
     style: row
     columns: 3
-  Monitoring:
+  LLM - Panels:
+    tab: LLM
+    style: row
+    columns: 2
+  LLM - Gateway und Chat:
+    tab: LLM
+    style: row
+    columns: 3
+  INFRA:
+    tab: INFRA
     style: row
     columns: 5
+  INFRA - Panels:
+    tab: INFRA
+    style: row
+    columns: 2
+  System - Node:
+    tab: SYSTEM
+    style: row
+    columns: 3
+  System - Panels:
+    tab: SYSTEM
+    style: row
+    columns: 1
+  Betrieb - Lage:
+    tab: BETRIEB
+    style: row
+    columns: 3
+  Agenten - Panels:
+    tab: BETRIEB
+    style: row
+    columns: 3
+  TOOLS:
+    tab: TOOLS
+    style: row
+    columns: 4

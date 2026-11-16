@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-11-16T13:07:21+01:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-11-16T13:42:46+01:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe (2026-11-16)
 
@@ -66,6 +66,17 @@ Das Repository ist das Backup.
   (`GF_SERVER_ROOT_URL=.../grafana/`, `GF_SERVER_SERVE_FROM_SUB_PATH=true`).
 * Wiki: `wiki.service` liefert `http://127.0.0.1:3003/` (200),
   `wiki-rebuild.timer` laeuft alle 30 Minuten, `site/.built-sha` gleicht HEAD.
+* Portal: `homepage.service` laeuft auf dem in `versions.lock` gepinnten
+  Digest `ghcr.io/gethomepage/homepage@sha256:3e38fe78…` (Tag v2.6.0) -
+  gemessen 2026-11-16: `--check` rc=0, `https://homepage.localhost/` 200,
+  alle 16 `/icons/<datei>` 200, Playwright-Netzliste 0 externe Anfragen
+  (kein `cdn.jsdelivr.net`). Erst 2.6.0 kennt Tabs: die sechs Gruppen aus
+  `config/homepage/settings.yaml` (Dashboard, LLM, INFRA, SYSTEM, BETRIEB,
+  TOOLS) sind gemessen klickbar (Screens `/tmp/qa/screens/portal-260-*.png`).
+  Der Installer rollt die Unit jetzt ueber `lib/units.sh` aus; vorher
+  installierte `scripts/60-install-homepage.sh` die Unit nie nach
+  `~/.config/containers/systemd`, der Live-Container hing dadurch auf
+  v2.4.0 fest. Beweise: `CHANGELOG.md`, `docs/status.md`.
 * Verifizierter Einzelzustand mit den Beweis-Befehlen: `docs/status.md`.
 
 ## 2. Was ist offen
@@ -104,22 +115,17 @@ Das Repository ist das Backup.
    `llm-crashguard`, `llm-infra-gitops`) sind auf diesem Rechner nicht
    installiert; bei Bedarf ueber die `--install`-Pfade der jeweiligen Skripte.
 
-15. **Portal-Symbole haengen an einem externen Auslieferer (CDN).** Die gepinnte
-    Portal-Version `ghcr.io/gethomepage/homepage:v2.4.0` kennt keine lokale
-    Symbolauflösung im Konfigurationsordner: `icon: name.png`/`.svg` wird
-    ausschliesslich gegen `cdn.jsdelivr.net` (homarr-labs/dashboard-icons,
-    selfh.st, mdi, simple-icons) aufgelöst; nur mit `/` oder `http` beginnende
-    Werte werden unveraendert geladen, und `/api/config/[path]` liefert nur
-    `custom.css`/`custom.js` (im Bild unter `/app` nachgesehen, nicht geraten).
-    Die 2026-11-16 heruntergeladenen PNGs unter `config/homepage/public/icons/`
-    waren deshalb tote Konfiguration und sind geloescht (ebenso das
-    Handarbeit-Relikt `~/.config/llm-infra/homepage/public/`). Zielbild wie im
-    Altrepo `luni-llmops-linux`: lokale SVG ueber einen read-only-Bind-Mount
-    nach `/images/custom/` im Portal-Container, damit ist der Betrieb
-    offline-gehaertet (kein CDN-Ausfall, keine externe Abhaengigkeit). Naechster
-    Befehl dafuer: Bind-Mount plus `icon: /images/custom/<name>.svg` in einem
-    Versuchszweig von `scripts/60-install-homepage.sh` erproben (Ports und
-    Volume-Angaben bleiben im Generator).
+15. **Erledigt 2026-11-16: Portal-Symbole und Tabs laufen lokal.** Das Portal
+    laeuft digest-pinnt auf v2.6.0 (`versions.lock`), die sechs Tabs aus
+    `config/homepage/settings.yaml` sind gemessen klickbar, und die Symbole
+    liegen versioniert unter `config/homepage/icons/` und werden dateiweise
+    read-only nach `/app/public/icons/` eingebunden: alle 16 Dateien
+    liefern 200, die Playwright-Netzliste zaehlt 0 Anfragen an
+    `cdn.jsdelivr.net` oder andere externe Hosts. Der fruehere Stand dieser
+    Nummer (v2.4.0 ohne lokale Symbolaufloesung, tote PNGs unter
+    `config/homepage/public/icons/`) ist damit gegenstandslos; Beweise in
+    `CHANGELOG.md`, `docs/status.md` und `/tmp/qa/playwright-network.json`.
+    Naechster Befehl: `./scripts/60-install-homepage.sh --check`.
 16. **Grafana-Wurzeladresse ist jetzt der lokale Name.** Eine Instanz kann nur
     eine `GF_SERVER_ROOT_URL` haben; sie zeigt auf
     `https://grafana.localhost/grafana/` (Betreiberauftrag: lokaler Zugang ohne
@@ -305,6 +311,7 @@ lokalen Backup-Pfad prüfen. Ein späterer Restore kann per `rsync` zurück nach
 cd /srv/work/llm-infra-setup
 ./scripts/doctor.sh                                   # Lagebild, nennt den naechsten Befehl
 ./scripts/74-setup-local-proxy.sh --check             # lokaler HTTPS-Zugang ueber Namen?
+./scripts/60-install-homepage.sh --check              # Portal: Bild, Unit, Symbole, Antworten?
 ./scripts/session-checkpoint.sh --status              # ungesicherte Aenderungen zeigen
 ./scripts/session-checkpoint.sh "Doku-Stand 2026-11-16"   # sichern (kommender Schritt des Betreibers)
 ```
@@ -312,3 +319,17 @@ cd /srv/work/llm-infra-setup
 ## Notiz 2026-11-16T13:07:21+01:00
 
 portal+proxy: benanntes HTTPS (homepage/grafana.localhost), Grafana anonym und einbettbar, Kachelsonden
+
+## Notiz 2026-11-16T13:45 (Portal-Umstellung abgeschlossen)
+
+`scripts/60-install-homepage.sh` rollt die Quadlet-Unit jetzt ueber
+`lib/units.sh` aus (install_units + systemd_reload, Start/Restart nur bei
+Abweichung); der --check prueft seiteneffektfrei und ueberlebt den
+frueheren SIGPIPE-Bildvergleich. Portal laeuft auf dem gepinnten
+2.6.0-Digest, Tabs klickbar, alle Symbole lokal, 0 externe Anfragen.
+Bericht: `/tmp/qa/homepage-install-bericht.md`. Nichts committet
+(Betreiberauftrag); `make drift` wartet weiter auf den Commit (Punkt 17).
+
+## Notiz 2026-11-16T13:42:46+01:00
+
+portal: 2.6.0 mit Tabs, lokale Symbole statt CDN, Proxy-Kennzahlen und Diagnosefall

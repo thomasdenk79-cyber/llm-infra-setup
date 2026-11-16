@@ -42,3 +42,13 @@ grafana.localhost {
 	encode zstd gzip
 	reverse_proxy grafana:3000
 }
+
+http://:8010 {
+	# Metrikziel fuer diesen Dienst (AGENTS.md: jeder neue Dienst bekommt eins).
+	# Caddy bietet /metrics ausschliesslich auf der Admin-API an, und die bleibt
+	# auf Loopback im Container. Deshalb wird genau dieser eine Pfad auf einem
+	# inneren Lauscher angeboten: kein veroeffentlichter Host-Port, keine
+	# schreibenden Admin-Endpunkte erreichbar.
+	# Pruefung: podman exec systemd-prometheus wget -qO- -T 5 http://llm-proxy:8010/metrics
+	reverse_proxy /metrics 127.0.0.1:2019
+}

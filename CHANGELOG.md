@@ -1,4 +1,37 @@
 # Aenderungsprotokoll
+## 2026-11-16 (Runde: Portal auf 2.6.0 - Tabs und lokale Symbole)
+
+- Fehler behoben: `scripts/60-install-homepage.sh` erzeugte die Unit nur im
+  Repo und kopierte die Konfiguration nach `~/.config/llm-infra/homepage`,
+  installierte sie aber nie nach `~/.config/containers/systemd` - der
+  Live-Container hing deshalb auf v2.4.0 fest, obwohl `versions.lock` und
+  Generator laengst 2.6.0 zeigten. Der Installer nutzt jetzt denselben
+  Mechanismus wie alle anderen Dienste: `install_units`/`systemd_reload`/
+  `start_units` aus `lib/units.sh`; ein Neustart faellt nur bei Abweichung
+  von Unit-Datei oder laufendem Bild (gemessen: zweiter Lauf ohne Neustart).
+- Der `--check`-Pfad prueft seiteneffektfrei (Generatorausgabe per Pipe
+  vergleichen statt die committete Datei zurueckzuschreiben) und
+  ueberlebt den frueher todbringenden Bildvergleich: `podman images | awk`
+  brach mit SIGPIPE + `pipefail` still den Lauf ab (rc 141). Neu im --check:
+  installierte Unit gegen Repo-Fassung (`installed_unit_diff`).
+- Umstieg v2.4.0 -> v2.6.0 (Digest-Pin aus `versions.lock`,
+  `sha256:3e38fe78…`): erst 2.6.0 kennt Tabs und indexiert `/app/public`
+  beim Start. Die sechs Tabs aus `config/homepage/settings.yaml` (Dashboard,
+  LLM, INFRA, SYSTEM, BETRIEB, TOOLS) sind gemessen klickbar. Symbole
+  versioniert unter `config/homepage/icons/`, dateiweise read-only nach
+  `/app/public/icons/` eingebunden; ein Verzeichnis-Bind auf `/app/public`
+  als Ganzes schattiert die Locales ab (Rohschluessel im Text) und ist
+  deshalb falsch.
+- Gemessene Abnahme (2026-11-16): `podman ps` zeigt das Digest-Bild; alle
+  16 `/icons/<datei>` liefern 200; `--check` rc=0; `https://homepage.localhost/`
+  200; Playwright ueber `https://homepage.localhost/`: 633 Anfragen, nur
+  `homepage.localhost` und `grafana.localhost` (beide ::1), 0 an
+  `cdn.jsdelivr.net` oder andere externe Hosts, 0 HTTP-Fehler; Screens
+  `/tmp/qa/screens/portal-260-*.png`. `make validate` OK;
+  `./scripts/healthcheck.sh` SYSTEM HEALTHY; `./scripts/doctor.sh`
+  15 Pruefpunkte, 0 Fehler; `make drift` haelt an der bekannten Sperre
+  ungecommitteter Generatordateien (offener Punkt 17 in `docs/HANDOFF.md`).
+
 ## 2026-11-16 (Runde: lokaler HTTPS-Zugang ueber Namen, Grafana ohne Anmeldung)
 
 - Neuer verwalteter lokaler Proxy: `quadlet/llm-proxy.container` (Caddy,

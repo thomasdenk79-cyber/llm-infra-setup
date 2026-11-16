@@ -1,72 +1,539 @@
-# Portal-Kacheln. Jede Kachel zeigt auf einen Dienst, der auf diesem Rechner
-# wirklich hoert (Pruefung: podman ps + curl auf 127.0.0.1). Grafana liegt im
-# Unterpfad /grafana/, weil Caddy auf dem Gateway-Rechner mehrere Dienste aus
-# einem Serverblock bedient (GF_SERVER_SERVE_FROM_SUB_PATH=true).
+---
+# LUNI Mission Control - Kacheln (gethomepage/homepage v2.6.0).
 #
-# siteMonitor = Statussonde auf der Kachel. Sie laeuft im Portalcontainer, also
-# nur fuer Dienste im Netz llm-observability (Grafana, Prometheus, Loki, Dozzle,
-# Alertmanager) - alle funf Pfade sind gemessen 200. Dienste, die nur auf der
-# Host-Loopback hoeren (Laufzeit 30000, Gateway 4000, Chat 3001, Wiki 3003),
-# bleiben Link-only: ein rootless-Netz erreicht die Host-Loopback nicht, eine
-# Sonde waere dauerhaft rot ohne Grund (im Vorgaengerrepo ebenso gehandhabt).
-- Chat & RAG:
-    - Wissens-Wiki:
-        icon: mkdocs.png
-        href: http://127.0.0.1:3003
-        description: Chronik, Erkenntnisse, Ergebnisse (Mensch + Agent)
-    - Open WebUI:
-        icon: open-webui.png
-        href: http://127.0.0.1:3001
-        description: Chat, Dateien und RAG
-    - LiteLLM:
-        icon: openai.png
-        href: http://127.0.0.1:4000
-        description: OpenAI-kompatibles Gateway
-    - LLM-Laufzeit:
-        icon: ollama.png
+# Grundregel: jede Kachel zeigt auf einen Dienst, der auf diesem Rechner wirklich
+# hoert, und jedes eingebettete Panel liefert wirklich Daten. Geprueft am
+# 2026-11-16 mit podman ps, curl aus dem Portalcontainer, Prometheus-/Loki-
+# Abfragen und Playwright; die Einzelbelege stehen in
+# /tmp/qa/mission-control-bericht.md.
+#
+# siteMonitor: laeuft im Portalcontainer. Sonden stehen nur dort, wo sie aus dem
+# Container 200 liefern, naemlich Netzaliase im Netz llm-observability (gemessen:
+# grafana 200, prometheus 200, loki 200, alertmanager 200, dozzle 200,
+# llm-node-exporter 200, llm-gpu-exporter 200, llm-wiki 200).
+#
+# Dienste nur auf Host-Loopback bleiben Link-only ohne Sonde: rootless pasta
+# reicht die Host-Loopback nicht an Container durch, eine Sonde waere dauerhaft
+# rot ohne Grund (gemessen: 127.0.0.1:30000, :4000, :3001, :3003, :9090 ->
+# ECONNREFUSED aus dem Portalcontainer). Betroffen sind die Modelle-Laufzeit,
+# das Gateway, der Chat und alles, was nur ueber 127.0.0.1 publiziert.
+#
+# Symbole: /icons/<datei> - die Dateien liegen unter config/homepage/icons/ im
+# Repo und werden vom Generator einzeln nach /app/public/icons eingebunden.
+# Ein nackter Name wie "grafana.png" waere ein Aufruf an cdn.jsdelivr.net.
+#
+# Eingebettete Panels: iframe-Widget mit d-solo-URL von Grafana. Grafana laeuft
+# anonym (GF_AUTH_ANONYMOUS_ENABLED=true, Viewer) mit erlaubter Einbettung
+# (GF_SECURITY_ALLOW_EMBEDDING=true); gemessen 200 ohne Cookies und ohne
+# X-Frame-Options: deny. Unterpfad /grafana/ bleibt, weil GF_SERVER_SERVE_FROM_
+# SUB_PATH=true gesetzt ist. Eingesetzte UIDs: llm-infra-runtime, llm-infra-gpu,
+# llm-infra-host, llm-infra-storage, llm-infra-agent-observatorium.
+#
+# Weggefallen (gibt es auf diesem Rechner nicht, keine toten Kacheln): Tempo,
+# Komodo, Bonsai, OrcaRouter-4001, TegraStack-Monitore, btop/mjpeg-Cockpit,
+# customapi-Zufuhr, Tailscale, Uptime-Kuma, LLM-Captain, alle DEMO-Tabs.
+- LUNI:
+    - LUNI Mission Control:
+        # Hero-Kachel: Markenzeichen aus dem eigenen Symbolordner (kein CDN).
+        # Das mjpeg-Widget rendert <img src=stream>; eine SVG-Datei ist dabei
+        # Absicht - Standbild statt Live-Stream, weil es auf diesem Rechner
+        # keinen btop/mjpeg-Vorschaudienst gibt.
+        icon: /icons/luni-moon.svg
+        href: https://homepage.localhost/
+        description: Beobachtung und Betrieb des LLM-Stapels auf diesem Rechner
+        widget:
+          type: mjpeg
+          stream: /icons/luni-moon.svg
+          fit: contain
+          classes: h-40
+- KPI-Band:
+    - Schreibrate:
+        icon: /icons/sglang.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-runtime
+        description: Token/s beim Schreiben (job vllm)
+        widget:
+          type: prometheusmetric
+          url: http://prometheus:9090
+          metrics:
+            - label: Token/s
+              query: sum(rate(vllm:generation_tokens_total[1m]))
+    - Leserate:
+        icon: /icons/sglang.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-runtime
+        description: Token/s beim Vorlesen (job vllm)
+        widget:
+          type: prometheusmetric
+          url: http://prometheus:9090
+          metrics:
+            - label: Token/s
+              query: sum(rate(vllm:prompt_tokens_total[1m]))
+    - Anfragen:
+        icon: /icons/sglang.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-runtime
+        description: Abgeschlossene Anfragen pro Sekunde
+        widget:
+          type: prometheusmetric
+          url: http://prometheus:9090
+          metrics:
+            - label: pro Sekunde
+              query: sum(rate(vllm:request_success_total[5m]))
+    - Laufende Anfragen:
+        icon: /icons/sglang.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-runtime
+        description: Anfragen, die gerade in der Laufzeit sitzen
+        widget:
+          type: prometheusmetric
+          url: http://prometheus:9090
+          metrics:
+            - label: laufen
+              query: vllm:num_requests_running
+    - Wartend:
+        icon: /icons/sglang.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-runtime
+        description: Anfragen in der Warteschlange
+        widget:
+          type: prometheusmetric
+          url: http://prometheus:9090
+          metrics:
+            - label: wartend
+              query: vllm:num_requests_waiting
+    - KV-Auslastung:
+        icon: /icons/sglang.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-runtime
+        description: Belegung des Vorhersagepuffers in Prozent
+        widget:
+          type: prometheusmetric
+          url: http://prometheus:9090
+          metrics:
+            - label: Prozent
+              query: 100 * vllm:kv_cache_usage_perc
+    - GPU-Auslastung:
+        icon: /icons/nvidia.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-gpu
+        description: Auslastung der RTX PRO 6000 in Prozent
+        widget:
+          type: prometheusmetric
+          url: http://prometheus:9090
+          metrics:
+            - label: Prozent
+              query: nvidia_smi_utilization_gpu_ratio
+    - CPU-Last:
+        icon: /icons/linux.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-host
+        description: CPU-Auslastung des Rechners in Prozent
+        widget:
+          type: prometheusmetric
+          url: http://prometheus:9090
+          metrics:
+            - label: Prozent
+              query: 100 - (avg(rate(node_cpu_seconds_total{job="node",mode="idle"}[5m])) * 100)
+    - Arbeitsspeicher:
+        icon: /icons/linux.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-host
+        description: Belegter Arbeitsspeicher in Prozent
+        widget:
+          type: prometheusmetric
+          url: http://prometheus:9090
+          metrics:
+            - label: Prozent
+              query: 100 * (1 - node_memory_MemAvailable_bytes{job="node"} / node_memory_MemTotal_bytes{job="node"})
+- Chart-Zeile:
+    - Token pro Sekunde:
+        # Panel 2150 aus llm-infra-runtime - gemessen mit Daten (332 Token/s beim
+        # Vorlesen, 298 beim Schreiben).
+        icon: /icons/sglang.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-runtime
+        description: Vorlesen, Schreiben und zusammen - live aus Prometheus
+        widget:
+          type: iframe
+          name: runtime-token
+          src: https://grafana.localhost/grafana/d-solo/llm-infra-runtime?kiosk&theme=dark&panelId=2150&from=now-3h&to=now
+          allowScrolling: "no"
+          classes: h-64
+    - Vorlaufzeit bis zum ersten Token:
+        # Panel 2420 aus llm-infra-runtime - gemessen mit Daten (p95 ~5 s).
+        icon: /icons/sglang.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-runtime
+        description: TTFT p50, p95 und p99
+        widget:
+          type: iframe
+          name: runtime-ttft
+          src: https://grafana.localhost/grafana/d-solo/llm-infra-runtime?kiosk&theme=dark&panelId=2420&from=now-6h&to=now
+          allowScrolling: "no"
+          classes: h-64
+    - GPU-Auslastung und Leistung:
+        # Panel 66218 aus llm-infra-gpu - gemessen mit Daten (100 %, 420 W).
+        icon: /icons/nvidia.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-gpu
+        description: Kernel-Last, Speicher-Last und Verbrauch
+        widget:
+          type: iframe
+          name: gpu-auslastung
+          src: https://grafana.localhost/grafana/d-solo/llm-infra-gpu?kiosk&theme=dark&panelId=66218&from=now-6h&to=now
+          allowScrolling: "no"
+          classes: h-64
+    - CPU gesamt und Last:
+        # Panel 11879 aus llm-infra-host - gemessen mit Daten (31 %, load1 3,8).
+        icon: /icons/linux.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-host
+        description: CPU gesamt daneben load1 und load5
+        widget:
+          type: iframe
+          name: host-cpu
+          src: https://grafana.localhost/grafana/d-solo/llm-infra-host?kiosk&theme=dark&panelId=11879&from=now-6h&to=now
+          allowScrolling: "no"
+          classes: h-64
+- System - GPUs:
+    - NVIDIA RTX PRO 6000:
+        # Ein Gerat auf diesem Rechner (uuid 780d3589-...); die zweite Karte des
+        # Referenzrechners (RTX 3500 Ada) existiert hier nicht, deshalb keine
+        # zweite Kachel.
+        icon: /icons/nvidia.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-gpu
+        description: Blackwell-Werkkarte - Zahlen aus job gpu
+        siteMonitor: http://llm-gpu-exporter:9835/metrics
+        widget:
+          type: prometheusmetric
+          url: http://prometheus:9090
+          metrics:
+            - label: Auslastung
+              query: nvidia_smi_utilization_gpu_ratio{job="gpu"}
+              format:
+                type: number
+                suffix: " %"
+            - label: VRAM belegt
+              query: nvidia_smi_memory_used_bytes{job="gpu"} / 1073741824
+              format:
+                type: number
+                suffix: " GiB"
+            - label: Leistung
+              query: nvidia_smi_power_draw_watts{job="gpu"}
+              format:
+                type: number
+                suffix: " W"
+            - label: Temperatur
+              query: nvidia_smi_temperature_gpu{job="gpu"}
+              format:
+                type: number
+                suffix: " °C"
+- System - Wacht:
+    - Alarm- und Ziellage:
+        # Alle vier Abfragen gemessen mit Daten (3 Alarme aktiv, 0 Ziele ausgefallen).
+        icon: /icons/alertmanager.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-agent-observatorium
+        description: Alarme, Scraping-Ziele und Einheiten auf einen Blick
+        widget:
+          type: prometheusmetric
+          url: http://prometheus:9090
+          metrics:
+            - label: Alarme aktiv
+              query: count(ALERTS{alertstate="firing"}) or vector(0)
+            - label: Ziele erreichbar
+              query: count(up == 1)
+            - label: Ziele ausgefallen
+              query: count(up != 1) or vector(0)
+            - label: Einheiten aktiv
+              query: sum(llm_unit_active)
+- LLM - Laufzeit:
+    - Laufzeit flash-next-v3:
+        # Die Laufzeit hoert nur auf der Host-Loopback 127.0.0.1:30000 und ist im
+        # Netz llm-inference - aus dem Portalcontainer nicht erreichbar (gemessen
+        # ECONNREFUSED), deshalb ohne siteMonitor. Die Zahlen kommen trotzdem
+        # live: Prometheus scrape die Runtime ueber job vllm.
+        icon: /icons/sglang.svg
         href: http://127.0.0.1:30000/v1/models
-        description: Modellserver flash-next-v3 (Modellliste, /health, /metrics)
-- Verwaltung:
-    - Dozzle:
-        icon: dozzle.png
-        href: http://127.0.0.1:8080
-        siteMonitor: http://dozzle:8080/
-        description: Live-Containerlogs
-    - Repository:
-        icon: github.png
-        href: https://github.com/thomasdenk79-cyber/llm-infra-setup
-        description: Source of Truth
-- Monitoring:
+        description: Modellserver flash-next-v3 (NVFP4, 512k Fenster) - Modelliste, /health, /metrics
+        widget:
+          type: prometheusmetric
+          url: http://prometheus:9090
+          metrics:
+            - label: laufen
+              query: vllm:num_requests_running{job="vllm"}
+            - label: wartend
+              query: vllm:num_requests_waiting{job="vllm"}
+            - label: Schreibrate
+              query: sum(rate(vllm:generation_tokens_total{job="vllm"}[1m]))
+            - label: Betriebszeit
+              query: (time() - min(vllm:request_success_created{job="vllm"})) / 3600
+              format:
+                type: number
+                suffix: " h"
+    - Modell-API:
+        # Link-only: Host-Loopback, keine Sonde moeglich (Begruendung oben).
+        # /v1/models, /docs und /health sind gemessen 200 (Ports nur 127.0.0.1).
+        icon: /icons/sglang.svg
+        href: http://127.0.0.1:30000/docs
+        description: OpenAI-kompatible Schnittstelle der Laufzeit (Port nur 127.0.0.1:30000)
+- LLM - Latenz:
+    - Vorlaufzeit bis zum ersten Token:
+        icon: /icons/sglang.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-runtime
+        description: TTFT p50, p95 und p99 in Sekunden
+        widget:
+          type: prometheusmetric
+          url: http://prometheus:9090
+          metrics:
+            - label: p50
+              query: histogram_quantile(0.50, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket[10m])))
+            - label: p95
+              query: histogram_quantile(0.95, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket[10m])))
+            - label: p99
+              query: histogram_quantile(0.99, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket[10m])))
+    - Zeit zwischen zwei Token:
+        icon: /icons/sglang.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-runtime
+        description: TPOT p50 und p95 in Millisekunden
+        widget:
+          type: prometheusmetric
+          url: http://prometheus:9090
+          metrics:
+            - label: p50 ms
+              query: histogram_quantile(0.50, sum by (le) (rate(vllm:inter_token_latency_seconds_bucket[10m]))) * 1000
+            - label: p95 ms
+              query: histogram_quantile(0.95, sum by (le) (rate(vllm:inter_token_latency_seconds_bucket[10m]))) * 1000
+    - Gesamtdauer einer Anfrage:
+        icon: /icons/sglang.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-runtime
+        description: Ende-zu-Ende p50 und p95 in Sekunden
+        widget:
+          type: prometheusmetric
+          url: http://prometheus:9090
+          metrics:
+            - label: p50
+              query: histogram_quantile(0.50, sum by (le) (rate(vllm:e2e_request_latency_seconds_bucket[10m])))
+            - label: p95
+              query: histogram_quantile(0.95, sum by (le) (rate(vllm:e2e_request_latency_seconds_bucket[10m])))
+- LLM - Panels:
+    - Puffer- und Cache-Nutzung:
+        # Panel 3200 aus llm-infra-runtime - gemessen mit Daten (KV 59 %,
+        # Cache-Treffer 95 %).
+        icon: /icons/sglang.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-runtime
+        description: Vorhersagepuffer, Cache-Treffer und Wartend-Anteil
+        widget:
+          type: iframe
+          name: runtime-nutzung
+          src: https://grafana.localhost/grafana/d-solo/llm-infra-runtime?kiosk&theme=dark&panelId=3200&from=now-6h&to=now
+          allowScrolling: "no"
+          classes: h-64
+    - Token der letzten Stunden:
+        # Panel 2942 aus llm-infra-runtime - gemessen mit Daten (649 214 Token in
+        # der letzten Stunde).
+        icon: /icons/sglang.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-runtime
+        description: Vorlesen, Schreiben und Anfragen im Stundenvergleich
+        widget:
+          type: iframe
+          name: runtime-tokenstunden
+          src: https://grafana.localhost/grafana/d-solo/llm-infra-runtime?kiosk&theme=dark&panelId=2942&from=now-6h&to=now
+          allowScrolling: "no"
+          classes: h-64
+- LLM - Gateway und Chat:
+    - LiteLLM-Gateway:
+        # Link-only: das Gateway hoert nur auf 127.0.0.1:4000 (Netz llm-inference),
+        # aus dem Portalcontainer nicht erreichbar. Eigene Gateway-Metriken gibt es
+        # hier nicht: Prometheus kennt keinen aktiven litellm-Job (gemessen 0
+        # Serien litellm_*), deshalb zeigt die Kachel absichtlich keine Zahl.
+        icon: /icons/litellm.svg
+        href: http://127.0.0.1:4000
+        description: OpenAI-kompatibles Gateway mit Modellschluesseln (nur 127.0.0.1:4000)
+    - Open WebUI:
+        # Link-only: 127.0.0.1:3001, Netz llm-inference - gleiche Begruendung.
+        icon: /icons/chat.svg
+        href: http://127.0.0.1:3001
+        description: Chat, Dateien und RAG (nur 127.0.0.1:3001)
+- INFRA:
     - Grafana:
-        icon: grafana.png
-        href: http://127.0.0.1:3000/grafana/
+        icon: /icons/grafana.svg
+        href: https://grafana.localhost/grafana/
         siteMonitor: http://grafana:3000/grafana/api/health
-        description: Dashboards (Unterpfad /grafana/)
-    - Agenten-Observatorium:
-        icon: grafana.png
-        href: http://127.0.0.1:3000/grafana/d/llm-infra-agent-observatorium
-        description: Dashboard 05 - Coding-Arme live (Kollegen-Demo)
+        description: Dashboards ohne Anmeldung (Unterpfad /grafana/)
     - Prometheus:
-        icon: prometheus.png
+        icon: /icons/prometheus.svg
         href: http://127.0.0.1:9090
         siteMonitor: http://prometheus:9090/-/healthy
-        description: Metriken und Targets
-    - Loki:
-        icon: loki.png
-        href: http://127.0.0.1:3100
-        siteMonitor: http://loki:3100/ready
-        description: Logs (kein Web-UI; Abfragen ueber Grafana /grafana/explore)
+        description: Metriken, Regeln und Scraping-Ziele
+        widget:
+          type: prometheus
+          url: http://prometheus:9090
     - Alertmanager:
-        icon: alertmanager.png
+        icon: /icons/alertmanager.svg
         href: http://127.0.0.1:9093
         siteMonitor: http://alertmanager:9093/-/healthy
         description: Alarme, Stillhaltefristen und Routing
-- Wissen:
-    - Doku & Handbuch:
-        icon: bookstack.png
+    - Loki:
+        icon: /icons/loki.svg
+        href: http://127.0.0.1:3100/ready
+        siteMonitor: http://loki:3100/ready
+        description: Protokolle (kein Web-UI; Abfragen ueber Grafana-Explore)
+    - Dozzle:
+        icon: /icons/dozzle.svg
+        href: http://127.0.0.1:8080
+        siteMonitor: http://dozzle:8080/
+        description: Live-Protokolle der Container
+- INFRA - Panels:
+    - Zustaende der Dienste:
+        # Panel 22040 aus llm-infra-storage - gemessen mit Daten (18 Einheiten).
+        # Bewusst gewaehlt: die ZFS- und PLE-Panels desselben Dashboards liefern auf
+        # diesem Rechner keine Daten (keine llm_zfs_*, node_zfs_* und llm_ple_*
+        # Serien) und waeren weisse Felder.
+        icon: /icons/storage.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-storage
+        description: Systemeinheiten llm_unit_active aus dem Host-Sammler
+        widget:
+          type: iframe
+          name: speicher-dienste
+          src: https://grafana.localhost/grafana/d-solo/llm-infra-storage?kiosk&theme=dark&panelId=22040&from=now-6h&to=now
+          allowScrolling: "no"
+          classes: h-64
+    - NVMe-Zustand:
+        # Panel 56624 aus llm-infra-storage - gemessen mit Daten (47 °C, 4 %
+        # Verbraucht, 100 % Ersatz).
+        icon: /icons/storage.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-storage
+        description: Temperatur, Verschleiss und Ersatzreserve der Modellplatte
+        widget:
+          type: iframe
+          name: speicher-nvme
+          src: https://grafana.localhost/grafana/d-solo/llm-infra-storage?kiosk&theme=dark&panelId=56624&from=now-24h&to=now
+          allowScrolling: "no"
+          classes: h-64
+- System - Node:
+    - Rechner:
+        icon: /icons/linux.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-host
+        description: CachyOS-Host mit 96 GB Arbeitsspeicher
+        siteMonitor: http://llm-node-exporter:9100/metrics
+        widget:
+          type: prometheusmetric
+          url: http://prometheus:9090
+          metrics:
+            - label: CPU
+              query: 100 - (avg(rate(node_cpu_seconds_total{job="node",mode="idle"}[5m])) * 100)
+              format:
+                type: number
+                suffix: " %"
+            - label: Last 5 min
+              query: node_load5{job="node"}
+            - label: RAM belegt
+              query: (node_memory_MemTotal_bytes{job="node"} - node_memory_MemAvailable_bytes{job="node"}) / 1073741824
+              format:
+                type: number
+                suffix: " GiB"
+            - label: Betriebszeit
+              query: (time() - node_boot_time_seconds{job="node"}) / 3600
+              format:
+                type: number
+                suffix: " h"
+    - Podman-Laufzeit:
+        # Kein eigener Dienst, der abgefragt werden koennte: die Sonde prueft
+        # Prometheus, weil dort die Einheiten- und Zielbilder der Container liegen.
+        icon: /icons/podman.png
+        href: http://127.0.0.1:9090/targets
+        siteMonitor: http://prometheus:9090/-/healthy
+        description: rootless Podman - Ziel- und Einheitenstand bei Prometheus
+    - Wissens-Wiki:
+        icon: /icons/doc.svg
+        href: http://127.0.0.1:3003
+        siteMonitor: http://llm-wiki:8000/
+        description: Chronik, Erkenntnisse, Ergebnisse (Mensch und Agent)
+- System - Panels:
+    - Arbeitsspeicher:
+        # Panel 29372 aus llm-infra-host - gemessen mit Daten (50 GB belegt).
+        icon: /icons/linux.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-host
+        description: Arbeitsspeicher, Cache und Switch
+        widget:
+          type: iframe
+          name: host-ram
+          src: https://grafana.localhost/grafana/d-solo/llm-infra-host?kiosk&theme=dark&panelId=29372&from=now-6h&to=now
+          allowScrolling: "no"
+          classes: h-64
+- Betrieb - Lage:
+    - Alarm-Lage:
+        icon: /icons/alertmanager.svg
+        href: http://127.0.0.1:9093
+        description: Aktive und ausstehende Alarme (ALERTS)
+        widget:
+          type: prometheusmetric
+          url: http://prometheus:9090
+          metrics:
+            - label: aktiv
+              query: count(ALERTS{alertstate="firing"}) or vector(0)
+            - label: ausstehend
+              query: count(ALERTS{alertstate="pending"}) or vector(0)
+            - label: Alarmregeln
+              query: count(ALERTS) or vector(0)
+    - Gateway-Fehler und Fallback:
+        # Absichtlich ohne Zahl: das Gateway-Protokoll liegt bei Loki, und Loki-
+        # Ziele muessen gegen Loki (/loki/api/v1/query_range) gefragt werden - wer
+        # sie versehentlich an Prometheus fragt, bekommt 0 Serien und haelt ein
+        # gesundes Panel fuer kaputt. Das prometheusmetric-Widget kann nur
+        # Prometheus; die echte Fehlerzahl zeigt das eingebettete Panel
+        # "Gateway-Fehler 15 Minuten" im Tab BETRIEB (Loki-Ziel, gemessen 9).
+        icon: /icons/loki.svg
+        href: https://grafana.localhost/grafana/explore?left=%7B%22datasource%22%3A%22P8E80F9AEF21F6940%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22expr%22%3A%22%7Bcontainer%3D%5C%22litellm%5C%22%7D%22%7D%5D%7D
+        description: Gateway-Stoerfaelle und Fallbacks im Klartext (Loki-Explore)
+    - Laufzeit-Protokolle:
+        # Zweites Loki-Ziel, anderer Container - bewusste Abgrenzung zur
+        # Gateway-Kachel oben und zum Dozzle-Knopf im Tab INFRA.
+        icon: /icons/sglang.svg
+        href: https://grafana.localhost/grafana/explore?left=%7B%22datasource%22%3A%22P8E80F9AEF21F6940%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22expr%22%3A%22%7Bcontainer%3D%5C%22flash-next-v3%5C%22%7D%22%7D%5D%7D
+        description: Protokolle der Modelle-Laufzeit (Loki-Explore)
+- Agenten - Panels:
+    - Generierdurchsatz:
+        # Panel "Generierdurchsatz ueber Zeit" aus llm-infra-agent-observatorium -
+        # gemessen mit Daten. Die Panels dieses Dashboards trugen keine IDs; die
+        # IDs standen auch im bereitgestellten d-solo-Verweis an erster Stelle und
+        # sind jetzt in 05-agent-observatorium.json gesetzt (sonst findet Grafana
+        # das Panel nicht und malt ein leeres Feld).
+        icon: /icons/homepage.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-agent-observatorium
+        description: Schreibtoken pro Sekunde ueber Zeit
+        widget:
+          type: iframe
+          name: agenten-durchsatz
+          src: https://grafana.localhost/grafana/d-solo/llm-infra-agent-observatorium?kiosk&theme=dark&panelId=1007&from=now-6h&to=now
+          allowScrolling: "no"
+          classes: h-64
+    - Auslastung je Geraet:
+        # Panel "Auslastung je Geraet" (gemessen: 100 % auf der einzigen Karte).
+        icon: /icons/nvidia.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-agent-observatorium
+        description: Kernel-Last und Speicher-Last je GPU
+        widget:
+          type: iframe
+          name: agenten-gpu
+          src: https://grafana.localhost/grafana/d-solo/llm-infra-agent-observatorium?kiosk&theme=dark&panelId=1011&from=now-6h&to=now
+          allowScrolling: "no"
+          classes: h-64
+    - Gateway-Fehler 15 Minuten:
+        # Panel "Gateway-Fehler (15 min)" - Loki-Ziel, gemessen mit 9 Treffern.
+        icon: /icons/litellm.svg
+        href: https://grafana.localhost/grafana/d/llm-infra-agent-observatorium
+        description: Fehler im Gateway-Protokoll ueber 15 Minuten
+        widget:
+          type: iframe
+          name: agenten-fehler
+          src: https://grafana.localhost/grafana/d-solo/llm-infra-agent-observatorium?kiosk&theme=dark&panelId=1017&from=now-6h&to=now
+          allowScrolling: "no"
+          classes: h-64
+- TOOLS:
+    - Agent-Anleitung:
+        # Auslieferung ueber den lokalen HTTPS-Proxy (scripts/74-setup-local-proxy.sh):
+        # config/proxy/site/anleitung.html liegt im Container-Layout unter
+        # /srv/llm-proxy/site und wird von Caddy unter /anleitung/ bedient.
+        icon: /icons/homepage.svg
+        href: https://homepage.localhost/anleitung/
+        description: Betreiber-Anleitung - was offen ist, welche Befehle als Naechstes kommen
+    - Doku und Handbuch:
+        # Fuhrt absichtlich nach aussen auf das Repo: die lokale Doku-Auslieferung
+        # (make docs-build, mkdocs auf Port 8000) laeuft auf diesem Rechner nicht,
+        # ein Knopf darauf waere eine tote Kachel.
+        icon: /icons/doc.svg
         href: https://github.com/thomasdenk79-cyber/llm-infra-setup/tree/main/docs
-        description: Monitoring, CMDB, Betriebsregeln
+        description: Monitoring, Betriebsregeln und Problemloesungen im Repo
     - CMDB:
-        icon: bookstack.png
+        icon: /icons/doc.svg
         href: https://github.com/thomasdenk79-cyber/llm-infra-setup/blob/main/docs/cmdb.yaml
-        description: Was laeuft wo mit welcher API
+        description: Was laeuft wo mit welcher Schnittstelle

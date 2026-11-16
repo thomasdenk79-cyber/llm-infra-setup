@@ -5,15 +5,36 @@ After=llm-observability-network.service
 Wants=llm-observability-network.service
 
 [Container]
-Image=ghcr.io/gethomepage/homepage:v2.4.0
+# Bild ueber Digest gepinnt (Tag v2.6.0, Digest
+# sha256:3e38fe788223cb46a3ce1f046ef11667b40f7707fdca0dcbfa3f86c5c42bf1e8, Quelle versions.lock).
+Image=ghcr.io/gethomepage/homepage@sha256:3e38fe788223cb46a3ce1f046ef11667b40f7707fdca0dcbfa3f86c5c42bf1e8
 ContainerName=llm-homepage
 Network=llm-observability.network
 PublishPort=127.0.0.1:3002:3000
 # Erlaubte Host-Header: kommen aus config/host.env (HOMEPAGE_ALLOWED_HOSTS).
 # Jeder andere Host antwoordet mit 400 - Pruefung in src/middleware.js der
-# gepinnten Version v2.4.0.
+# gepinnten Version.
 Environment=HOMEPAGE_ALLOWED_HOSTS=127.0.0.1:3002,localhost:3002,homepage.localhost
 Volume=%h/.config/llm-infra/homepage:/app/config:Z,U
+# Symbole einzeln in den public-Ordner des Containers (read-only). Kacheln
+# verweisen auf /icons/<datei>. Ein Bind auf /app/public als Ganzes waere
+# falsch: er schattiert die mitgelieferten Locales ab (Rohschluessel im Text).
+Volume=@CONFIG_ROOT@/config/homepage/icons/alertmanager.svg:/app/public/icons/alertmanager.svg:ro
+Volume=@CONFIG_ROOT@/config/homepage/icons/chat.svg:/app/public/icons/chat.svg:ro
+Volume=@CONFIG_ROOT@/config/homepage/icons/doc.svg:/app/public/icons/doc.svg:ro
+Volume=@CONFIG_ROOT@/config/homepage/icons/dozzle.svg:/app/public/icons/dozzle.svg:ro
+Volume=@CONFIG_ROOT@/config/homepage/icons/grafana.svg:/app/public/icons/grafana.svg:ro
+Volume=@CONFIG_ROOT@/config/homepage/icons/homepage.svg:/app/public/icons/homepage.svg:ro
+Volume=@CONFIG_ROOT@/config/homepage/icons/linux.svg:/app/public/icons/linux.svg:ro
+Volume=@CONFIG_ROOT@/config/homepage/icons/litellm.svg:/app/public/icons/litellm.svg:ro
+Volume=@CONFIG_ROOT@/config/homepage/icons/loki.svg:/app/public/icons/loki.svg:ro
+Volume=@CONFIG_ROOT@/config/homepage/icons/luni-moon.svg:/app/public/icons/luni-moon.svg:ro
+Volume=@CONFIG_ROOT@/config/homepage/icons/nvidia.svg:/app/public/icons/nvidia.svg:ro
+Volume=@CONFIG_ROOT@/config/homepage/icons/podman.png:/app/public/icons/podman.png:ro
+Volume=@CONFIG_ROOT@/config/homepage/icons/postgresql.svg:/app/public/icons/postgresql.svg:ro
+Volume=@CONFIG_ROOT@/config/homepage/icons/prometheus.svg:/app/public/icons/prometheus.svg:ro
+Volume=@CONFIG_ROOT@/config/homepage/icons/sglang.svg:/app/public/icons/sglang.svg:ro
+Volume=@CONFIG_ROOT@/config/homepage/icons/storage.svg:/app/public/icons/storage.svg:ro
 
 [Service]
 Restart=on-failure

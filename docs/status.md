@@ -183,6 +183,34 @@ systemctl --user list-timers --no-pager | head -5
   `/v1/models` 401, `/` 401, `/health/liveliness` 200. Anonym reicht nicht
   nach aussen - Basic-Auth auf dem Gateway sitzt vor Grafana.
 
+## Portal (gethomepage) auf 2.6.0 - gemessener Stand 2026-11-16
+
+* `homepage.service` laeuft auf dem gepinnten Bild
+  `ghcr.io/gethomepage/homepage@sha256:3e38fe788223cb46a3ce1f046ef11667b40f7707fdca0dcbfa3f86c5c42bf1e8`
+  (Tag v2.6.0, Quelle `versions.lock`). Der Sprung von v2.4.0 war noetig,
+  weil erst 2.6.0 Tabs kennt und `/app/public` beim Start indexiert.
+* Tabs aus `config/homepage/settings.yaml` (Dashboard, LLM, INFRA, SYSTEM,
+  BETRIEB, TOOLS) erscheinen im gerenderten HTML und sind per Playwright
+  klickbar; Screens `/tmp/qa/screens/portal-260-*.png`.
+* Symbole: versioniert unter `config/homepage/icons/`, dateiweise ro-Bind
+  nach `/app/public/icons/`; alle 16 Dateien liefern 200 (gemessen per
+  curl und im Browser `naturalWidth > 0`, keine kaputten Bilder, keine
+  Rohschluessel). Playwright-Netzliste ueber das ganze Portal: nur
+  `homepage.localhost` und `grafana.localhost` (beide ::1), 0 Anfragen an
+  `cdn.jsdelivr.net` oder andere externe Hosts.
+* Der Installer rollt die Unit jetzt selbst ueber `lib/units.sh` aus
+  (`install_units` + `systemd_reload`, Start/Restart nur bei Abweichung
+  von Unit-Datei oder laufendem Bild). Vorher installierte
+  `scripts/60-install-homepage.sh` die Unit nie dorthin, wo Quadlet sie
+  liest, und der Live-Stand hing auf v2.4.0 fest.
+
+```bash
+podman ps --filter name=llm-homepage --format '{{.Image}}'   # Digest-Bild v2.6.0
+./scripts/60-install-homepage.sh --check                       # rc 0, alles OK
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3002/icons/grafana.svg  # 200
+curl -s -o /dev/null -w '%{http_code}\n' https://homepage.localhost/               # 200
+```
+
 ## Bekannte Abweichungen (bewusst, dokumentiert)
 
 - Der Weiterleiter bindet Port 30001 an die Host-Adressen, also auch ins LAN.

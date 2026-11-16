@@ -20,6 +20,7 @@
   "id": null,
   "panels": [
     {
+      "id": 1000,
       "type": "text",
       "title": "Datengrenze",
       "gridPos": {
@@ -47,6 +48,7 @@
       "panels": []
     },
     {
+      "id": 1002,
       "type": "stat",
       "title": "Schreibtoken pro Sekunde",
       "description": "Aktuelle Generierrate der SGLang-Runtime (Pennyroyal).",
@@ -98,6 +100,7 @@
       ]
     },
     {
+      "id": 1003,
       "type": "stat",
       "title": "Laufende Anfragen",
       "description": "Aktuell im Decode-Fenster der Engine.",
@@ -145,6 +148,7 @@
       ]
     },
     {
+      "id": 1004,
       "type": "stat",
       "title": "Warteschlange",
       "description": "Anfragen, die noch keinen KV-Platz gefunden haben.",
@@ -196,6 +200,7 @@
       ]
     },
     {
+      "id": 1005,
       "type": "stat",
       "title": "KV-Cache belegt",
       "description": "Anteil des KV-Speichers in Gebrauch (SGLang token_usage).",
@@ -252,6 +257,7 @@
       ]
     },
     {
+      "id": 1006,
       "type": "stat",
       "title": "Spekulative Akzeptlaenge",
       "description": "Mittlere Anzahl akzeptierter Token je Verifikations-Schritt (accept_len).",
@@ -307,6 +313,7 @@
       ]
     },
     {
+      "id": 1007,
       "type": "timeseries",
       "title": "Generierdurchsatz ueber Zeit",
       "description": "Token/s aus der Engine-Perspektive; Einbrueche = Umbau der Batches oder KV-Druck.",
@@ -364,6 +371,7 @@
       ]
     },
     {
+      "id": 1008,
       "type": "timeseries",
       "title": "Parallelitaet: laufend gegen Warteschlange",
       "description": "Wer arbeitet gerade, und wer muss warten.",
@@ -427,6 +435,7 @@
       ]
     },
     {
+      "id": 1009,
       "type": "timeseries",
       "title": "KV- und Mamba-Auslastung",
       "description": "token_usage (gesamt) und mamba_usage — Naehere an 100 % drosselt neue Anfragen.",
@@ -505,6 +514,7 @@
       "panels": []
     },
     {
+      "id": 1011,
       "type": "timeseries",
       "title": "Auslastung je Geraet",
       "description": "Kernel-Auslastung; die 3500 Ada traelgt bonsai-2-27b, die PRO 6000 Pennyroyal.",
@@ -555,21 +565,22 @@
         }
       },
       "targets": [
-            {
-              "refId": "A",
-              "expr": "nvidia_smi_utilization_gpu_ratio",
-              "legendFormat": "{{gpu}} Kernel",
-              "instant": false
-            },
-            {
-              "refId": "B",
-              "expr": "nvidia_smi_utilization_memory_ratio",
-              "legendFormat": "{{gpu}} Speicher",
-              "instant": false
-            }
-          ]
+        {
+          "refId": "A",
+          "expr": "nvidia_smi_utilization_gpu_ratio",
+          "legendFormat": "{{gpu}} Kernel",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "nvidia_smi_utilization_memory_ratio",
+          "legendFormat": "{{gpu}} Speicher",
+          "instant": false
+        }
+      ]
     },
     {
+      "id": 1012,
       "type": "timeseries",
       "title": "VRAM-Bedarf je Geraet",
       "description": "Modellgewichte plus Laufzeitpuffer.",
@@ -618,21 +629,22 @@
         }
       },
       "targets": [
-            {
-              "refId": "A",
-              "expr": "nvidia_smi_memory_used_bytes",
-              "legendFormat": "{{gpu}} belegt",
-              "instant": false
-            },
-            {
-              "refId": "B",
-              "expr": "nvidia_smi_memory_free_bytes",
-              "legendFormat": "{{gpu}} frei",
-              "instant": false
-            }
-          ]
+        {
+          "refId": "A",
+          "expr": "nvidia_smi_memory_used_bytes",
+          "legendFormat": "{{gpu}} belegt",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "nvidia_smi_memory_free_bytes",
+          "legendFormat": "{{gpu}} frei",
+          "instant": false
+        }
+      ]
     },
     {
+      "id": 1013,
       "type": "stat",
       "title": "VRAM-Fuellstand",
       "description": "Belegt geteilt durch total je Geraet (Ada ca. 12 GB, Blackwell ca. 96 GB).",
@@ -716,15 +728,16 @@
         "orient": "vertical"
       },
       "targets": [
-            {
-              "refId": "A",
-              "expr": "100 * nvidia_smi_memory_used_bytes / clamp_min(nvidia_smi_memory_used_bytes + nvidia_smi_memory_free_bytes, 1)",
-              "legendFormat": "{{gpu}}",
-              "instant": true
-            }
-          ]
+        {
+          "refId": "A",
+          "expr": "100 * nvidia_smi_memory_used_bytes / clamp_min(nvidia_smi_memory_used_bytes + nvidia_smi_memory_free_bytes, 1)",
+          "legendFormat": "{{gpu}}",
+          "instant": true
+        }
+      ]
     },
     {
+      "id": 1014,
       "type": "timeseries",
       "title": "Leistungsaufnahme und Temperatur",
       "description": "Watt (linke Axe) und Grad (rechte Axe) je Geraet.",
@@ -861,6 +874,7 @@
       "panels": []
     },
     {
+      "id": 1016,
       "type": "stat",
       "title": "Fallback/Retry-Treffer (5 min)",
       "description": "LiteLLM-Logzeilen mit Retry/Fallback im Gateway-Container.",
@@ -921,6 +935,7 @@
       ]
     },
     {
+      "id": 1017,
       "type": "stat",
       "title": "Gateway-Fehler (15 min)",
       "description": "ERROR/Exception-Zeilen im LiteLLM-Log.",
@@ -981,6 +996,7 @@
       ]
     },
     {
+      "id": 1018,
       "type": "timeseries",
       "title": "Fallback-Aktivitaet je 5 Minuten",
       "description": "Zeitreiche der Retry/Fallback-Treffer (Loki-Metrikquery ueber Range).",
@@ -1042,6 +1058,7 @@
       ]
     },
     {
+      "id": 1019,
       "type": "timeseries",
       "title": "Fehlerrate je 5 Minuten",
       "description": "ERROR/Exception-Zeilen pro Fenster.",
@@ -1103,6 +1120,7 @@
       ]
     },
     {
+      "id": 1020,
       "type": "logs",
       "title": "Gateway-Stoerfaelle im Klartext",
       "datasource": {
@@ -1149,6 +1167,7 @@
       "panels": []
     },
     {
+      "id": 1022,
       "type": "stat",
       "title": "Aktive System-Einheiten",
       "description": "llm_unit_active aus dem Textfile-Collector (node_exporter).",
@@ -1200,6 +1219,7 @@
       ]
     },
     {
+      "id": 1023,
       "type": "stat",
       "title": "Scrape-Ziele erreichbar",
       "description": "up == 1 ueber alle Jobs (gpu, loki, node, pennyroyal, prometheus).",
@@ -1251,6 +1271,7 @@
       ]
     },
     {
+      "id": 1024,
       "type": "stat",
       "title": "Ausgefallene Ziele",
       "description": "Hoechstens 0 im Normalbetrieb.",
@@ -1302,6 +1323,7 @@
       ]
     },
     {
+      "id": 1025,
       "type": "table",
       "title": "Einheiten-Status (llm_unit_active)",
       "description": "Je systemd-Unit: 1 = aktiv, 0 = inaktiv (Textfile-Collector, 30 s Intervall).",
