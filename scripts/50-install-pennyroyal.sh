@@ -150,9 +150,8 @@ RestartSec=30
 KillMode=mixed
 TimeoutStopSec=180
 TimeoutStartSec=3600
-
-[Install]
-WantedBy=default.target
 UNIT
 log "Pennyroyal-Unit erzeugt (Digest ${digest})."
+log 'Referenz-Unit ohne Autostart: sie bleibt installiert und ist manuell startbar'
+log '  (systemctl --user start pennyroyal.service), nimmt beim Login aber nicht die Grafikkarte ein.'
 log 'Noch NICHT aktiv: ./scripts/apply-runtime-unit.sh prüft zuerst laufende Anfragen.'

@@ -131,6 +131,9 @@ Das Repository ist das einzige Backup dieser Arbeit. Deshalb gilt fuer jeden Sch
   (`docs/adr/0009-scrape-across-networks.md`).
 * Unit-Dateien kommen aus `quadlet/`; generierte Dateien tragen einen Header
   `GENERIERT von ...`. Aendern im Generator, nicht in der Datei.
+* Autostart folgt der Unit-Datei: nur Dateien mit `WantedBy=` werden in
+  `default.target.wants` eingetragen. Die Referenz-Unit `pennyroyal.container` hat
+  bewusst keines - sonst laeuft beim Login ein zweites Bild auf der Grafikkarte.
 
 ## Qualitaetspruefungen
 

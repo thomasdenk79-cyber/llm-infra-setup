@@ -198,6 +198,8 @@ case "${mode}" in
     restart_runtime
     ;;
   apply)
+    # Die nächste Hilfe-Zeile am Ende nennt eine Unit - die darf nicht geraten sein.
+    laufzeit_bestimmen
     prune_legacy_units
     changed=0
     for unit in "${INFERENCE_UNITS[@]}" "${OBSERVABILITY_UNITS[@]}"; do

@@ -1,4 +1,29 @@
 # Aenderungsprotokoll
+## 2026-11-16 (Runde: Referenz-Unit nahm beim Login die Grafikkarte)
+
+- **Gefunden beim Blick auf den naechsten Hochlauf:** `render_unit()` in
+  `lib/units.sh` setzte jede installierte Unit auf Autostart - auch
+  `pennyroyal.container`. Die Datei liegt in `~/.config/containers/systemd/` und war
+  in `default.target.wants` verlinkt, ihr Bild `localhost/flash-next-sm120:serving`
+  existiert aber nicht (`podman image exists` = nein). Beim naechsten Login waere eine
+  Unit mit `Restart=on-failure` (30 s) endlos fehlgeschlagen, und mit vorhandenem Bild
+  waere ein zweiter GPU-Container angelaufen - beides gegen die Regeln des Repos.
+- **Behoben an der Ursache:** Autostart folgt jetzt der Unit-Datei - `render_unit()`
+  setzt den `.wants`-Verweis nur bei vorhandener `WantedBy=`-Zeile und entfernt einen
+  alten Verweis sonst. Die Referenz-Unit verliert in `scripts/50-install-pennyroyal.sh`
+  (und damit in `quadlet/pennyroyal.container`) ihr `[Install]`-Stueck: sie bleibt
+  installiert und ist mit `systemctl --user start pennyroyal.service` startbar.
+- **Gemessen nach dem Einbau:** `pennyroyal verlinkt: 0`, `flash-next verlinkt: 1`
+  (die Laufzeit laeuft also weiterhin beim Login an), Laeufer unveraendert
+  `flash-next-v3 Up 13 hours`, nichts gestartet.
+- **Nebenbefund behoben:** die Ausgabe von `apply-runtime-unit.sh --install-only` /
+  `--dry-run` empfahl `systemctl --user start pennyroyal.service`, weil
+  `laufzeit_bestimmen` nur im Neustart- und Uebernahmezweig lief und sonst der
+  Altwert `pennyroyal` stand. Der Aufruf steht jetzt auch im Anwendzweig; die Ausgabe
+  nennt korrekt: "Laufzeit-Unit am ContainerNamen erkannt: flash-next".
+
+
+
 ## 2026-11-16 (Runde: Warten auf Leerlauf wird ein Werkzeug)
 
 - **Neu `scripts/takeover-when-idle.sh` mit Timer.** Die Uebernahme des von Hand

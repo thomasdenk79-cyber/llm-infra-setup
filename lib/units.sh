@@ -116,16 +116,25 @@ unit_service_name() {
 }
 
 render_unit() {
-  # render_unit <file-name>  -> installs under UNIT_DIR with placeholder
-  # substitution and enables it through default.target.wants.
+  # render_unit <file-name>  -> installiert unter UNIT_DIR mit Platzhalterersetzung.
+  # Autostart richtet sich nach der Unit-Datei: nur Dateien mit WantedBy= bekommen
+  # den .wants-Verweis. Eine Referenz-Unit ohne WantedBy bleibt installiert und ist
+  # manuell startbar, laeuft aber beim naechsten Login nicht an - sonst wuerde die
+  # Pennyroyal-Referenz bei jedem Start ein zweites Bild auf die Grafikkarte setzen
+  # (oder mit fehlendem Bild endlos neu versuchen).
   local name="$1" src="${REPO_ROOT}/quadlet/$1"
   [[ -f "${src}" ]] || { log "FEHLT: quadlet/${name} existiert nicht (erst Generator ausführen)."; return 1; }
   install -d -m 0755 "${UNIT_DIR}" "${WANTS_DIR}"
   sed "s#@CONFIG_ROOT@#${REPO_ROOT}#g" "${src}" > "${UNIT_DIR}/${name}.tmp"
   chmod 0644 "${UNIT_DIR}/${name}.tmp"
   mv -f "${UNIT_DIR}/${name}.tmp" "${UNIT_DIR}/${name}"
-  ln -sfn "../${name}" "${WANTS_DIR}/${name}"
-  log "unit installiert: ${UNIT_DIR}/${name}"
+  if grep -qs '^WantedBy=' "${src}"; then
+    ln -sfn "../${name}" "${WANTS_DIR}/${name}"
+    log "unit installiert und auf Autostart gesetzt: ${UNIT_DIR}/${name}"
+  else
+    rm -f "${WANTS_DIR}/${name}"
+    log "unit installiert, ohne Autostart (kein WantedBy in ${name}): ${UNIT_DIR}/${name}"
+  fi
 }
 
 install_units() {

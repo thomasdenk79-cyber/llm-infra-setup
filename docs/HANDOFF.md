@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-11-16T16:00:11+01:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-11-16T16:01:43+01:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe (2026-11-16)
 
@@ -27,6 +27,11 @@ Das Repository ist das Backup.
   fehlenden Teilen mit Rueckgabewert 1 und naechstem Befehl — ein Lauf mit 0 bedeutet
   also wirklich vollstaendig. Nicht enthalten (bewusst): Grafanas Ausfuhrordner
   `png/csv/pdf`.
+* Autostart folgt der Unit-Datei (`WantedBy=`): die Referenz-Unit `pennyroyal.container`
+  hat keins und nimmt beim Login kein zweites Bild auf die Grafikkarte; starten ist
+  Betreiberaktion (`systemctl --user start pennyroyal.service`). Pruefen: `ls -l
+  ~/.config/containers/systemd/default.target.wants/` - dort muss nur die laufende
+  Laufzeit-Unit stehen (`flash-next.container`).
 * Uebernahme der Laufzeit unter `flash-next.service` ist vorbereitet und wartet auf
   Leerlauf: `llm-runtime-takeover.timer` misst alle 10 Minuten und meldet
   `state/runtime-takeover/bereits.txt`. Ansehen: `./scripts/takeover-when-idle.sh
@@ -461,3 +466,7 @@ warteinheit fuer die laufzeit-uebernahme bei leerlauf
 ## Notiz 2026-11-16T16:00:11+01:00
 
 uebernahme-warten an gemessene leerlauf-fenster angepasst
+
+## Notiz 2026-11-16T16:01:43+01:00
+
+referenz-unit ohne autostart, autostart folgt der unit-datei
