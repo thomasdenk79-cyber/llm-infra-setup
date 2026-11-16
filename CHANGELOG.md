@@ -1,4 +1,30 @@
 # Aenderungsprotokoll
+## 2026-11-16 (Runde: Rueckgabepfad, der wirklich zur Sicherung passt)
+
+- **Der Rueckgabeweg war gegen das eigene Sicherungsarchiv kaputt.** `extract()` in
+  `scripts/restore.sh` setzte voraus, dass der Archivkopf dem Archivnamen entspricht -
+  der Kopf ist aber der nackte Stempel (`20261116T133541Z/`), der Name traegt das
+  Praefix `llm-infra-backup-`. Jedes `--check`, `config` und `database` lief damit in
+  ein Verzeichnis, das es nicht gab, und meldete „manifest.json fehlt - Backup
+  unvollstaendig“ an einem vollstaendigen Archiv. Jetzt wird nach dem Ordner mit
+  `manifest.json` gesucht; ein Ordner als Eingabe gibt sein Pfad zurueck (vorher: leere
+  Ausgabe). Messbar: `./scripts/restore.sh --check` sagt **7 Dateien geprueft,
+  MANIFEST OK**, `restore.sh config` zeigt den Unterschied zur aktuellen Konfiguration.
+- **Die Sicherung enthaelt jetzt die Betreiber-Einstellungen.** `config/host.env` legt
+  Pfade, Ports und Containernamen fest und wird von keinem Skript neu erzeugt; es war
+  durch die `.env`-Ausnahme komplett draussen. Gesichert wird eine gefilterte Kopie
+  (0600), Zeilen mit Schluessel-/Token-/Passwort-/Secret-Namen bleiben weg.
+  `restore.sh config` vergleicht sie und nennt den Einsetzbefehl.
+- **Selbstpruefung und Aufbewahrung.** `backup.sh` laeuft am Ende `restore.sh --check`
+  ueber das gerade geschriebene Archiv (`state/backup-check.log`) und meldet
+  „Backup fertig und geprueft“ erst danach; die neuesten drei Archive bleiben
+  (`LLM_BACKUP_ANZAHL`), geloescht wird nur nach einem vollstaendigen Lauf.
+- **Doku nachgezogen:** `docs/backup-restore.md` (neue Teile, Selbstpruefung,
+  Aufbewahrung, Modellteil ohne ZFS), `docs/status.md` begruendet jetzt auch die
+  CDI-Warnung als Zurueckhaltung statt Defekt.
+
+
+
 ## 2026-11-16 (Runde: Ueberwachung lueckenlos - Waechter, Dashboards, Lektuere)
 
 - **Beide Waechter laufen jetzt wirklich.** `llm-litellm-watchdog.timer` prueft alle
