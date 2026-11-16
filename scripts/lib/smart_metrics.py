@@ -12,6 +12,14 @@ dev = os.environ.get('SMART_DEV', 'unknown')
 nv = data.get('nvme_smart_health_information_log') or {}
 abstract = data.get('abstract') or {}
 temp = (abstract.get('temp') or {}).get('current')
+if temp is None:
+    # NVMe-Platten melden die Temperatur im NVMe-Log, nicht im ATA-Feld 'abstract'.
+    nvme_temp = nv.get('temperature')
+    if isinstance(nvme_temp, (int, float)):
+        temp = nvme_temp
+# Kein Ersatzwert bei fehlender Messung: die Messreihe entfaellt dann, das
+# Dashboard steht auf "No data". Eine 0 waere eine eiskalte Platte - gefaehrlich
+# schoen in einem Panel, das Hitze melden soll.
 if isinstance(temp, (int, float)):
     print(f'llm_smart_temperature_celsius{{device="{dev}"}} {temp}')
 print(f'llm_smart_status_ok{{device="{dev}"}} {1 if (data.get("smart_status") or {}).get("passed") else 0}')

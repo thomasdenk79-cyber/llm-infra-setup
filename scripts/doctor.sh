@@ -14,7 +14,9 @@ source "${root}/lib/units.sh"
 # nicht vorhandener Wert den gesamten Lauf abbrechen wuerde. Weiter ohne -e.
 set +e
 [[ -f "${root}/config/host.env" ]] && source "${root}/config/host.env"
-: "${PENNYROYAL_PORT:=8001}"
+# Ansprache der Laufzeit (Host, Port, Container, Unit, Image) kommt aus
+# lib/units.sh; config/host.env ist vorher eingelesen und bestimmt die Werte.
+runtime_identity
 : "${LITELLM_PORT:=4000}"
 : "${LLM_MODELS_DIR:=/srv/llm/models}"
 : "${PLE_STORAGE_MOUNT:=/srv/llm/ple-ext4}"
@@ -97,7 +99,7 @@ else
 fi
 
 # 5 Modell --------------------------------------------------------------------
-title 'Modell auf ZFS'
+title 'Modell auf dem Datentraeger'
 model_dir="${LLM_MODELS_DIR}/$(basename "${MODEL_ID:-RadixArk/Qwen3.8-Flash-Next-NVFP4}")"
 if [[ -f "${model_dir}/config.json" && -f "${model_dir}/model.safetensors.index.json" ]]; then
   shards="$(find "${model_dir}" -maxdepth 1 -name '*.safetensors' 2>/dev/null | wc -l)"
@@ -111,7 +113,13 @@ fi
 
 # 6 PLE-Speicher --------------------------------------------------------------
 title 'PLE-Speicher (SSD-Auslagerung der Einbettungen)'
-if "${root}/scripts/47-setup-ple-storage.sh" --verify >/tmp/llm-doctor-ple.$$ 2>&1; then
+# Hat dieser Rechner keinen PLE-Speicher, ist "nicht eingerichtet" der Zustand
+# und kein Fehler. Dieselbe Regel wie im Kennzahlensammler (ple_configured),
+# damit Doctor und Alarmmeldung nie auseinanderlaufen.
+if ! ple_configured; then
+  note 'Dieser Rechner hat keinen PLE-Speicher - die Pruefung entfaellt.'
+  note 'PLE einrichten: ./scripts/47-setup-ple-storage.sh, danach PLE_* in config/host.env.'
+elif "${root}/scripts/47-setup-ple-storage.sh" --verify >/tmp/llm-doctor-ple.$$ 2>&1; then
   good 'eingehaengt, in /etc/fstab eingetragen, ext4'
 else
   bad 'PLE-Speicher ist nicht korrekt eingerichtet.' './scripts/47-setup-ple-storage.sh'
@@ -122,17 +130,34 @@ rm -f /tmp/llm-doctor-ple.$$
 # 7 Image ---------------------------------------------------------------------
 title 'Runtime-Image'
 if command -v podman >/dev/null 2>&1; then
-  img="${PENNYROYAL_IMAGE:-ghcr.io/jpezzulli/sglang-rtxpro6000:v2.5.3}"
-  if podman image exists "${img}"; then
+  img="${RUNTIME_IMAGE}"
+  # Laeuft die Laufzeit, zaehlt das Image, aus dem sie wirklich gestartet ist.
+  if runtime_is_running && [[ -n "${RUNTIME_CONTAINER}" ]]; then
+    running_img="$(podman inspect "${RUNTIME_CONTAINER}" -f '{{.Config.Image}}' 2>/dev/null || true)"
+    [[ -n "${running_img}" ]] && img="${running_img}"
+  fi
+  pinned="$(sed -n 's/^pennyroyal_image:[[:space:]]*//p' "${root}/versions.lock" 2>/dev/null | head -1)"
+  if podman image exists "${img}" 2>/dev/null; then
     good "Image vorhanden: ${img}"
-    dig="$(podman image inspect "${img}" --format '{{.Digest}}' 2>/dev/null)"
-    if grep -qF "${dig}" "${root}/versions.lock" 2>/dev/null; then
-      good 'Digest stimmt mit versions.lock ueberein'
+    if [[ -n "${pinned}" && "${img}" != "${pinned}" ]]; then
+      # Ein eigenes (lokal gebauten) Image hat einen Speicher-Digest, aber nie
+      # den gepinnten Registry-Digest; ein Vergleich waere eine Dauermeldung
+      # ohne Aussage. Gepinnt ist nur das Pennyroyal-Image aus versions.lock.
+      note "Laufzeit-Image ist nicht das gepinnte Image (${pinned}); Digest-Vergleich entfaellt."
     else
-      warn 'Image-Digest weicht von versions.lock ab.' './scripts/50-install-pennyroyal.sh && git diff versions.lock quadlet'
+      dig="$(podman image inspect "${img}" --format '{{.Digest}}' 2>/dev/null || true)"
+      if [[ -z "${dig}" ]]; then
+        note 'Image ohne Registry-Digest; versions.lock-Vergleich entfaellt.'
+      elif grep -qF "${dig}" "${root}/versions.lock" 2>/dev/null; then
+        good 'Digest stimmt mit versions.lock ueberein'
+      else
+        warn 'Image-Digest weicht von versions.lock ab.' './scripts/50-install-pennyroyal.sh && git diff versions.lock quadlet'
+      fi
     fi
+  elif runtime_is_running; then
+    warn "Image ${img} ist nicht als lokales Image auffindbar, die Laufzeit laeuft aber." 'podman images'
   else
-    bad 'Image fehlt.' 'make pennyroyal'
+    bad "Image ${img} fehlt." 'make pennyroyal   (eigene Images: podman images)'
   fi
 else
   bad 'podman fehlt.' 'make install'
@@ -150,34 +175,68 @@ fi
 
 # 9 Runtime -------------------------------------------------------------------
 title 'Inferenz-Laufzeit'
-if systemctl --user is-active --quiet pennyroyal.service; then
-  good 'Unit laeuft'
-  if curl -fsS --max-time 8 "http://127.0.0.1:${PENNYROYAL_PORT}/health" >/dev/null 2>&1; then
-    good "/health antwortet auf :${PENNYROYAL_PORT}"
-    m="$(curl -fsS --max-time 8 "http://127.0.0.1:${PENNYROYAL_PORT}/metrics" 2>/dev/null || true)"
+if runtime_is_running; then
+  if [[ -n "${RUNTIME_SERVICE}" ]]; then good "Unit ${RUNTIME_SERVICE} laeuft"; else good "Container ${RUNTIME_CONTAINER} laeuft"; fi
+  if curl -fsS --max-time 8 "${RUNTIME_URL}${RUNTIME_HEALTH_PATH}" >/dev/null 2>&1; then
+    good "${RUNTIME_HEALTH_PATH} antwortet auf ${RUNTIME_URL}"
+    m="$(curl -fsS --max-time 8 "${RUNTIME_URL}${RUNTIME_METRICS_PATH}" 2>/dev/null || true)"
     # Kein exit in awk: das wuerde curl eine geschlossene Pipeline zeigen und die
     # Diagnose mit SIGPIPE-Code beenden, obwohl alles in Ordnung ist.
     metric() { printf '%s\n' "${m}" | awk -v name="$1" 'index($0, name "{")==1 {if(!seen){print $2; seen=1}}'; }
     thr="$(metric sglang:gen_throughput)"
     acc="$(metric sglang:spec_accept_length)"
     run_req="$(metric sglang:num_running_reqs)"
-    note "Token/s gerade: ${thr:-keine Last}   Spekulativ accepted/forward: ${acc:-?}   laufende Anfragen: ${run_req:-0}"
+    [[ -n "${run_req}" ]] || run_req="$(metric vllm:num_requests_running)"
+    if [[ -n "${thr}" || -n "${acc}" ]]; then
+      note "Token/s gerade: ${thr:-keine Last}   Spekulativ accepted/forward: ${acc:-?}   laufende Anfragen: ${run_req:-0}"
+    else
+      # vLLM fuehrt keine Momentanrate; Warteschlange und Zaehler sind die
+      # Werte, die zu dieser Laufzeit passen.
+      waiting="$(metric vllm:num_requests_waiting)"
+      tokens="$(metric vllm:generation_tokens_total)"
+      note "Laufende Anfragen: ${run_req:-0}   Wartend: ${waiting:-0}   Geschriebene Token insgesamt: ${tokens:-?}"
+    fi
   else
-    bad 'Unit laeuft, aber /health antwortet nicht (Kaltstart dauert ~15 Minuten).' \
-        'journalctl --user -u pennyroyal.service -n 120 --no-pager'
+    bad "Die Laufzeit laeuft, aber ${RUNTIME_HEALTH_PATH} antwortet nicht (Kaltstart dauert ~15 Minuten)." \
+        "$(runtime_logs_hint)"
   fi
 else
-  note 'Pennyroyal laeuft gerade nicht.'
+  note "Die Laufzeit (${RUNTIME_CONTAINER}) laeuft gerade nicht."
   hint_unit='make deploy-ready'
   if [[ "${short}" == 1 ]]; then hints+=("${hint_unit}"); fi
   printf '     -> starten mit: make deploy-ready   (oder ohne GPU: make deploy-non-gpu)\n'
-  if systemctl --user status pennyroyal.service --no-pager -n 0 2>/dev/null | grep -q 'Result: exit-code'; then
-    bad 'Die Unit ist zuletzt fehlgeschlagen.' 'journalctl --user -u pennyroyal.service -n 120 --no-pager'
+  if [[ -n "${RUNTIME_SERVICE}" ]] && systemctl --user status "${RUNTIME_SERVICE}" --no-pager -n 0 2>/dev/null | grep -q 'Result: exit-code'; then
+    bad 'Die Unit ist zuletzt fehlgeschlagen.' "$(runtime_logs_hint)"
   fi
 fi
-if [[ "${short}" == 0 ]] && journalctl --user -u pennyroyal.service -n 400 --no-pager 2>/dev/null | grep -Eqi 'CUDA out of memory|out-of-memory|Killed|oom-kill'; then
-  bad 'Letzte Meldungen deuten auf Speicherprobleme (CUDA OOM / OOM-Killer).' \
-      'docs/performance.md#arbeitsspeicher-hicache'
+if [[ "${short}" == 0 ]]; then
+  if [[ -n "${RUNTIME_SERVICE}" ]]; then
+    oom_evidence="$(journalctl --user -u "${RUNTIME_SERVICE}" -n 400 --no-pager 2>/dev/null || true)"
+  else
+    oom_evidence="$(podman logs --tail 400 "${RUNTIME_CONTAINER}" 2>&1 || true)"
+  fi
+  if printf '%s' "${oom_evidence}" | grep -Eqi 'CUDA out of memory|out-of-memory|Killed|oom-kill'; then
+    bad 'Letzte Meldungen deuten auf Speicherprobleme (CUDA OOM / OOM-Killer).' \
+        'docs/performance.md#arbeitsspeicher-hicache'
+  fi
+fi
+
+# 9b Pennyroyal (optional) ----------------------------------------------------
+title 'Pennyroyal (optional, Legacy)'
+# Pennyroyal ist die Quadlet-Runtime des Referenzrechners. Laeuft hier vLLM als
+# Container, ist ihre Abwesenheit der Normalzustand - diese Pruefung kann
+# deshalb keinen Fehler liefern, sie zeigt nur, was zu sehen ist.
+if [[ "${RUNTIME_UNIT}" == "pennyroyal" ]]; then
+  good 'Pennyroyal ist die aktive Laufzeit (siehe Pruefpunkt 9)'
+elif unit_exists "${RUNTIME_LEGACY_SERVICE}"; then
+  if systemctl --user is-active --quiet "${RUNTIME_LEGACY_SERVICE}"; then
+    warn "Pennyroyal laeuft mit, ist aber nicht die aktive Laufzeit (${RUNTIME_CONTAINER} auf ${RUNTIME_URL})." \
+         "systemctl --user status ${RUNTIME_LEGACY_SERVICE} --no-pager"
+  else
+    note "Pennyroyal-Unit ist installiert, steht aber; aktive Laufzeit ist ${RUNTIME_CONTAINER}."
+  fi
+else
+  good "Pennyroyal ist nicht installiert - aktive Laufzeit ist ${RUNTIME_CONTAINER} auf ${RUNTIME_URL}."
 fi
 
 # 10 RAM / Platz --------------------------------------------------------------
@@ -261,6 +320,6 @@ elif (( ${#hints[@]} > 0 )); then
     for h in "${hints[@]:1}"; do printf '    %s\n' "$h"; done
   fi
 else
-  printf '  Bitte Log pruefen: journalctl --user -u pennyroyal.service -n 120 --no-pager\n'
+  printf '  Bitte Log pruefen: %s\n' "$(runtime_logs_hint)"
 fi
 exit $(( fails > 0 ? 1 : 0 ))

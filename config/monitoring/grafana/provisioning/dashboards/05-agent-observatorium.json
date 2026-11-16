@@ -93,7 +93,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sglang:gen_throughput"
+          "expr": "sum(rate(vllm:generation_tokens_total[1m]))"
         }
       ]
     },
@@ -140,7 +140,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sglang:num_running_reqs"
+          "expr": "vllm:num_requests_running"
         }
       ]
     },
@@ -191,7 +191,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sglang:num_queue_reqs"
+          "expr": "vllm:num_requests_waiting"
         }
       ]
     },
@@ -247,7 +247,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "100 * sglang:token_usage"
+          "expr": "100 * vllm:kv_cache_usage_perc"
         }
       ]
     },
@@ -302,54 +302,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sglang:spec_accept_length"
-        }
-      ]
-    },
-    {
-      "type": "stat",
-      "title": "Aktive Agenten-Sitzungen",
-      "description": "Unterschiedliche Routing-Schluessel (Sitzungen) mit laufenden Anfragen an der Engine.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 20,
-        "y": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "decimals": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "colorMode": "value",
-        "graphMode": "area",
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sglang:num_unique_running_routing_keys"
+          "expr": "sum(rate(vllm:spec_decode_num_accepted_tokens_total[15m])) / clamp_min(sum(rate(vllm:spec_decode_num_drafts_total[15m])), 0.001)"
         }
       ]
     },
@@ -404,7 +357,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sglang:gen_throughput",
+          "expr": "sum(rate(vllm:generation_tokens_total[1m]))",
           "legendFormat": "tok/s (Engine)",
           "instant": false
         }
@@ -461,13 +414,13 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sglang:num_running_reqs",
+          "expr": "vllm:num_requests_running",
           "legendFormat": "laufend",
           "instant": false
         },
         {
           "refId": "B",
-          "expr": "sglang:num_queue_reqs",
+          "expr": "vllm:num_requests_waiting",
           "legendFormat": "warteschlange",
           "instant": false
         }
@@ -526,13 +479,13 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "100 * sglang:token_usage",
+          "expr": "100 * vllm:kv_cache_usage_perc",
           "legendFormat": "KV token_usage",
           "instant": false
         },
         {
           "refId": "B",
-          "expr": "100 * sglang:mamba_usage",
+          "expr": "100 * sum(vllm:num_requests_waiting) / clamp_min(sum(vllm:num_requests_running) + sum(vllm:num_requests_waiting), 1)",
           "legendFormat": "Mamba-State",
           "instant": false
         }
@@ -602,13 +555,19 @@
         }
       },
       "targets": [
-        {
-          "refId": "A",
-          "expr": "label_replace(label_replace(nvidia_smi_utilization_gpu_ratio,\"dev\",\"RTX PRO 6000 Blackwell\",\"uuid\",\"780d.*\"),\"dev\",\"RTX 3500 Ada\",\"uuid\",\"0b9d.*\")",
-          "legendFormat": "{{dev}}",
-          "instant": false
-        }
-      ]
+            {
+              "refId": "A",
+              "expr": "nvidia_smi_utilization_gpu_ratio",
+              "legendFormat": "{{gpu}} Kernel",
+              "instant": false
+            },
+            {
+              "refId": "B",
+              "expr": "nvidia_smi_utilization_memory_ratio",
+              "legendFormat": "{{gpu}} Speicher",
+              "instant": false
+            }
+          ]
     },
     {
       "type": "timeseries",
@@ -659,13 +618,19 @@
         }
       },
       "targets": [
-        {
-          "refId": "A",
-          "expr": "label_replace(label_replace(nvidia_smi_memory_used_bytes,\"dev\",\"RTX PRO 6000 Blackwell\",\"uuid\",\"780d.*\"),\"dev\",\"RTX 3500 Ada\",\"uuid\",\"0b9d.*\")",
-          "legendFormat": "{{dev}}",
-          "instant": false
-        }
-      ]
+            {
+              "refId": "A",
+              "expr": "nvidia_smi_memory_used_bytes",
+              "legendFormat": "{{gpu}} belegt",
+              "instant": false
+            },
+            {
+              "refId": "B",
+              "expr": "nvidia_smi_memory_free_bytes",
+              "legendFormat": "{{gpu}} frei",
+              "instant": false
+            }
+          ]
     },
     {
       "type": "stat",
@@ -751,12 +716,13 @@
         "orient": "vertical"
       },
       "targets": [
-        {
-          "refId": "A",
-          "expr": "label_replace(label_replace(100 * nvidia_smi_memory_used_bytes / nvidia_smi_memory_total_bytes,\"dev\",\"RTX PRO 6000 Blackwell\",\"uuid\",\"780d.*\"),\"dev\",\"RTX 3500 Ada\",\"uuid\",\"0b9d.*\")",
-          "legendFormat": "{{dev}}"
-        }
-      ]
+            {
+              "refId": "A",
+              "expr": "100 * nvidia_smi_memory_used_bytes / clamp_min(nvidia_smi_memory_used_bytes + nvidia_smi_memory_free_bytes, 1)",
+              "legendFormat": "{{gpu}}",
+              "instant": true
+            }
+          ]
     },
     {
       "type": "timeseries",
@@ -874,20 +840,8 @@
           "instant": false
         },
         {
-          "refId": "B",
-          "expr": "label_replace(nvidia_smi_power_draw_watts{uuid=~\"0b9d.*\"},\"dev\",\"Ada Watt\",\"uuid\",\".*\")",
-          "legendFormat": "{{dev}}",
-          "instant": false
-        },
-        {
           "refId": "C",
           "expr": "label_replace(nvidia_smi_temperature_gpu{uuid=~\"780d.*\"},\"dev\",\"Blackwell Grad\",\"uuid\",\".*\")",
-          "legendFormat": "{{dev}}",
-          "instant": false
-        },
-        {
-          "refId": "D",
-          "expr": "label_replace(nvidia_smi_temperature_gpu{uuid=~\"0b9d.*\"},\"dev\",\"Ada Grad\",\"uuid\",\".*\")",
           "legendFormat": "{{dev}}",
           "instant": false
         }
@@ -958,7 +912,11 @@
         {
           "refId": "A",
           "expr": "sum(count_over_time({container=\"litellm\"} |~ \"Retried|Falling back|fallback\" [5m])) or vector(0)",
-          "instant": true
+          "instant": true,
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          }
         }
       ]
     },
@@ -1014,7 +972,11 @@
         {
           "refId": "A",
           "expr": "sum(count_over_time({container=\"litellm\"} |~ \"LiteLLM:ERROR|Exception\" [15m])) or vector(0)",
-          "instant": true
+          "instant": true,
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          }
         }
       ]
     },
@@ -1071,7 +1033,11 @@
           "refId": "A",
           "expr": "sum(count_over_time({container=\"litellm\"} |~ \"Retried|Falling back|fallback\" [5m])) or vector(0)",
           "legendFormat": "Fallback/Retry",
-          "queryType": "range"
+          "queryType": "range",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          }
         }
       ]
     },
@@ -1128,7 +1094,11 @@
           "refId": "A",
           "expr": "sum(count_over_time({container=\"litellm\"} |~ \"LiteLLM:ERROR|Exception\" [5m])) or vector(0)",
           "legendFormat": "Fehler",
-          "queryType": "range"
+          "queryType": "range",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          }
         }
       ]
     },

@@ -31,10 +31,35 @@ if [[ "${check_only}" == 1 ]]; then
 fi
 
 need_cmd podman 'Jetzt ausführen: make install'
-install -d -m 0755 "${HOME}/.local/share/llm-infra"/{loki,prometheus,grafana,open-webui,node-exporter/textfile,homepage/logs}
+install -d -m 0755 "${HOME}/.local/share/llm-infra"/{loki,prometheus,grafana,alertmanager,open-webui,node-exporter/textfile,homepage/logs}
 ensure_base_credentials
+# Alloy liest das Journal des Rechners (loki.source.journal in
+# config/monitoring/alloy.alloy). Fehlt der dauerhafte Journal-Ordner, lehnt
+# Podman die fehlende Bind-Quelle ab und der Container laeuft nicht an.
+if [[ ! -d /var/log/journal ]]; then
+  printf 'HINWEIS: /var/log/journal fehlt - Alloy braucht dauerhafte Journale.\n' >&2
+  printf '  sudo mkdir -p /var/log/journal\n  sudo systemd-tmpfiles --create --prefix /var/log/journal\n  sudo systemctl restart systemd-journald\n' >&2
+fi
 if [[ ! -f "${root}/quadlet/llm-gpu-exporter.container" ]]; then
   run "${root}/scripts/65-install-gpu-exporter.sh"
+fi
+# Grafana hinter dem oeffentlichen Zugang laeuft im Unterpfad /grafana/. Ohne
+# root_url mit Pfad und serve_from_sub_path bricht die Seite ueber den Tunnel,
+# weil Grafana seine Assets unter /public/ statt /grafana/public/ anbietet. Die
+# Werte sind Rechnerangaben (haengen am Gateway-Namen) und liegen deshalb
+# ausserhalb von Git; Vorlage ist config/grafana.env.example.
+grafana_env="${SECRETS_DIR}/grafana.env"
+if [[ ! -f "${grafana_env}" ]]; then
+  dns="$(sed -n 's/^GATEWAY_DNS_NAME=//p' "${root}/config/gateway-proxy.env" 2>/dev/null | head -1 || true)"
+  if [[ -n "${dns}" ]]; then
+    wurzel="https://${dns}/grafana/"
+  else
+    wurzel="http://127.0.0.1:3000/grafana/"
+  fi
+  install -d -m 0700 "$(dirname -- "${grafana_env}")"
+  printf '# GENERIERT von scripts/60-install-monitoring.sh - Vorlage: config/grafana.env.example\nGF_SERVER_ROOT_URL=%s\nGF_SERVER_SERVE_FROM_SUB_PATH=true\n' "${wurzel}" > "${grafana_env}"
+  chmod 600 "${grafana_env}"
+  log "Grafana-Adresse gesetzt: ${grafana_env} (${wurzel})"
 fi
 prune_legacy_units
 install_units "${OBSERVABILITY_UNITS[@]}"

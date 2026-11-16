@@ -15,10 +15,15 @@ set -uo pipefail
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=common.sh
 source "${root}/lib/common.sh"
+# shellcheck source=units.sh
+source "${root}/lib/units.sh"
 [[ -f "${root}/config/host.env" ]] && source "${root}/config/host.env"
 : "${LLM_MODELS_DIR:=/srv/llm/models}"
 : "${PLE_STORAGE_IMAGE:=/srv/llm/ple-nvme.ext4}"
 : "${PLE_STORAGE_MOUNT:=/srv/llm/ple-ext4}"
+# Kanonische Ansprache der Laufzeit (Host, Port, Container, Unit, Image).
+# config/host.env ist vorher eingelesen und bestimmt deshalb die Werte.
+runtime_identity
 TEXTFILE_DIR="${LLM_NODE_EXPORTER_TEXTFILE:-${HOME}/.local/share/llm-infra/node-exporter/textfile}"
 MODEL_ID="${MODEL_ID:-RadixArk/Qwen3.8-Flash-Next-NVFP4}"
 dry_run=0
@@ -32,34 +37,94 @@ trap 'rm -f "${raw}" "${tmp}"' EXIT
 emit() { printf '%s\n' "$1" >> "${raw}"; }
 
 # --- User-Dienste -----------------------------------------------------------
-for unit in pennyroyal litellm litellm-postgres open-webui homepage prometheus \
-            grafana loki alloy dozzle llm-node-exporter llm-gpu-exporter; do
-  if systemctl --user is-active --quiet "${unit}.service" 2>/dev/null; then state=1; else state=0; fi
-  emit "llm_unit_active{unit=\"${unit}\"} ${state}"
-done
-for timer in llm-infra-collect-facts llm-runtime-watchdog; do
-  if systemctl --user is-active --quiet "${timer}.timer" 2>/dev/null; then state=1; else state=0; fi
-  emit "llm_timer_active{timer=\"${timer}\"} ${state}"
-done
+# Die Listen kommen aus lib/units.sh (INFERENCE_UNITS, OBSERVABILITY_UNITS,
+# HOST_UNITS, MONITOR_TIMERS) und werden um MONITOR_EXTRA_UNITS bzw.
+# MONITOR_EXTRA_TIMERS aus config/host.env ergaenzt - Rechnerfremde Dienste
+# stehen also in der Rechnerkonfiguration, nicht hier.
+#
+# Eine Messreihe liefert nur, wer auf diesem Rechner wirklich existiert
+# (unit_exists aus lib/units.sh): eine nicht installierte Einheit - hier
+# pennyroyal.service, weil die Laufzeit ein Container ist - hat keinen Zustand,
+# den man melden koennte; eine Null waere eine Aussage ueber etwas, das es nicht
+# gibt. Vorhandene, aber stehende Einheiten behalten ihre 0; darauf haengen die
+# Alarme in alerts.yml.
+emit_unit_active() {
+  # emit_unit_active <service-name> <label-name>
+  local state
+  if systemctl --user is-active --quiet "$1" 2>/dev/null; then state=1; else state=0; fi
+  emit "llm_unit_active{unit=\"${2}\"} ${state}"
+}
+
+if have systemctl; then
+  declare -A seen_unit=() seen_timer=()
+  extra_units=() extra_timers=()
+  read -r -a extra_units <<< "${MONITOR_EXTRA_UNITS:-}"
+  read -r -a extra_timers <<< "${MONITOR_EXTRA_TIMERS:-}"
+
+  for spec in "${INFERENCE_UNITS[@]}" "${OBSERVABILITY_UNITS[@]}"; do
+    svc="$(unit_service_name "${spec}")"
+    unit="${svc%.service}"
+    [[ -n "${seen_unit[${unit}]:-}" ]] && continue
+    unit_exists "${svc}" || continue
+    seen_unit["${unit}"]=1
+    emit_unit_active "${svc}" "${unit}"
+  done
+  for unit in "${HOST_UNITS[@]}" "${extra_units[@]}"; do
+    [[ -n "${seen_unit[${unit}]:-}" ]] && continue
+    unit_exists "${unit}.service" || continue
+    seen_unit["${unit}"]=1
+    emit_unit_active "${unit}.service" "${unit}"
+  done
+  for timer in "${MONITOR_TIMERS[@]}" "${extra_timers[@]}"; do
+    [[ -n "${seen_timer[${timer}]:-}" ]] && continue
+    unit_exists "${timer}.timer" || continue
+    seen_timer["${timer}"]=1
+    if systemctl --user is-active --quiet "${timer}.timer" 2>/dev/null; then state=1; else state=0; fi
+    emit "llm_timer_active{timer=\"${timer}\"} ${state}"
+  done
+fi
 
 # --- Laufzeit der Runtime ---------------------------------------------------
-# systemd kennt den Startzeitpunkt der Haupteinheit; daraus die Betrieitszeit.
-uptime_raw="$(systemctl --user show pennyroyal.service -p ExecMainStartTimestamp --value 2>/dev/null || true)"
-if [[ -n "${uptime_raw}" && "${uptime_raw}" != "n/a" ]]; then
-  uptime_seconds="$(DATE_VALUE="${uptime_raw}" python3 -c '
-import datetime, os
+# Betriebszeit der Laufzeit: bei einer eigenen Unit antwortet systemd, sonst
+# steht der Startzeitpunkt im Container (vLLM laeuft auf diesem Rechner ohne
+# Quadlet-Unit). Kein Messwert, wenn die Laufzeit nicht laeuft - eine 0 waere
+# eine Betriebszeit, die nie begonnen haette.
+runtime_uptime_seconds() {
+  # runtime_uptime_seconds <startzeittext> -> Sekunden seit Start, sonst leer.
+  # Beide Formate, die hier vorkommen:
+  #   systemd: "Mon 2026-11-16 02:54:10 CET"        podman: "2026-11-16 02:54:10.148 +0100 CET"
+  DATE_VALUE="${1:-}" python3 -c '
+import datetime, os, re
 raw = os.environ["DATE_VALUE"].strip()
-try:
-    when = datetime.datetime.strptime(raw, "%a %Y-%m-%d %H:%M:%S %Z")
-except ValueError:
+if not raw:
     raise SystemExit(0)
-now = datetime.datetime.now()
-print(max(0, int((now - when).total_seconds())))
-' 2>/dev/null || true)"
-  if [[ -n "${uptime_seconds}" ]]; then
-    emit "llm_runtime_uptime_seconds ${uptime_seconds}"
+now = datetime.datetime.now(datetime.timezone.utc)
+match = re.search(r"(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})(?:\.\d+)?(?:\s*(Z|[+-]\d{2}:?\d{2}))?", raw)
+if not match:
+    raise SystemExit(0)
+date_, time_, offset = match.groups()
+offset = (offset or "").replace(":", "")
+if offset == "Z":
+    offset = "+0000"
+if offset:
+    started = datetime.datetime.strptime("%s %s%s" % (date_, time_, offset), "%Y-%m-%d %H:%M:%S%z")
+else:
+    started = datetime.datetime.strptime("%s %s" % (date_, time_), "%Y-%m-%d %H:%M:%S")
+    started = started.replace(tzinfo=now.astimezone().tzinfo)
+print(max(0, int((now - started).total_seconds())))
+' 2>/dev/null
+}
+
+uptime_seconds=''
+if runtime_is_running; then
+  if [[ -n "${RUNTIME_SERVICE}" ]] && systemctl --user is-active --quiet "${RUNTIME_SERVICE}" 2>/dev/null; then
+    start_raw="$(systemctl --user show "${RUNTIME_SERVICE}" -p ExecMainStartTimestamp --value 2>/dev/null || true)"
+  else
+    start_raw="$(podman inspect "${RUNTIME_CONTAINER}" -f '{{.State.StartedAt}}' 2>/dev/null || true)"
   fi
+  uptime_seconds="$(runtime_uptime_seconds "${start_raw}")"
 fi
+[[ -n "${uptime_seconds}" ]] && emit "llm_runtime_uptime_seconds ${uptime_seconds}"
 
 # --- ZFS --------------------------------------------------------------------
 if have zpool && have zfs; then
@@ -108,17 +173,23 @@ for d in /sys/bus/pci/devices/*; do
 done
 
 # --- PLE-Speicher und Modell -------------------------------------------------
-if mountpoint -q "${PLE_STORAGE_MOUNT}" 2>/dev/null; then
-  emit "llm_ple_mounted 1"
-else
-  emit "llm_ple_mounted 0"
+# Eine Familie nur liefern, wenn ihre Voraussetzung auf diesem Rechner vorhanden
+# ist (ple_configured aus lib/common.sh, dieselbe Regel wie im Doctor). Ein
+# fehlender Messwert heisst "hier gibt es nichts zu messen"; eine Null aus einem
+# Beispiel-Pfad, den es nie gab, laesst PleSpeicherFehlt dauerhaft feuern.
+if ple_configured; then
+  if have mountpoint && mountpoint -q "${PLE_STORAGE_MOUNT}" 2>/dev/null; then
+    emit "llm_ple_mounted 1"
+  else
+    emit "llm_ple_mounted 0"
+  fi
+  if grep -qE 'llm-ple|ple-ext4|ple-nvme' /etc/fstab 2>/dev/null; then
+    emit "llm_ple_in_fstab 1"
+  else
+    emit "llm_ple_in_fstab 0"
+  fi
+  [[ -f "${PLE_STORAGE_IMAGE}" ]] && emit "llm_ple_backing_bytes $(du -sb "${PLE_STORAGE_IMAGE}" 2>/dev/null | awk '{print $1}')"
 fi
-if grep -qE 'llm-ple|ple-ext4|ple-nvme' /etc/fstab 2>/dev/null; then
-  emit "llm_ple_in_fstab 1"
-else
-  emit "llm_ple_in_fstab 0"
-fi
-[[ -f "${PLE_STORAGE_IMAGE}" ]] && emit "llm_ple_backing_bytes $(du -sb "${PLE_STORAGE_IMAGE}" 2>/dev/null | awk '{print $1}')"
 model_dir="${LLM_MODELS_DIR}/$(basename "${MODEL_ID}")"
 if [[ -d "${model_dir}" ]]; then
   emit "llm_model_shard_files $(find "${model_dir}" -maxdepth 1 -name '*.safetensors' 2>/dev/null | wc -l)"

@@ -10,6 +10,10 @@ PublishPort=127.0.0.1:3000:3000
 Volume=%h/.local/share/llm-infra/grafana:/var/lib/grafana:Z,U
 Volume=@CONFIG_ROOT@/config/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro,Z
 Environment=GF_AUTH_ANONYMOUS_ENABLED=false
+# Unterpfad /grafana/ und oeffentliche Adresse: stehen in einer Rechnerdatei,
+# weil sie vom Gateway-Namen abhaengen (docs/gateway-proxy.md). Erzeugt wird
+# sie von scripts/60-install-monitoring.sh, Vorlage ist config/grafana.env.example.
+EnvironmentFile=%h/.config/llm-infra/grafana.env
 Environment=GF_SECURITY_ADMIN_USER=admin
 Secret=grafana_admin_password,type=env,target=GF_SECURITY_ADMIN_PASSWORD
 

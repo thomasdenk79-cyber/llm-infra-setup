@@ -7,8 +7,9 @@ Image=docker.io/grafana/alloy:v1.10.2
 Network=llm-observability.network
 NetworkAlias=alloy
 Volume=@CONFIG_ROOT@/config/monitoring/alloy.alloy:/etc/alloy/config.alloy:ro,Z
+Volume=/var/log/journal:/var/log/journal:ro
 Volume=%t/podman/podman.sock:/var/run/docker.sock:ro
-Exec=run /etc/alloy/config.alloy
+Exec=run /etc/alloy/config.alloy --server.http.listen-addr=0.0.0.0:12345
 
 [Service]
 Restart=on-failure

@@ -732,7 +732,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "{container=~\"pennyroyal|llm-gpu-exporter\"}",
+          "expr": "{container=~\"flash-next-v3|llm-gpu-exporter\"}",
           "queryType": "range",
           "datasource": {
             "type": "loki",

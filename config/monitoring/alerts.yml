@@ -3,24 +3,27 @@
 groups:
   - name: runtime
     rules:
-      - alert: PennyroyalNichtErreichbar
-        expr: up{job="pennyroyal"} == 0
-        for: 20m
+      - alert: RuntimeNichtErreichbar
+        expr: up{job="vllm"} == 0
+        for: 15m
         labels: { severity: critical }
         annotations:
-          summary: "Inferenz-Runtime antwortet nicht auf /metrics"
+          summary: "Inferenz-Laufzeit antwortet nicht auf /metrics"
           description: >-
             Kalter Start dauert ca. 15 Minuten. Naehert sich ein Neustart, ist
-            das normal. Sonst: ./scripts/doctor.sh und
-            journalctl --user -u pennyroyal.service -n 120
+            das normal. Sonst erst der Weiterleiter (er stellt die Metriken ins
+            Inferenz-Netz): ./scripts/73-setup-vllm-forwarder.sh --check, dann
+            podman logs --tail 120 flash-next-v3
 
-      - alert: PennyroyalOhneFortschritt
-        expr: sum(sglang:num_running_reqs) > 0 and sum(rate(sglang:generation_tokens_total[5m])) == 0
+      - alert: RuntimeOhneFortschritt
+        expr: |
+          sum(vllm:num_requests_running) > 0
+            and sum(rate(vllm:generation_tokens_total[5m])) == 0
         for: 5m
         labels: { severity: critical }
         annotations:
           summary: "Anfragen laufen, aber es werden keine Token erzeugt"
-          description: "Runtime haengt wahrscheinlich. ./scripts/apply-runtime-unit.sh --restart-only"
+          description: "Laufzeit haengt wahrscheinlich. ./scripts/apply-runtime-unit.sh --restart-only"
 
   - name: resources
     rules:
@@ -56,7 +59,7 @@ groups:
         labels: { severity: critical }
         annotations:
           summary: "PLE-Speicher ist nicht eingehaengt"
-          description: "Ohne /ple startet Pennyroyal nicht. ./scripts/47-setup-ple-storage.sh"
+          description: "Ohne PLE startet die prefetch-lastige Laufzeit nicht. ./scripts/47-setup-ple-storage.sh"
 
       - alert: ModellDateienFehlen
         expr: llm_model_shard_files < 150
@@ -94,16 +97,32 @@ groups:
           description: "systemctl --user status llm-infra-collect-facts.timer"
 
       - alert: BeobachtungZieltNicht
-        expr: up{job=~"node|gpu|loki"} == 0
+        expr: up{job=~"node|gpu|loki|vllm|grafana|alloy|alertmanager|litellm-liveliness"} == 0
         for: 10m
         labels: { severity: warning }
         annotations: { summary: "Target {{ $labels.job }} wird nicht erreicht" }
+
+      - alert: ProtokollsammlungSteht
+        expr: up{job="alloy"} == 0
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "Keine Container-Protokolle in Loki"
+          description: "systemctl --user status alloy.service --no-pager; Alloy braucht die Journal-Bindung, siehe docs/monitoring.md"
+
+      - alert: AlarmwegFehlt
+        expr: up{job="alertmanager"} == 0
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "Alertmanager erreicht - Alarme bleiben ungelesen"
+          description: "systemctl --user status alertmanager.service --no-pager"
 
   - name: gateway
     rules:
       - alert: GatewayNichtErreichbar
         expr: llm_unit_active{unit="litellm"} == 0
-        for: 5m
+        for: 3m
         labels: { severity: critical }
         annotations:
           summary: "LiteLLM-Gateway laeuft nicht"
@@ -146,7 +165,7 @@ groups:
   - name: anfragequalitaet
     rules:
       - alert: VorlaufzeitZuHoch
-        expr: histogram_quantile(0.95, sum by (le) (rate(sglang:time_to_first_token_seconds_bucket[10m]))) > 10
+        expr: histogram_quantile(0.95, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket[10m]))) > 10
         for: 15m
         labels: { severity: warning }
         annotations:
@@ -155,7 +174,7 @@ groups:
 
       - alert: SchreibrateGering
         expr: |
-          (sum(rate(sglang:generation_tokens_total[10m])) / clamp_min(sum(sglang:num_running_reqs), 1)) < 25
+          (sum(rate(vllm:generation_tokens_total[10m])) / clamp_min(sum(vllm:num_requests_running), 1)) < 25
         for: 15m
         labels: { severity: warning }
         annotations:
@@ -163,7 +182,9 @@ groups:
           description: "PCIe-Anbindung, PLE-Speicher und Kuehlung pruefen: docs/performance.md"
 
       - alert: VorhersageWirktNicht
-        expr: sglang:spec_accept_length < 1.2
+        expr: |
+          sum(rate(vllm:spec_decode_num_accepted_tokens_total[15m]))
+            / clamp_min(sum(rate(vllm:spec_decode_num_drafts_total[15m])), 0.001) < 1.2
         for: 30m
         labels: { severity: warning }
         annotations:
@@ -171,9 +192,9 @@ groups:
           description: "Bei einem einzigen Modellwechsel normal; sonst Bild- und Modellkombination pruefen."
 
       - alert: KVSpeicherVolllaeuft
-        expr: 100 * sglang:kv_used_tokens / sglang:max_total_num_tokens > 95
+        expr: 100 * max(vllm:kv_cache_usage_perc) > 95
         for: 10m
         labels: { severity: warning }
         annotations:
           summary: "KV-Cache zu ueber 95 % gefuellt"
-          description: "Neue Anfragen muessen warten; NIXL und Zulaufe im Blick behalten."
+          description: "Neue Anfragen muessen warten; Zulaufe im Blick behalten: vllm:num_requests_waiting"

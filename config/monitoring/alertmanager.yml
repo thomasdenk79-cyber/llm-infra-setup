@@ -1,0 +1,53 @@
+# Alarmweiterleitung dieses Stacks. Prometheus meldet hierher (siehe
+# config/monitoring/prometheus.yml, Abschnitt alerting).
+#
+# Bewusst ohne Versand: solange kein Kanal eingetragen ist, bleibt jeder Alarm
+# hier und in der Prometheus-Oberflaeche sichtbar, statt ungelesen in ein leeres
+# Postfach zu gehen. Welche der beiden Moeglichkeiten der Betreiber will, steht
+# in docs/monitoring.md#alarmkanal - beide sind vorbereitet und auskommentiert.
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: hinweise
+  group_by: [alertname, severity]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    # Wartungsfenster: kritische Runtime-Alarmsaetze waehrend eines geplanten
+    # Neustarts nicht wiederholt melden (./scripts/apply-runtime-unit.sh).
+    - matchers:
+        - alertname = "RuntimeNichtErreichbar"
+      receiver: hinweise
+      repeat_interval: 24h
+
+receivers:
+  - name: hinweise
+    # ntfy - ohne Konto, nur ein frei gewaehltes Themenwort auf dem Handy:
+    #
+    # ntfy_configs:
+    #   - uri: https://ntfy.sh/< eigenes Themenwort >
+    #     title: '{{ .CommonLabels.alertname }}'
+    #     message: '{{ .CommonAnnotations.summary }}'
+    #     priority: high
+    #     tags: [warning]
+    #
+    # E-Mail - braucht SMTP-Zugang des Betreibers:
+    #
+    # email_configs:
+    #   - to: betrieb@example.org
+    #     from: llm-infra@cachyos
+    #     smarthost: smtp.example.org:587
+    #     auth_username: betrieb
+    #     auth_password: aus ~/.config/workstation/secrets.env (ALERT_SMTP_PASS)
+    #     require_tls: true
+
+inhibit_rules:
+  # Ein ausgefallener Collector laesst jeden Target-Alarm stumm werden, sonst
+  # meldet jede Regel, deren Messgroesse gerade wegfaellt.
+  - source_matchers:
+      - alertname = "BeobachtungZieltNicht"
+    target_matchers:
+      - severity =~ "warning|critical"
+    equal: [job]

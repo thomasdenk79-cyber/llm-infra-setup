@@ -1,0 +1,22 @@
+# Alertmanager nimmt die Alarmregeln von Prometheus an und hält sie vor, bis ein
+# Kanal eingetragen ist. Ohne ihn laufen die 24 Regeln aus
+# config/monitoring/alerts.yml ins Leere (defekter Alarm).
+[Unit]
+Description=Alertmanager for the LLM infrastructure alerts
+After=llm-observability-network.service
+
+[Container]
+Image=docker.io/prom/alertmanager:v0.27.0
+Network=llm-observability.network
+NetworkAlias=alertmanager
+PublishPort=127.0.0.1:9093:9093
+Volume=%h/.local/share/llm-infra/alertmanager:/alertmanager:Z,U
+Volume=@CONFIG_ROOT@/config/monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro,Z
+Exec=--config.file=/etc/alertmanager/alertmanager.yml --storage.path=/alertmanager --web.listen-address=0.0.0.0:9093
+
+[Service]
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=default.target
