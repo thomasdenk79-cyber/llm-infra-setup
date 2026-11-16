@@ -24,6 +24,7 @@ OBSERVABILITY_UNITS=(
   grafana.container
   loki.container
   alloy.container
+  alertmanager.container
   dozzle.container
   llm-gpu-exporter.container
   llm-node-exporter.container
@@ -37,6 +38,60 @@ OPTIONAL_UNITS=(llm-autossh.container komodo-periphery.container)
 # entfernt, sonst bleiben zwei Units mit demselben Containernamen uebrig und
 # bringten sich gegenseitig zum Neustart.
 LEGACY_UNITS=(gpu-exporter.container node-exporter.container)
+
+# Plain-User-Units, die dieses Repo zusaetzlich zu den Quadlets aus systemd/
+# installiert. Zusammen mit INFERENCE_UNITS und OBSERVABILITY_UNITS ergibt das
+# die Menge der Dienste, deren Zustand der Kennzahlensammler berichtet.
+HOST_UNITS=(llm-reverse-tunnel llm-vllm-forwarder)
+
+# Timer, deren Ablauf der Betrieb erwartet (Namen ohne .timer).
+MONITOR_TIMERS=(llm-infra-collect-facts llm-runtime-watchdog llm-litellm-watchdog
+                llm-crashguard llm-infra-gitops wiki-rebuild)
+
+# --- Inferenz-Laufzeit -------------------------------------------------------
+# Kanonische Ansprache der Laufzeit an einem Ort: API, Metriken, Containername
+# und Image fuer Pruefskripte (healthcheck, doctor) und den Kennzahlensammler.
+# Die Werte eines konkreten Rechners stehen in config/host.env, deshalb bestimmt
+# diese Datei sie. Aufrufer lesen erst host.env und rufen danach runtime_identity
+# auf:
+#   source lib/units.sh
+#   [[ -f config/host.env ]] && source config/host.env
+#   runtime_identity
+# Die Defaults beschreiben das Quadlet-Deployment (Container pennyroyal auf
+# 127.0.0.1:8001). Ein direkt mit podman gestartetes vLLM hat keine eigene Unit;
+# es setzt RUNTIME_UNIT leer und nennt Container, Port und Image in host.env.
+runtime_identity() {
+  RUNTIME_UNIT="${RUNTIME_UNIT-pennyroyal}"          # leer = laeuft ohne eigene Unit
+  RUNTIME_CONTAINER="${RUNTIME_CONTAINER-pennyroyal}"
+  RUNTIME_HOST="${RUNTIME_HOST-127.0.0.1}"
+  RUNTIME_PORT="${RUNTIME_PORT-${PENNYROYAL_PORT:-8001}}"
+  RUNTIME_HEALTH_PATH="${RUNTIME_HEALTH_PATH-/health}"
+  RUNTIME_METRICS_PATH="${RUNTIME_METRICS_PATH-/metrics}"
+  RUNTIME_MODELS_PATH="${RUNTIME_MODELS_PATH-/v1/models}"
+  RUNTIME_IMAGE="${RUNTIME_IMAGE-${PENNYROYAL_IMAGE-ghcr.io/jpezzulli/sglang-rtxpro6000:v2.5.3}}"
+  RUNTIME_URL="http://${RUNTIME_HOST}:${RUNTIME_PORT}"
+  RUNTIME_SERVICE="${RUNTIME_UNIT:+${RUNTIME_UNIT}.service}"
+  RUNTIME_LEGACY_SERVICE='pennyroyal.service'
+  return 0
+}
+
+runtime_logs_hint() {
+  # Der Befehl, der die Logzeilen der Laufzeit zeigt: Unit-Log oder Container.
+  if [[ -n "${RUNTIME_SERVICE}" ]]; then
+    printf 'journalctl --user -u %s -n 120 --no-pager' "${RUNTIME_SERVICE}"
+  else
+    printf 'podman logs --tail 120 %s' "${RUNTIME_CONTAINER}"
+  fi
+}
+
+runtime_is_running() {
+  # True, wenn die Laufzeit laeuft: uber ihre Unit oder als (unmanaged) Container.
+  if [[ -n "${RUNTIME_SERVICE}" ]] && systemctl --user is-active --quiet "${RUNTIME_SERVICE}"; then
+    return 0
+  fi
+  [[ -n "${RUNTIME_CONTAINER}" ]] && have podman \
+    && podman ps --format '{{.Names}}' 2>/dev/null | grep -qx -- "${RUNTIME_CONTAINER}"
+}
 
 prune_legacy_units() {
   local name
@@ -120,6 +175,16 @@ start_units() {
 }
 
 unit_is_active() { systemctl --user is-active --quiet "$(unit_service_name "$1")"; }
+
+unit_exists() {
+  # True, wenn die Einheit auf diesem Rechner installiert ist. LoadState statt
+  # is-active: eine vorhandene, aber stehende Einheit ist messbar, eine
+  # fehlende ("not-found") hat keinen Zustand und bekommt deshalb nichts.
+  case "$(systemctl --user show "$1" -p LoadState --value 2>/dev/null || true)" in
+    loaded|masked) return 0 ;;
+    *) return 1 ;;
+  esac
+}
 
 installed_unit_diff() {
   # Reports whether the installed unit differs from the rendered repository

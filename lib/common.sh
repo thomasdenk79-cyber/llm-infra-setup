@@ -8,6 +8,7 @@ SECRETS_DIR="${LLM_INFRA_SECRETS_DIR:-${XDG_CONFIG_HOME:-${HOME}/.config}/llm-in
 mkdir -p "${STATE_DIR}"
 
 log() { printf '[%s] %s\n' "$(date -Is)" "$*"; }
+die() { log "FEHLER: $*"; exit 1; }
 retry() {
   local attempts="${RETRY_ATTEMPTS:-8}" delay="${RETRY_DELAY:-10}" n=1 rc=0
   while :; do
@@ -40,6 +41,24 @@ need_cmd() {
   return 127
 }
 run() { log "+ $*"; "$@"; }
+
+# --- PLE-Voraussetzung -------------------------------------------------------
+# PLE (SSD-Auslagerung der Einbettungstabellen) ist nur ein Thema, wenn dieser
+# Rechner wirklich einen PLE-Speicher hat. Wo keiner ist, bleiben die ganze
+# Messfamilie llm_ple_* und die zugehorige Doctor-Pruefung weg: eine Null oder
+# ein Alarm aus einem Beispiel-Pfad, den es nie gab, beschreibt nichts.
+# PLE_ENABLED=1/0 in config/host.env ueberschreibt die Erkennung fuer Rechner
+# mit eigenen Pfaden. Aufrufer lesen vorher config/host.env ein.
+ple_configured() {
+  case "${PLE_ENABLED:-auto}" in
+    1|true|yes) return 0 ;;
+    0|false|no) return 1 ;;
+  esac
+  if have mountpoint && mountpoint -q "${PLE_STORAGE_MOUNT:-/srv/llm/ple-ext4}" 2>/dev/null; then return 0; fi
+  [[ -e "${PLE_STORAGE_IMAGE:-/srv/llm/ple-nvme.ext4}" ]] && return 0
+  grep -qE 'llm-ple|ple-ext4|ple-nvme' /etc/fstab 2>/dev/null && return 0
+  return 1
+}
 
 # --- secrets ---------------------------------------------------------------
 random_secret() {
