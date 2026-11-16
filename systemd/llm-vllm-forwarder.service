@@ -1,0 +1,17 @@
+# GENERIERT von scripts/73-setup-vllm-forwarder.sh - dort ändern, nicht hier.
+[Unit]
+Description=Weiterleiter der Modell-Runtime ins Inferenz-Netz
+Documentation=file://@CONFIG_ROOT@/docs/runtime.md
+After=network.target
+
+[Service]
+Environment=VLLM_PUBLIC_PORT=30001
+Environment=VLLM_PUBLIC_BIND=auto
+Environment=VLLM_UPSTREAM=127.0.0.1:30000
+ExecStart=/usr/bin/python3 @CONFIG_ROOT@/scripts/vllm-pub-forwarder.py
+Restart=on-failure
+RestartSec=3
+Nice=10
+
+[Install]
+WantedBy=default.target
