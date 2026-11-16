@@ -1,0 +1,22 @@
+# GENERIERT von scripts/70-setup-gateway-proxy.sh - dort ändern, nicht hier.
+[Unit]
+Description=Reverse-Tunnel zum Gateway-Rechner (LiteLLM, Grafana, Homepage)
+Documentation=file://@CONFIG_ROOT@/docs/gateway-proxy.md
+After=network-online.target litellm.service
+Wants=network-online.target
+
+[Service]
+# Alle Gateway-Listener binden auf 127.0.0.1 des Gateway-Rechners: die
+# oeffentliche Seite macht dort Caddy, nicht dieser Tunnel. ExitOnForwardFailure
+# sorgt dafuer, dass ein halber Tunnel als Fehler sichtbar ist statt als
+# scheinbar laufender Dienst.
+Environment=AUTOSSH_GATETIME=0
+Environment=AUTOSSH_LOGFILE=%h/.local/state/llm-gateway-tunnel.autossh.log
+ExecStart=/usr/bin/autossh -M 0 -N -i @SSH_KEY@ -p @SSH_PORT@ -o BatchMode=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=%h/.local/share/llm-infra/ssh/gateway-known_hosts @FORWARDS@ @REMOTE@
+Restart=always
+RestartSec=15
+# autossh schreibt Logdatei und known_hosts; das Verzeichnis muss existieren.
+ExecStartPre=/usr/bin/install -d -m 0700 %h/.local/share/llm-infra/ssh
+
+[Install]
+WantedBy=default.target
