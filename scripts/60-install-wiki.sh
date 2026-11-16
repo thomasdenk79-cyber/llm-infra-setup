@@ -51,14 +51,17 @@ RestartSec=15
 WantedBy=default.target
 UNIT
 
-cat > "${root}/systemd/wiki-rebuild.service" <<UNIT
+cat > "${root}/systemd/wiki-rebuild.service" <<'UNIT'
 # GENERIERT von scripts/60-install-wiki.sh
 [Unit]
 Description=Hermes-Wiki neu bauen (nur bei neuen Commits)
 
 [Service]
 Type=oneshot
-ExecStart=${root}/scripts/wiki-rebuild.sh
+# Platzhalter: install_systemd_units in lib/units.sh ersetzt ihn durch die
+# aktuelle Repo-Wurzel. Ein hier festgeschriebener Pfad ueberlebt keinen Umzug
+# des Repos (vgl. systemd/llm-infra-collect-facts.service).
+ExecStart=@CONFIG_ROOT@/scripts/wiki-rebuild.sh
 UNIT
 
 cat > "${root}/systemd/wiki-rebuild.timer" <<'UNIT'

@@ -4,4 +4,7 @@ Description=Hermes-Wiki neu bauen (nur bei neuen Commits)
 
 [Service]
 Type=oneshot
-ExecStart=/home/z000g9hu/work/llm-infra-setup/scripts/wiki-rebuild.sh
+# Platzhalter: install_systemd_units in lib/units.sh ersetzt ihn durch die
+# aktuelle Repo-Wurzel. Ein hier festgeschriebener Pfad ueberlebt keinen Umzug
+# des Repos (vgl. systemd/llm-infra-collect-facts.service).
+ExecStart=@CONFIG_ROOT@/scripts/wiki-rebuild.sh
