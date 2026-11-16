@@ -26,9 +26,9 @@ Volume=/srv/llm-cache/b12x:/root/.cache/b12x
 Volume=/srv/llm-cache/torch:/root/.cache/torch
 Volume=/srv/llm-cache/triton:/root/.cache/triton
 ShmSize=40g
-IpcMode=shareable
+PodmanArgs=--ipc=shareable
 WorkingDir=/workspace
-SecurityOpt=no-new-privileges
+PodmanArgs=--security-opt=no-new-privileges
 Ulimit=memlock=8388608:8388608
 Ulimit=nofile=1048576:1048576
 Ulimit=nproc=255212:255212

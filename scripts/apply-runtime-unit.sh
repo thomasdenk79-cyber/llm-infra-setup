@@ -6,6 +6,7 @@
 #   ./scripts/apply-runtime-unit.sh --list          drift ueber alle Units
 #   ./scripts/apply-runtime-unit.sh --restart-only  Runtime neu starten (mit Schutz)
 #   ./scripts/apply-runtime-unit.sh --install-only  Units installieren, nichts starten
+#   ./scripts/apply-runtime-unit.sh --takeover      von Hand gestarteten Container uebernehmen
 #
 # Schutz: ein Neustart von Pennyroyal verwirft alle laufenden Anfragen und kostet
 # ~15 Minuten Kaltstart. Deshalb wird abgebrochen, solange Anfragen laufen, wenn
@@ -31,6 +32,7 @@ for a in "$@"; do
     --list) mode=list ;;
     --restart-only) mode=restart ;;
     --install-only) start=0 ;;
+    --takeover) mode=takeover ;;
     --force) force=1 ;;
     *) printf 'unbekanntes Argument: %s\n' "$a" >&2; exit 2 ;;
   esac
@@ -79,6 +81,7 @@ require_idle_runtime() {
 }
 
 restart_runtime() {
+  laufzeit_bestimmen
   require_idle_runtime || return 1
   log "Starte ${laufzeit_unit}.service neu (Kaltstart ~15 Minuten)."
   systemctl --user restart "${laufzeit_unit}.service"
@@ -86,7 +89,97 @@ restart_runtime() {
   log 'Laufzeitpruefung danach: make healthcheck'
 }
 
+laufzeit_bestimmen() {
+  # RUNTIME_UNIT kann leer sein (So war es auf diesem Rechner bisher). Dann wird die
+  # Unit ueber den ContainerNamen gesucht, den sie beschreibt - geraten wird nicht:
+  # ohne passenden Treffer bleibt es bei der Angabe aus host.env.
+  [[ -n "${RUNTIME_UNIT:-}" ]] && return 0
+  local datei
+  for datei in "${root}"/quadlet/*.container; do
+    [[ -f "${datei}" ]] || continue
+    if grep -qs "^ContainerName=${RUNTIME_CONTAINER:-__keiner__}\$" "${datei}"; then
+      laufzeit_unit="$(basename "${datei}" .container)"
+      log "Laufzeit-Unit am ContainerNamen erkannt: ${laufzeit_unit} (RUNTIME_UNIT war leer)."
+      return 0
+    fi
+  done
+  return 0
+}
+
+quadlet_schluessel() {
+  # Liest einen Schluessel aus der Quadlet-Datei der Laufzeit (erste Zeile zaehlt).
+  awk -F= -v schluessel="$1" '$1 == schluessel {print substr($0, index($0, "=") + 1); exit}' \
+    "${root}/quadlet/${laufzeit_unit}.container"
+}
+
+spec_stimmt_mit_laeufer() {
+  # Vergleicht die laufende Laufzeit mit der Spec, aus der die Unit gebaut ist. Ein
+  # Neustart darf nicht in einer anderen Konfiguration enden als der, die gerade
+  # Antworten liefert: sonst heisst 'laeuft wieder' nur 'laeuft anders'.
+  local spec="${root}/config/runtime/${laufzeit_unit}.spec" container="${RUNTIME_CONTAINER:-}"
+  [[ -f "${spec}" ]] || { echo "Spec fehlt: ${spec}" >&2; return 1; }
+  [[ -n "${container}" ]] || { echo 'RUNTIME_CONTAINER ist nicht gesetzt (config/host.env).' >&2; return 1; }
+  podman inspect "${container}" >/dev/null 2>&1 || { echo "Container ${container} existiert nicht." >&2; return 1; }
+
+  local bild_unit bild_laeufer
+  bild_unit="$(sed -n 's/^IMAGE=//p' "${spec}" | head -1)"
+  bild_laeufer="$(podman inspect "${container}" --format '{{.Config.Image}}')"
+  if [[ "${bild_unit}" != "${bild_laeufer}" ]]; then
+    echo "Bildunterschied: Unit ${bild_unit}, Laeufer ${bild_laeufer}." >&2
+    return 1
+  fi
+
+  local anzahl_spec anzahl_laeufer
+  anzahl_spec="$(grep -c '^EXEC_ARG=' "${spec}")"
+  anzahl_laeufer="$(podman inspect "${container}" --format '{{len .Config.Cmd}}')"
+  if [[ "${anzahl_spec}" != "${anzahl_laeufer}" ]]; then
+    echo "Schalteranzahl unterschiedlich: Spec ${anzahl_spec}, Laeufer ${anzahl_laeufer}." >&2
+    echo "  Naechster Befehl: ./scripts/76-setup-runtime-unit.sh --import-from-container ${container}" >&2
+    return 1
+  fi
+  return 0
+}
+
+uebernahme() {
+  # Uebernimmt einen von Hand gestarteten Container in die Unit. Ohne Rueckweg und
+  # ohne Uebereinstimmung von Spec und Laeufer wird abgebrochen.
+  laufzeit_bestimmen
+  require_idle_runtime || return 1
+  local container rueckweg
+  container="$(quadlet_schluessel ContainerName)"
+  [[ -n "${container}" ]] || die "quadlet/${laufzeit_unit}.container nennt keinen ContainerName."
+  rueckweg="${root}/state/runtime-restore-${container}.sh"
+  [[ -x "${rueckweg}" ]] || die "Kein Rueckweg unter ${rueckweg}. Vor der Uebernahme aufnehmen: ./scripts/76-setup-runtime-unit.sh --import-from-container ${container}"
+  spec_stimmt_mit_laeufer || die "Laufende Laufzeit unterscheidet sich von der Spec - zuerst neu aufnehmen (Ausgabe oben)."
+
+  if unit_is_active "${laufzeit_unit}.container" && podman ps --format '{{.Names}}' | grep -qx "${container}"; then
+    log "${laufzeit_unit}.service besitzt ${container} bereits - nichts zu uebernehmen."
+    return 0
+  fi
+
+  log "Uebernahme: ${container} kommt unter die Verwaltung von ${laufzeit_unit}.service."
+  log "Rueckweg, falls die Unit sich nicht bewaehrt: ${rueckweg}"
+  if podman ps -a --format '{{.Names}}' | grep -qx "${container}"; then
+    log 'Container wird angehalten und entfernt; Bild, Modell und Cache bleiben erhalten.'
+    podman stop --time 60 "${container}" >/dev/null
+    podman rm "${container}" >/dev/null
+  fi
+  systemctl --user restart "${laufzeit_unit}.service"
+  # host.env ist die kanonische Ansprache fuer Pruefskripte: RUNTIME_UNIT erst dann,
+  # wenn die Unit den Container wirklich besitzt - sonst meldet der Arztlauf eine
+  # Unit als Laufzeit, die an der laufenden Konfiguration vorbeilaeuft.
+  if [[ -f "${root}/config/host.env" ]] && ! grep -qs "^RUNTIME_UNIT=${laufzeit_unit}\$" "${root}/config/host.env"; then
+    sed -i "s/^RUNTIME_UNIT=.*/RUNTIME_UNIT=${laufzeit_unit}/" "${root}/config/host.env"
+    log "config/host.env: RUNTIME_UNIT=${laufzeit_unit} eingetragen."
+  fi
+  log "Neustart ausgeloest. Fortschritt: journalctl --user -u ${laufzeit_unit}.service -f"
+  log 'Danach: make healthcheck   (Kaltstart ~15 Minuten)'
+}
+
 case "${mode}" in
+  takeover)
+    uebernahme
+    ;;
   list)
     rc=0
     for unit in "${INFERENCE_UNITS[@]}" "${OBSERVABILITY_UNITS[@]}"; do

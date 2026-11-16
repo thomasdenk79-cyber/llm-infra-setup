@@ -241,10 +241,14 @@ for d in listen.get('ADD_DEVICE', []):
 for v in listen.get('VOLUME', []):
     ZEILEN.append('Volume={}'.format(v))
 ZEILEN.append('ShmSize={}g'.format(werte.get('SHM_SIZE', '16')))
-ZEILEN.append('IpcMode={}'.format(werte.get('IPC_MODE', 'shareable')))
+# Schluessel, die dieses Quadlet nicht kennt (hier ipc und security-opt), gehoeren als
+# podman-Argument in PodmanArgs: ein unbekannter Schlüssel ueberspringt die ganze Unit
+# stillschweigend (der Generator meldet "unsupported key" und schreibt keine
+# Service-Datei) - die Unit existiert dann, als waere sie nie angelegt worden.
+ZEILEN.append('PodmanArgs=--ipc={}'.format(werte.get('IPC_MODE', 'shareable')))
 ZEILEN.append('WorkingDir={}'.format(werte.get('WORKING_DIR', '/workspace')))
 for s in listen.get('SECURITY_OPT', []):
-    ZEILEN.append('SecurityOpt={}'.format(s))
+    ZEILEN.append('PodmanArgs=--security-opt={}'.format(s))
 for u in listen.get('ULIMIT', []):
     # Quadlet kennt die Form aus podman --ulimit: name=weich:hart.
     kern, weich, hart = u.split(':')

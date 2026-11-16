@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-11-16T15:18:39+01:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-11-16T15:24:09+01:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe (2026-11-16)
 
@@ -401,3 +401,7 @@ drift: dokumentierte ausnahmeliste fuer die pennyroyal-fork-unit
 ## Notiz 2026-11-16T15:18:39+01:00
 
 laufzeit: Unit aus Aufnahmen des laufenden Containers, Neustart-Schutz fails closed
+
+## Notiz 2026-11-16T15:24:09+01:00
+
+uebernahme-Modus mit Leerlaufschutz, Rueckweg und Spec-Vergleich
