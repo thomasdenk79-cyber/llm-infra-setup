@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-10-11T15:08:46+02:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-11-16T13:07:21+01:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe (2026-11-16)
 
@@ -38,6 +38,23 @@ Das Repository ist das Backup.
   liegt wiederherstellbar unter
   `~/.config/systemd/user/reverse-tunnel.service.retired-20261116`.
   Doku: `docs/gateway-proxy.md`.
+* Lokaler HTTPS-Zugang ueber Namen (2026-11-16, neuer Rund): Container
+  `llm-proxy` (Caddy, Netz `llm-observability`, nur `127.0.0.1:443`) bedient
+  `https://homepage.localhost/` (Portal) und `https://grafana.localhost/grafana/`
+  (Grafana ohne Anmeldung, Unterpfad bleibt). Generator
+  `scripts/74-setup-local-proxy.sh` (`make local-proxy`, `--check`,
+  `--ca-import`, `--render` fuer `make drift`), Vorlage
+  `config/proxy/Caddyfile.template`, Quadlet `quadlet/llm-proxy.container`.
+  Caddy-CA im Systemtrust verankert; Kernelgrenze
+  `net.ipv4.ip_unprivileged_port_start=443` ueber
+  `/etc/sysctl.d/99-llm-infra-local-proxy.conf` (sudo, reversibel).
+  Grafana anonym+einbettbar via `~/.config/llm-infra/grafana.env` (Generator
+  `scripts/60-install-monitoring.sh`); dazu entfiel die
+  `Environment=GF_AUTH_ANONYMOUS_ENABLED=false`-Zeile in
+  `quadlet/grafana.container` (podman: `--env` schlaegt `--env-file`).
+  Gemessen: beide Namen 200 ohne `-k`, `d-solo?panelId=2` 200 ohne Cookies
+  (alle fuenf Dashboards), oeffentlich weiterhin `/grafana/` 401 und
+  `/v1/models` 401. Doku: `docs/operations.md`, `docs/status.md`.
 * Beobachtung: Alertmanager laeuft (127.0.0.1:9093), Prometheus meldet ihm
   die Regeln, Versandkanal bewusst noch zu. Alloy sammelt jetzt auch
   `flash-next-v3` ueber das Journal (`/var/log/journal` read-only, Alloy
@@ -86,6 +103,43 @@ Das Repository ist das Backup.
 8. Waechter- und GitOps-Timer (`llm-runtime-watchdog`, `llm-litellm-watchdog`,
    `llm-crashguard`, `llm-infra-gitops`) sind auf diesem Rechner nicht
    installiert; bei Bedarf ueber die `--install`-Pfade der jeweiligen Skripte.
+
+15. **Portal-Symbole haengen an einem externen Auslieferer (CDN).** Die gepinnte
+    Portal-Version `ghcr.io/gethomepage/homepage:v2.4.0` kennt keine lokale
+    Symbolauflösung im Konfigurationsordner: `icon: name.png`/`.svg` wird
+    ausschliesslich gegen `cdn.jsdelivr.net` (homarr-labs/dashboard-icons,
+    selfh.st, mdi, simple-icons) aufgelöst; nur mit `/` oder `http` beginnende
+    Werte werden unveraendert geladen, und `/api/config/[path]` liefert nur
+    `custom.css`/`custom.js` (im Bild unter `/app` nachgesehen, nicht geraten).
+    Die 2026-11-16 heruntergeladenen PNGs unter `config/homepage/public/icons/`
+    waren deshalb tote Konfiguration und sind geloescht (ebenso das
+    Handarbeit-Relikt `~/.config/llm-infra/homepage/public/`). Zielbild wie im
+    Altrepo `luni-llmops-linux`: lokale SVG ueber einen read-only-Bind-Mount
+    nach `/images/custom/` im Portal-Container, damit ist der Betrieb
+    offline-gehaertet (kein CDN-Ausfall, keine externe Abhaengigkeit). Naechster
+    Befehl dafuer: Bind-Mount plus `icon: /images/custom/<name>.svg` in einem
+    Versuchszweig von `scripts/60-install-homepage.sh` erproben (Ports und
+    Volume-Angaben bleiben im Generator).
+16. **Grafana-Wurzeladresse ist jetzt der lokale Name.** Eine Instanz kann nur
+    eine `GF_SERVER_ROOT_URL` haben; sie zeigt auf
+    `https://grafana.localhost/grafana/` (Betreiberauftrag: lokaler Zugang ohne
+    301 auf Azure). Der oeffentliche Zugang bleibt durch Basic-Auth geschuetzt
+    (gemessen 401 auf `/grafana/` und `/v1/models`), aber absolute Links der
+    ausgelieferten Seiten zeigen auf `grafana.localhost` - fuer Eingeloggte ausserhalb
+    des Rechners brachen damit Assets. Optionen: Gateway-Caddy eine zweite
+    `grafana.localhost`-Site geben und Einwahl-Rechnern eine Hosts-Zuordnung
+    mitgeben, oder eine zweite Grafana-Instanz fuer den oeffentlichen Weg. Naechster
+    Befehl: mit einem Zugangsschluessel
+    `curl -u person https://edipoc-gateway.westeurope.cloudapp.azure.com/grafana/`
+    ziehen und die Link-Ziele im HTML zaehlen, bevor entschieden wird.
+17. **`make drift` wartet auf den Commit dieser Runde.** Die neue Datei
+    `quadlet/llm-proxy.container` und die geaenderten
+    `quadlet/homepage.container`/`quadlet/grafana.container` sind bewusst
+    nicht committet (Betreiberauftrag: nichts committen). Die
+    Drift-Pruefung weist ungecommittete generierte Dateien zurueck; vor der
+    Runde war sie auf dem Stand "nur die bekannte Pennyroyal-Abweichung".
+    Naechster Befehl: nach `git add ... && git commit` erneut `make drift`
+    (erwartet: wieder nur Pennyroyal).
 
 ## 3. Welche Befehle braucht der naechste Leser
 
@@ -250,6 +304,11 @@ lokalen Backup-Pfad prüfen. Ein späterer Restore kann per `rsync` zurück nach
 ```bash
 cd /srv/work/llm-infra-setup
 ./scripts/doctor.sh                                   # Lagebild, nennt den naechsten Befehl
+./scripts/74-setup-local-proxy.sh --check             # lokaler HTTPS-Zugang ueber Namen?
 ./scripts/session-checkpoint.sh --status              # ungesicherte Aenderungen zeigen
 ./scripts/session-checkpoint.sh "Doku-Stand 2026-11-16"   # sichern (kommender Schritt des Betreibers)
 ```
+
+## Notiz 2026-11-16T13:07:21+01:00
+
+portal+proxy: benanntes HTTPS (homepage/grafana.localhost), Grafana anonym und einbettbar, Kachelsonden

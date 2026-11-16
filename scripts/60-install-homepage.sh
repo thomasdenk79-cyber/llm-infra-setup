@@ -3,13 +3,16 @@
 # und die Quadlet-Unit erzeugen.
 #
 # Einzelne Quelle der Wahrheit fuer die erlaubten Hosts ist config/host.env
-# (Variable HOMEPAGE_ALLOWED_HOSTS, Default: Loopback auf Port 3002). Der
-# oeffentliche Zugang der Kollegen haengt hinter Caddy auf dem Gateway-Rechner;
-# dessen Homepage-Block setzt den Host-Header auf die Upstream-Adresse
-# ("header_up Host {upstream_hostport}" in config/gateway/Caddyfile.template),
-# deshalb prueft Homepage den Loopback-Wert 127.0.0.1:3002 und keinen
-# Gateway-Namen. Werte fuer 8443 oder LAN-Adressen gehoeren nicht mehr hierher:
-# der LAN-HTTPS-Proxy ist durch den Gateway-Tunnel ersetzt.
+# (Variable HOMEPAGE_ALLOWED_HOSTS, Default: Loopback auf Port 3002 plus der
+# Name des lokalen HTTPS-Proxys). Der oeffentliche Zugang der Kollegen haengt
+# hinter Caddy auf dem Gateway-Rechner; dessen Homepage-Block setzt den
+# Host-Header auf die Upstream-Adresse ("header_up Host {upstream_hostport}" in
+# config/gateway/Caddyfile.template), deshalb prueft Homepage den Loopback-Wert
+# 127.0.0.1:3002 und keinen Gateway-Namen. Der lokale Zugang ueber Namen
+# (https://homepage.localhost/, scripts/74-setup-local-proxy.sh) liefert den
+# Namen selbst als Host-Header, deshalb gehoert homepage.localhost in die Liste.
+# Werte fuer 8443 oder LAN-Adressen gehoeren nicht mehr hierher: der
+# LAN-HTTPS-Proxy ist durch den Gateway-Tunnel ersetzt.
 #
 # Die Unit-Datei quadlet/homepage.container wird hier geschrieben und traegt
 # den Header "GENERIERT von". Aendern am Generator, nicht an der Datei -
@@ -23,7 +26,7 @@ source "${root}/lib/common.sh"
 homepage_port=3002   # muss zu PublishPort in der Unit-Datei passen
 homepage_allowed_hosts="$(printf '%s' "${HOMEPAGE_ALLOWED_HOSTS:-}" | tr -d '[:space:]')"
 if [[ -z "${homepage_allowed_hosts}" ]]; then
-  homepage_allowed_hosts="127.0.0.1:${homepage_port},localhost:${homepage_port}"
+  homepage_allowed_hosts="127.0.0.1:${homepage_port},localhost:${homepage_port},homepage.localhost"
 fi
 # Zeichenerlaubnis statt Regex: die bash-ERE scheitert an den eckigen Klammern
 # der IPv6-Notation, und der Wert landet ohne Umwege in einer Unit-Datei.

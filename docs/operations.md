@@ -94,6 +94,8 @@ podman ps --format '{{.Names}}\t{{.Status}}'
 | Zweck | Adresse | Hinweis |
 |---|---|---|
 | Portal | http://127.0.0.1:3002 | Einstieg fuer Menschen |
+| Portal ueber Namen | https://homepage.localhost/ | lokaler Proxy, nur 127.0.0.1:443 (Abschnitt unten) |
+| Grafana ohne Anmeldung | https://grafana.localhost/grafana/ | anonymes Lesen, Unterpfad /grafana/ (Abschnitt unten) |
 | Chat (Open WebUI) | http://127.0.0.1:3001 | erster Account ist Admin |
 | Gateway (OpenAI-kompatibel) | http://127.0.0.1:4000/v1 | Schluessel aus `credentials.txt` |
 | Runtime direkt | http://127.0.0.1:30000/v1 | vLLM-Container `flash-next-v3`, nur fuer Diagnose und lokale Tools; bei Quadlet-Betrieb waere es Pennyroyal auf 8001 |
@@ -107,6 +109,75 @@ Loopback gebunden. Von einem anderen Rechner im Netz kommst du so hin:
 ```bash
 ssh -L 3000:127.0.0.1:3000 -L 3001:127.0.0.1:3001 deinrechner
 ```
+
+## Lokaler HTTPS-Zugang ueber Namen
+
+Ein verwalteter Caddy (Container `llm-proxy`, Quadlet
+`quadlet/llm-proxy.container`) hoert im Netz `llm-observability` und ist nur
+auf `127.0.0.1:443` veroeffentlicht. Er bedient zwei Sites:
+
+| Adresse | Ziel | Gegencheck |
+|---|---|---|
+| https://homepage.localhost/ | Portal (`llm-homepage:3000`) | `curl -s -o /dev/null -w '%{http_code}' https://homepage.localhost/` -> 200 |
+| https://grafana.localhost/grafana/ | Grafana (`grafana:3000`, Unterpfad bleibt) | `curl -s -o /dev/null -w '%{http_code}' https://grafana.localhost/grafana/` -> 200 ohne Login |
+
+Warum Container-Namen statt 127.0.0.1: rootless pasta reicht die Host-Loopback
+nicht an Container durch - der Proxy muss im Netz wohnen und gegen
+`llm-homepage:3000`/`grafana:3000` proxen (gemessen mit `getent hosts` im Netz).
+
+Befehle (alles idempotent, Vorlage `config/proxy/Caddyfile.template`):
+
+```bash
+make local-proxy                     # ausrollen: rendern, caddy validate, Unit starten
+./scripts/74-setup-local-proxy.sh --check    # pruefen ohne zu aendern
+./scripts/74-setup-local-proxy.sh --ca-import # Caddy-CA in den Systemtrust (sudo, nur dieser Rechner)
+./scripts/74-setup-local-proxy.sh --status   # Unit, Listener, CA, Sysctl-Grenze
+```
+
+Nach dem ersten Ausrollen einmal `--ca-import` laufen lassen: erst dann gehen
+`curl` ohne `-k` und der Browser ohne Warnung (Pruefung: `trust list
+--filter=ca-anchors | grep Caddy`). Entfernen: `sudo trust anchor --remove
+~/.local/share/llm-infra/caddy/ca/caddy-local-authority-root.crt`.
+
+Das Veroeffentlichen von Port 443 als Benutzer erfordert die Kernelgrenze
+`net.ipv4.ip_unprivileged_port_start <= 443`. Der Generator legt dafuer
+idempotent `/etc/sysctl.d/99-llm-infra-local-proxy.conf` an (sudo). Bewusst 443
+und nicht 80: Ports 80..442 bleiben privilegiert. Rueckbauaendern: Datei
+loeschen und `sudo sysctl --system`.
+
+Grafana ohne Anmeldung: `~/.config/llm-infra/grafana.env` (Generator
+`scripts/60-install-monitoring.sh`, Vorlage `config/grafana.env.example`)
+setzt anonyme Lese-Rolle, keine Anmeldemaske und Einbettung
+(`GF_SECURITY_ALLOW_EMBEDDING=true`). Abnahme fuer Panel-Einbettungen:
+
+```bash
+curl -s -o /dev/null -b /dev/null -c /dev/null -w '%{http_code}\n' \
+  'http://127.0.0.1:3000/grafana/d-solo/llm-infra-gpu?panelId=2'   # muss 200 liefern
+curl -s -I -b /dev/null -c /dev/null 'http://127.0.0.1:3000/grafana/d-solo/llm-infra-gpu?panelId=2' | grep -i x-frame   # darf kein deny enthalten
+```
+
+Fehlerbilder:
+
+- `400` vom Portal unter `homepage.localhost`: Host-Liste in
+  `config/host.env` (`HOMEPAGE_ALLOWED_HOSTS`) ergaenzen, dann
+  `make homepage && systemctl --user restart homepage.service`.
+- `502` vom Proxy: Zielname loest im Netz nicht auf - `podman network
+  inspect llm-observability` und `podman ps` pruefen; der Admin-Port 2019 ist
+  absichtlich nur im Container-Loopback.
+- `Permission denied` beim Starten von `llm-proxy.service`: Sysctl-Grenze
+  zurueckgesetzt - `./scripts/74-setup-local-proxy.sh --apply` erneut laufen
+  lassen.
+- Zertifikatswarnung: `--ca-import` fehlt oder das Root hat gewechselt (Caddy
+  erneuert die CA nach 8 Tagen Gueltigkeit) - `--ca-import` ist idempotent.
+- Weisse Panel-Flaeche im Portal-iframe: `GF_SECURITY_ALLOW_EMBEDDING` fehlt
+  (dann steht `X-Frame-Options: deny` im Kopf des d-solo-Aufrufs).
+
+Der oeffentliche Zugang der Kollegen bleibt davon unberuehrt: Caddy auf dem
+Gateway verlangt weiterhin Basic-Auth vor `/grafana/` und `/v1/models`
+(401 ohne Zugangswerte, docs/gateway-proxy.md). Einziger Unterschied fuer
+Auswaertige: die Wurzeladresse zeigt jetzt auf den lokalen Namen, daher
+zeigen absolute Links der Grafana-Seite auf `grafana.localhost` - Details in
+`docs/HANDOFF.md` (offene Punkte).
 
 ## Gateway-Fallback in drei Stufen
 

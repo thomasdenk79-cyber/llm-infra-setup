@@ -1,0 +1,44 @@
+# GENERIERT von scripts/74-setup-local-proxy.sh - dort ändern, nicht hier.
+# Vorlage: config/proxy/Caddyfile.template. Ausgerollt wird die eingesetzte
+# Fassung nach config/proxy/Caddyfile; gerendert und gerollt wird nur ueber
+# den Generator (caddy validate laeuft vor dem Ausrollen).
+#
+# Lokaler HTTPS-Zugang ueber Namen, ausschliesslich Loopback (Host 127.0.0.1:443):
+#   https://homepage.localhost/            -> Portal   (Container llm-homepage, intern 3000)
+#   https://grafana.localhost/grafana/     -> Grafana  (Netzalias grafana,   intern 3000)
+#
+# Warum hier Container-Namen statt 127.0.0.1: rootless pasta reicht die
+# Host-Loopback nicht an Container durch. Der Proxy haengt deshalb im Netz
+# llm-observability und proxen gegen die Namen, die dort aufloesen
+# (gemessen: getent hosts grafana -> 10.89.1.x, getent hosts llm-homepage -> 10.89.1.y).
+#
+# Zertifikate: Caddy-eigene lokale CA ("tls internal"), Bestand unter
+# ~/.local/share/llm-infra/caddy/data. Ohne Verankerung im Systemtrust
+# zeigen Browser und curl Warnungen; dagegen hilft:
+#   ./scripts/74-setup-local-proxy.sh --ca-import
+#
+# Platzhalter, eingesetzt vom Generator:
+#   llm-homepage:3000   Container:Port des Portals   (llm-homepage:3000)
+#   grafana:3000    Container:Port der Grafana   (grafana:3000)
+
+{
+	# Admin-API bewusst auf Loopback im Container: nicht veroeffentlicht, von
+	# aussen nicht erreichbar; erlaubt aber schonendes Reload ohne Aussenport.
+	admin 127.0.0.1:2019
+}
+
+homepage.localhost {
+	tls internal
+	encode zstd gzip
+	reverse_proxy llm-homepage:3000
+}
+
+grafana.localhost {
+	# Grafana bedient weiter den Unterpfad /grafana/ (GF_SERVER_SERVE_FROM_SUB_PATH=true),
+	# der Pfad wird unveraendert durchgereicht. Der Host bleibt grafana.localhost und
+	# passt damit zu GF_SERVER_ROOT_URL=https://grafana.localhost/grafana/ in
+	# ~/.config/llm-infra/grafana.env (Generator scripts/60-install-monitoring.sh).
+	tls internal
+	encode zstd gzip
+	reverse_proxy grafana:3000
+}

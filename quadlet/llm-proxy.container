@@ -1,0 +1,21 @@
+# GENERIERT von scripts/74-setup-local-proxy.sh - dort ändern, nicht hier.
+[Unit]
+Description=LLM Infrastructure lokaler HTTPS-Proxy (Caddy, nur 127.0.0.1:443)
+After=llm-observability-network.service homepage.service grafana.service
+Wants=llm-observability-network.service
+
+[Container]
+Image=docker.io/library/caddy:2-alpine
+ContainerName=llm-proxy
+Network=llm-observability.network
+PublishPort=127.0.0.1:443:443
+Volume=%h/.local/share/llm-infra/caddy/data:/data:Z,U
+Volume=%h/.local/share/llm-infra/caddy/config:/config:Z,U
+Volume=@CONFIG_ROOT@/config/proxy/Caddyfile:/etc/caddy/Caddyfile:Z,ro
+
+[Service]
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=default.target

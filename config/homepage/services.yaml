@@ -2,6 +2,13 @@
 # wirklich hoert (Pruefung: podman ps + curl auf 127.0.0.1). Grafana liegt im
 # Unterpfad /grafana/, weil Caddy auf dem Gateway-Rechner mehrere Dienste aus
 # einem Serverblock bedient (GF_SERVER_SERVE_FROM_SUB_PATH=true).
+#
+# siteMonitor = Statussonde auf der Kachel. Sie laeuft im Portalcontainer, also
+# nur fuer Dienste im Netz llm-observability (Grafana, Prometheus, Loki, Dozzle,
+# Alertmanager) - alle funf Pfade sind gemessen 200. Dienste, die nur auf der
+# Host-Loopback hoeren (Laufzeit 30000, Gateway 4000, Chat 3001, Wiki 3003),
+# bleiben Link-only: ein rootless-Netz erreicht die Host-Loopback nicht, eine
+# Sonde waere dauerhaft rot ohne Grund (im Vorgaengerrepo ebenso gehandhabt).
 - Chat & RAG:
     - Wissens-Wiki:
         icon: mkdocs.png
@@ -12,17 +19,18 @@
         href: http://127.0.0.1:3001
         description: Chat, Dateien und RAG
     - LiteLLM:
-        icon: mdi-api.svg
+        icon: openai.png
         href: http://127.0.0.1:4000
         description: OpenAI-kompatibles Gateway
     - LLM-Laufzeit:
-        icon: mdi-robot.svg
+        icon: ollama.png
         href: http://127.0.0.1:30000/v1/models
         description: Modellserver flash-next-v3 (Modellliste, /health, /metrics)
 - Verwaltung:
     - Dozzle:
         icon: dozzle.png
         href: http://127.0.0.1:8080
+        siteMonitor: http://dozzle:8080/
         description: Live-Containerlogs
     - Repository:
         icon: github.png
@@ -32,6 +40,7 @@
     - Grafana:
         icon: grafana.png
         href: http://127.0.0.1:3000/grafana/
+        siteMonitor: http://grafana:3000/grafana/api/health
         description: Dashboards (Unterpfad /grafana/)
     - Agenten-Observatorium:
         icon: grafana.png
@@ -40,21 +49,24 @@
     - Prometheus:
         icon: prometheus.png
         href: http://127.0.0.1:9090
+        siteMonitor: http://prometheus:9090/-/healthy
         description: Metriken und Targets
     - Loki:
         icon: loki.png
         href: http://127.0.0.1:3100
+        siteMonitor: http://loki:3100/ready
         description: Logs (kein Web-UI; Abfragen ueber Grafana /grafana/explore)
     - Alertmanager:
         icon: alertmanager.png
         href: http://127.0.0.1:9093
+        siteMonitor: http://alertmanager:9093/-/healthy
         description: Alarme, Stillhaltefristen und Routing
 - Wissen:
     - Doku & Handbuch:
-        icon: mdi-book-open-variant.svg
+        icon: bookstack.png
         href: https://github.com/thomasdenk79-cyber/llm-infra-setup/tree/main/docs
         description: Monitoring, CMDB, Betriebsregeln
     - CMDB:
-        icon: mdi-view-list.svg
+        icon: bookstack.png
         href: https://github.com/thomasdenk79-cyber/llm-infra-setup/blob/main/docs/cmdb.yaml
         description: Was laeuft wo mit welcher API

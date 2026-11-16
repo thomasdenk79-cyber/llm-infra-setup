@@ -6,6 +6,7 @@
 #
 # Was danach läuft (alle Ports nur auf 127.0.0.1):
 #   Grafana    http://127.0.0.1:3000   Passworthinweis: ./scripts/show-credentials.sh
+#              lokal ohne Anmeldung: https://grafana.localhost/grafana/ (scripts/74-setup-local-proxy.sh)
 #   Prometheus http://127.0.0.1:9090
 #   Loki       http://127.0.0.1:3100
 #   Dozzle     http://127.0.0.1:8080
@@ -26,6 +27,17 @@ if [[ "${check_only}" == 1 ]]; then
   done
   systemctl --user is-active --quiet llm-infra-collect-facts.timer || { printf 'FEHLT: Kennzahlen-Timer laeuft nicht\n'; missing=1; }
   systemctl --user is-active --quiet wiki-rebuild.timer || { printf 'FEHLT: Wiki-Rebuild-Timer laeuft nicht\n'; missing=1; }
+  # Anonymes Lesen und Einbettung sind ohne die vier Schluessel nicht erfuellet
+  # (Abnahme: d-solo ohne Cookies 200, kein X-Frame-Options: deny).
+  if [[ -f "${SECRETS_DIR}/grafana.env" ]]; then
+    for schluessel in GF_AUTH_ANONYMOUS_ENABLED=true GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer \
+                      GF_AUTH_DISABLE_LOGIN_FORM=true GF_SECURITY_ALLOW_EMBEDDING=true; do
+      grep -Fxq "${schluessel}" "${SECRETS_DIR}/grafana.env" \
+        || { printf 'FEHLT: grafana.env enthaelt nicht %s\n' "${schluessel}"; missing=1; }
+    done
+  else
+    printf 'FEHLT: %s fehlt (Vorlage: config/grafana.env.example)\n' "${SECRETS_DIR}/grafana.env"; missing=1
+  fi
   [[ "${missing}" == 0 ]] && printf 'OK: Beobachtung vollstaendig\n'
   exit "${missing}"
 fi
@@ -43,35 +55,52 @@ fi
 if [[ ! -f "${root}/quadlet/llm-gpu-exporter.container" ]]; then
   run "${root}/scripts/65-install-gpu-exporter.sh"
 fi
-# Grafana hinter dem oeffentlichen Zugang laeuft im Unterpfad /grafana/. Ohne
-# root_url mit Pfad und serve_from_sub_path bricht die Seite ueber den Tunnel,
-# weil Grafana seine Assets unter /public/ statt /grafana/public/ anbietet. Die
-# Werte sind Rechnerangaben (haengen am Gateway-Namen) und liegen deshalb
-# ausserhalb von Git; Vorlage ist config/grafana.env.example.
+# Grafana laeuft im Unterpfad /grafana/ und ohne Anmeldung fuer den lokalen
+# Zugang. Ohne root_url mit Pfad und serve_from_sub_path bricht die Seite
+# sowohl ueber den lokalen Proxy (scripts/74-setup-local-proxy.sh) als auch
+# ueber den Gateway-Tunnel, weil Grafana seine Assets dann unter /public/ statt
+# /grafana/public/ anbietet. GF_SERVER_ROOT_URL zeigt auf den lokalen Proxy:
+# https://grafana.localhost/grafana/ - damit liefert der Proxy die Seite, ohne
+# dass Grafana auf die Gateway-Adresse umleitet und die absoluten Links dorthin
+# zeigen. Der oeffentliche Zugang der Kollegen bleibt zusaetzlich durch
+# Basic-Auth auf dem Gateway geschuetzt (401 ohne Zugang); die Einzelheiten
+# stehen in docs/operations.md und docs/HANDOFF.md. Die Schluessel sind
+# Rechnerangaben und liegen ausserhalb von Git; Vorlage ist
+# config/grafana.env.example. Die Datei gehoert diesem Skript: bei Abweichung
+# wird sie mit Zeitstempel-Sicherung neu geschrieben.
 grafana_env="${SECRETS_DIR}/grafana.env"
-if [[ ! -f "${grafana_env}" ]]; then
-  dns="$(sed -n 's/^GATEWAY_DNS_NAME=//p' "${root}/config/gateway-proxy.env" 2>/dev/null | head -1 || true)"
-  if [[ -n "${dns}" ]]; then
-    wurzel="https://${dns}/grafana/"
-  else
-    wurzel="http://127.0.0.1:3000/grafana/"
-  fi
+grafana_env_geplant=$(cat <<'GRAFANA'
+# GENERIERT von scripts/60-install-monitoring.sh - Vorlage: config/grafana.env.example
+GF_SERVER_ROOT_URL=https://grafana.localhost/grafana/
+GF_SERVER_SERVE_FROM_SUB_PATH=true
+GF_AUTH_ANONYMOUS_ENABLED=true
+GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+GF_AUTH_DISABLE_LOGIN_FORM=true
+GF_SECURITY_ALLOW_EMBEDDING=true
+GRAFANA
+)
+if [[ ! -f "${grafana_env}" ]] || ! cmp -s <(printf '%s\n' "${grafana_env_geplant}") "${grafana_env}"; then
   install -d -m 0700 "$(dirname -- "${grafana_env}")"
-  printf '# GENERIERT von scripts/60-install-monitoring.sh - Vorlage: config/grafana.env.example\nGF_SERVER_ROOT_URL=%s\nGF_SERVER_SERVE_FROM_SUB_PATH=true\n' "${wurzel}" > "${grafana_env}"
+  if [[ -f "${grafana_env}" ]]; then
+    cp -a "${grafana_env}" "${grafana_env}.bak.$(date -u +%Y%m%dT%H%M%SZ)"
+    log "grafana.env wich ab - Sicherung daneben gelegt, neue Fassung geschrieben"
+  fi
+  printf '%s\n' "${grafana_env_geplant}" > "${grafana_env}"
   chmod 600 "${grafana_env}"
-  log "Grafana-Adresse gesetzt: ${grafana_env} (${wurzel})"
+  log "Grafana-Adresse und anonymes Lesen gesetzt: ${grafana_env}"
 fi
 prune_legacy_units
 install_units "${OBSERVABILITY_UNITS[@]}"
 install_systemd_units "${HOME}/.config/systemd/user" llm-infra-collect-facts.service llm-infra-collect-facts.timer wiki-rebuild.service wiki-rebuild.timer
 systemd_reload
-start_units llm-observability.network loki.container prometheus.container grafana.container alloy.container dozzle.container llm-node-exporter.container llm-gpu-exporter.container homepage.container wiki.container
+start_units llm-observability.network loki.container prometheus.container grafana.container alloy.container dozzle.container llm-node-exporter.container llm-gpu-exporter.container homepage.container wiki.container llm-proxy.container
 systemctl --user enable --now llm-infra-collect-facts.timer
 systemctl --user enable --now wiki-rebuild.timer
 run "${root}/scripts/collect-host-facts.sh" || log 'WARNUNG: erste Kennzahlensammlung fehlgeschlagen'
 cat <<'NEXT'
 Naechste Schritte
-  1. Browser oeffnen:  http://127.0.0.1:3000   (Grafana, Passwort: ./scripts/show-credentials.sh)
+  1. Browser oeffnen:  https://grafana.localhost/grafana/   (lokal ohne Anmeldung;
+     Verankerung der Proxy-CA: ./scripts/74-setup-local-proxy.sh --ca-import)
   2. Targets pruefen:  http://127.0.0.1:9090/targets   (muss pennyroyal, node, gpu zeigen)
   3. Wenn etwas rot ist: ./scripts/doctor.sh
 NEXT

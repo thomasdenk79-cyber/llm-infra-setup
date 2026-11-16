@@ -9,10 +9,14 @@ NetworkAlias=grafana
 PublishPort=127.0.0.1:3000:3000
 Volume=%h/.local/share/llm-infra/grafana:/var/lib/grafana:Z,U
 Volume=@CONFIG_ROOT@/config/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro,Z
-Environment=GF_AUTH_ANONYMOUS_ENABLED=false
-# Unterpfad /grafana/ und oeffentliche Adresse: stehen in einer Rechnerdatei,
-# weil sie vom Gateway-Namen abhaengen (docs/gateway-proxy.md). Erzeugt wird
-# sie von scripts/60-install-monitoring.sh, Vorlage ist config/grafana.env.example.
+# Anonymes Lesen, Rollenzuschnitt und Einbettung stehen vollständig in
+# ~/.config/llm-infra/grafana.env (Generator scripts/60-install-monitoring.sh,
+# Vorlage config/grafana.env.example). Hier darf kein Environment= für dieselben
+# Schüssel stehen: podman lässt --env gegen --env-file gewinnen, ein festes
+# GF_AUTH_ANONYMOUS_ENABLED=false hätte die Datei-Werte stillschweigend
+# unterdrückt (gemessen 2026-11-16: 302 auf /grafana/login statt 200 anonym).
+# Unterpfad /grafana/ und Adresse: stehen in derselben Rechnerdatei
+# (docs/gateway-proxy.md). Erzeugt wird sie von scripts/60-install-monitoring.sh.
 EnvironmentFile=%h/.config/llm-infra/grafana.env
 Environment=GF_SECURITY_ADMIN_USER=admin
 Secret=grafana_admin_password,type=env,target=GF_SECURITY_ADMIN_PASSWORD

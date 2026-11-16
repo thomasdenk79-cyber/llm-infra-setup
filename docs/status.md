@@ -158,6 +158,31 @@ git -C ~/work/hermes-wiki rev-parse HEAD | head -c 12; echo; cat ~/work/hermes-w
 systemctl --user list-timers --no-pager | head -5
 ```
 
+## Lokaler HTTPS-Zugang ueber Namen - gemessener Stand 2026-11-16
+
+* Neuer verwalteter Proxy: Container `llm-proxy` (Caddy, Netz `llm-observability`,
+  nur `127.0.0.1:443`). Generator `scripts/74-setup-local-proxy.sh`
+  (`make local-proxy`), Vorlage `config/proxy/Caddyfile.template`, Pruefung
+  `--check`, Caddy-CA im Systemtrust (`--ca-import`). Details und Fehlerbilder:
+  `docs/operations.md` (Abschnitt "Lokaler HTTPS-Zugang ueber Namen").
+* `https://homepage.localhost/` liefert 200 mit curl ohne `-k`; Host-Freigabe
+  ueber `HOMEPAGE_ALLOWED_HOSTS` in `config/host.env` (Generator
+  `scripts/60-install-homepage.sh`).
+* `https://grafana.localhost/grafana/` liefert 200 ohne Anmeldung, ohne `301`
+  auf die Gateway-Adresse und ohne Azure-Links in der Auslieferung. Werte in
+  `~/.config/llm-infra/grafana.env`: anonyme Lese-Rolle, keine Anmeldemaske,
+  Einbettung an, `GF_SERVER_ROOT_URL=https://grafana.localhost/grafana/`
+  (Vorlage `config/grafana.env.example`).
+* Panel-Einbettung anonym messbar: alle fuenf Dashboards (runtime, gpu, host,
+  storage, agent-observatorium) liefern `d-solo?panelId=2` = 200 ohne Cookies,
+  kein `X-Frame-Options: deny` im Kopf. Dafuer musste die
+  `Environment=GF_AUTH_ANONYMOUS_ENABLED=false`-Zeile aus
+  `quadlet/grafana.container` weichen: podman laesst `--env` gegen `--env-file`
+  gewinnen, die Datei wurde sonst stillschweigend unterdrueckt.
+* Oeffentliche Routen unveraendert (nach dem Umbau gemessen): `/grafana/` 401,
+  `/v1/models` 401, `/` 401, `/health/liveliness` 200. Anonym reicht nicht
+  nach aussen - Basic-Auth auf dem Gateway sitzt vor Grafana.
+
 ## Bekannte Abweichungen (bewusst, dokumentiert)
 
 - Der Weiterleiter bindet Port 30001 an die Host-Adressen, also auch ins LAN.
@@ -206,6 +231,7 @@ systemctl --user list-timers --no-pager | head -5
 cd /srv/work/llm-infra-setup
 ./scripts/doctor.sh                        # gefuehrte Diagnose, nennt den naechsten Befehl
 ./scripts/70-setup-gateway-proxy.sh --check  # oeffentlicher Zugang in Ordnung?
+./scripts/74-setup-local-proxy.sh --check    # lokaler HTTPS-Zugang ueber Namen in Ordnung?
 ./scripts/60-install-monitoring.sh --check   # Beobachtungsstufe vollstaendig?
 ./scripts/60-install-open-webui.sh --check   # Chat-Oberflaeche und Gateway-Weg?
 ./scripts/session-checkpoint.sh --status     # was ist noch ungesichert?

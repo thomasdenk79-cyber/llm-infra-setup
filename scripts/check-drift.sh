@@ -45,6 +45,7 @@ run ./scripts/60-install-homepage.sh
 run ./scripts/60-install-wiki.sh
 run ./scripts/63-install-postgres.sh
 run ./scripts/65-install-gpu-exporter.sh
+run ./scripts/74-setup-local-proxy.sh --render
 
 if git diff --quiet -- quadlet config/litellm.yaml; then
   echo 'KEINE DRIFT: committete Units entsprechen exakt den Generatoren.'

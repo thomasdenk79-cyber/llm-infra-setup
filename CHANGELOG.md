@@ -1,4 +1,50 @@
 # Aenderungsprotokoll
+## 2026-11-16 (Runde: lokaler HTTPS-Zugang ueber Namen, Grafana ohne Anmeldung)
+
+- Neuer verwalteter lokaler Proxy: `quadlet/llm-proxy.container` (Caddy,
+  Netz `llm-observability`, nur `127.0.0.1:443`) mit Generator
+  `scripts/74-setup-local-proxy.sh` (`make local-proxy`; Modi `--check`,
+  `--render` fuer `make drift`, `--ca-import`, `--status`) und Vorlage
+  `config/proxy/Caddyfile.template`. Er bedient
+  `https://homepage.localhost/` (Portal) und
+  `https://grafana.localhost/grafana/` (Grafana, Unterpfad bleibt).
+  Warum Netz statt Loopback: rootless pasta reicht `127.0.0.1` nicht an
+  Container durch, der Proxy proxen gegen `llm-homepage:3000` und
+  `grafana:3000` (Namen mit `getent hosts` im Netz gemessen). `caddy validate`
+  laeuft vor jedem Ausrollen; die Admin-API bleibt auf Container-Loopback.
+- Port 443 rootless: Generator legt idempotent
+  `/etc/sysctl.d/99-llm-infra-local-proxy.conf` an und senkt
+  `net.ipv4.ip_unprivileged_port_start` auf 443 (sudo, reversibel; bewusst
+  nicht 80). Caddy-CA ins Systemtrust: `--ca-import` (trust anchor +
+  update-ca-trust); danach curl ohne `-k` und Browser ohne Warnung - gemessen.
+- Portal-Hostfreigabe: `HOMEPAGE_ALLOWED_HOSTS` in `config/host.env` um
+  `homepage.localhost` ergaenzt (Generator `scripts/60-install-homepage.sh`,
+  Default nachgezogen); bestehende Loopback-Formen bleiben.
+- Grafana ohne Anmeldung: `scripts/60-install-monitoring.sh` schreibt jetzt
+  vollstaendig `GF_SERVER_ROOT_URL=https://grafana.localhost/grafana/`,
+  `GF_SERVER_SERVE_FROM_SUB_PATH=true`, anonyme Lese-Rolle (`Viewer`),
+  `GF_AUTH_DISABLE_LOGIN_FORM=true` und `GF_SECURITY_ALLOW_EMBEDDING=true`
+  nach `~/.config/llm-infra/grafana.env` (Vorlage neu dokumentiert);
+  Abweichung wird mit Zeitstempel-Sicherung neu geschrieben, `--check`
+  prueft die Schluessel. Noetig war zusaetzlich, die
+  `Environment=GF_AUTH_ANONYMOUS_ENABLED=false`-Zeile aus
+  `quadlet/grafana.container` zu entfernen: podman laesst `--env` gegen
+  `--env-file` gewinnen - vorher blieb alles beim 302 auf `/grafana/login`
+  (gemessen), die Dateiwerte waren wirkungslos.
+- Gemessene Abnahme (2026-11-16): beide Namen 200 ohne `-k`; `/grafana/` ohne
+  Login-Formular und ohne 301 auf Azure; `d-solo?panelId=2` liefert fuer alle
+  fuenf Dashboards 200 ohne Cookies und ohne `X-Frame-Options: deny`;
+  oeffentlich bleiben `/grafana/` 401 und `/v1/models` 401 (anonym reicht
+  nicht nach aussen, Basic-Auth sitzt vor); `./scripts/healthcheck.sh` SYSTEM
+  HEALTHY; `make validate` OK; `--check` beider Generatoren gruen.
+- Neustarts nur `grafana.service`, `homepage.service` und der neue
+  `llm-proxy.service`; vorab Inflight-Check (litellm-Journal, Runtime-Logs:
+  null Anfragen), `flash-next-v3` nicht beruehrt.
+- Symbol-Aufraeumen: PNG-Garnitur unter `config/homepage/public/icons/`
+  wirkungslos fuer v2.4.0 (Aufloesung nur ueber CDN; im Bild unter `/app`
+  nachgesehen) und geloescht; CDN-Abhaengigkeit als bekannter Mangel in
+  `docs/HANDOFF.md` (Zielbild: lokale SVG ueber `/images/custom/-Bind-Mount`).
+
 ## 2026-11-16 – Oeffentlicher Zugang, Alarmweg, Beobachtungskorrektur
 
 - Chat-Oberflaeche (Open WebUI) zum ersten Mal von Hand bis zur Antwort

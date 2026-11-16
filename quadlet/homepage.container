@@ -12,7 +12,7 @@ PublishPort=127.0.0.1:3002:3000
 # Erlaubte Host-Header: kommen aus config/host.env (HOMEPAGE_ALLOWED_HOSTS).
 # Jeder andere Host antwoordet mit 400 - Pruefung in src/middleware.js der
 # gepinnten Version v2.4.0.
-Environment=HOMEPAGE_ALLOWED_HOSTS=127.0.0.1:3002,localhost:3002
+Environment=HOMEPAGE_ALLOWED_HOSTS=127.0.0.1:3002,localhost:3002,homepage.localhost
 Volume=%h/.config/llm-infra/homepage:/app/config:Z,U
 
 [Service]
