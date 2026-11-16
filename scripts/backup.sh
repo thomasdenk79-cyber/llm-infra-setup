@@ -19,11 +19,22 @@ ts="$(date -u +%Y%m%dT%H%M%SZ)"
 dest="${dest_base}/${ts}"
 install -d -m 0700 "${dest}"
 
+# Ein Teil, der stillschweigend fehlt, macht aus dem Backup eine Taetigung.
+# Die alte Form `tar ... && log ...` loest kein errexit aus: innerhalb einer
+# &&-Kette ist nur der letzte Befehl massgeblich, und das war hier das log, das im
+# Fehlerfall gar nicht lief. Der Archivaufbau endete trotzdem mit 0 und meldete
+# 'Backup fertig', waehrend Grafanas Ausfuhrordner fehlten. Deshalb wird jetzt
+# jeder Teil gezaehlt und am Ende entschieden.
+teile_fehlend=()
+
 items=(); for item in config quadlet systemd containers docs Makefile versions.lock mkdocs.yml AGENTS.md README.md; do
   [[ -e "${root}/${item}" ]] && items+=("${item}")
 done
-tar --exclude='config/*.env' --exclude='config/homepage/.secret.env' -czf "${dest}/repository-config.tar.gz" -C "${root}" "${items[@]}"
-log 'Konfiguration gespeichert.'
+if tar --exclude='config/*.env' --exclude='config/homepage/.secret.env' -czf "${dest}/repository-config.tar.gz" -C "${root}" "${items[@]}"; then
+  log 'Konfiguration gespeichert.'
+else
+  teile_fehlend+=('Konfiguration aus dem Repo')
+fi
 
 if command -v podman >/dev/null 2>&1 && \
    [[ "$(podman ps --format '{{.Names}}' 2>/dev/null || true)" == *litellm-postgres* ]]; then
@@ -31,15 +42,34 @@ if command -v podman >/dev/null 2>&1 && \
   source "${SECRETS_DIR}/postgres.env" 2>/dev/null || { POSTGRES_DB=litellm; POSTGRES_USER=litellm; }
   podman exec litellm-postgres pg_dump -U "${POSTGRES_USER:-litellm}" -d "${POSTGRES_DB:-litellm}" \
     > "${dest}/litellm-postgres.sql" 2>"${dest}/pg_dump.err" || {
-      log 'WARNUNG: pg_dump fehlgeschlagen (Datenbank laeuft nicht?); Details in pg_dump.err'; rm -f "${dest}/pg_dump.err"; }
-  [[ -s "${dest}/litellm-postgres.sql" ]] && log 'Datenbank gespeichert.'
+      log 'WARNUNG: pg_dump fehlgeschlagen (Details in pg_dump.err).'; teile_fehlend+=('Datenbank-Inhalt'); }
+  if [[ -s "${dest}/litellm-postgres.sql" ]]; then
+    log 'Datenbank gespeichert.'
+    rm -f "${dest}/pg_dump.err"
+  else
+    teile_fehlend+=('Datenbank-Inhalt (leerer Auszug)')
+  fi
 else
   log 'Datenbank-Container laeuft nicht; kein Datenbankteil im Backup.'
+  teile_fehlend+=('Datenbank-Inhalt (Container laeuft nicht)')
 fi
 
 for dir in open-webui grafana homepage; do
   src="${HOME}/.local/share/llm-infra/${dir}"
-  [[ -d "${src}" ]] && tar -czf "${dest}/state-${dir}.tar.gz" -C "$(dirname "${src}")" "$(basename "${src}")" && log "Zustand ${dir} gespeichert."
+  [[ -d "${src}" ]] || continue
+  # Grafana legt Ausfuhren (png/csv/pdf) ab; die hoeren dem Nutzer des Containers
+  # und sind bei Bedarf neu erzeugbare Ausfuhren, kein Zustand. Ohne Ausschluss
+  # scheitert tar beim Oeffnen genau dieser Ordner - ein echter Fehler, der bisher
+  # nur auf stderr zu sehen war. Alles andere bleibt ein Anlassteil.
+  ausschluss=()
+  if [[ "${dir}" == 'grafana' ]]; then
+    ausschluss=(--exclude='grafana/png' --exclude='grafana/csv' --exclude='grafana/pdf')
+  fi
+  if tar "${ausschluss[@]}" -czf "${dest}/state-${dir}.tar.gz" -C "$(dirname "${src}")" "$(basename "${src}")"; then
+    log "Zustand ${dir} gespeichert."
+  else
+    teile_fehlend+=("Zustand ${dir}")
+  fi
 done
 [[ -f "${HOME}/.config/opencode/opencode.json" ]] && cp "${HOME}/.config/opencode/opencode.json" "${dest}/opencode.json"
 command -v podman >/dev/null 2>&1 && podman ps -a --format '{{.Names}}|{{.Image}}|{{.Status}}' > "${dest}/containers.txt" 2>/dev/null || true
@@ -81,6 +111,13 @@ print(f'{len(files)} Dateien im Manifest')
 PY
 tar -czf "${dest_base}/llm-infra-backup-${ts}.tar.gz" -C "${dest_base}" "${ts}"
 rm -rf "${dest}"
+
+if (( ${#teile_fehlend[@]} > 0 )); then
+  printf '\n\033[31mBackup unvollstaendig:\033[0m %s\n' "$(IFS=', '; printf '%s\n' "${teile_fehlend[*]}")"
+  printf '  Das Archiv liegt trotzdem da (lueckenhaft): %s\n' "${dest_base}/llm-infra-backup-${ts}.tar.gz"
+  printf '  Naechster Befehl: %s\n' './scripts/doctor.sh   # zeigt, welcher Dienst nicht laeuft'
+  exit 1
+fi
 printf '\nBackup fertig: %s\n' "${dest_base}/llm-infra-backup-${ts}.tar.gz"
 printf 'Inhalt pruefen: ./scripts/restore.sh --list\n'
 printf 'Achtung: Die ZFS-Snapshots bleiben liegen. Loeschen nur von Hand (bewusst):\n'

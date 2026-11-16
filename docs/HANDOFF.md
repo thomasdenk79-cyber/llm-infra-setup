@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-11-16T14:33:25+01:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-11-16T14:37:41+01:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe (2026-11-16)
 
@@ -21,6 +21,12 @@ Das Repository ist das Backup.
   Ende-zu-Ende gemessen (HTTP 200, angezeigte Antwort). Gateway-Eigenmetriken fehlen
   weiterhin bewusst (Image ohne `prometheus-client`), Lebensdauer ueber
   `llm_unit_active`.
+* Erste Sicherung existiert: `./scripts/backup.sh` legt ein Archiv unter
+  `state/backups/` an (Konfiguration, `pg_dump`, Zustandsordner, Manifest mit
+  Pruefsummen); ansehen mit `./scripts/restore.sh --list`. Das Skript endet bei
+  fehlenden Teilen mit Rueckgabewert 1 und naechstem Befehl — ein Lauf mit 0 bedeutet
+  also wirklich vollstaendig. Nicht enthalten (bewusst): Grafanas Ausfuhrordner
+  `png/csv/pdf`.
 * Inferenz-Laufzeit ist der unmanaged Container `flash-next-v3` (vLLM) mit
   API nur auf `127.0.0.1:30000`. Es gibt auf diesem Rechner KEIN Pennyroyal;
   `config/host.env` (`RUNTIME_CONTAINER=flash-next-v3`, `RUNTIME_UNIT=` leer,
@@ -383,3 +389,7 @@ chat: eigener Gateway-Schluessel, Dashboard ohne No-Data, Diagnosefall Laufzeit-
 ## Notiz 2026-11-16T14:33:25+01:00
 
 doku: chat-eigener-schluessel und pruefpunkt 16
+
+## Notiz 2026-11-16T14:37:41+01:00
+
+sicherung: teilfehler scheitern laut, grafana-ausfuhren ausgeschlossen

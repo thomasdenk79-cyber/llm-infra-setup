@@ -1,4 +1,21 @@
 # Aenderungsprotokoll
+## 2026-11-16 (Runde: Sicherung meldet Teilfehler statt taetig zu sein)
+
+- **Erstes Backup dieses Repos erstellt** und gepaeft: Archiv mit Konfiguration,
+  Datenbank-Auszug und den drei Zustandsordnern (Chat, Grafana, Portal), Manifest mit
+  Pruefsummen, `./scripts/restore.sh --list` zeigt es. Arztlauf Pruefpunkt 14 damit OK;
+  Warnungen gesamt von vier auf **drei**.
+- **Gefundener Defekt im Sicherungsskript:** der erste Lauf meldete „Backup fertig“
+  bei Rueckgabewert 0, obwohl `tar` drei Grafana-Ordner nicht oeffnen konnte
+  (`png/csv/pdf`, hoeren dem Container-Nutzer). Grund war dieselbe Befehlsketten-
+  Falle wie anderswo: `[[ -d ]] && tar ... && log ...` loest kein `errexit` aus, weil
+  nur der letzte Befehl der Kette massgeblich ist — und das war das `log`, das im
+  Fehlerfall gar nicht lief. Eingebaut: ein Teilzaehler fuer Konfiguration, Datenbank
+  und jeden Zustandsordner; Grafanas neu erzeugbare Ausfuhrordner sind jetzt
+  ausgeschlossen und begruendet; bei mindestens einem fehlenden Teil endet der Lauf mit
+  **Rueckgabewert 1**, roter Meldung und naechstem Befehl. Gegentestet mit einer
+  unlesbaren Datei unter Wegwerf-`HOME`: Meldung „Backup unvollstaendig“ und rc=1.
+
 ## 2026-11-16 (Runde: Chat-Beweis ueber die Oberflaeche, Pruefpunkt Chat-Dienst)
 
 - **Chat nach der Schluesselumstellung Ende-zu-Ende gemessen:** Anmeldung gegen

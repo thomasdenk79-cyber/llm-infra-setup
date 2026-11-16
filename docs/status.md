@@ -7,6 +7,18 @@ Git-Verlauf: `git show HEAD:docs/status.md`. Fortsetzungsanker ist
 
 ## Verifizierter Zustand (2026-11-16)
 
+### Sicherung
+
+`./scripts/backup.sh` hat ihr erstes Archiv erzeugt
+(`state/backups/llm-infra-backup-<Zeitstempel>.tar.gz`, ausserhalb von Git): Konfiguration
+aus dem Repo, `pg_dump` der Gateway-Datenbank, Zustandsordner von Chat, Grafana und
+Portal, dazu ein `manifest.json` mit Pruefsummen. Anssehen: `./scripts/restore.sh --list`.
+Das Skript meldet Teilfehler jetzt als Fehler (Rueckgabewert 1 mit naechstem Befehl);
+zuvor fehlten still die nicht lesbaren Grafana-Ausfuhrordner `png/csv/pdf`, waehrend
+der Lauf mit 0 endete. Diese drei Ordner sind ausgeschlossen, weil sie dem Nutzer des
+Grafana-Containers hoeren und bei Bedarf neu erzeugt werden - kein Zustand, der
+verloren gehen kann.
+
 ### Chat-Dienst und Gateway-Zugang
 
 Der Chat haelt einen **eigenen** Gateway-Schluessel (Alias `open-webui`, ausgegeben
