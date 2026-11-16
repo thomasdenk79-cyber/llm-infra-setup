@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-11-16T14:28:31+01:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-11-16T14:33:25+01:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe (2026-11-16)
 
@@ -13,6 +13,14 @@ Das Repository ist das Backup.
 * Repo-Wurzel ist `/srv/work/llm-infra-setup` (nicht mehr `~/work/...`).
   Die Arbeiten des Tages sind in Themen-Commits gesichert (`git log --oneline -8`);
   der Fortschritt liegt damit in Git und ist nicht nur lokal vorhanden.
+* Der Chat haelt einen **eigenen** Gateway-Schluessel (Alias `open-webui`, nie den
+  Master): Aussteller ist `chat_service_key()` in `lib/secrets.sh`, Speicher ist
+  `~/.config/llm-infra/gateway-proxy/issued-keys.txt`, Dreh und Revoke laufen ueber
+  `scripts/71-gateway-keys.sh`. `scripts/doctor.sh` Pruefpunkt 16 ueberwacht genau das
+  und schlaegt fehl, wenn der Master wieder im Chat landet. Chat ueber die Oberflaeche
+  Ende-zu-Ende gemessen (HTTP 200, angezeigte Antwort). Gateway-Eigenmetriken fehlen
+  weiterhin bewusst (Image ohne `prometheus-client`), Lebensdauer ueber
+  `llm_unit_active`.
 * Inferenz-Laufzeit ist der unmanaged Container `flash-next-v3` (vLLM) mit
   API nur auf `127.0.0.1:30000`. Es gibt auf diesem Rechner KEIN Pennyroyal;
   `config/host.env` (`RUNTIME_CONTAINER=flash-next-v3`, `RUNTIME_UNIT=` leer,
@@ -371,3 +379,7 @@ Diagnosefall Laufzeit-Unit, Dashboard ohne No-Data-Panels, eigener Chat-Schluess
 ## Notiz 2026-11-16T14:28:31+01:00
 
 chat: eigener Gateway-Schluessel, Dashboard ohne No-Data, Diagnosefall Laufzeit-Unit
+
+## Notiz 2026-11-16T14:33:25+01:00
+
+doku: chat-eigener-schluessel und pruefpunkt 16

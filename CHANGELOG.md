@@ -1,4 +1,28 @@
 # Aenderungsprotokoll
+## 2026-11-16 (Runde: Chat-Beweis ueber die Oberflaeche, Pruefpunkt Chat-Dienst)
+
+- **Chat nach der Schluesselumstellung Ende-zu-Ende gemessen:** Anmeldung gegen
+  `http://127.0.0.1:3001`, Anfrage uber die Oberflaeche, `POST /api/chat/completions`
+  mit **HTTP 200**, angezeigte Modellantwort „Paris“, keine Konsolenfehler. Beweist,
+  dass der Chat mit dem **eigenen** Schluessel antwortet (Helfer
+  `/tmp/qa/chat-oberflaeche.mjs`).
+- **Zwei Messfehler dieser Runde, beide meine:** der QA-Helfer las das Passwort als
+  letztes Wort der Zugangszeile - die Zeile trug es aber nach dem Wort `passwort`,
+  deshalb blieb die Anmeldemaske leer („Enter Your Password“). Der Helfer benutzt
+  jetzt dieselbe Regel wie `chat_zugang()` in `scripts/60-install-open-webui.sh`.
+  Zweiter Irrtum: ich hielt das Fehlen von `litellm_*`-Reihen in Prometheus fuer einen
+  Defekt - es ist eine begruendete Entscheidung in `config/monitoring/prometheus.yml`
+  (Chainguard-Image ohne `prometheus-client`, `/metrics` liefert 404; Anleitung zum
+  Freischalten in `docs/monitoring.md`). Lebensdauer des Gateways wird ueber
+  `llm_unit_active` gemessen; gemessen: **18 Einheiten melden 1**, darunter `litellm`.
+- **Neuer Pruefpunkt 16 „Chat-Dienst“ in `scripts/doctor.sh`:** Unit laeuft,
+  `/health` antwortet, und die Chat-Umgebung haelt einen **eigenen** Gateway-
+  Schluessel. Der dritte Punkt ist die Sicherung der letzten Aenderung nach oben.
+  Gegentestet in einer Wegwerf-Umgebung (`LLM_INFRA_SECRETS_DIR`): Master im Chat =
+  FEHLER mit naechstem Befehl, fehlender Schluessel = FEHLER mit naechstem Befehl.
+  Gesamtstand: **16 Pruefpunkte, 0 Fehler, 4 Warnungen**.
+
+
 ## 2026-11-16 (Runde: Chat ohne Master-Schluessel, Dashboard ohne No-Data, Diagnosefall Laufzeit)
 
 - **Chat-Dienst ohne Master-Schluessel:** `open-webui.env` enthielt den

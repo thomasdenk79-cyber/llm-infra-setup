@@ -340,6 +340,35 @@ for url in 'https://homepage.localhost/' 'https://grafana.localhost/grafana/'; d
   fi
 done
 
+# 15 Chat-Dienst ---------------------------------------------------------------
+title 'Chat-Dienst'
+# Der Chat ist die einzige Flaeche, die Anwenderinnen und Anwender direkt
+# ansprechen: Laeuft die Unit, antwortet die Anwendung, und haelt sie einen
+# eigenen Gateway-Schluessel? Der letzte Punkt ist der wichtige - der
+# Master-Schluessel des Gateways kann Schluessel anlegen und loeschen und darf
+# deshalb in der Chat-Umgebung nicht stehen. Verglichen wird nur, nie ausgegeben.
+if systemctl --user is-active --quiet open-webui.service 2>/dev/null; then
+  good 'Chat-Unit (open-webui) laeuft'
+else
+  warn 'Chat-Unit laeuft nicht; die Chat-Oberflaeche ist dann nicht erreichbar.' './scripts/60-install-open-webui.sh'
+fi
+chat_code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 6 'http://127.0.0.1:3001/health' 2>/dev/null || printf '000')"
+if [[ "${chat_code}" == '200' ]]; then
+  good 'Chat-Dienst antwortet auf /health'
+else
+  bad "Chat-Dienst antwortet nicht auf /health (${chat_code})." './scripts/60-install-open-webui.sh --check'
+fi
+chat_schluessel="$(sed -n 's/^OPENAI_API_KEY=//p' "${SECRETS_DIR}/open-webui.env" 2>/dev/null | head -1)"
+master_schluessel="$(sed -n 's/^LITELLM_MASTER_KEY=//p' "${SECRETS_DIR}/gateway.env" 2>/dev/null | head -1)"
+if [[ -z "${chat_schluessel}" ]]; then
+  bad 'Chat-Umgebung hat keinen Gateway-Schluessel.' './scripts/60-install-open-webui.sh'
+elif [[ -n "${master_schluessel}" && "${chat_schluessel}" == "${master_schluessel}" ]]; then
+  bad 'Chat-Umgebung haelt den Master-Schluessel des Gateways - der darf Schluessel anlegen und loeschen.' \
+    "chat_schluessel-Zeile in ${SECRETS_DIR}/open-webui.env loeschen, dann ./scripts/60-install-open-webui.sh --provision"
+else
+  good 'Chat-Dienst haelt einen eigenen Gateway-Schluessel (nicht den Master)'
+fi
+
 # Abschluss -------------------------------------------------------------------
 printf '\n\033[1mErgebnis\033[0m\n'
 printf '  %d Pruefpunkte, %d Fehler, %d Warnungen\n' "${checks}" "${fails}" "${warns}"

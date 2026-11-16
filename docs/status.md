@@ -7,6 +7,25 @@ Git-Verlauf: `git show HEAD:docs/status.md`. Fortsetzungsanker ist
 
 ## Verifizierter Zustand (2026-11-16)
 
+### Chat-Dienst und Gateway-Zugang
+
+Der Chat haelt einen **eigenen** Gateway-Schluessel (Alias `open-webui`, ausgegeben
+von `scripts/71-gateway-keys.sh`, gespeichert in
+`~/.config/llm-infra/gateway-proxy/issued-keys.txt`). Der Master-Schluessel des
+Gateways steht nicht mehr in `open-webui.env` - er kann Schluessel anlegen und
+loeschen und gehoert nicht in eine Anwendung fuer Anwenderinnen und Anwender.
+Ausgestellt wird er von `chat_service_key()` in `lib/secrets.sh`, damit dafuer keine
+zweite Stelle im Repo existiert. Gemessen: Anmeldung und Anfrage ueber die
+Oberflaeche, `POST /api/chat/completions` mit HTTP 200, angezeigte Modellantwort
+(„Paris“), keine Konsolenfehler; `scripts/doctor.sh` Pruefpunkt 16 meldet drei OK und
+schlaegt fehl, wenn der Master doch wieder im Chat steht (gegentestet).
+
+Gateway-Eigenmetriken (`litellm_*`) fehlen in Prometheus **bewusst**: das
+Chainguard-Image enthaelt kein `prometheus-client`, `/metrics` liefert 404. Die
+Lebensdauer laeuft ueber `llm_unit_active{unit="litellm"}` aus
+`scripts/collect-host-facts.sh`; gemessen melden 18 Einheiten den Wert 1. Freischaltweg
+fuer echte Gateway-Metriken: `docs/monitoring.md`.
+
 ### Inferenz-Laufzeit
 
 Der unmanaged Container `flash-next-v3` (vLLM, Bild
