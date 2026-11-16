@@ -7,6 +7,23 @@ Git-Verlauf: `git show HEAD:docs/status.md`. Fortsetzungsanker ist
 
 ## Verifizierter Zustand (2026-11-16)
 
+### CDI-Beschreibung
+
+Der Arztlauf meldet die CDI-Beschreibung als „38 h alt“. Das ist kein Fehler, sondern
+ein Hinweis mit Verfallsdatum: die Datei `etc/containers/cdi.d/nvidia.com.yaml` entsteht
+bei `make podman`, und dieses Ziel startet einen GPU-Testcontainer. Die Grafikkarte
+gehoert aber dem Modell (Grundregel 2), deshalb wird sie nicht nebenbei fuer eine
+Auffrischung angefasst.
+
+Nachholen, wenn eines davon zutrifft: NVIDIA-Treiber gewechselt, neue CUDA-Version,
+neue Karte, oder die Laufzeit klagt ueber fehlende Geraete. Dann in einem fenster
+ohne laufende Anfragen:
+
+```bash
+make podman            # erzeugt CDI neu und testet die Karte in einem Wegwerfcontainer
+./scripts/doctor.sh    # die Warnung muss weg sein
+```
+
 ### Alarmierung
 
 Der Alertmanager laeuft **bewusst ohne Empfaenger** (Betreiberentscheidung vom

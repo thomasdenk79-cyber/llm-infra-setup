@@ -36,6 +36,23 @@ else
   teile_fehlend+=('Konfiguration aus dem Repo')
 fi
 
+# Betreiber-Einstellungen aus config/host.env: die Datei legt Pfade, Ports und den
+# Containernamen fest und wird von keinem Skript neu erzeugt - nach einem Totalausfall
+# waeren sie weg. Mit in die Sicherung, aber ohne Zugangswerte: Zeilen, deren Name
+# nach Schluessel, Token, Passwort oder Secret aussieht, bleiben draussen; dafuer ist
+# ensure-credentials.sh zustaendig.
+if [[ -f "${root}/config/host.env" ]]; then
+  if grep -qvE '^[[:space:]]*(#|$)' "${root}/config/host.env"; then
+    if grep -vE '^[[:space:]]*[A-Za-z_]*(API_?KEY|TOKEN|SECRET|PASSWORT|PASSWORD|PASS)[A-Za-z_]*=' \
+         "${root}/config/host.env" > "${dest}/host.env"; then
+      chmod 0600 "${dest}/host.env"
+      log 'Betreiber-Einstellungen gespeichert (ohne Zugangswerte).'
+    else
+      teile_fehlend+=('Betreiber-Einstellungen aus config/host.env')
+    fi
+  fi
+fi
+
 if command -v podman >/dev/null 2>&1 && \
    [[ "$(podman ps --format '{{.Names}}' 2>/dev/null || true)" == *litellm-postgres* ]]; then
   # shellcheck disable=SC1090
@@ -111,14 +128,36 @@ print(f'{len(files)} Dateien im Manifest')
 PY
 tar -czf "${dest_base}/llm-infra-backup-${ts}.tar.gz" -C "${dest_base}" "${ts}"
 rm -rf "${dest}"
+archiv="${dest_base}/llm-infra-backup-${ts}.tar.gz"
+
+# Selbstpruefung: 'fertig' soll heissen, dass das Archiv sich selbst und seine
+# Pruefsummen hat - nicht nur, dass tar mit 0 endete (genau da hatte ein frueherer
+# Lauf drei Grafana-Ordner stillschweigend weggelassen).
+if ./scripts/restore.sh --check "${archiv}" >"${STATE_DIR}/backup-check.log" 2>&1; then
+  log 'Archiv selbst geprueft: Manifest und Pruefsummen stimmen.'
+else
+  teile_fehlend+=('Selbstpruefung des Archivs')
+  printf '  Nachlesen: %s\n' "${STATE_DIR}/backup-check.log"
+fi
+
+# Aufbewahrung: die Archive sind hunderte MB gross. Ohne Grenze laeuft der Ordner
+# voll und die Sicherung hort auf zu funktionieren - behalten wird die neueste Zahl
+# aus LLM_BACKUP_ANZAHL, und das nur, wenn der neue Lauf vollstaendig war.
+if (( ${#teile_fehlend[@]} == 0 )); then
+  : "${LLM_BACKUP_ANZAHL:=3}"
+  while IFS= read -r alt; do
+    [[ -n "${alt}" ]] || continue
+    rm -f "${alt}" && log "alte Sicherung entfernt: $(basename "${alt}")"
+  done < <(ls -1t "${dest_base}"/llm-infra-backup-*.tar.gz 2>/dev/null | tail -n +"$((LLM_BACKUP_ANZAHL + 1))")
+fi
 
 if (( ${#teile_fehlend[@]} > 0 )); then
   printf '\n\033[31mBackup unvollstaendig:\033[0m %s\n' "$(IFS=', '; printf '%s\n' "${teile_fehlend[*]}")"
-  printf '  Das Archiv liegt trotzdem da (lueckenhaft): %s\n' "${dest_base}/llm-infra-backup-${ts}.tar.gz"
+  printf '  Das Archiv liegt trotzdem da (lueckenhaft): %s\n' "${archiv}"
   printf '  Naechster Befehl: %s\n' './scripts/doctor.sh   # zeigt, welcher Dienst nicht laeuft'
   exit 1
 fi
-printf '\nBackup fertig: %s\n' "${dest_base}/llm-infra-backup-${ts}.tar.gz"
+printf '\nBackup fertig und geprueft: %s\n' "${archiv}"
 printf 'Inhalt pruefen: ./scripts/restore.sh --list\n'
 printf 'Achtung: Die ZFS-Snapshots bleiben liegen. Loeschen nur von Hand (bewusst):\n'
 printf '  zfs list -t snapshot -o name,used | grep llm-infra\n'

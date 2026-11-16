@@ -28,13 +28,26 @@ list() {
 }
 
 extract() {
-  local base="$1" tarball
-  [[ -d "${base}" ]] && return 0
+  # Liefert das Verzeichnis, in dem manifest.json liegt. Der Archivkopf ist der
+  # Stempel allein (20261116T133541Z/), der Archivname traegt zusaetzlich das
+  # Praefix - die beiden Deckel identisch zu behandeln war ein Defekt: jedes
+  # --check, config und database lief auf ein Verzeichnis, das es nicht gab.
+  local base="$1" tarball ziel ordner
+  if [[ -d "${base}" ]]; then
+    printf '%s\n' "${base}"
+    return 0
+  fi
   tarball="${base%.tar.gz}.tar.gz"
   [[ -f "${tarball}" ]] || { echo "Backup nicht gefunden: ${base} (auch nicht ${tarball})" >&2; exit 1; }
-  base="$(mktemp -d)/$(basename "${tarball}" .tar.gz)"
-  install -d -m 0700 "$(dirname "${base}")"
-  tar -xzf "${tarball}" -C "$(dirname "${base}")"
+  ziel="$(mktemp -d)"
+  chmod 0700 "${ziel}"
+  tar -xzf "${tarball}" -C "${ziel}"
+  base="${ziel}"
+  if [[ ! -f "${base}/manifest.json" ]]; then
+    for ordner in "${ziel}"/*/; do
+      [[ -f "${ordner}manifest.json" ]] && { base="${ordner%/}"; break; }
+    done
+  fi
   printf '%s\n' "${base}"
 }
 
@@ -75,6 +88,13 @@ PY
     echo 'Vergleich mit dem aktuellen Stand:'
     diff -rq "${stage}/config" "${root}/config" 2>&1 | head -20 || true
     echo
+    if [[ -f "${base}/host.env" ]]; then
+      echo 'Betreiber-Einstellungen (config/host.env) - Vergleich mit dem aktuellen Stand:'
+      diff -u "${base}/host.env" "${root}/config/host.env" 2>&1 | head -20 || true
+      echo 'Wenn das passt, uebernehmen:'
+      printf '  cp -a %s/host.env %s/config/host.env\n' "${base}" "${root}"
+      echo
+    fi
     echo 'Wenn das passt, uebernehmen:'
     printf '  cp -a %s/config/. %s/config/ && ./scripts/deploy-ready.sh\n' "${stage}" "${root}"
     echo 'Hinweis: Passwort-Dateien waren bewusst nicht im Backup; neu erzeugen mit'

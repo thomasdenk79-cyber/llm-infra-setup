@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-11-16T15:41:30+01:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-11-16T15:44:43+01:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe (2026-11-16)
 
@@ -440,3 +440,7 @@ speicher-dashboard ohne totes ple-ziel, alle sichtbaren panels mit daten
 ## Notiz 2026-11-16T15:41:30+01:00
 
 waechter installiert und fail-closed, dashboards ohne tote zeile
+
+## Notiz 2026-11-16T15:44:43+01:00
+
+rueckgabepfad repariert, sicherung mit selbstpruefung und aufbewahrung
