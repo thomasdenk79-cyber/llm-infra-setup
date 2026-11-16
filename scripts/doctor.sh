@@ -174,10 +174,25 @@ else
 fi
 
 # 9 Runtime -------------------------------------------------------------------
+# RUNTIME_SERVICE war hier bisher nur benutzt, aber nie gesetzt: die Zeile "Unit
+# laeuft" konnte damit nie erscheinen, und nach dem Anlegen einer Unit blieb die
+# Warnung stehen. Bestimmt wird sie jetzt aus host.env (RUNTIME_UNIT); findet die
+# Konfiguration nichts, sucht der Arztlauf die Unit zum Container beim Namen.
+RUNTIME_SERVICE=""
+if [[ -n "${RUNTIME_UNIT:-}" ]]; then
+  RUNTIME_SERVICE="${RUNTIME_UNIT}.service"
+else
+  gefunde_unit="$(systemctl --user list-unit-files --no-legend "${RUNTIME_CONTAINER}*.service" 2>/dev/null | awk '{print $1; exit}')"
+  RUNTIME_SERVICE="${gefunde_unit:-}"
+fi
+
 title 'Inferenz-Laufzeit'
 if runtime_is_running; then
-  if [[ -n "${RUNTIME_SERVICE}" ]]; then
+  if [[ -n "${RUNTIME_SERVICE}" ]] && systemctl --user is-active --quiet "${RUNTIME_SERVICE}"; then
     good "Unit ${RUNTIME_SERVICE} laeuft"
+  elif [[ -n "${RUNTIME_SERVICE}" ]]; then
+    warn "Unit ${RUNTIME_SERVICE} ist bekannt, aber nicht aktiv - das Modell laeuft an ihr vorbei." \
+         "systemctl --user start ${RUNTIME_SERVICE}    (pruefen vorher: ./scripts/apply-runtime-unit.sh --list)"
   else
     # Ein Container ohne Unit ueberlebt keinen Neustart: er wurde von Hand gestartet,
     # ohne dass quadlet/ oder eine Unit-Datei ihn beschreibt. Als 'gut' durchgehen

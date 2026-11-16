@@ -14,6 +14,7 @@ INFERENCE_UNITS=(
   llm-inference.network
   litellm-postgres.container
   pennyroyal.container
+  flash-next.container
   litellm.container
   open-webui.container
 )
