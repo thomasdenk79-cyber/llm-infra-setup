@@ -1,4 +1,23 @@
 # Aenderungsprotokoll
+## 2026-11-16 (Runde: Drift-Pruefung ohne Eingriff, Pennyroyal-Unit berichtigt)
+
+- Fehler behoben: `scripts/check-drift.sh` liess die Generatoren im
+  Arbeitsverzeichnis laufen und verglich danach mit `git diff`. Die Pruefung war damit
+  selbst der Eingriff, den sie melden soll: nach jedem `make drift` lag eine geaenderte
+  `quadlet/pennyroyal.container` im Baum, und `make ci` rollte bei dieser Gelegenheit
+  Units aus (`render_unit` nach `~/.config/containers/systemd`, `daemon-reload`,
+  `systemctl --user start`). Heute laufen die Generatoren in einer weggeworfenen
+  `git worktree`-Kopfe des committeten Standes; die neue Drift-Kapsel in
+  `lib/units.sh` (`LLM_DRIFT=1`) lenkt alle Ausroll-Schritte in einen leeren Ordner und
+  verdeckt `systemctl`, weil einzelne Generatoren es direkt aufrufen. `--restore` ist
+  weggefallen. Gemessen: `make drift` meldet die bekannte Pennyroyal-Abweichung weiter
+  (`DRIFT GEFUNDEN`, Exit ungleich 0), Unit-Verzeichnis vor/nach dem Lauf identisch,
+  kein Container neu gestartet, Arbeitsverzeichnis unveraendert.
+- Eigener Fehler berichtigt: `88a95c8` hatte `quadlet/pennyroyal.container`
+  mitgenommen, waehrend die alte Pruefung die Generatorfassung in den Baum schrieb -
+  das Upstream-Bild stand im Repo statt der Fork-Fassung des Betreibers. Zurueck auf
+  den Stand `e9085c6` (`localhost/flash-next-sm120:serving`, `093e2bf`).
+
 ## 2026-11-16 (Runde: Anleitung wieder bedient, Proxy-Pflichtpunkte)
 
 - Fehler behoben: die TOOLS-Kachel **Agent-Anleitung** zeigte auf

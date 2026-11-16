@@ -96,12 +96,20 @@ Das Repository ist das Backup.
   Windows-Schnellstart aus dem alten Bestand (`luni-llmops-linux`, Zweig
   `fix/homepage-local-recovery`) und den Betriebsteil, und wird von Caddy unter
   `/anleitung/` bedient. Gemessen: `200`, Kachelklick oeffnet `_blank` mit `200`.
-- **`check-drift.sh` schreibt in die committeten Dateien:** die Pruefung ruft die
-  Generatoren auf, und `scripts/50-install-pennyroyal.sh` schreibt sein Ergebnis in
-  die Datei im Arbeitsverzeichnis. Nach jedem `make drift` liegt deshalb eine
-  geaenderte `quadlet/pennyroyal.container` im Baum. Bis zur Entscheidung oben nicht
-  committten, sondern mit `git restore quadlet/pennyroyal.container` zuruecknehmen -
-  sonst unterschreibt ein Commit unbeaufsichtigt die Generatorfassung.
+- **`check-drift.sh` aendert den Baum nicht mehr (2026-11-16, gemessen):** die Pruefung
+  liess die Generatoren im Arbeitsverzeichnis laufen und verglich dann mit `git diff`
+  - derselbe Eingriff, den sie melden soll. Nach jedem `make drift` lag eine
+  geaenderte `quadlet/pennyroyal.container` im Baum, und ein `git add` darauf haette
+  unbeaufsichtigt die Generatorfassung unterschrieben. Genau das ist passiert: Commit
+  `88a95c8` brachte das Upstream-Bild `ghcr.io/jpezzulli/sglang-rtxpro6000:v2.5.3`
+  statt der Fork-Fassung des Betreibers ins Repo; zurueckgenommen in `093e2bf`
+  (Stand `e9085c6`). Heute laufen die Generatoren in einer weggeworfenen
+  `git worktree`-Kopfe, und die Drift-Kapsel in `lib/units.sh` (`LLM_DRIFT=1`)
+  verhindert Installation, `daemon-reload` und Starts - auch bei Generatoren, die
+  `systemctl` direkt aufrufen. Gemessen nach dem Umbau: `make drift` schlaegt weiter
+  rot an fuer die bekannte Pennyroyal-Abweichung, das Arbeitsverzeichnis bleibt
+  unbearbeitet, Unit-Verzeichnis und Container unveraendert. `--restore` ist
+  weggefallen (nichts mehr zurueckzuholen).
 
 1. Nach jeder Aenderung sichern: `./scripts/session-checkpoint.sh "kurze Notiz"`
    (AGENTS Grundregel 0; prueft, committet, pushed).

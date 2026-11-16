@@ -199,3 +199,39 @@ installed_unit_diff() {
   fi
   rm -f "${rendered}"; return 1
 }
+
+# ---------------------------------------------------------------------------
+# Drift-Kapsel. check-drift.sh laesst die Generatoren laufen, um ihre Ausgabe mit
+# dem committeten Stand zu vergleichen. Ohne diese Kapsel waere das ein echter
+# Ausrolllauf: Units nach ~/.config/containers/systemd installiert,
+# daemon-reload ausgeloesen und Container gestartet - ein Prueflauf (und damit
+# `make ci`) wuerde die lebende Konfiguration veraendern. Mit LLM_DRIFT=1 landen
+# alle Ausroll-Schritte in einem leeren Ordner, und systemctl bleibt zu. Die
+# Definitionen stehen am Dateiende, weil sie die oberen sonst wieder verdecken
+# wuerden (die Datei wird von oben nach unten ausgefuehrt).
+if [[ "${LLM_DRIFT:-0}" == '1' ]]; then
+  UNIT_DIR="${LLM_DRIFT_UNIT_DIR:-${TMPDIR:-/tmp}/llm-drift-units}"
+  WANTS_DIR="${UNIT_DIR}/default.target.wants"
+
+  prune_legacy_units()     { log "LLM_DRIFT: veraltete Einheiten unberuehrt (Verzeichnis ${UNIT_DIR})"; }
+  systemd_reload()         { log 'LLM_DRIFT: daemon-reload uebersprungen'; }
+  start_units()            { log "LLM_DRIFT: Start uebersprungen: $*"; }
+
+  # Die Funktion verdeckt das kommando: einzelne Generatoren rufen systemctl
+  # direkt auf (reload/restart der eigenen Unit) statt ueber start_units. Ohne
+  # diese Kapsel wuerde ein Prueflauf den laufenden Proxy neu starten.
+  systemctl() { log "LLM_DRIFT: systemctl $* uebersprungen"; return 0; }
+
+  install_systemd_units() {
+    # Gleiche Arbeit, aber in den Drift-Ordner statt in die lebende Konfiguration.
+    local name src dst_dir="$1"; shift
+    for name in "$@"; do
+      src="${SYSTEMD_SRC_DIR}/${name}"
+      [[ -f "${src}" ]] || { log "FEHLT: systemd/${name} fehlt."; return 1; }
+      install -d -m 0755 "${UNIT_DIR}"
+      sed "s#@CONFIG_ROOT@#${REPO_ROOT}#g" "${src}" > "${UNIT_DIR}/${name}"
+      chmod 0644 "${UNIT_DIR}/${name}"
+    done
+    log "LLM_DRIFT: systemd-Dateien nach ${UNIT_DIR} geschrieben"
+  }
+fi
