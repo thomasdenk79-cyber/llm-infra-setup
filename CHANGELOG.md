@@ -1,6 +1,19 @@
 # Aenderungsprotokoll
 ## 2026-11-16 (Runde: drei Betreiberentscheidungen - Drift, Laufzeit-Unit, Alarmkanal)
 
+- **Lektüre auf den Stand gebracht.** Die README-Tabelle nennt jetzt die benannten
+  HTTPS-Einstiege (`https://homepage.localhost`,
+  `https://grafana.localhost/grafana/`) vor den Loopback-Adressen, fuehrt Wiki,
+  Alertmanager und den vLLM-Weiterleiter, und stattet die Laufzeile mit dem
+  tatsaechlichen Port 30000 aus (vorher: Pennyroyal 8001). Das Architekturdiagramm
+  zeigt vLLM-Laufzeit, Weiterleiter und die oeffentliche Azure-Route statt des
+  sglang-Forks; die alte Messung ist als Stand von 2026-10-02 gekennzeichnet.
+  `docs/install.md` beschreibt das Kontoskript statt Handregistrierung, und die
+  Skriptkarte in `AGENTS.md` fuehrt `64-setup-open-webui-account.sh`,
+  `65-configure-siemens-api.sh`, `70-setup-gateway-proxy.sh`, `71-gateway-keys.sh`,
+  `73-setup-vllm-forwarder.sh`, `74-setup-local-proxy.sh`, `76-setup-runtime-unit.sh`
+  sowie die neuen Modi von `apply-runtime-unit.sh`.
+
 - **Drift mit dokumentierter Ausnahmeliste.** `scripts/check-drift.sh` fuehrt jetzt
   `ausnahmen=( 'quadlet/pennyroyal.container' )`: die committete Fork-Unit bleibt die
   Wahrheit, der Generator darf sie nicht erreichen. Die Abweichung wird bei jedem Lauf

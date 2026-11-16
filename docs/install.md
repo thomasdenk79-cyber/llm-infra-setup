@@ -59,9 +59,17 @@ make healthcheck
 ./scripts/backup.sh              # erste Sicherung anlegen
 ```
 
-Browser: http://127.0.0.1:3002 (Portal), http://127.0.0.1:3001 (Chat).
-Im Chat einmal registrieren - dieser Account ist Admin - danach
-`ENABLE_SIGNUP=false` in `~/.config/llm-infra/open-webui.env` setzen.
+Browser: https://homepage.localhost (Portal) und https://grafana.localhost/grafana/
+(Dashboards, ohne Anmeldung lesbar). Der Chat laeuft unter http://127.0.0.1:3001;
+das erste Konto legt das Repo an, Handarbeit ist dafuer nicht noetig:
+
+```bash
+./scripts/64-setup-open-webui-account.sh   # Konto anlegen, Zugangswert nach
+                                           # ~/.config/llm-infra/open-webui.env (0600)
+```
+
+Danach ist Registrierung geschlossen (`ENABLE_SIGNUP=false` in
+`~/.config/llm-infra/open-webui.env`); neue Konten entstehen nur ueber das Skript.
 
 ## ThinkPad L15 mit externer Grafikkarte
 

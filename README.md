@@ -10,12 +10,14 @@
 
 ```mermaid
 flowchart LR
-  agents["Agenten: hermes, opencode, copilot"] -->|"OpenAI-API"| litellm["LiteLLM Gateway, Port 4000"]
+  agents["Agenten: opencode, Kollegen"] -->|"OpenAI-API"| litellm["LiteLLM Gateway, Port 4000"]
   humans["Menschen: Open WebUI, Port 3001"] --> litellm
-  litellm --> pennyroyal["Pennyroyal sglang-Fork, Port 8001"]
-  pennyroyal --> gpu[("RTX PRO 6000 Blackwell")]
-  pennyroyal -.->|"sglang Metriken"| prom["Prometheus, Port 9090"]
-  podman["12 Podman-Container"] --> alloy["Alloy"]
+  public["Oeffentlich: Azure-Gateway-VM, 443"] -->|"Reverse-Tunnel"| litellm
+  litellm --> forwarder["vLLM-Weiterleiter, Port 30001"]
+  forwarder --> runtime["vLLM-Laufzeit flash-next, Port 30000"]
+  runtime --> gpu[("RTX PRO 6000 Blackwell")]
+  runtime -.->|"vLLM-Metriken"| prom["Prometheus, Port 9090"]
+  podman["Container-Protokolle"] --> alloy["Alloy"]
   alloy --> loki["Loki, Port 3100"]
   prom --> grafana["Grafana, Port 3000"]
   loki --> grafana
@@ -51,16 +53,30 @@ make healthcheck
 
 `make` ohne Argument zeigt alle Befehle mit Erklaerung.
 
-## Was dann läuft (alle Ports nur auf 127.0.0.1)
+## Was dann laeuft
+
+Der Einstieg fuer den Menschen ist benanntes HTTPS ueber den lokalen Caddy
+(ausschliesslich Loopback, Host `127.0.0.1:443`): `https://homepage.localhost`
+fuer das Portal und `https://grafana.localhost/grafana/` fuer die Dashboards.
+Zertifikat ist Caddys eigene lokale CA; einmal verankern mit
+`./scripts/74-setup-local-proxy.sh --ca-import`.
+
+Alle Dienstports bleiben auf `127.0.0.1` (Ausnahme: der freigegebene oeffentliche
+443-Pfad ueber den Azure-Tunnel, siehe `docs/gateway-proxy.md`).
 
 | Adresse | Dienst | Wofuer |
 |---|---|---|
-| http://127.0.0.1:3002 | Homepage | Einstiegseite fuer den Betreiber |
+| https://homepage.localhost | Homepage | Einstiegseite fuer den Betreiber |
+| https://grafana.localhost/grafana/ | Grafana | Dashboards, ohne Anmeldung lesbar |
 | http://127.0.0.1:3001 | Open WebUI | Chat, Dateien, RAG |
+| http://127.0.0.1:3002 | Homepage | Portal direkt (ohne Proxy, nur Diagnose) |
+| http://127.0.0.1:3000 | Grafana | Grafana direkt (ohne Proxy, nur Diagnose) |
+| http://127.0.0.1:3003 | Wiki | Anleitung und Handbuch |
 | http://127.0.0.1:4000 | LiteLLM | ein Gateway, ein Schluessel |
-| http://127.0.0.1:8001 | Pennyroyal | Runtime direkt (nur Diagnose) |
-| http://127.0.0.1:3000 | Grafana | vier Dashboards |
+| http://127.0.0.1:30000 | vLLM-Laufzeit | Modell direkt (nur Diagnose) |
+| http://127.0.0.1:30001 | vLLM-Weiterleiter | Uebersetzung fuer den Gateway |
 | http://127.0.0.1:9090 | Prometheus | Metriken und Alarmregeln |
+| http://127.0.0.1:9093 | Alertmanager | Alarme, bewusst ohne Empfaenger |
 | http://127.0.0.1:8080 | Dozzle | Live-Protokolle |
 
 Zugangsdaten werden bei der ersten Einrichtung erzeugt und liegen **nicht** im
@@ -73,6 +89,9 @@ Podman-Secret:
 
 ## Geschwindigkeit
 
+Die Zahlen unten sind ein Stand vom 2026-10-02 mit Pennyroyal v2.5.3; seitdem
+laeuft auf diesem Rechner die vLLM-Laufzeit `flash-next` (Gemessenes: `make
+benchmark` bzw. `./scripts/benchmark.sh`, eingeordnet in `docs/performance.md`).
 Gemessen am 2026-10-02 mit Pennyroyal v2.5.3: 157,88 Token/s bei einem normalen
 Prompt, 119,01 Token/s bei langem Prompt, 242 Token/s insgesamt bei vier
 gleichzeitigen Anfragen. Die Einzelanfrage bleibt bei etwa 160 Token/s stehen,

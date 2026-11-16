@@ -3,8 +3,11 @@
 ## Zweck
 
 Versionierte Quelle der Wahrheit fuer die lokale LLM-Infrastruktur: CachyOS/Arch,
-rootless Podman, ZFS, NVIDIA RTX PRO 6000, Pennyroyal/SGLang, LiteLLM, Open WebUI
-und die Beobachtungsstapel (Prometheus, Grafana, Loki, Alloy, Dozzle).
+rootless Podman, NVIDIA RTX PRO 6000, vLLM-Laufzeit `flash-next` (die
+Pennyroyal/SGLang-Unit bleibt als Referenz gepflegt, laeuft hier aber nicht),
+LiteLLM, Open WebUI und die Beobachtungsstapel (Prometheus, Grafana, Loki, Alloy,
+Dozzle). ZFS und PLE sind vorgesehen, auf diesem Rechner aber nicht in Betrieb -
+welche Speicherform tatsaechlich laeuft, steht in `docs/status.md`.
 
 ## Grundregel 0: Arbeitsstand ist gesichert, bevor etwas anderes passiert
 
@@ -90,7 +93,14 @@ Das Repository ist das einzige Backup dieser Arbeit. Deshalb gilt fuer jeden Sch
 | `scripts/61-install-autossh.sh` | optionaler Wartungstunnel, nur ein Schluessel, kein `apk add` zur Laufzeit |
 | `scripts/62-install-komodo.sh` | optionale Periphery, bricht ohne echten Server ab |
 | `scripts/63-install-postgres.sh` | Datenbank-Unit |
+| `scripts/64-setup-open-webui-account.sh` | erstes Chat-Konto anlegen, Zugangswert nach `~/.config/llm-infra/`, `--check` |
+| `scripts/65-configure-siemens-api.sh` | Siemens-API-Schluessel in der Gateway-Umgebung, ohne ihn auszugeben |
 | `scripts/65-install-gpu-exporter.sh` | GPU-Metriken (nvidia-smi oder dcgm) |
+| `scripts/70-setup-gateway-proxy.sh` | oeffentlicher Zugang: Reverse-Tunnel zur Azure-Gateway-VM, Caddy mit TLS an 443 |
+| `scripts/71-gateway-keys.sh` | persoenliche Virtual-Keys ausgeben und widerrufen |
+| `scripts/73-setup-vllm-forwarder.sh` | Weiterleiter der vLLM-Runtime ins Inferenz-Netz (Gateway versteht vLLM nicht direkt) |
+| `scripts/74-setup-local-proxy.sh` | lokales HTTPS unter Namen (`homepage.localhost`, `grafana.localhost`), `--ca-import` |
+| `scripts/76-setup-runtime-unit.sh` | Laufzeit-Unit aus dem laufenden Container aufnehmen (`--import-from-container`) und bauen, `--check` |
 | `scripts/collect-host-facts.sh` | Host-Kennzahlen als Textdatei fuer den node_exporter |
 | `scripts/runtime-watchdog.sh` | wacht ueber die Runtime, `--install`/`--uninstall` |
 | `scripts/litellm-watchdog.sh` | wacht ueber den Gateway (Liveliness+Smoke), `--install`/`--uninstall`/`--reset` |
@@ -100,7 +110,7 @@ Das Repository ist das einzige Backup dieser Arbeit. Deshalb gilt fuer jeden Sch
 | `scripts/deploy-non-gpu.sh` | ohne GPU: Portal, Chat, Gateway, Beobachtung |
 | `scripts/deploy-ready.sh` | Vollstaendiger Einstieg nach Neustart, prueft Voraussetzungen |
 | `scripts/deploy-all.sh` | Wrapper ueber mehrere Units (Betreiberaktion) |
-| `scripts/apply-runtime-unit.sh` | Unit-Aenderungen sicher anwenden, `--list`, `--dry-run`, `--restart-only` |
+| `scripts/apply-runtime-unit.sh` | Unit-Aenderungen sicher anwenden, `--list`, `--dry-run`, `--install-only`, `--restart-only`, `--takeover` (bricht bei laufenden Anfragen ab) |
 | `scripts/doctor.sh` | gefuehrte Diagnose; Ausgabe endet mit dem naechsten Befehl |
 | `scripts/healthcheck.sh` | Kurzpruefung; Langform ist `doctor.sh` |
 | `scripts/benchmark.sh` + `benchmark_probe.py` | Messung von Vorlaufzeit und Schreibrate |
