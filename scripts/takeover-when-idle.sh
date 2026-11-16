@@ -94,7 +94,9 @@ check() {
     echo "${zaehler}" > "${zaehler_datei}"
     anzeige=${zaehler}
     (( anzeige > LLM_TAKEOVER_PROBEN )) && anzeige=${LLM_TAKEOVER_PROBEN}
-    say "Leerlauf gemessen (${anzeige}/${LLM_TAKEOVER_PROBEN})."
+    if (( zaehler == 1 || zaehler == LLM_TAKEOVER_PROBEN )); then
+      say "Leerlauf gemessen (${anzeige}/${LLM_TAKEOVER_PROBEN})."
+    fi
     if (( zaehler < LLM_TAKEOVER_PROBEN )); then
       return 0
     fi
@@ -132,7 +134,7 @@ case "${1:-check}" in
     install_systemd_units "${HOME}/.config/systemd/user" llm-runtime-takeover.service llm-runtime-takeover.timer
     systemd_reload
     systemctl --user enable --now llm-runtime-takeover.timer
-    say "Wartender Uebernahme-Timer aktiv (alle 10 Minuten). Automatik: ${LLM_TAKEOVER_AUTOMATIK} (1 = er wuerde selbst neu starten)."
+    say "Wartender Uebernahme-Timer aktiv. Automatik: ${LLM_TAKEOVER_AUTOMATIK} (1 = er wuerde selbst neu starten)."
     printf 'Naechster Schritt: ./scripts/takeover-when-idle.sh --status\n'
     ;;
   --uninstall|uninstall)
@@ -146,6 +148,8 @@ case "${1:-check}" in
     tail -6 "${log_datei}" 2>/dev/null || printf '  (noch nichts protokolliert)\n'
     printf 'Leerlauf-Zaehler: %s von %s\n' "$(cat "${zaehler_datei}" 2>/dev/null || echo 0)" "${LLM_TAKEOVER_PROBEN}"
     printf 'Timer: %s\n' "$(systemctl --user is-active llm-runtime-takeover.timer 2>/dev/null || echo inaktiv)"
+    naechster="$(systemctl --user list-timers llm-runtime-takeover.timer --no-legend --no-pager 2>/dev/null | head -1 | awk '{print $1, $2, $3, $4}')"
+    [[ -n "${naechster}" ]] && printf '  naechster Lauf: %s\n' "${naechster}"
     if [[ -f "${bereit_datei}" ]]; then
       printf 'Bereit: %s\n' "$(cat "${bereit_datei}")"
       printf '  Ausfuehren: ./scripts/apply-runtime-unit.sh --takeover\n'

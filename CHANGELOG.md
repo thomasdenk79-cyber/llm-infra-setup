@@ -4,7 +4,7 @@
 - **Neu `scripts/takeover-when-idle.sh` mit Timer.** Die Uebernahme des von Hand
   gestarteten Containers durch `flash-next.service` haengt an einer Bedingung, die man
   nicht bestellen kann: null laufende Anfragen. Der Timer
-  `llm-runtime-takeover.timer` (10 Minuten) misst die Anfragezahl dreimal
+  `llm-runtime-takeover.timer` (2 Minuten) misst die Anfragezahl dreimal
   hintereinander und meldet Uebernahmebereitschaft in
   `state/runtime-takeover/bereits.txt`; der Befehl dazu steht in der Meldung.
   Neustarten tut er standardmaessig nicht (`LLM_TAKEOVER_AUTOMATIK=0`) - die Regel
@@ -13,7 +13,10 @@
   sich der Timer selbst ab.
 - **Beide Pfade gemessen:** ohne Messquelle `unbekannt` -> Zaehler bleibt 0 (kein
   Handeln); kiinstliche Nullmessung -> `1/3, 2/3, 3/3`, Bereitschaftsdatei, kein
-  Neustart. Unit-Vorlagen liegen in `systemd/llm-runtime-takeover.{service,timer}`.
+  Neustart. Der Takt ist aus Prometheus abgeleitet, nicht geraten: ueber 13 Stunden
+  waren 42 % der Messpunkte null, die kuerzesten zusammenhaengenden Fenster 20
+  Minuten - ein Zehn-Minuten-Takt haette sie nie gesehen. Unit-Vorlagen liegen in
+  `systemd/llm-runtime-takeover.{service,timer}`.
 - Doku: neuer Abschnitt "Uebernahme der Laufzeit bei Leerlauf" in
   `docs/operations.md`, Skriptkarte in `AGENTS.md`.
 

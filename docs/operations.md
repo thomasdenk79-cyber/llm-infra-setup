@@ -225,10 +225,18 @@ Luna direkt 1,73 s. Referenz der ersten bewiesenen Kette: 9,78 s Gesamt bei
 Solange die Laufzeit von Hand gestartet ist, gehoert ihr Container keiner Unit -
 ein Rechnerneustart waere das Aus fuer das Modell. `scripts/takeover-when-idle.sh`
 schliesst die Luecke, ohne die Neustart-Regel zu biegen: der Timer
-`llm-runtime-takeover.timer` fragt alle 10 Minuten die Anfragezahl
+`llm-runtime-takeover.timer` fragt alle zwei Minuten die Anfragezahl
 (`vllm:num_requests_running` ueber den Weiterleiter, sonst die Runtime), und erst
 nach drei aufeinanderfolgenden Nullmessungen meldet er Uebernahmebereitschaft in
 `state/runtime-takeover/bereits.txt`.
+
+Der Takt ist an der Wirklichkeit dieses Rechners festgemacht: ueber 13 Stunden
+Beobachtung waren die laufenden Anfragen in 42 % der Messpunkte null, die
+zusammenhaengenden Leerlauf-Fenster waren 20 bis 215 Minuten lang. Bei zwei
+Minuten Takt und drei Messungen in Folge muss ein Fenster also nur sechs Minuten
+halten - bei zehn Minuten Takt waeren die kuerzesten Fenster nie erfasst worden.
+Nachmessen laesst sich das mit `query_range` auf `vllm:num_requests_running`
+gegen Prometheus (Port 9090).
 
 Standardmaessig **startet er nichts neu** - die Regel des Repos ist ein eigener,
 angekuendigter Neustartschritt, und eine Grafikkarte laeuft man nicht nebenbei

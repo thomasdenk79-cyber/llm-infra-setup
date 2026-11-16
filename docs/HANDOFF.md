@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-11-16T15:52:58+01:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-11-16T16:00:11+01:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe (2026-11-16)
 
@@ -457,3 +457,7 @@ aenderungsprotokoll fuer rueckgabe und sicherung
 ## Notiz 2026-11-16T15:52:58+01:00
 
 warteinheit fuer die laufzeit-uebernahme bei leerlauf
+
+## Notiz 2026-11-16T16:00:11+01:00
+
+uebernahme-warten an gemessene leerlauf-fenster angepasst

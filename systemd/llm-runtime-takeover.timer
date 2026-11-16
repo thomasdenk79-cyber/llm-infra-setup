@@ -1,10 +1,14 @@
 [Unit]
-Description=llm-infra Leerlauf-Warten der Laufzeit-Uebernahme (alle 10 Minuten)
+Description=llm-infra Leerlauf-Warten der Laufzeit-Uebernahme
 
 [Timer]
-OnBootSec=300s
-OnUnitActiveSec=10min
-AccuracySec=1min
+# Drei Messungen in Folge muessen null sein; bei zwei Minuten Takt sind das sechs
+# Minuten Ruhe. Die Kirze ist gemessen, nicht geraten: die Leerlauf-Fenster dieses
+# Rechners waren am 2026-11-16 zwischen 20 und 215 Minuten lang. Ein Zehn-Minuten-Takt
+# haette die kuerzesten Fenster (20 Minuten = zwei Messungen) nicht erfasst.
+OnBootSec=60s
+OnUnitActiveSec=2min
+AccuracySec=30s
 
 [Install]
 WantedBy=timers.target
