@@ -176,7 +176,20 @@ fi
 # 9 Runtime -------------------------------------------------------------------
 title 'Inferenz-Laufzeit'
 if runtime_is_running; then
-  if [[ -n "${RUNTIME_SERVICE}" ]]; then good "Unit ${RUNTIME_SERVICE} laeuft"; else good "Container ${RUNTIME_CONTAINER} laeuft"; fi
+  if [[ -n "${RUNTIME_SERVICE}" ]]; then
+    good "Unit ${RUNTIME_SERVICE} laeuft"
+  else
+    # Ein Container ohne Unit ueberlebt keinen Neustart: er wurde von Hand gestartet,
+    # ohne dass quadlet/ oder eine Unit-Datei ihn beschreibt. Als 'gut' durchgehen
+    # darf das nicht, sonst gilt die Laufzeit als verwaltet, obwohl sie niemand
+    # wieder hochfaehrt. Der Fall ist entscheidungsneutral: sobald eine Unit ihn
+    # besitzt, schlaegt diese Zeile von selbst in good um.
+    warn "Container ${RUNTIME_CONTAINER} laeuft, aber keine Unit verwaltet ihn - nach einem Neustart ist das Modell weg." \
+         'Betreiber entscheiden: Unit einrichten (./scripts/apply-runtime-unit.sh, bricht bei laufenden Anfragen ab) oder bewusst von Hand starten.'
+    if ! grep -qs "ContainerName=${RUNTIME_CONTAINER}" "${root}"/quadlet/*.container; then
+      note "In quadlet/ fehlt eine Unit, die ${RUNTIME_CONTAINER} beschreibt - die committete Pennyroyal-Unit nennt einen anderen Container und ein anderes Bild."
+    fi
+  fi
   if curl -fsS --max-time 8 "${RUNTIME_URL}${RUNTIME_HEALTH_PATH}" >/dev/null 2>&1; then
     good "${RUNTIME_HEALTH_PATH} antwortet auf ${RUNTIME_URL}"
     m="$(curl -fsS --max-time 8 "${RUNTIME_URL}${RUNTIME_METRICS_PATH}" 2>/dev/null || true)"

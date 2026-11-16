@@ -37,10 +37,28 @@ env_wert() {
 # Skript, nicht aus dem Texteditor. Zwei Werte muessen stabil bleiben, weil sie
 # bestehendes entwerten wuerden, und werden deshalb uebernommen:
 #   WEBUI_SECRET_KEY   - sonst sind alle Sitzungscookies wertlos
-#   OPENAI_API_KEY     - der Zugang zum Gateway, aus gateway.env erzeugt
+#   OPENAI_API_KEY     - der eigene Schluessel des Chat-Dienstes (chat_service_key),
+#                        bewusst nie der Master-Schluessel des Gateways
 # Das Administratorkonto ist NICHT Sache dieser Datei: es legt
 # scripts/64-setup-open-webui-account.sh an und pflegt den Zugangswert in der
 # Zugangsdatei. Zwei Schreibende fuer dieselbe Zeile waeren zwei Wahrheiten.
+chat_service_key() {
+  # Der Chat dient Anwenderinnen und Anwendern, darf also nicht den
+  # Master-Schluessel des Gateways halten: der kann Schluessel anlegen und
+  # loeschen. Der Wert kommt aus demselben Speicher wie die persoenlichen
+  # Schluessel und wird bei Bedarf ueber genau das Skript ausgestellt, das auch
+  # sie vergibt - damit es dafuer keine zweite Stelle gibt.
+  local alias_name="${1:-open-webui}" store="${SECRETS_DIR}/gateway-proxy/issued-keys.txt" schluessel
+  schluessel="$(awk -F'\t' -v a="${alias_name}" '$1 == a { k = $3 } END { print k }' "${store}" 2>/dev/null)"
+  if [[ -z "${schluessel}" ]]; then
+    log "Chat-Schluessel '${alias_name}' fehlt - wird ueber 71-gateway-keys.sh ausgestellt."
+    "${REPO_ROOT}/scripts/71-gateway-keys.sh" --issue "${alias_name}" >/dev/null 2>&1 \
+      || die "Schluessel '${alias_name}' konnte nicht ausgestellt werden (laeuft das Gateway?). Naechster Befehl: ./scripts/71-gateway-keys.sh --issue ${alias_name}"
+    schluessel="$(awk -F'\t' -v a="${alias_name}" '$1 == a { k = $3 } END { print k }' "${store}" 2>/dev/null)"
+  fi
+  [[ -n "${schluessel}" ]] || die "Schluessel '${alias_name}' bleibt leer, obwohl ausgestellt. Naechster Befehl: ./scripts/71-gateway-keys.sh --check"
+  printf '%s\n' "${schluessel}"
+}
 ensure_webui_env() {
   local file="${SECRETS_DIR}/open-webui.env" backup
   local secret gateway_key
@@ -49,7 +67,7 @@ ensure_webui_env() {
   secret="$(env_wert "${file}" WEBUI_SECRET_KEY)"
   [[ -n "${secret}" ]] || secret="$(random_secret 24)"
   gateway_key="$(env_wert "${file}" OPENAI_API_KEY)"
-  [[ -n "${gateway_key}" ]] || gateway_key="${LITELLM_MASTER_KEY}"
+  [[ -n "${gateway_key}" ]] || gateway_key="$(chat_service_key)"
 
   # Erst bauen, dann vergleichen: ein Lauf ohne Aenderung schreibt nichts und
   # legt keine Sicherung an (Idempotenz, Grundregel "Nichts zerstoeren").

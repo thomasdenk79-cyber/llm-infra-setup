@@ -68,7 +68,7 @@ WEBUI_SECRET_KEY=${new_webui}
 ENABLE_SIGNUP=true
 ENABLE_OPENAI_API=true
 OPENAI_API_BASE_URL=http://litellm:4000/v1
-OPENAI_API_KEY=${new_master}
+OPENAI_API_KEY=$(chat_service_key)
 EOF
 chmod 0600 "${SECRETS_DIR}"/*.env
 

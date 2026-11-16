@@ -51,556 +51,6 @@
       }
     },
     {
-      "type": "stat",
-      "title": "ZFS-Pools online",
-      "description": "1 = alle Pools ONLINE, sonst Wert < 1.",
-      "id": 6853,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 0,
-        "y": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "decimals": 1,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "noValue": "keine Daten"
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "colorMode": "value",
-        "graphMode": "area",
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "min(llm_zfs_pool_health == 1)"
-        }
-      ]
-    },
-    {
-      "type": "stat",
-      "title": "Scrub laeuft",
-      "description": "",
-      "id": 68555,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 4,
-        "y": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "decimals": 1,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "noValue": "keine Daten"
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "colorMode": "value",
-        "graphMode": "area",
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "max(llm_zfs_scrub_running)"
-        }
-      ]
-    },
-    {
-      "type": "stat",
-      "title": "ARC-Groesse",
-      "description": "Vorspeicher im RAM. Begrenzt durch ZFS_ARC_MAX_GB.",
-      "id": 70689,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 8,
-        "y": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-              "noValue": "keine Daten (kein ZFS-Betrieb auf diesem Rechner)",
-          "unit": "bytes",
-          "decimals": 1,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "colorMode": "value",
-        "graphMode": "area",
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "node_zfs_arc_size"
-        }
-      ]
-    },
-    {
-      "type": "stat",
-      "title": "ARC-Treffer",
-      "description": "",
-      "id": 62247,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 12,
-        "y": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-              "noValue": "keine Daten (kein ZFS-Betrieb auf diesem Rechner)",
-          "unit": "percent",
-          "decimals": 1,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "colorMode": "value",
-        "graphMode": "area",
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "100 * rate(node_zfs_arc_hits[5m]) / clamp_min(rate(node_zfs_arc_hits[5m]) + rate(node_zfs_arc_misses[5m]), 1)"
-        }
-      ]
-    },
-    {
-      "type": "stat",
-      "title": "PLE-Speicher",
-      "description": "1 = SSD-Speicher fuer die Einbettungen ist eingehaengt.",
-      "id": 15434,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 16,
-        "y": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "decimals": 1,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "colorMode": "value",
-        "graphMode": "area",
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "llm_ple_mounted"
-        }
-      ]
-    },
-    {
-      "type": "stat",
-      "title": "PLE in fstab",
-      "description": "0 = nach dem naechsten Neustart fehlt der Speicher!",
-      "id": 36889,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 20,
-        "y": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "decimals": 1,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "colorMode": "value",
-        "graphMode": "area",
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "llm_ple_in_fstab"
-        }
-      ]
-    },
-    {
-      "type": "timeseries",
-      "title": "ARC ueber Zeit",
-      "description": "",
-      "id": 53975,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 9
-      },
-      "fieldConfig": {
-        "defaults": {
-              "noValue": "keine Daten (kein ZFS-Betrieb auf diesem Rechner)",
-          "unit": "bytes",
-          "min": null,
-          "max": null,
-          "custom": {
-            "fillOpacity": 8,
-            "showPoints": "never",
-            "lineWidth": 1.5
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "mean",
-            "max"
-          ]
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "node_zfs_arc_size",
-          "legendFormat": "ARC",
-          "instant": false
-        }
-      ]
-    },
-    {
-      "type": "timeseries",
-      "title": "ARC Treffer und Fehlschlaege",
-      "description": "",
-      "id": 61879,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 9
-      },
-      "fieldConfig": {
-        "defaults": {
-              "noValue": "keine Daten (kein ZFS-Betrieb auf diesem Rechner)",
-          "unit": "short",
-          "min": null,
-          "max": null,
-          "custom": {
-            "fillOpacity": 8,
-            "showPoints": "never",
-            "lineWidth": 1.5
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "mean",
-            "max"
-          ]
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "rate(node_zfs_arc_hits[5m])",
-          "legendFormat": "Treffer/s",
-          "instant": false
-        },
-        {
-          "refId": "B",
-          "expr": "rate(node_zfs_arc_misses[5m])",
-          "legendFormat": "Fehlschlaege/s",
-          "instant": false
-        }
-      ]
-    },
-    {
-      "type": "timeseries",
-      "title": "Dataset-Fuellstand",
-      "description": "ueber 90 % wird eng: Modell, PLE-Datei und Protokolle brauchen Platz.",
-      "id": 38114,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 17
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": null,
-          "max": null,
-          "custom": {
-            "fillOpacity": 8,
-            "showPoints": "never",
-            "lineWidth": 1.5
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "noValue": "keine Daten"
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "mean",
-            "max"
-          ]
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "100 * (llm_zfs_dataset_used_bytes{mountpoint!~\"none|-\"} / (llm_zfs_dataset_used_bytes{mountpoint!~\"none|-\"} + llm_zfs_dataset_avail_bytes{mountpoint!~\"none|-\"}))",
-          "legendFormat": "{{dataset}}",
-          "instant": false
-        }
-      ]
-    },
-    {
-      "type": "timeseries",
-      "title": "Kompressionsfaktor",
-      "description": "1.0 heisst: nichts gewonnen.",
-      "id": 79296,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 17
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "min": null,
-          "max": null,
-          "custom": {
-            "fillOpacity": 8,
-            "showPoints": "never",
-            "lineWidth": 1.5
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "noValue": "keine Daten"
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "mean",
-            "max"
-          ]
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "llm_zfs_dataset_compress_ratio",
-          "legendFormat": "{{dataset}}",
-          "instant": false
-        }
-      ]
-    },
-    {
       "type": "timeseries",
       "title": "NVMe-Zustand",
       "description": "Abnutzung ueber 90 % oder Reserve unter 10 %: Backup machen und Ersatz planen.",
@@ -839,6 +289,586 @@
           }
         }
       ]
+    },
+    {
+      "type": "text",
+      "title": "ZFS und PLE",
+      "id": 90001,
+      "gridPos": {
+        "h": 3,
+        "w": 24,
+        "x": 0,
+        "y": 49
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "**ZFS und PLE sind auf diesem Rechner nicht vorhanden.**\n\nDie darunterliegende Zeile ist zugeklappt, weil es hier nichts zu messen gibt: der Kennzahlensammler liefert llm_zfs_ und node_zfs_ nur, wenn ein ZFS-Pool existiert, llm_ple_ nur, wenn ein PLE-Speicher eingerichtet ist (ple_configured in lib/common.sh).\nNullen aus Beispiel-Pfaden, die es nie gab, wuerden die Alarme PleSpeicherFehlt und ZfsPoolDegraded dauerhaft feuern lassen - deshalb fehlt der Messwert bewusst. Auf einem Rechner mit ZFS und PLE liefert diese Zeile die Panels unveraendert."
+      }
+    },
+    {
+      "type": "row",
+      "title": "ZFS und PLE (auf diesem Rechner nichts zu messen)",
+      "id": 90002,
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 52
+      },
+      "panels": [
+        {
+          "type": "stat",
+          "title": "ZFS-Pools online",
+          "description": "1 = alle Pools ONLINE, sonst Wert < 1.",
+          "id": 6853,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 4,
+            "x": 0,
+            "y": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 1,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "noValue": "keine Daten"
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "value",
+            "graphMode": "area",
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "min(llm_zfs_pool_health == 1)"
+            }
+          ]
+        },
+        {
+          "type": "stat",
+          "title": "Scrub laeuft",
+          "description": "",
+          "id": 68555,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 4,
+            "x": 4,
+            "y": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 1,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "noValue": "keine Daten"
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "value",
+            "graphMode": "area",
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "max(llm_zfs_scrub_running)"
+            }
+          ]
+        },
+        {
+          "type": "stat",
+          "title": "ARC-Groesse",
+          "description": "Vorspeicher im RAM. Begrenzt durch ZFS_ARC_MAX_GB.",
+          "id": 70689,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 4,
+            "x": 8,
+            "y": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "noValue": "keine Daten (kein ZFS-Betrieb auf diesem Rechner)",
+              "unit": "bytes",
+              "decimals": 1,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "value",
+            "graphMode": "area",
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "node_zfs_arc_size"
+            }
+          ]
+        },
+        {
+          "type": "stat",
+          "title": "ARC-Treffer",
+          "description": "",
+          "id": 62247,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 4,
+            "x": 12,
+            "y": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "noValue": "keine Daten (kein ZFS-Betrieb auf diesem Rechner)",
+              "unit": "percent",
+              "decimals": 1,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "value",
+            "graphMode": "area",
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "100 * rate(node_zfs_arc_hits[5m]) / clamp_min(rate(node_zfs_arc_hits[5m]) + rate(node_zfs_arc_misses[5m]), 1)"
+            }
+          ]
+        },
+        {
+          "type": "stat",
+          "title": "PLE-Speicher",
+          "description": "1 = SSD-Speicher fuer die Einbettungen ist eingehaengt.",
+          "id": 15434,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 4,
+            "x": 16,
+            "y": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 1,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "value",
+            "graphMode": "area",
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "llm_ple_mounted"
+            }
+          ]
+        },
+        {
+          "type": "stat",
+          "title": "PLE in fstab",
+          "description": "0 = nach dem naechsten Neustart fehlt der Speicher!",
+          "id": 36889,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 4,
+            "x": 20,
+            "y": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 1,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "value",
+            "graphMode": "area",
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "llm_ple_in_fstab"
+            }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "ARC ueber Zeit",
+          "description": "",
+          "id": 53975,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 9
+          },
+          "fieldConfig": {
+            "defaults": {
+              "noValue": "keine Daten (kein ZFS-Betrieb auf diesem Rechner)",
+              "unit": "bytes",
+              "min": null,
+              "max": null,
+              "custom": {
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "lineWidth": 1.5
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "node_zfs_arc_size",
+              "legendFormat": "ARC",
+              "instant": false
+            }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "ARC Treffer und Fehlschlaege",
+          "description": "",
+          "id": 61879,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 9
+          },
+          "fieldConfig": {
+            "defaults": {
+              "noValue": "keine Daten (kein ZFS-Betrieb auf diesem Rechner)",
+              "unit": "short",
+              "min": null,
+              "max": null,
+              "custom": {
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "lineWidth": 1.5
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "rate(node_zfs_arc_hits[5m])",
+              "legendFormat": "Treffer/s",
+              "instant": false
+            },
+            {
+              "refId": "B",
+              "expr": "rate(node_zfs_arc_misses[5m])",
+              "legendFormat": "Fehlschlaege/s",
+              "instant": false
+            }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Dataset-Fuellstand",
+          "description": "ueber 90 % wird eng: Modell, PLE-Datei und Protokolle brauchen Platz.",
+          "id": 38114,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 17
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": null,
+              "max": null,
+              "custom": {
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "lineWidth": 1.5
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "noValue": "keine Daten"
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "100 * (llm_zfs_dataset_used_bytes{mountpoint!~\"none|-\"} / (llm_zfs_dataset_used_bytes{mountpoint!~\"none|-\"} + llm_zfs_dataset_avail_bytes{mountpoint!~\"none|-\"}))",
+              "legendFormat": "{{dataset}}",
+              "instant": false
+            }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Kompressionsfaktor",
+          "description": "1.0 heisst: nichts gewonnen.",
+          "id": 79296,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 17
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "min": null,
+              "max": null,
+              "custom": {
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "lineWidth": 1.5
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "noValue": "keine Daten"
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "llm_zfs_dataset_compress_ratio",
+              "legendFormat": "{{dataset}}",
+              "instant": false
+            }
+          ]
+        }
+      ],
+      "description": "Zugeklappt, weil die Kennzahlenfamilien auf diesem Rechner nicht erzeugt werden."
     }
   ]
 }
