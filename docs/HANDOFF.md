@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-11-16T14:37:41+01:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-11-16T15:06:41+01:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe (2026-11-16)
 
@@ -393,3 +393,7 @@ doku: chat-eigener-schluessel und pruefpunkt 16
 ## Notiz 2026-11-16T14:37:41+01:00
 
 sicherung: teilfehler scheitern laut, grafana-ausfuhren ausgeschlossen
+
+## Notiz 2026-11-16T15:06:41+01:00
+
+drift: dokumentierte ausnahmeliste fuer die pennyroyal-fork-unit

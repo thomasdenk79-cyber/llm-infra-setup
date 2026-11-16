@@ -85,16 +85,46 @@ do
     || die "Generator lief nicht durch: ${generator}  (von Hand nachfahren: ${root}/${generator#./})"
 done
 
-if git -C "${wt}" diff --quiet -- quadlet config/litellm.yaml; then
-  echo 'KEINE DRIFT: committete Units entsprechen exakt den Generatoren.'
+# --- Dokumentierte Ausnahmen -------------------------------------------------
+# Dateien, deren committete Fassung bewusst nicht dem Generatorergebnis entspricht.
+# Eine Ausnahme ist eine Entscheidung mit Begruendung, kein Wegsehen: die Abweichung
+# wird bei jedem Lauf ausgegeben (Kurzstatistik plus Begruendung), und der Verweis auf
+# die Begruendung muss stimmen - sonst ist der Eintrag ein Fehler, keine Ausnahme.
+#   quadlet/pennyroyal.container
+#     Betreiber-Fork localhost/flash-next-sm120:serving statt dem Upstream-Bild
+#     ghcr.io/jpezzulli/sglang-rtxpro6000:v2.5.3. Der Fork traegt die sm120-Schalter
+#     und die mamba-19-lazy-Konfiguration; der Generator kennt den Fork nicht, weil
+#     er das Upstream-Image pinnt. Betreiberentscheidung vom 2026-11-16, Begruendung
+#     in docs/status.md (Abschnitt 'Pennyroyal-Abweichung').
+ausnahmen=( 'quadlet/pennyroyal.container' )
+
+# Der Vergleich nimmt die Ausnahmen per Pfadausschluss heraus; geprueft wird trotzdem
+# gegen dieselbe weggeworfene Kopfe.
+pruef_pfade=( quadlet config/litellm.yaml )
+for ausnahme in "${ausnahmen[@]}"; do
+  pruef_pfade+=( ":(exclude)${ausnahme}" )
+done
+
+for ausnahme in "${ausnahmen[@]}"; do
+  if ! git -C "${wt}" diff --quiet -- "${ausnahme}"; then
+    printf '\nAUSNAHME aktiv (bewusste Abweichung, nicht versteckt): %s\n' "${ausnahme}"
+    git -C "${wt}" --no-pager diff --stat -- "${ausnahme}" | sed 's/^/     /'
+    printf '     Begruendung: Betreiber-Fork statt Upstream-Bild - docs/status.md, Abschnitt "Pennyroyal-Abweichung".\n'
+    printf '     Aufloesen: entweder den Fork in den Generator schreiben, oder git checkout HEAD -- %s\n' "${ausnahme}"
+  fi
+done
+
+if git -C "${wt}" diff --quiet -- "${pruef_pfade[@]}"; then
+  echo 'KEINE DRIFT: committete Units entsprechen den Generatoren (dokumentierte Ausnahmen ausgenommen).'
   exit 0
 fi
 
 echo 'DRIFT GEFUNDEN - die Generatoren erzeugen etwas anderes als committet ist:'
-git -C "${wt}" --no-pager diff -- quadlet config/litellm.yaml
+git -C "${wt}" --no-pager diff -- "${pruef_pfade[@]}"
 echo
 echo 'Das Arbeitsverzeichnis ist unveraendert; verglichen wurde die weggeworfene Kopfe.'
 echo 'Entweder die Aenderung ist gewollt: git add quadlet config/litellm.yaml && git commit'
 echo 'Oder sie war ein Versehen:          git restore -- quadlet config/litellm.yaml'
 echo 'Und wenn der Generator selbst falsch ist: im Generator-Skript aendern, dann erneut pruefen.'
+echo 'Neue Ausnahme anlegen: nur in diesem Skript, mit Begruendung und Datum - nie durch stillschweigendes Weglassen.'
 exit 1

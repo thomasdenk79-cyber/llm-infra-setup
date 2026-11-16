@@ -7,6 +7,28 @@ Git-Verlauf: `git show HEAD:docs/status.md`. Fortsetzungsanker ist
 
 ## Verifizierter Zustand (2026-11-16)
 
+### Pennyroyal-Abweichung
+
+`quadlet/pennyroyal.container` ist die eine Datei im Repo, deren committete Fassung
+**bewusst** vom Generatorergebnis abweicht. Committet ist der Betreiber-Fork
+`localhost/flash-next-sm120:serving` (Beschreibung: „FORK sm120, all speed switches,
+mamba 19 lazy"); `scripts/50-install-pennyroyal.sh` wuerde das Upstream-Bild
+`ghcr.io/jpezzulli/sglang-rtxpro6000:v2.5.3` schreiben, weil es den Fork nicht kennt.
+
+Entscheidung des Betreibers vom 2026-11-16: der **Fork bleibt die committete Wahrheit**,
+und `make drift` / `make ci` werden nicht durch Wegsehen gruen, sondern durch eine
+dokumentierte Ausnahmeliste in `scripts/check-drift.sh` (`ausnahmen=(...)`). Die
+Abweichung wird bei jedem Lauf mit Kurzstatistik, Begruendung und Aufloeseweg
+ausgegeben; eine neue Ausnahme entsteht ausschliesslich dort, mit Datum und
+Begruendung.
+
+Aufloesen laesst sich die Ausnahme auf zwei Arten: die Fork-Werte (Bild,
+ulimits `memlock`/`nofile`, Modellpfad) in den Generator schreiben, dann ist die
+Ausnahme leer; oder `git checkout HEAD -- quadlet/pennyroyal.container` zurueck auf
+Upstream, falls der Fork nicht mehr gebraucht wird. Bis dahin gilt: auf diesem Rechner
+laeuft die Laufzeit ohnehin als `flash-next-v3` (Abschnitt Inferenz-Laufzeit), die
+Pennyroyal-Unit ist die vorbereitete, nicht die benutzte Fassung.
+
 ### Sicherung
 
 `./scripts/backup.sh` hat ihr erstes Archiv erzeugt
