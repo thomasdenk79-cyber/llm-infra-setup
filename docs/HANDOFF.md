@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-11-16T14:25:22+01:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-11-16T14:28:31+01:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe (2026-11-16)
 
@@ -367,3 +367,7 @@ portal: 2.6.0 mit Tabs, lokale Symbole statt CDN, Proxy-Kennzahlen und Diagnosef
 ## Notiz 2026-11-16T14:25:22+01:00
 
 Diagnosefall Laufzeit-Unit, Dashboard ohne No-Data-Panels, eigener Chat-Schluessel
+
+## Notiz 2026-11-16T14:28:31+01:00
+
+chat: eigener Gateway-Schluessel, Dashboard ohne No-Data, Diagnosefall Laufzeit-Unit

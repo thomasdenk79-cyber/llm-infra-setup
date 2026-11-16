@@ -1,4 +1,32 @@
 # Aenderungsprotokoll
+## 2026-11-16 (Runde: Chat ohne Master-Schluessel, Dashboard ohne No-Data, Diagnosefall Laufzeit)
+
+- **Chat-Dienst ohne Master-Schluessel:** `open-webui.env` enthielt den
+  Master-Schluessel des Gateways - der Chat haette damit Schluessel anlegen und
+  loeschen koennen. `lib/secrets.sh` stellt jetzt ueber `chat_service_key()` einen
+  eigenen Virtual Key aus (derselbe Speicher und dasselbe Skript wie die
+  persoenlichen Schluessel, Alias `open-webui`); `scripts/rotate-secrets.sh` nutzt
+  dieselbe Quelle statt den Master zu übernehmen. Gemessen: Schluessel gesetzt,
+  Form `sk-…`, nicht identisch mit dem Master; Ausrolllauf meldet „model check: OK
+  (13 Modelle gemeinsam mit dem Gateway)“ und „gateway Anbieter … HTTP 200“.
+- **Eigenen Fehler behoben:** `chat_service_key()` schrieb seine Fortschrittszeile mit
+  `log` auf Stdout; in der Befehlsersetzung wanderte die Zeile in den Wert, und die
+  Datei bekam eine kaputte `OPENAI_API_KEY=`-Zeile (Logtext plus Schluessel in zwei
+  Zeilen). Fortschritt geht jetzt nach Stderr, Fehlermeldungen auch - ein `die` in der
+  Funktion haette nur die Untershell verlassen. Der dabei im Terminal sichtbar
+  gewordene Schluessel wurde **gesperrt und neu ausgestellt** (`--revoke`, `--issue`).
+- **Dashboard Speicher ohne No-Data-Panels:** 10 Panels hingen an Kennzahlenfamilien,
+  die es auf diesem Rechner nicht gibt (`llm_zfs_*`, `node_zfs_*`, `llm_ple_*`). Sie
+  liegen jetzt in einer zugeklappten Zeile miterklaerung, damit die Flaeche ohne
+  „No data“ erscheint und die Panels auf Rechnern mit ZFS/PLE unveraendert liefern.
+  Gemessen: Grafana provisioniert neu (version 4, 7 Panels), alle sichtbaren Panels
+  mit Daten. Zwei Messfehler dieser Runde sind berichtigt: das Log-Panel haengt an
+  Loki (nicht Prometheus) und fuehrt 14 Stroeme - es war nie leer.
+- **Diagnosefall Laufzeit-Unit:** `scripts/doctor.sh` meldet jetzt WARNUNG, wenn der
+  Inferenz-Container laeuft, aber keine Unit ihn verwaltet (`flash-next-v3` ist so ein
+  Fall), plus Hinweis, dass `quadlet/` keine passende Unit beschreibt. Der Fall ist
+  entscheidungsneutral: mit einer vorhandenen Unit schlaegt er in OK um.
+
 ## 2026-11-16 (Runde: Drift-Pruefung ohne Eingriff, Pennyroyal-Unit berichtigt)
 
 - Fehler behoben: `scripts/check-drift.sh` liess die Generatoren im
