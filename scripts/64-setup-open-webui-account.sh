@@ -50,6 +50,30 @@ if [[ -n "$BESTEHEND" ]]; then
   exit 1
 fi
 
+# Fruehere Fassung des Generators schrieb die Open-WebUI-Zeile in einer anderen
+# Form ("Benutzer <mail> Passwort <pw>"). Wer sie vorfindet, haelte das Konto
+# fuer nicht vorhanden und das Anlegen schluegt fehl, weil das Konto laengst
+# existiert. Uebernommen wird nur, was sich nachweislich anmelden kann, und nur
+# in diesem Skript - es bleibt der einzige Schreibende der Zeile. Mit --check
+# passiert nichts an der Datei, die Meldung nennt nur den Weg.
+if grep -q '^Open WebUI' "$KENNWORTDATEI"; then
+  ALT="$(sed -n 's/^Open WebUI.*Benutzer \([^ ]*\).*Passwort \([^ ]*\).*/\2 \1/p' "$KENNWORTDATEI" | tail -1)"
+  if [[ -n "$ALT" ]]; then
+    A_PW="${ALT%% *}"; A_EML="${ALT##* }"
+    if [[ "$PRUEFEN" == "1" ]]; then
+      echo "Zugangszeile steht in der alten Form. Weiter mit: $0" >&2
+      exit 1
+    fi
+    anmelden "$A_EML" "$A_PW" || { echo "Alte Zugangszeile vorhanden, Anmeldung damit abgelehnt. Naechster Befehl: $0 --check" >&2; exit 1; }
+    cp "$KENNWORTDATEI" "${KENNWORTDATEI}.bak.$(date -u +%Y%m%dT%H%M%SZ)"
+    sed -i 's|^Open WebUI.*|Open WebUI   '"${BASIS}"'   passwort '"${A_PW}"' email '"${A_EML}"' (Administrator, uebernommen scripts/64-setup-open-webui-account.sh)|' "$KENNWORTDATEI"
+    chmod 600 "$KENNWORTDATEI"
+    echo "Zugangszeile in die einheitliche Form gebracht (${A_EML}); Anmeldung bestaetigt."
+    echo "weiter: ./scripts/healthcheck.sh"
+    exit 0
+  fi
+fi
+
 if [[ "$PRUEFEN" == "1" ]]; then
   echo "Kein Konto hinterlegt. Weiter mit: $0" >&2
   exit 1

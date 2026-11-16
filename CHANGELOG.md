@@ -1,6 +1,44 @@
 # Aenderungsprotokoll
 ## 2026-11-16 – Oeffentlicher Zugang, Alarmweg, Beobachtungskorrektur
 
+- Chat-Oberflaeche (Open WebUI) zum ersten Mal von Hand bis zur Antwort
+  geprueft, und vier Daengel am richtigen Ort behoben. Befund vor der
+  Korrektur: die eigene Datenbank der App enthielt null Konten bei gleich-
+  zeitig offener Registrierung (der erste Browser-Besuch waere Administrator
+  geworden), der Ollama-Anbieter stand an und hing an `host.docker.internal:11434`
+  (dort hoert nichts - nachgewiesen mit Verbindungsverweigerung), es gab kein
+  Standardmodell, und der Update-Hinweis legte beim ersten Oeffnen ein modales
+  Fenster ueber die Seite, das jeden Klick blockierte. Die Werte durften nicht
+  nur in `open-webui.env` stehen: die App uebernimmt Umgebungswerte nur fuer
+  Schluessel, die in ihrer Datenbank noch fehlen (`Config.seed_defaults`), ein
+  Austausch in der Datei wirkt auf eine bestehende Installation nicht.
+  `scripts/60-install-open-webui.sh` kann deshalb mehr als die Unit schreiben:
+  `--provision` setzt Anbieter, Standardmodell und Registrierung ueber
+  dieselben Endpunkte, die auch die Verwaltungsoberflaeche benutzt, und
+  `--check` (ohne Seitenwirkung) prueft zehn Punkte und endet mit dem
+  naechsten Befehl. Der Neustart des Chat-Dienstes ist ein eigener, erklarter
+  Schritt und bricht ab, wenn das Journal in den letzten zwei Minuten
+  Chat-Anfragen zeigt (`--forzieren` fuer die bewusste Ausnahme). Nachweis des
+  Weges: echte Frage an `qwen3.8-flash-next`, Antworttext im Browser
+  verglichen, gateway-seitig `POST /v1/chat/completions 200 OK` im Journal von
+  `litellm.service` zur Sekunde der Anfrage.
+- Doppelung zurueckgenommen: das Administratorkonto gehoert zu
+  `scripts/64-setup-open-webui-account.sh`, nicht in die Umgebungsdatei. Die
+  beiden `WEBUI_ADMIN_*`-Zeilen sind aus `lib/secrets.sh` entfernt, das
+  Konto-Skript ist der einzige Schreibende der Zugangszeile, und
+  `60-install-open-webui.sh` ruft es nur auf. Fruehere Fassungen der Zeile
+  (`Benutzer … Passwort …`) werden uebernommen, aber nur nach gelungener
+  Anmeldung und nur in diesem Skript. `lib/secrets.sh` erzeugt
+  `open-webui.env` weiterhin selbst: Vorher-Sicherung bei Aenderung, kein
+  Schreiben und keine Sicherung ohne Aenderung, kein Wert auf dem Bildschirm.
+- `quadlet/open-webui.container` ist unveraendert: der Generator erzeugt die
+  committete Datei byte-identisch (`git diff` dazu bleibt leer). `make drift`
+  bleibt aus dem bekannten pennyroyal-Grund rot, unveraendert.
+- Offen und dokumentiert: die Administratoren-Verstellungen zeigen rohe
+  Uebersetzungsschluessel, weil das Bild kein `i18n/` mitbringt; und der
+  Gateway-Zugang der App ist der Masterschluessel, ein eigener Schluessel waere
+  die sauberere Endfassung (`./scripts/71-gateway-keys.sh --issue open-webui`).
+
 - Irrtum zurueckgenommen: die entfernte
   `ExecStartPre=%h/forge/watchdog/reference-start-gate.sh` war nicht der Grund fuer
   rotes `make drift`. Die committete Referenz-Unit weicht in Bild, `Description`,

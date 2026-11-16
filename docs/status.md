@@ -41,6 +41,44 @@ grep -c 'model_name:' config/litellm.yaml                                       
 python3 -c "import json;d=json.load(open('$HOME/.config/llm-infra/chatgpt-tokens/auth.json'));print(sorted(d))"
 ```
 
+### Chat (Open WebUI)
+
+`open-webui.service` (Bild `ghcr.io/open-webui/open-webui:v0.11.4`) hoert auf
+`127.0.0.1:3001`; Port 3000 ist Grafana, nicht die Chat-Oberflaeche. `/health`
+liefert true, `/api/version` 0.11.4, und `/api/models` antwortet ohne Sitzung
+mit 401 - die Liste nennt die Gateway-Modelle und gehoert nicht an
+Nichtangemeldete.
+
+Pruefung am 2026-11-16 mit Playwright (Chromium headless, 1680x1000, Screens
+unter `/tmp/qa/screens/openwebui-*.png`): Einstieg `/` leitet auf `/auth`,
+Anmeldung gelingt, Hauptseite ohne Konsolenfehler, Modellauswahl geoeffnet mit
+14 Eintraegen (13 Gateway-Modelle zuzueglich das eigene `arena-model`), und
+eine echte Frage an `qwen3.8-flash-next` wird textlich beantwortet (erwartetes
+Wort in der Antwort, 1-2 s). Gateway-seitig belegt: `POST /v1/chat/completions
+HTTP/1.1" 200 OK` im Journal von `litellm.service` zur Sekunde der Anfrage, aus
+dem Netz des Chat-Dienstes.
+
+Behoben sind vier Daengel, alle im Generator: der Ollama-Anbieter stand an und
+hing an `host.docker.internal:11434` (hier hoert nichts), es gab kein
+Standardmodell, die Registrierung war offen bei null Konten (der erste
+Browser-Besuch waere Administrator geworden), und der Update-Hinweis legte beim
+ersten Oeffnen ein modales Fenster ueber die Seite, das jeden Klick blockierte.
+
+```bash
+./scripts/60-install-open-webui.sh --check          # zehn Pruefpunkte, alle ok
+./scripts/64-setup-open-webui-account.sh --check    # Konto und Anmeldung
+journalctl --user -u litellm.service --since '-5 minutes' --no-pager | grep -c 'chat/completions'
+```
+
+Zwei Punkte bleiben beim Hersteller und sind hier nur dokumentiert: das Bild
+enthalt keine Uebersetzung (kein `i18n/`-Verzeichnis unter `/app`,
+`/i18n/en.json` antwortet mit dem Single-Page-Geruest), deshalb stehen in den
+Administratoren-Verstellungen rohe Schluessel wie
+`settings.admin.connections.title`; und `/admin/settings` ist keine eigene
+Seite, sondern oeffnet die Verstellungen als Modal - die URL faellt auf `/`
+zurueck, die Inhalte sind erreichbar und die Verbindungsseite zeigt
+`http://litellm:4000/v1`.
+
 ### Oeffentlicher Zugang (443 am Azure-Gateway)
 
 Tunnel-Unit aktiv und aktiviert; die vier oeffentlichen Routen liefern die
@@ -139,6 +177,14 @@ systemctl --user list-timers --no-pager | head -5
   Reaktivierung in `docs/operations.md`.
 - 8 Panels in `04-speicher.json` (ZFS und ARC) zeigen "keine Daten", weil dieser
   Rechner nichts davon hat; auf dem ZFS-Referenzrechner fuellen sie sich.
+- Die Chat-Oberflaeche zeigt in den Administratoren-Verstellungen rohe
+  Uebersetzungsschluessel. Grund liegt im Bild, nicht in dieser Konfiguration:
+  `/app` fuehrt kein `i18n/`-Verzeichnis, und `/i18n/en.json` beantwortet die
+  App mit dem Single-Page-Geruest statt mit JSON. Beheben koennte nur ein
+  anderes Bild (Stand: `v0.11.4`, siehe `versions.lock`).
+- `scripts/doctor.sh` und `scripts/healthcheck.sh` kennen noch keinen
+  Chat-Fall; die Pruefung liefert bis dahin
+  `./scripts/60-install-open-webui.sh --check`.
 - Browser-Pruefung am 2026-11-16 mit Playwright (Chromium headless, 1680x1000):
   89 Panelfelder in fuenf Dashboards, 8 ohne Daten (ZFS/ARC), sonst keine
   "No data"-Felder; Dozzle zeigt alle sieben erwarteten Container; das Portal
@@ -161,5 +207,6 @@ cd /srv/work/llm-infra-setup
 ./scripts/doctor.sh                        # gefuehrte Diagnose, nennt den naechsten Befehl
 ./scripts/70-setup-gateway-proxy.sh --check  # oeffentlicher Zugang in Ordnung?
 ./scripts/60-install-monitoring.sh --check   # Beobachtungsstufe vollstaendig?
+./scripts/60-install-open-webui.sh --check   # Chat-Oberflaeche und Gateway-Weg?
 ./scripts/session-checkpoint.sh --status     # was ist noch ungesichert?
 ```
