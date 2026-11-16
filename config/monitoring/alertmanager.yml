@@ -1,7 +1,8 @@
 # Alarmweiterleitung dieses Stacks. Prometheus meldet hierher (siehe
 # config/monitoring/prometheus.yml, Abschnitt alerting).
 #
-# Bewusst ohne Versand: solange kein Kanal eingetragen ist, bleibt jeder Alarm
+# Bewusst ohne Versand: Betreiberentscheidung vom 2026-11-16 - es ist kein Kanal
+# getragen, und das ist der Soll-Zustand. Solange kein Kanal eingetragen ist, bleibt jeder Alarm
 # hier und in der Prometheus-Oberflaeche sichtbar, statt ungelesen in ein leeres
 # Postfach zu gehen. Welche der beiden Moeglichkeiten der Betreiber will, steht
 # in docs/monitoring.md#alarmkanal - beide sind vorbereitet und auskommentiert.

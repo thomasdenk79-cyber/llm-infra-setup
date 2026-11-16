@@ -48,6 +48,12 @@ der Betreiber keinen der beiden Kanaele waehlt, bleiben alle Alarme im
 Alertmanager unter `http://127.0.0.1:9093` und in der Prometheus-Oberflaeche
 sichtbar, statt ungelesen in ein leeres Postfach zu gehen.
 
+**Betreiberentscheidung vom 2026-11-16: ohne Empfaenger.** Kein Kanal ist getragen,
+und das ist der Soll-Zustand, keine offene Baustelle. Gewechselt wird erst, wenn
+Alarme regelmaessig gelesen werden sollen; die beiden vorbereiteten Kanaele sind
+dann in zwei Zeilen aktiviert (Telegram ist hier nicht vorgesehen - der vorbereitete
+Push-Kanal ist ntfy ohne Konto).
+
 - ntfy: ohne Konto, nur ein frei gewaehltes Themenwort auf dem Handy
   (`uri: https://ntfy.sh/<eigenes Themenwort>`).
 - E-Mail: braucht SMTP-Zugang des Betreibers; das Passwort kommt aus

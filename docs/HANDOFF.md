@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-11-16T15:24:09+01:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-11-16T15:26:18+01:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe (2026-11-16)
 
@@ -27,6 +27,15 @@ Das Repository ist das Backup.
   fehlenden Teilen mit Rueckgabewert 1 und naechstem Befehl — ein Lauf mit 0 bedeutet
   also wirklich vollstaendig. Nicht enthalten (bewusst): Grafanas Ausfuhrordner
   `png/csv/pdf`.
+* Alarmierung ist entschieden: **ohne Empfaenger** (Betreiberentscheidung 2026-11-16).
+  ntfy und E-Mail bleiben vorbereitet und auskommentiert; Begruendung und Umschaltweg
+  in `docs/monitoring.md#alarmkanal`.
+* Die Inferenz-Laufzeit bekommt eine Unit aus dem Repo: `scripts/76-setup-runtime-unit.sh`
+  nimmt den laufenden Container auf (`config/runtime/flash-next.spec`: 53 Umgebungs-
+  variablen, 65 Schalter, 7 Geraete, 5 Ordner, 3 Obergrenzen) und erzeugt daraus
+  `quadlet/flash-next.container`. Uebernehmen laeuft das bei Leerlauf:
+  `./scripts/apply-runtime-unit.sh --takeover` (bricht bei laufenden Anfragen und bei
+  Abweichung zwischen Spec und Laeufer ab). Rueckweg: `state/runtime-restore-flash-next-v3.sh`.
 * Inferenz-Laufzeit ist der unmanaged Container `flash-next-v3` (vLLM) mit
   API nur auf `127.0.0.1:30000`. Es gibt auf diesem Rechner KEIN Pennyroyal;
   `config/host.env` (`RUNTIME_CONTAINER=flash-next-v3`, `RUNTIME_UNIT=` leer,
@@ -405,3 +414,7 @@ laufzeit: Unit aus Aufnahmen des laufenden Containers, Neustart-Schutz fails clo
 ## Notiz 2026-11-16T15:24:09+01:00
 
 uebernahme-Modus mit Leerlaufschutz, Rueckweg und Spec-Vergleich
+
+## Notiz 2026-11-16T15:26:18+01:00
+
+alarmkanal-entscheidung ohne empfaenger dokumentiert

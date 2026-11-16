@@ -7,6 +7,14 @@ Git-Verlauf: `git show HEAD:docs/status.md`. Fortsetzungsanker ist
 
 ## Verifizierter Zustand (2026-11-16)
 
+### Alarmierung
+
+Der Alertmanager laeuft **bewusst ohne Empfaenger** (Betreiberentscheidung vom
+2026-11-16). Alarme erscheinen unter `http://127.0.0.1:9093` und in Prometheus;
+ntfy und E-Mail sind in `config/monitoring/alertmanager.yml` vorbereitet und
+auskommentiert. Das ist ein dokumentierter Soll-Zustand, damit niemand die fehlende
+Zustellung als Defekt bucht. Einzelheiten und Umschaltweg: `docs/monitoring.md#alarmkanal`.
+
 ### Pennyroyal-Abweichung
 
 `quadlet/pennyroyal.container` ist die eine Datei im Repo, deren committete Fassung

@@ -1,4 +1,39 @@
 # Aenderungsprotokoll
+## 2026-11-16 (Runde: drei Betreiberentscheidungen - Drift, Laufzeit-Unit, Alarmkanal)
+
+- **Drift mit dokumentierter Ausnahmeliste.** `scripts/check-drift.sh` fuehrt jetzt
+  `ausnahmen=( 'quadlet/pennyroyal.container' )`: die committete Fork-Unit bleibt die
+  Wahrheit, der Generator darf sie nicht erreichen. Die Abweichung wird bei jedem Lauf
+  mit Kurzstatistik, Begruendung und zwei Aufloesewegen ausgegeben - `make drift` und
+  `make ci` sind gruen, ohne dass etwas versteckt ist. Begruendungstext: `docs/status.md`,
+  Abschnitt „Pennyroyal-Abweichung“.
+- **Laufzeit-Unit aus dem Ist-Zustand, nicht aus Vermutungen.** Neu:
+  `scripts/76-setup-runtime-unit.sh` mit zwei Schritten. `--import-from-container
+  flash-next-v3` liest den laufenden Container aus und schreibt die versionierte
+  Spec `config/runtime/flash-next.spec` (53 Umgebungsvariablen gegen das Bild
+  abgeglichen, 65 Schalter, 7 Geraete, 5 Ordner, 3 Obergrenzen, Netzwerk `pasta`,
+  `--shm-size 40g`) plus den lauffaehigen Rueckweg
+  `state/runtime-restore-flash-next-v3.sh`. Der Generator-Zweig baut daraus
+  `quadlet/flash-next.container`; Zugangswert-Namen landen nicht im Repo. Der Generator
+  ist in `make drift` aufgenommen.
+- **Uebernahme als eigener, pruefender Modus.** `apply-runtime-unit.sh` kennt
+  `--install-only` (Units installieren, nichts starten) und `--takeover`: bricht ab bei
+  laufenden Anfragen, ohne Rueckwegskript, bei Bild- oder Schalterzahlabweichung
+  zwischen Spec und Laeufer, und traegt `RUNTIME_UNIT` in `config/host.env` erst ein,
+  wenn die Unit den Container wirklich besitzt.
+- **Drei Defekte am Neustart-Schutz behoben:** (1) `running_requests()` fragte nur den
+  sglang-Port ab und lieferte bei leerer Antwort `0` - ein Neustart war ins Blaue
+  moeglich; jetzt fragen Weiterleiter (vLLM) und Gateway ab, und ohne Zahl wird
+  abgebrochen. (2) `RUNTIME_SERVICE` war im Arztlauf benutzt, aber nie gesetzt: die
+  Zeile „Unit laeuft“ konnte nie erscheinen, jetzt kommt sie aus `RUNTIME_UNIT` oder
+  der Suche nach der Unit zum Container, und sie prueft `is-active` statt nur „nicht
+  leer“. (3) `IpcMode=` und `SecurityOpt=` sind in diesem Quadlet unbekannt - die
+  Unit wurde vom Generator **komplett uebersprungen**, also unsichtbar; beide Werte
+  laufen jetzt ueber `PodmanArgs=`.
+- **Alarmkanal entschieden: ohne Empfaenger** (Betreiberentscheidung 2026-11-16).
+  Als Soll-Zustand festgehalten in `docs/monitoring.md#alarmkanal`, im Kopf von
+  `config/monitoring/alertmanager.yml`, in `docs/status.md` und `docs/HANDOFF.md`.
+
 ## 2026-11-16 (Runde: Sicherung meldet Teilfehler statt taetig zu sein)
 
 - **Erstes Backup dieses Repos erstellt** und gepaeft: Archiv mit Konfiguration,
