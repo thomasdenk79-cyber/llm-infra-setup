@@ -13,11 +13,7 @@ Image=localhost/qwen38-fp4-tp1:v3
 ContainerName=flash-next-v3
 Network=pasta
 PublishPort=127.0.0.1:30000:8000
-AddDevice=/dev/nvidia-modeset
-AddDevice=/dev/nvidia-uvm
-AddDevice=/dev/nvidia-uvm-tools
-AddDevice=/dev/nvidiactl
-AddDevice=/dev/nvidia0
+AddDevice=nvidia.com/gpu=GPU-780d3589-9811-40ec-db66-93a9146697f3
 AddDevice=/dev/dri/card0
 AddDevice=/dev/dri/renderD129
 Volume=/srv/llm-cache/torchinductor:/root/.cache/torchinductor

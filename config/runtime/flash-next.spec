@@ -11,11 +11,7 @@ WORKING_DIR=/workspace
 ENTRYPOINT=/opt/venv/bin/vllm
 STOP_SIGNAL=SIGTERM
 PUBLISH=127.0.0.1:30000:8000
-ADD_DEVICE=/dev/nvidia-modeset
-ADD_DEVICE=/dev/nvidia-uvm
-ADD_DEVICE=/dev/nvidia-uvm-tools
-ADD_DEVICE=/dev/nvidiactl
-ADD_DEVICE=/dev/nvidia0
+ADD_DEVICE=nvidia.com/gpu=GPU-780d3589-9811-40ec-db66-93a9146697f3
 ADD_DEVICE=/dev/dri/card0
 ADD_DEVICE=/dev/dri/renderD129
 VOLUME=/srv/llm-cache/torchinductor:/root/.cache/torchinductor
