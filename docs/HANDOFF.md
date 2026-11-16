@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-11-16T15:26:18+01:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-11-16T15:26:47+01:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe (2026-11-16)
 
@@ -418,3 +418,7 @@ uebernahme-Modus mit Leerlaufschutz, Rueckweg und Spec-Vergleich
 ## Notiz 2026-11-16T15:26:18+01:00
 
 alarmkanal-entscheidung ohne empfaenger dokumentiert
+
+## Notiz 2026-11-16T15:26:47+01:00
+
+arztlauf: Laufzeit-Unit wird ueber ContainerName gefunden

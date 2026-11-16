@@ -182,7 +182,20 @@ RUNTIME_SERVICE=""
 if [[ -n "${RUNTIME_UNIT:-}" ]]; then
   RUNTIME_SERVICE="${RUNTIME_UNIT}.service"
 else
-  gefunde_unit="$(systemctl --user list-unit-files --no-legend "${RUNTIME_CONTAINER}*.service" 2>/dev/null | awk '{print $1; exit}')"
+  # Die Unit heisst nicht nach dem Container (flash-next.container besitzt
+  # ContainerName=flash-next-v3). gesucht wird deshalb zuerst in quadlet/, wo die
+  # Wahrheit steht; die Namenssuche bleibt als zweiter Weg stehen.
+  gefunde_unit=''
+  for datei in "${root}"/quadlet/*.container; do
+    [[ -f "${datei}" ]] || continue
+    if grep -qs "^ContainerName=${RUNTIME_CONTAINER:-__keiner__}\$" "${datei}"; then
+      gefunde_unit="$(basename "${datei}" .container).service"
+      break
+    fi
+  done
+  if [[ -z "${gefunde_unit}" ]]; then
+    gefunde_unit="$(systemctl --user list-unit-files --no-legend "${RUNTIME_CONTAINER}*.service" 2>/dev/null | awk '{print $1; exit}')"
+  fi
   RUNTIME_SERVICE="${gefunde_unit:-}"
 fi
 
