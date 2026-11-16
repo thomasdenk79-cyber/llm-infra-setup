@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LUNI | Anleitung</title>
+<style>
+  :root{color-scheme:light dark;--bg:#fbfbfd;--fg:#1d1d1f;--mut:#6e6e73;--card:#fff;--line:#d2d2d7;--akzent:#0071e3;--gut:#1a7f37;--warn:#8a6d00;--boot:#b3261e}
+  @media (prefers-color-scheme:dark){:root{--bg:#0b1220;--fg:#e7eef8;--mut:#9fb0c6;--card:#111c2f;--line:#273a54;--akzent:#7dd3fc;--gut:#86efac;--warn:#d0a800;--boot:#ff7a70}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  main{width:min(920px,calc(100% - 32px));margin:0 auto;padding:28px 0 64px}
+  .eyebrow{color:var(--akzent);font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+  h1{margin:6px 0 10px;font-size:clamp(2rem,6vw,3.2rem);line-height:1.1;letter-spacing:-.03em}
+  h2{margin:38px 0 10px;font-size:1.15rem}
+  h3{margin:20px 0 6px;font-size:1rem}
+  p{margin:0 0 14px}
+  .lead{max-width:660px;color:var(--mut);font-size:1.08rem}
+  section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:14px}
+  .schritte{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:6px}
+  .schritt{border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .nr{display:inline-flex;width:26px;height:26px;align-items:center;justify-content:center;border-radius:50%;
+      border:1px solid var(--akzent);color:var(--akzent);font-weight:700;font-size:.85rem;margin-bottom:6px}
+  table{width:100%;border-collapse:collapse;font-size:15px}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  th{color:var(--mut);font-weight:600;font-size:13px;text-transform:uppercase}
+  code,kbd{font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:color-mix(in srgb,var(--fg) 8%,transparent);padding:2px 6px;border-radius:6px}
+  pre{margin:0;padding:12px;background:color-mix(in srgb,var(--fg) 6%,transparent);border-radius:9px;overflow:auto}
+  pre code{background:none;padding:0}
+  a{color:var(--akzent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .knopf{display:inline-flex;min-height:44px;align-items:center;padding:9px 16px;border:1px solid var(--akzent);border-radius:10px;margin:2px 8px 2px 0}
+  .gut{color:var(--gut)} .warn{color:var(--warn)} .boot{color:var(--boot)}
+  ul{margin:6px 0 0;padding-left:20px} li{margin:4px 0}
+  .fuss{color:var(--mut);font-size:13px;margin-top:26px;border-top:1px solid var(--line);padding-top:12px}
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">LUNI · Windows · LiteLLM · Agenten</p>
+  <h1>Lokale KI. Einmal einrichten.</h1>
+  <p class="lead">Das Paket richtet den sicheren Tunnel, das Zertifikat und OpenCode, Copilot CLI sowie OmO automatisch ein.
+  Darunter steht der Betriebsteil: was auf diesem Rechner laeuft, was offen ist und welcher Befehl als naechstes hilft.</p>
+
+  <p>
+    <a class="knopf" href="https://github.com/thomasdenk79-cyber/luni-llmops-linux/tree/fix/homepage-local-recovery/stacks/router/gateway/config/site">Windows-Paket (Bestand)</a>
+    <a class="knopf" href="https://homepage.localhost/">Zur LUNI-Homepage</a>
+  </p>
+
+  <h2>In drei Schritten startklar</h2>
+  <section>
+    <div class="schritte">
+      <div class="schritt"><span class="nr">1</span><h3>Herunterladen</h3><p>ZIP-Datei speichern und in einen Ordner entpacken.</p></div>
+      <div class="schritt"><span class="nr">2</span><h3>Installieren</h3><p><code>install.bat</code> doppelklicken und deinen persoenlichen LiteLLM-Schluessel eingeben. Zertifikat, Tunnel-Aufgabe und Clients werden eingerichtet.</p></div>
+      <div class="schritt"><span class="nr">3</span><h3>Loslegen</h3><p>Ein neues Terminal oeffnen und <code>opencode</code>, <code>copilot</code> oder <code>omo</code> starten.</p></div>
+    </div>
+  </section>
+
+  <h2>Das brauchst du</h2>
+  <section>
+    <p>Einen freigeschalteten SSH-Schluessel und deinen persoenlichen LiteLLM Virtual Key. Die Installation braucht keine
+    Administratorrechte. Ein bereits vorhandener Task <em>LiteLLM-Tunnel</em> muss vorher geklaert werden; das Paket verhindert
+    einen Portkonflikt automatisch.</p>
+    <p>Standardmodell ist <code>local-balanced</code>. <code>local-*</code> bleibt lokal; <code>standard-*</code> kann bei Bedarf
+    auf kostenpflichtige Copilot-Luna-Modelle ausweichen.</p>
+    <p>Der Installer prueft das mitgelieferte oeffentliche Zertifikat und richtet es fuer deinen Windows-Benutzer ein.
+    Zertifikatswarnungen niemals umgehen.</p>
+  </section>
+
+  <h2>Zugangswege</h2>
+  <section>
+    <table>
+      <tr><th>Flaeche</th><th>Adresse</th><th>Zugang</th></tr>
+      <tr><td>Portal</td><td><a href="https://homepage.localhost/">https://homepage.localhost/</a></td><td>ohne Anmeldung, Tabs Dashboard/LLM/INFRA/SYSTEM/BETRIEB/TOOLS</td></tr>
+      <tr><td>Beobachtung</td><td><a href="https://grafana.localhost/grafana/">https://grafana.localhost/grafana/</a></td><td>ohne Anmeldung (anonymous, Rolle Viewer), Einbettung erlaubt</td></tr>
+      <tr><td>Gateway</td><td><a href="https://litellm.localhost/">https://litellm.localhost/</a> · <a href="https://edipoc-gateway.westeurope.cloudapp.azure.com/v1/models">oeffentlicher Tunnel</a></td><td>Persoenlicher Virtual Key erforderlich; ohne Schluessel <code>401</code></td></tr>
+      <tr><td>Logs</td><td><a href="http://127.0.0.1:3001/">http://127.0.0.1:3001/</a> (Dozzle)</td><td>nur Loopback</td></tr>
+      <tr><td>Kennzahlen</td><td><a href="http://127.0.0.1:9090/">http://127.0.0.1:9090/</a> (Prometheus)</td><td>nur Loopback</td></tr>
+    </table>
+    <p class="lead" style="margin:12px 0 0">Die benannten Namen bedient der Container <code>llm-proxy</code> (Caddy, lokale CA)
+    ausschliesslich auf <code>127.0.0.1:443</code>. Faellt wieder eine Zertifikatswarnung auf, hilft
+    <code>./scripts/74-setup-local-proxy.sh --ca-import</code>.</p>
+  </section>
+
+  <h2>Erste Handlung nach dem Start</h2>
+  <section>
+<pre><code>cd /srv/work/llm-infra-setup
+./scripts/doctor.sh            # 15 Pruefpunkte, letzter: Lokaler Zugang ueber Namen
+./scripts/healthcheck.sh       # SYSTEM HEALTHY / Hinweis auf den naechsten Befehl
+make validate                  # Syntax, YAML/JSON, Quadlet, Geheimnismuster
+make docs-build                # Doku unter site/</code></pre>
+    <p class="lead" style="margin:10px 0 0">Ein Neustart einer Quadlet-Unit haengt an diesem Rechner gelegentlich an
+    <code>podman-user-wait-network-online</code>. Gegenmittel: <code>systemctl --user start network-online.target</code>,
+    danach erneut versuchen.</p>
+  </section>
+
+  <h2>Was gemessen gesund ist</h2>
+  <section>
+    <ul>
+      <li><span class="gut">Portal</span> gethomepage <code>2.6.0</code> (Digest <code>sha256:3e38fe78…</code>), 6 Tabs, 42 Kacheln,
+          18/18 Symbole vom eigenen Rechner, <strong>0</strong> Anfragen an <code>cdn.jsdelivr.net</code> oder andere externe Hoste.</li>
+      <li><span class="gut">Grafana</span> 5 Dashboards; alle 15 geprueften <code>d-solo</code>-Einbettungen antworten ohne Cookie.</li>
+      <li><span class="gut">Prometheus</span> 8/8 Ziele <code>up</code>; 109/121 Panel-Ziele mit Daten. Die 12 ohne Daten liegen
+          ausschliesslich im Dashboard Speicher: 9 ZFS- und 3 PLE-Ziele, fuer die es auf diesem Rechner nichts zu messen gibt.</li>
+      <li><span class="gut">Lokaler Proxy</span> eigene Kennzahlen <code>llm_local_proxy_homepage_up</code> und
+          <code>llm_local_proxy_grafana_up</code> (Quelle: <code>scripts/collect-host-facts.sh</code>).</li>
+      <li><span class="gut">Oeffentlich</span> <code>/v1/models</code> liefert mit Schluessel 13 Modelle; <code>/grafana/</code>
+          und <code>/v1/models</code> bleiben ohne Schluessel <code>401</code>.</li>
+    </ul>
+  </section>
+
+  <h2>Was offen ist - und warum</h2>
+  <section>
+    <table>
+      <tr><th>Zustand</th><th>Bedeutung</th><th>Weiter</th></tr>
+      <tr>
+        <td class="boot">Laufzeit ohne Unit</td>
+        <td>Der Inferenz-Container <code>flash-next-v3</code> (Bild <code>localhost/qwen38-fp4-tp1:v3</code>) wird von keiner
+            Unit und keiner Quadlet-Datei verwaltet. Nach einem Neustart kommt das Modell nicht von selbst zurueck.</td>
+        <td>Entscheidung des Betreibers: Unit einrichten (erzwingt einen Laufzeit-Neustart von rund 15 Minuten) oder bewusst
+            manuell lassen.</td>
+      </tr>
+      <tr>
+        <td class="warn">Drift Pennyroyal</td>
+        <td><code>quadlet/pennyroyal.container</code> (Fork <code>localhost/flash-next-sm120:serving</code>) und die
+            Generatorausgabe (<code>ghcr.io/jpezzulli/sglang-rtxpro6000:v2.5.3</code>) beschreiben verschiedene Welten;
+            <code>make drift</code> bleibt deshalb rot.</td>
+        <td>Offene Entscheidung: Generator an die Wirklichkeit anpassen, committete Datei als Wahrheit, oder bewusst
+            dokumentierte Abweichung.</td>
+      </tr>
+      <tr>
+        <td class="warn">Alarm ohne Empfaenger</td>
+        <td>Alertmanager laeuft, hat aber keinen Empfaenger - Alarme bleiben unsichtbar.</td>
+        <td>Kanal waehlen (Telegram, SMTP oder bewusst ohne Empfaenger) und in
+            <code>~/.config/llm-infra/secrets.env</code> hinterlegen, nie im Repo.</td>
+      </tr>
+    </table>
+  </section>
+
+  <h2>Befehle, die alles ändern</h2>
+  <section>
+    <table>
+      <tr><th>Absicht</th><th>Befehl</th></tr>
+      <tr><td>Portal ausrollen</td><td><code>./scripts/60-install-homepage.sh</code> · Pruefung: <code>--check</code></td></tr>
+      <tr><td>Lokalen Proxy aendern</td><td>Vorlage <code>config/proxy/Caddyfile.template</code>, dann <code>./scripts/74-setup-local-proxy.sh</code> (validiert vor dem Ausrollen)</td></tr>
+      <tr><td>Beobachtung ausrollen</td><td><code>./scripts/60-install-monitoring.sh</code></td></tr>
+      <tr><td>Stand sichern</td><td><code>./scripts/session-checkpoint.sh "grund der aenderung"</code></td></tr>
+      <tr><td>Alles prüfen</td><td><code>make validate</code> · <code>make drift</code> · <code>./scripts/doctor.sh</code></td></tr>
+    </table>
+    <p class="lead" style="margin:10px 0 0">Generierte Dateien sind am Header <em>GENERIERT von …</em> zu erkennen. Immer die
+    Vorlage aendern und den Generator laufen lassen, nie die eingesetzte Datei von Hand.</p>
+  </section>
+
+  <p class="fuss">Der Windows-Teil stammt aus dem alten Bestand <code>luni-llmops-linux</code>, Zweig
+  <code>fix/homepage-local-recovery</code>, Datei <code>stacks/router/gateway/config/site/anleitung.html</code> - dort liegt auch
+  das ZIP-Paket; es wird aus diesem Repo bewusst nicht ausgeliefert (Zertifikate und Zugangswerte bleiben ausserhalb von Git).
+  Seite: <code>config/proxy/site/anleitung/index.html</code>, bedient von Caddy unter <code>/anleitung/</code>. Keine externen
+  Mittel: stylesheet und Schriften kommen vom eigenen Rechner. Stand der Messwerte: 2026-11-16.</p>
+</main>
+</body>
+</html>

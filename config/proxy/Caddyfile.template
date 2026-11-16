@@ -30,7 +30,19 @@
 homepage.localhost {
 	tls internal
 	encode zstd gzip
-	reverse_proxy __HOMEPAGE_UPSTREAM__
+
+	# Betreiber- und Nutzeranleitung vom Repo (config/proxy/site, siehe
+	# scripts/74-setup-local-proxy.sh als Bind). Beide Blenden schliessen einander
+	# aus, damit die statische Seite nicht zusaetzlich ans Portal weitergereicht
+	# wird. /anleitung ohne Schraegstrich leitet Caddy selbst auf /anleitung/ um.
+	handle /anleitung* {
+		root * /srv/llm-proxy/site
+		file_server
+	}
+
+	handle {
+		reverse_proxy __HOMEPAGE_UPSTREAM__
+	}
 }
 
 grafana.localhost {

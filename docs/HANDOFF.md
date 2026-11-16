@@ -81,6 +81,28 @@ Das Repository ist das Backup.
 
 ## 2. Was ist offen
 
+- **Laufzeit ohne Unit (wichtigster offener Punkt):** der Inferenz-Container
+  `flash-next-v3` (Bild `localhost/qwen38-fp4-tp1:v3`, 11 h Laufzeit) wird von keiner
+  Unit und keiner Quadlet-Datei verwaltet - weder auf Benutzer- noch auf Systemebene,
+  auch nicht ueber einen Pod. Nach einem Neustart des Rechners kommt das Modell nicht
+  zurueck, und `make drift` laeuft an `quadlet/pennyroyal.container` ins Leere, weil
+  dort eine andere Laufzeit beschrieben steht (Fork `localhost/flash-next-sm120:serving`).
+  Entscheidung des Betreibers erforderlich: Unit einrichten (erzwingt einen
+  Laufzeit-Neustart von rund 15 Minuten, abbruch bei laufenden Anfragen) oder bewusst
+  manuell lassen. Nichts davon ist ohne diese Antwort geschehen.
+- **Anleitung wieder bedient (2026-11-16, gemessen):** die TOOLS-Kachel zeigte auf
+  `https://homepage.localhost/anleitung/`, ohne dass jemand die Seite auslieferte.
+  Sie liegt jetzt als `config/proxy/site/anleitung/index.html` im Repo, haelt den
+  Windows-Schnellstart aus dem alten Bestand (`luni-llmops-linux`, Zweig
+  `fix/homepage-local-recovery`) und den Betriebsteil, und wird von Caddy unter
+  `/anleitung/` bedient. Gemessen: `200`, Kachelklick oeffnet `_blank` mit `200`.
+- **`check-drift.sh` schreibt in die committeten Dateien:** die Pruefung ruft die
+  Generatoren auf, und `scripts/50-install-pennyroyal.sh` schreibt sein Ergebnis in
+  die Datei im Arbeitsverzeichnis. Nach jedem `make drift` liegt deshalb eine
+  geaenderte `quadlet/pennyroyal.container` im Baum. Bis zur Entscheidung oben nicht
+  committten, sondern mit `git restore quadlet/pennyroyal.container` zuruecknehmen -
+  sonst unterschreibt ein Commit unbeaufsichtigt die Generatorfassung.
+
 1. Nach jeder Aenderung sichern: `./scripts/session-checkpoint.sh "kurze Notiz"`
    (AGENTS Grundregel 0; prueft, committet, pushed).
 2. Alarmkanal waehlen und eintragen: `docs/monitoring.md#alarmkanal`

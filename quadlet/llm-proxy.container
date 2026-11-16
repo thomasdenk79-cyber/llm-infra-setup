@@ -12,6 +12,7 @@ PublishPort=127.0.0.1:443:443
 Volume=%h/.local/share/llm-infra/caddy/data:/data:Z,U
 Volume=%h/.local/share/llm-infra/caddy/config:/config:Z,U
 Volume=@CONFIG_ROOT@/config/proxy/Caddyfile:/etc/caddy/Caddyfile:Z,ro
+Volume=@CONFIG_ROOT@/config/proxy/site:/srv/llm-proxy/site:Z,ro
 
 [Service]
 Restart=on-failure

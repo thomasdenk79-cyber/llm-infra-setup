@@ -7,6 +7,11 @@ __pycache__/
 .venv/
 *.pyc
 site/
+# Ausnahme: die Seiten des lokalen Proxies sind Quelle, nicht mkdocs-Ausgabe.
+# Ohne diese zwei Zeilen faellt config/proxy/site/ unter die Regel oben und die
+# Anleitung verschwindet stillschweigend aus Git.
+!config/proxy/site/
+!config/proxy/site/**
 .cache/
 config/homepage/.secret.env
 # Backup-Archiv und erzeugte Kennzahlen (Rechnerzustand, nicht Quellcode)

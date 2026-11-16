@@ -1,4 +1,29 @@
 # Aenderungsprotokoll
+## 2026-11-16 (Runde: Anleitung wieder bedient, Proxy-Pflichtpunkte)
+
+- Fehler behoben: die TOOLS-Kachel **Agent-Anleitung** zeigte auf
+  `https://homepage.localhost/anleitung/`, aber niemand bediente die Seite
+  (`/anleitung/` = `308`, `/anleitung.html` = `404`). Auslieferung ueber den lokalen
+  Proxy: neue `config/proxy/site/anleitung/index.html`, Bind in
+  `scripts/74-setup-local-proxy.sh`, eigene `handle`-Blende in
+  `config/proxy/Caddyfile.template` vor dem Portal. Gemessen: `200`, Titel
+  `LUNI | Anleitung`, Kachelklick oeffnet `_blank` mit `200`, 0 externe Anfragen.
+- Wiederhergestellt: der Windows-Schnellstart (drei Schritte, Virtual Key,
+  `local-balanced`) stammt aus dem alten Bestand `luni-llmops-linux`, Zweig
+  `fix/homepage-local-recovery`. Das ZIP-Paket bleibt ausserhalb dieses Repos
+  (Zertifikate), verlinkt ist der Bestandsordner.
+- Pflichtpunkte fuer den neuen Dienst `llm-proxy` nach `AGENTS.md`: Kennzahlen
+  `llm_local_proxy_homepage_up` und `llm_local_proxy_grafana_up` ueber
+  `scripts/collect-host-facts.sh` (die Caddy-Admin-API liefert `/metrics` nur auf
+  ihrer eigenen Loopback-Schnittstelle; der Umweg ueber einen inneren Lauscher brachte
+  `403` und ist zurueckgebaut) und ein Diagnosefall `Lokaler Zugang ueber Namen` in
+  `scripts/doctor.sh` (Pruefpunkt 15, curl ohne `-k`, faengt also auch einen Verlust
+  der CA-Verankerung).
+- Dokumentiert: Zielkonflikt von `GF_SERVER_ROOT_URL=https://grafana.localhost/grafana/`
+  (absolute Grafana-Links zeigen auf den benannten Namen, fuer die oeffentliche
+  Azure-Flaeche nicht erreichbar) und der Befund, dass der Inferenz-Container
+  `flash-next-v3` von keiner Unit verwaltet wird - offene Entscheidung des Betreibers.
+
 ## 2026-11-16 (Runde: Portal auf 2.6.0 - Tabs und lokale Symbole)
 
 - Fehler behoben: `scripts/60-install-homepage.sh` erzeugte die Unit nur im

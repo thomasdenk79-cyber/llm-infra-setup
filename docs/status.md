@@ -211,6 +211,39 @@ curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3002/icons/grafana.svg
 curl -s -o /dev/null -w '%{http_code}\n' https://homepage.localhost/               # 200
 ```
 
+## Anleitung unter `/anleitung/` - gemessener Stand 2026-11-16
+
+Die Kachel **Agent-Anleitung** im TOOLS-Tab fuehrte ins Leere: sie zeigt auf
+`https://homepage.localhost/anleitung/`, bedient wurde die Seite von niemandem
+(`308`/`404`). Auslieferung jetzt ueber den lokalen Proxy:
+
+- Datei `config/proxy/site/anleitung/index.html`, vom Container `llm-proxy` unter
+  `/srv/llm-proxy/site` gelesen (Bind in `scripts/74-setup-local-proxy.sh`) und von
+  Caddy in einer eigenen `handle`-Blende vor das Portal geschaltet
+  (`config/proxy/Caddyfile.template`). Beide Blenden schliessen einander aus, die
+  Seite wird also nicht zusaetzlich ans Portal weitergereicht.
+- Inhalt: der Nutzer-Teil ist aus dem alten Bestand zurueckgeholt
+  (`luni-llmops-linux`, Zweig `fix/homepage-local-recovery`,
+  `stacks/router/gateway/config/site/anleitung.html` - dort war es die
+  Windows-Einrichtungsseite mit drei Schritten), darunter der Betriebsteil mit
+  Zugangswegen, erstem Befehl, gemessenem Gesundheitsstand und den offenen Punkten.
+- Das Windows-ZIP wird **nicht** aus diesem Repo ausgeliefert: es enthaelt
+  Zertifikate, die bleiben ausserhalb von Git. Die Kachel verlinkt den Bestandsordner.
+- Gemessen: `https://homepage.localhost/anleitung/` = `200`, `/anleitung` = `308` auf
+  die Seite mit Schraegstrich, Titel `LUNI | Anleitung`, Ueberschrift `Lokale KI.
+  Einmal einrichten.`; Kachelklick im TOOLS-Tab oeffnet sie als `_blank` mit `200`
+  (Schirm `/tmp/qa/screens/anleitung.png`). Anfragen gehen ausschliesslich an
+  `homepage.localhost`/`grafana.localhost`, keine externen Mittel (stylesheet und
+  Schriften lokal).
+
+**Zielkonflikt, der bewusst bleibt:** `GF_SERVER_ROOT_URL=https://grafana.localhost/grafana/`
+macht Grafana hinter dem benannten Namen und einbettbar. absolute Links in Grafana
+(icons, return-URLs) zeigen dadurch auf `grafana.localhost` und sind fuer die
+oeffentliche Azure-Flaeche nicht erreichbar - dort hilft der Weg ueber
+`http://127.0.0.1:3000/grafana/` nicht mehr, weil derselbe Container beide Flaechen
+bedient. Aufgewogen gegen den Wunsch des Betreibers nach benannten HTTPS-Namen und
+Grafana ohne Anmeldung; die oeffentliche Flaeche bleibt bei `/v1/*` (Schluessel noetig).
+
 ## Bekannte Abweichungen (bewusst, dokumentiert)
 
 - Der Weiterleiter bindet Port 30001 an die Host-Adressen, also auch ins LAN.
