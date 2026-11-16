@@ -76,7 +76,14 @@ Das Repository ist das Backup.
    Deckel, Modellpfad `/srv/llm-models`). Entscheidung noetig, welche Fassung die
    Referenz ist; dann Generator nachziehen, nicht die Datei. Die Unit laeuft hier nicht.
    (Die fruehere Annahme, es sei nur die Gate-Zeile, war falsch und ist zurueckgenommen.)
-7. Waechter- und GitOps-Timer (`llm-runtime-watchdog`, `llm-litellm-watchdog`,
+7. Chat-Oberflaeche Open WebUI (Port 127.0.0.1:3001): es gibt noch kein Konto - das
+   erste Konto wird Administrator. `credentials.txt` sagt bisher "beim ersten Start ein
+   eigenes Konto anlegen" Dafuer liegt `scripts/64-setup-open-webui-account.sh`
+   (erzeugt Zugangswert, schreibt ihn in `credentials.txt` 0600, prueft die Anmeldung,
+   idempotent, keine Ausgabe des Werts). Nach dem Anlegen haingt die Playwright-Pruefung
+   der Chat-Antwort noch fest. Anbieter und Grundadresse sind richtig
+   (`quadlet/open-webui.container`, Datenvolumen haelt unter `~/.local/share/llm-infra/open-webui`).
+8. Waechter- und GitOps-Timer (`llm-runtime-watchdog`, `llm-litellm-watchdog`,
    `llm-crashguard`, `llm-infra-gitops`) sind auf diesem Rechner nicht
    installiert; bei Bedarf ueber die `--install`-Pfade der jeweiligen Skripte.
 

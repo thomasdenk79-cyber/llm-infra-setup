@@ -6,6 +6,14 @@
   rotes `make drift`. Die committete Referenz-Unit weicht in Bild, `Description`,
   `Ulimit`-Zeilen und Modellpfad von der Generator-Ausgabe ab; die Zeile ist wieder drin.
   Welche Fassung die Referenz ist, entscheidet der Betreiber (siehe `docs/HANDOFF.md`).
+- Neuer Pfad fuer die Chat-Oberflaeche: `scripts/64-setup-open-webui-account.sh` legt das
+  erste Open-WebUI-Konto an (es wird Administrator), erzeugt den Zugangswert, schreibt ihn
+  in `~/.config/llm-infra/credentials.txt` (0600, mit Zeitstempel-Sicherung der Datei) und
+  prueft die Anmeldung gegen `POST /api/v1/auths/signin`. Idempotent, `--check` ohne
+  Seitenwirkung, der Wert wird nie ausgegeben. Getesteter Ist-Zustand: App auf
+  127.0.0.1:3001, `/api/models` antwortet erst nach Anmeldung (401 vorher), Umleitung
+  nach `/auth` wie erwartet; Grafana auf 127.0.0.1:3000 leitet auf die oeffentliche
+  `/grafana/`-Adresse um (Wurzel-URL, kein Defekt).
 - Doku-Gaenge wieder lauffaehig: `make docs-build` schlug fehl, weil mkdocs auf diesem
   Rechner kein Systempaket ist. Neu `scripts/install-docs-tooling.sh` (idempotent, legt
   die Umgebung unter `~/.local/share/llm-infra/docs-venv` an, Version aus `versions.lock`),
