@@ -125,8 +125,8 @@
     },
     {
       "type": "timeseries",
-      "title": "Modell und PLE auf der Platte",
-      "description": "Unvollstaendige Dateien > 0 heisst: der Download wurde abgebrochen (make model setzt fort).",
+      "title": "Modell auf der Platte",
+      "description": "Unvollstaendige Dateien > 0 heisst: der Download wurde abgebrochen (make model setzt fort). Die PLE-Datei existiert auf diesem Rechner nicht, sie waere in der ausgeklappten Zeile unten richtig.",
       "id": 61422,
       "datasource": {
         "type": "prometheus",
@@ -185,12 +185,6 @@
           "refId": "B",
           "expr": "llm_model_incomplete_files",
           "legendFormat": "unvollstaendige Dateien",
-          "instant": false
-        },
-        {
-          "refId": "C",
-          "expr": "llm_ple_backing_bytes / 1e9",
-          "legendFormat": "PLE-Datei GiB",
           "instant": false
         }
       ]
