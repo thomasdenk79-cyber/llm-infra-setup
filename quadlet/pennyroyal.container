@@ -77,6 +77,8 @@ HealthStartPeriod=1800s
 Exec=exec bash /opt/pennyroyal/configs/pennyroyal-live-wsl/serve-flash-next-frspec.sh
 
 [Service]
+# Refuse to start the reference while a candidate holds the GPU; log who started us.
+ExecStartPre=%h/forge/watchdog/reference-start-gate.sh
 Restart=on-failure
 RestartSec=30
 # A live but hanging server is restarted by the external watchdog, because

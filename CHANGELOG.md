@@ -1,10 +1,11 @@
 # Aenderungsprotokoll
 ## 2026-11-16 – Oeffentlicher Zugang, Alarmweg, Beobachtungskorrektur
 
-- Stale Zeile in der Runtime-Unit entfernt: `ExecStartPre=%h/forge/watchdog/reference-start-gate.sh`
-  stand nur in der committeten `quadlet/pennyroyal.container`, wurde vom Generator
-  nie geschrieben und zeigt auf einen Pfad, den es hier nicht gibt. Damit war
-  `make drift` dauerhaft rot. Der Generator bleibt die Quelle der Wahrheit.
+- Irrtum zurueckgenommen: die entfernte
+  `ExecStartPre=%h/forge/watchdog/reference-start-gate.sh` war nicht der Grund fuer
+  rotes `make drift`. Die committete Referenz-Unit weicht in Bild, `Description`,
+  `Ulimit`-Zeilen und Modellpfad von der Generator-Ausgabe ab; die Zeile ist wieder drin.
+  Welche Fassung die Referenz ist, entscheidet der Betreiber (siehe `docs/HANDOFF.md`).
 - Doku-Gaenge wieder lauffaehig: `make docs-build` schlug fehl, weil mkdocs auf diesem
   Rechner kein Systempaket ist. Neu `scripts/install-docs-tooling.sh` (idempotent, legt
   die Umgebung unter `~/.local/share/llm-infra/docs-venv` an, Version aus `versions.lock`),

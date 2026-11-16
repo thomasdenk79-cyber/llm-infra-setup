@@ -124,12 +124,17 @@ systemctl --user list-timers --no-pager | head -5
 
 - Der Weiterleiter bindet Port 30001 an die Host-Adressen, also auch ins LAN.
   Begruendung und Verengung auf eine Adresse: `docs/runtime.md`.
-- Die committete Runtime-Unit hatte eine Zeile, die ihr Generator nie schrieb:
-  `ExecStartPre=%h/forge/watchdog/reference-start-gate.sh` (Pfad eines Referenz-
-  rechners, hier nicht vorhanden). Der Generator ist die Quelle der Wahrheit, also
-  ist die Zeile aus `quadlet/pennyroyal.container` geflogen und `make drift` ist
-  wieder gruen. Ein Rechner, der ein Start-Gate braucht, bekommt es im Generator
-  (`scripts/50-install-pennyroyal.sh`), nicht in der Datei.
+- `make drift` ist auf diesem Rechner nicht gruen, und zwar grundlegend: die
+  committete `quadlet/pennyroyal.container` ist seit laengerem Handarbeit, nicht
+  Generator-Ausgabe. Der Generator schreibt eine andere Unit (Bild
+  `ghcr.io/jpezzulli/sglang-rtxpro6000:v2.5.3` mit Digest, anderes
+  `Description`, ohne die beiden `Ulimit`-Zeilen, Modellpfad `/srv/llm-models`
+  statt `/home/z000g9hu/models`), committet ist die Fassung des Referenzrechners
+  (`localhost/flash-next-sm120:serving`, memlock/nofile-Deckel, eigene
+  Start-Gate-Zeile). Keines der beiden Bilder laeuft hier - die Laufzeit ist der
+  unmanaged Container `flash-next-v3`. Welche Fassung die Referenz ist, muss der
+  Betreiber entscheiden; danach Generator oder committete Datei angleichen. Nichts
+  davon ungeprueft anwenden: `apply-runtime-unit.sh` wuerde das Referenzbild tauschen.
 - `gpt-6-luna` ist ohne echtes Geraet-Token aus dem Katalog gestrichen;
   Reaktivierung in `docs/operations.md`.
 - 8 Panels in `04-speicher.json` (ZFS und ARC) zeigen "keine Daten", weil dieser

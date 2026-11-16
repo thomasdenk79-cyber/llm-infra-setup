@@ -69,10 +69,13 @@ Das Repository ist das Backup.
    `docs/install.md` (alter Pfad), `docs/troubleshooting.md` und
    `docs/performance.md` (sglang-Formulierungen), `AGENTS.md` Zweckzeile
    (Pennyroyal/SGLang). Nachziehen in einer eigenen Runde.
-6. Start-Gate der Referenz-Runtime: die Zeile war ein Uberbleibsel aus einer
-   Generator-Fassung und ist entfernt (Drift ist damit gruen). Falls ein Referenz-
-   Rechner das Gate wirklich braucht, es in `scripts/50-install-pennyroyal.sh`
-   wieder erzeugen lassen - nicht in der Quadlet-Datei.
+6. `make drift` ist nicht gruen, und der Grund ist grosser als zuerst angenommen:
+   `quadlet/pennyroyal.container` (Referenzrechner, Bild `localhost/flash-next-sm120:serving`,
+   `Ulimit`-Deckel, Start-Gate) weicht in mehreren Feldern von dem ab, was
+   `scripts/50-install-pennyroyal.sh` schreibt (pinned `sglang-rtxpro6000:v2.5.3`, keine
+   Deckel, Modellpfad `/srv/llm-models`). Entscheidung noetig, welche Fassung die
+   Referenz ist; dann Generator nachziehen, nicht die Datei. Die Unit laeuft hier nicht.
+   (Die fruehere Annahme, es sei nur die Gate-Zeile, war falsch und ist zurueckgenommen.)
 7. Waechter- und GitOps-Timer (`llm-runtime-watchdog`, `llm-litellm-watchdog`,
    `llm-crashguard`, `llm-infra-gitops`) sind auf diesem Rechner nicht
    installiert; bei Bedarf ueber die `--install`-Pfade der jeweiligen Skripte.
