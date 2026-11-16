@@ -69,11 +69,10 @@ Das Repository ist das Backup.
    `docs/install.md` (alter Pfad), `docs/troubleshooting.md` und
    `docs/performance.md` (sglang-Formulierungen), `AGENTS.md` Zweckzeile
    (Pennyroyal/SGLang). Nachziehen in einer eigenen Runde.
-6. Drift des Referenz-Quadlets: `make drift` laeuft auf diesem Rechner ins Leere,
-   weil `scripts/50-install-pennyroyal.sh` die `reference-start-gate`-Zeile aus
-   `quadlet/pennyroyal.container` entfernt (Gate-Skript hier nicht vorhanden).
-   Nach dem Drift-Lauf `git restore -- quadlet/pennyroyal.container`. Sauber waere
-   ein host.env-Zweig im Generator.
+6. Start-Gate der Referenz-Runtime: die Zeile war ein Uberbleibsel aus einer
+   Generator-Fassung und ist entfernt (Drift ist damit gruen). Falls ein Referenz-
+   Rechner das Gate wirklich braucht, es in `scripts/50-install-pennyroyal.sh`
+   wieder erzeugen lassen - nicht in der Quadlet-Datei.
 7. Waechter- und GitOps-Timer (`llm-runtime-watchdog`, `llm-litellm-watchdog`,
    `llm-crashguard`, `llm-infra-gitops`) sind auf diesem Rechner nicht
    installiert; bei Bedarf ueber die `--install`-Pfade der jeweiligen Skripte.

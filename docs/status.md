@@ -124,13 +124,12 @@ systemctl --user list-timers --no-pager | head -5
 
 - Der Weiterleiter bindet Port 30001 an die Host-Adressen, also auch ins LAN.
   Begruendung und Verengung auf eine Adresse: `docs/runtime.md`.
-- `make drift` ist auf diesem Rechner nicht gruen: der Pennyroyal-Generator
-  schreibt `quadlet/pennyroyal.container` ohne die Zeile
-  `ExecStartPre=%h/forge/watchdog/reference-start-gate.sh`, weil das
-  Gate-Skript hier nicht existiert (es laeuft auf dem Referenzrechner).
-  Committet ist die Referenz-Fassung. Nach einem Drift-Lauf die Datei zurueck
-  holen (`git restore -- quadlet/pennyroyal.container`); automatisch
-  zurueckgebaut wird nichts mehr (`--restore` ist optional).
+- Die committete Runtime-Unit hatte eine Zeile, die ihr Generator nie schrieb:
+  `ExecStartPre=%h/forge/watchdog/reference-start-gate.sh` (Pfad eines Referenz-
+  rechners, hier nicht vorhanden). Der Generator ist die Quelle der Wahrheit, also
+  ist die Zeile aus `quadlet/pennyroyal.container` geflogen und `make drift` ist
+  wieder gruen. Ein Rechner, der ein Start-Gate braucht, bekommt es im Generator
+  (`scripts/50-install-pennyroyal.sh`), nicht in der Datei.
 - `gpt-6-luna` ist ohne echtes Geraet-Token aus dem Katalog gestrichen;
   Reaktivierung in `docs/operations.md`.
 - 8 Panels in `04-speicher.json` (ZFS und ARC) zeigen "keine Daten", weil dieser
