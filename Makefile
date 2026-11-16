@@ -232,10 +232,12 @@ bench-long:
 	./scripts/benchmark.sh long
 tui:
 	./tui/llmctl.py
+MKDOCS ?= $(shell test -x $(HOME)/.local/share/llm-infra/docs-venv/bin/mkdocs \
+	&& echo $(HOME)/.local/share/llm-infra/docs-venv/bin/mkdocs || echo mkdocs)
 docs:
-	mkdocs serve
+	$(MKDOCS) serve
 docs-build:
-	mkdocs build --strict
+	$(MKDOCS) build --strict
 checkpoint:
 	./scripts/session-checkpoint.sh
 ungesichert:

@@ -1,6 +1,12 @@
 # Aenderungsprotokoll
 ## 2026-11-16 – Oeffentlicher Zugang, Alarmweg, Beobachtungskorrektur
 
+- Doku-Gaenge wieder lauffaehig: `make docs-build` schlug fehl, weil mkdocs auf diesem
+  Rechner kein Systempaket ist. Neu `scripts/install-docs-tooling.sh` (idempotent, legt
+  die Umgebung unter `~/.local/share/llm-infra/docs-venv` an, Version aus `versions.lock`),
+  das Makefile nutzt sie ueber `MKDOCS`. `make docs-build` (mkdocs --strict) laeuft durch;
+  die fuenf bis dahin unverlinkten Seiten (Pruefprotokoll, Ubuntu-Uebergabe,
+  Siemens-LLM-API, Recht, Messmatrix) haengen jetzt in der Navigation.
 - Fehler im Weiterleiter der Modell-API behoben: `socket.create_connection(..., timeout=10)`
   setzte auch das Lese-Timeout der Laufzeitseite. Wartete die Laufzeit bei Auslastung
   laenger als 10 s bis zum ersten Token, brach der Stuck-Strom ab und LiteLLM meldete
