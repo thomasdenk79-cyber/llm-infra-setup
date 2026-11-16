@@ -1,6 +1,13 @@
 # Aenderungsprotokoll
 ## 2026-11-16 – Oeffentlicher Zugang, Alarmweg, Beobachtungskorrektur
 
+- Fehler im Weiterleiter der Modell-API behoben: `socket.create_connection(..., timeout=10)`
+  setzte auch das Lese-Timeout der Laufzeitseite. Wartete die Laufzeit bei Auslastung
+  laenger als 10 s bis zum ersten Token, brach der Stuck-Strom ab und LiteLLM meldete
+  `TransferEncodingError: Not enough data to satisfy transfer length header` (Gateway 502
+  auf alle lokalen Modelle). Timeout gilt jetzt nur fuer den Verbindungsaufbau.
+  Neuartige Regressionspruefung: `scripts/test-vllm-forwarder.sh` mit einem langsamen
+  Vorgaetter (13 s bis zum ersten Byte); rot gegen die alte Fassung, gruen gegen die neue.
 - Repo umgezogen nach `/srv/work/llm-infra-setup`; alle Docs auf diesen Pfad
   gezogen (README und install.md folgen, siehe offene Punkte).
 - Gateway-Unit neu geschrieben: die unverwaltete `reverse-tunnel.service`

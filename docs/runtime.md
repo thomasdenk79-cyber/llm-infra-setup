@@ -70,4 +70,5 @@ Steuern:
 |---|---|---|
 | Prometheus-Job `vllm` down, Ziel `host.containers.internal:30001` | Weiterleiter laeuft nicht oder bindet nur Loopback | `./scripts/73-setup-vllm-forwarder.sh --check` |
 | Gateway antwortet auf lokale Modelle mit 502/Connection error | Weiterleiter oder Runtime unten | `curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:30001/v1/models` |
+| LiteLLM 502 mit `TransferEncodingError: Not enough data to satisfy transfer length header` unter Last | Der Weiterleiter trug die Vorlaufzeit der Laufzeit als 10-s-Socket-Timeout ab und brach den Stuck-Strom ab | `./scripts/test-vllm-forwarder.sh` (rot gegen die alte Fassung) |
 | `bind 192.168.0.x:30001 uebersprungen: Address already in use` | zweite Instanz (meist retired Unit wieder aktiviert) | `systemctl --user list-units --all \| grep -E 'vllm\|forwarder'` |

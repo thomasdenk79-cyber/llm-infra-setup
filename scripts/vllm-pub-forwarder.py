@@ -104,6 +104,12 @@ def pipe(src, dst):
 def serve(client, upstream):
     try:
         remote = socket.create_connection(upstream, timeout=10)
+        # Nur der Aufbau darf nach 10 s scheitern. Eine Antwort darf laenger
+        # dauern: bei Warteschlange in der Laufzeit liegt die Zeit bis zum ersten
+        # Token ueber mehreren Sekunden, und ein Socket-Timeout hier bricht dann
+        # den Stuck-Strom ab (bei LiteLLM: TransferEncodingError, Payload
+        # unvollstaendig).
+        remote.settimeout(None)
     except OSError as err:
         client.close()
         print(f"upstream {upstream} nicht erreichbar: {err}", file=sys.stderr, flush=True)
