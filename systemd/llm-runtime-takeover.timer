@@ -1,0 +1,10 @@
+[Unit]
+Description=llm-infra Leerlauf-Warten der Laufzeit-Uebernahme (alle 10 Minuten)
+
+[Timer]
+OnBootSec=300s
+OnUnitActiveSec=10min
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

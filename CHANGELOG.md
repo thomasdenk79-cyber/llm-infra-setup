@@ -1,4 +1,24 @@
 # Aenderungsprotokoll
+## 2026-11-16 (Runde: Warten auf Leerlauf wird ein Werkzeug)
+
+- **Neu `scripts/takeover-when-idle.sh` mit Timer.** Die Uebernahme des von Hand
+  gestarteten Containers durch `flash-next.service` haengt an einer Bedingung, die man
+  nicht bestellen kann: null laufende Anfragen. Der Timer
+  `llm-runtime-takeover.timer` (10 Minuten) misst die Anfragezahl dreimal
+  hintereinander und meldet Uebernahmebereitschaft in
+  `state/runtime-takeover/bereits.txt`; der Befehl dazu steht in der Meldung.
+  Neustarten tut er standardmaessig nicht (`LLM_TAKEOVER_AUTOMATIK=0`) - die Regel
+  "eigener, angekuendigter Schritt" gilt auch einem Timer nicht. Mit Automatik ruft er
+  `apply-runtime-unit.sh --takeover`, das die Zahl erneut prueft; nach Erfolg waehlt
+  sich der Timer selbst ab.
+- **Beide Pfade gemessen:** ohne Messquelle `unbekannt` -> Zaehler bleibt 0 (kein
+  Handeln); kiinstliche Nullmessung -> `1/3, 2/3, 3/3`, Bereitschaftsdatei, kein
+  Neustart. Unit-Vorlagen liegen in `systemd/llm-runtime-takeover.{service,timer}`.
+- Doku: neuer Abschnitt "Uebernahme der Laufzeit bei Leerlauf" in
+  `docs/operations.md`, Skriptkarte in `AGENTS.md`.
+
+
+
 ## 2026-11-16 (Runde: Rueckgabepfad, der wirklich zur Sicherung passt)
 
 - **Der Rueckgabeweg war gegen das eigene Sicherungsarchiv kaputt.** `extract()` in

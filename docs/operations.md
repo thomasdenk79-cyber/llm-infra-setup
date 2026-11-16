@@ -220,6 +220,31 @@ unbertroffen. Letzter Lauf 2026-10-08 12:31: Kette nach totem Primaer in
 Luna direkt 1,73 s. Referenz der ersten bewiesenen Kette: 9,78 s Gesamt bei
 ~45 tok/s auf Bonsai (Langmessung).
 
+### Uebernahme der Laufzeit bei Leerlauf
+
+Solange die Laufzeit von Hand gestartet ist, gehoert ihr Container keiner Unit -
+ein Rechnerneustart waere das Aus fuer das Modell. `scripts/takeover-when-idle.sh`
+schliesst die Luecke, ohne die Neustart-Regel zu biegen: der Timer
+`llm-runtime-takeover.timer` fragt alle 10 Minuten die Anfragezahl
+(`vllm:num_requests_running` ueber den Weiterleiter, sonst die Runtime), und erst
+nach drei aufeinanderfolgenden Nullmessungen meldet er Uebernahmebereitschaft in
+`state/runtime-takeover/bereits.txt`.
+
+Standardmaessig **startet er nichts neu** - die Regel des Repos ist ein eigener,
+angekuendigter Neustartschritt, und eine Grafikkarte laeuft man nicht nebenbei
+an. Ausfuehren ist dann ein Befehl:
+
+```bash
+./scripts/takeover-when-idle.sh --status              # Protokoll, Zaehler, Bereitstatus
+./scripts/apply-runtime-unit.sh --takeover            # prueft die Anfragezahl erneut
+```
+
+Wer die Automatik will: `LLM_TAKEOVER_AUTOMATIK=1 ./scripts/takeover-when-idle.sh
+--install`. Auch dann laeuft der Neustart durch `apply-runtime-unit.sh --takeover`,
+das bei laufenden Anfragen und bei nicht lesbarer Anfragezahl abbricht - zwei
+RIegel, einer vom Waechter, einer vom Werkzeug. Nach gelungener Uebernahme waehlt
+sich der Timer selbst ab (`systemctl --user is-active llm-runtime-takeover.timer`).
+
 ### Waechter fuer den Gateway
 
 ```bash

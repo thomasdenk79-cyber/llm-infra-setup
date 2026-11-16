@@ -111,6 +111,7 @@ Das Repository ist das einzige Backup dieser Arbeit. Deshalb gilt fuer jeden Sch
 | `scripts/deploy-ready.sh` | Vollstaendiger Einstieg nach Neustart, prueft Voraussetzungen |
 | `scripts/deploy-all.sh` | Wrapper ueber mehrere Units (Betreiberaktion) |
 | `scripts/apply-runtime-unit.sh` | Unit-Aenderungen sicher anwenden, `--list`, `--dry-run`, `--install-only`, `--restart-only`, `--takeover` (bricht bei laufenden Anfragen ab) |
+| `scripts/takeover-when-idle.sh` | wartet auf Leerlauf und meldet die Uebernahmebereitheit, `--install`/`--uninstall`/`--status`; Neustart nur mit `LLM_TAKEOVER_AUTOMATIK=1` |
 | `scripts/doctor.sh` | gefuehrte Diagnose; Ausgabe endet mit dem naechsten Befehl |
 | `scripts/healthcheck.sh` | Kurzpruefung; Langform ist `doctor.sh` |
 | `scripts/benchmark.sh` + `benchmark_probe.py` | Messung von Vorlaufzeit und Schreibrate |

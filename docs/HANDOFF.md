@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-11-16T15:45:24+01:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-11-16T15:52:58+01:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe (2026-11-16)
 
@@ -27,6 +27,11 @@ Das Repository ist das Backup.
   fehlenden Teilen mit Rueckgabewert 1 und naechstem Befehl — ein Lauf mit 0 bedeutet
   also wirklich vollstaendig. Nicht enthalten (bewusst): Grafanas Ausfuhrordner
   `png/csv/pdf`.
+* Uebernahme der Laufzeit unter `flash-next.service` ist vorbereitet und wartet auf
+  Leerlauf: `llm-runtime-takeover.timer` misst alle 10 Minuten und meldet
+  `state/runtime-takeover/bereits.txt`. Ansehen: `./scripts/takeover-when-idle.sh
+  --status`; ausfuehren: `./scripts/apply-runtime-unit.sh --takeover` (bricht bei
+  laufenden Anfragen ab, zweifach geprueft). Rueckweg: `state/runtime-restore-flash-next-v3.sh`.
 * Beide Waechter sind installiert und laufen: `llm-litellm-watchdog.timer`
   (5 Minuten, startet nur `litellm.service`) und `llm-runtime-watchdog.timer`
   (60 Sekunden, **warnt nur** - `PENNY_WATCHDOG_RESTART=0`). Beide fragen die Zahl
@@ -39,9 +44,9 @@ Das Repository ist das Backup.
 * Die Inferenz-Laufzeit bekommt eine Unit aus dem Repo: `scripts/76-setup-runtime-unit.sh`
   nimmt den laufenden Container auf (`config/runtime/flash-next.spec`: 53 Umgebungs-
   variablen, 65 Schalter, 7 Geraete, 5 Ordner, 3 Obergrenzen) und erzeugt daraus
-  `quadlet/flash-next.container`. Uebernehmen laeuft das bei Leerlauf:
-  `./scripts/apply-runtime-unit.sh --takeover` (bricht bei laufenden Anfragen und bei
-  Abweichung zwischen Spec und Laeufer ab). Rueckweg: `state/runtime-restore-flash-next-v3.sh`.
+  `quadlet/flash-next.container`. Spec und Laeufer muessen uebereinstimmen: bei
+  Bild- oder Schalterzahlabweichung bricht die Uebernahme ab und nennt den
+  Aufnahmefall. Spec-Aufnahme bei Aenderungen am Container nicht vergessen.
 * Inferenz-Laufzeit ist der unmanaged Container `flash-next-v3` (vLLM) mit
   API nur auf `127.0.0.1:30000`. Es gibt auf diesem Rechner KEIN Pennyroyal;
   `config/host.env` (`RUNTIME_CONTAINER=flash-next-v3`, `RUNTIME_UNIT=` leer,
@@ -448,3 +453,7 @@ rueckgabepfad repariert, sicherung mit selbstpruefung und aufbewahrung
 ## Notiz 2026-11-16T15:45:24+01:00
 
 aenderungsprotokoll fuer rueckgabe und sicherung
+
+## Notiz 2026-11-16T15:52:58+01:00
+
+warteinheit fuer die laufzeit-uebernahme bei leerlauf

@@ -1,0 +1,8 @@
+[Unit]
+Description=llm-infra Wartet auf Leerlauf fuer die Uebernahme der Inferenz-Laufzeit
+Wants=llm-inference-network.service
+
+[Service]
+Type=oneshot
+Nice=10
+ExecStart=@CONFIG_ROOT@/scripts/takeover-when-idle.sh check
