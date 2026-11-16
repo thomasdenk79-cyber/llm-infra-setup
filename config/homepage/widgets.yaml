@@ -1,7 +1,17 @@
 ---
-# Homepage info widgets - https://gethomepage.dev/configs/info-widgets/
-# News-Feeds = "was gibt's Neues an Forks/Modellen" - Kurz gehalten:
-# nur Quellen, die die eigenen Runtimes + Modellwelt abdecken.
+# Info-Widgets des Portals - https://gethomepage.dev/configs/info-widgets/
+#
+# Gueltig fuer die gepinnte Version ghcr.io/gethomepage/homepage:v2.4.0. Diese
+# Version kennt als Info-Widgets ausschliesslich weatherapi, openweathermap,
+# resources, search, greeting, datetime, logo, unifi_console, glances,
+# openmeteo, longhorn, kubernetes und stocks (widgetMappings in
+# src/components/widgets/widget.jsx der Version v2.4.0). Jeder andere Block
+# rendert im Portal nur "Missing <name>" - das fruehere "rss:" war deshalb
+# tote Konfiguration. Die Nachrichtenquellen stehen als Lesezeichen in
+# bookmarks.yaml.
+#
+# cpu und memory zeigen die Nutzung des Containers, nicht des Rechners
+# (upstream-Doku zum resources-Widget); die Host-Zahlen liefert Grafana.
 
 - resources:
     cpu: true
@@ -11,24 +21,3 @@
 - search:
     provider: duckduckgo
     target: _blank
-
-- rss:
-    html: false
-    limit: 15
-    refreshInterval: 900000
-    feeds:
-      # eigener Stack: Fork-/Runtime-Releases
-      - type: rss
-        source: https://github.com/sgl-project/sglang/releases.atom
-      - type: rss
-        source: https://github.com/ggml-org/llama.cpp/releases.atom
-      - type: rss
-        source: https://github.com/vllm-project/vllm/releases.atom
-      - type: rss
-        source: https://github.com/BerriAI/litellm/releases.atom
-      # Modell- und Forschungsnews
-      - type: rss
-        source: https://huggingface.co/blog/feed.xml
-      # Community-Puls
-      - type: reddit
-        source: LocalLLaMA

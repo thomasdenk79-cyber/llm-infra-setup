@@ -13,3 +13,6 @@ config/homepage/.secret.env
 state/backups/
 state/config-backup-*.tar.gz
 *.prom
+
+# Laufzeit-Protokoll des Portals (schreibt der Container in die Bind-Mount)
+config/homepage/logs/

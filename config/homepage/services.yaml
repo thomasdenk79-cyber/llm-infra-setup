@@ -1,6 +1,10 @@
+# Portal-Kacheln. Jede Kachel zeigt auf einen Dienst, der auf diesem Rechner
+# wirklich hoert (Pruefung: podman ps + curl auf 127.0.0.1). Grafana liegt im
+# Unterpfad /grafana/, weil Caddy auf dem Gateway-Rechner mehrere Dienste aus
+# einem Serverblock bedient (GF_SERVER_SERVE_FROM_SUB_PATH=true).
 - Chat & RAG:
     - Wissens-Wiki:
-        icon: markdown.png
+        icon: mkdocs.png
         href: http://127.0.0.1:3003
         description: Chronik, Erkenntnisse, Ergebnisse (Mensch + Agent)
     - Open WebUI:
@@ -8,14 +12,14 @@
         href: http://127.0.0.1:3001
         description: Chat, Dateien und RAG
     - LiteLLM:
-        icon: litellm.png
+        icon: mdi-api.svg
         href: http://127.0.0.1:4000
         description: OpenAI-kompatibles Gateway
+    - LLM-Laufzeit:
+        icon: mdi-robot.svg
+        href: http://127.0.0.1:30000/v1/models
+        description: Modellserver flash-next-v3 (Modellliste, /health, /metrics)
 - Verwaltung:
-    - Komodo:
-        icon: komodo.png
-        href: http://127.0.0.1
-        description: Host- und Containerverwaltung
     - Dozzle:
         icon: dozzle.png
         href: http://127.0.0.1:8080
@@ -27,11 +31,11 @@
 - Monitoring:
     - Grafana:
         icon: grafana.png
-        href: http://127.0.0.1:3000
-        description: Dashboards
+        href: http://127.0.0.1:3000/grafana/
+        description: Dashboards (Unterpfad /grafana/)
     - Agenten-Observatorium:
         icon: grafana.png
-        href: http://127.0.0.1:3000/d/llm-infra-agent-observatorium
+        href: http://127.0.0.1:3000/grafana/d/llm-infra-agent-observatorium
         description: Dashboard 05 - Coding-Arme live (Kollegen-Demo)
     - Prometheus:
         icon: prometheus.png
@@ -40,13 +44,17 @@
     - Loki:
         icon: loki.png
         href: http://127.0.0.1:3100
-        description: Logs und Abfragen
+        description: Logs (kein Web-UI; Abfragen ueber Grafana /grafana/explore)
+    - Alertmanager:
+        icon: alertmanager.png
+        href: http://127.0.0.1:9093
+        description: Alarme, Stillhaltefristen und Routing
 - Wissen:
     - Doku & Handbuch:
-        icon: markdown.png
+        icon: mdi-book-open-variant.svg
         href: https://github.com/thomasdenk79-cyber/llm-infra-setup/tree/main/docs
         description: Monitoring, CMDB, Betriebsregeln
     - CMDB:
-        icon: list.png
+        icon: mdi-view-list.svg
         href: https://github.com/thomasdenk79-cyber/llm-infra-setup/blob/main/docs/cmdb.yaml
         description: Was laeuft wo mit welcher API

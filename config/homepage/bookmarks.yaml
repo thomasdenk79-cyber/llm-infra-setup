@@ -1,7 +1,40 @@
+---
+# Lesezeichen - https://gethomepage.dev/configs/bookmarks
+#
+# Format fuer die gepinnte Version v2.4.0: ein Lesezeichen ist ein Zweitschluessel
+# mit genau einer Zuordnung darunter (src/utils/config/api-response.js uebernimmt
+# nur das erste Element der Liste). Gueltige Schluessel sind href, abbr, icon und
+# description - ein Wert wie "ab:" oder "repo:" wird ignoriert, die Kachel bleibt
+# dann ohne Link.
+#
+# Die Nachrichtenquellen waren frueher ein rss-Block in widgets.yaml; v2.4.0 kennt
+# kein RSS-Info-Widget, also sind es Lesezeichen auf die Release-Seiten.
 - Dokumentation:
     - Open WebUI RAG:
-        - ab: https://docs.openwebui.com/features/chat-conversations/rag/
+        - abbr: OW
+          href: https://docs.openwebui.com/features/chat-conversations/rag/
     - Komodo:
-        - docs: https://komo.do/docs
+        - abbr: KO
+          href: https://komo.do/docs
     - Projektstatus:
-        - repo: https://github.com/thomasdenk79-cyber/llm-infra-setup
+        - abbr: PS
+          href: https://github.com/thomasdenk79-cyber/llm-infra-setup
+- Nachrichten:
+    - SGLang Releases:
+        - abbr: SG
+          href: https://github.com/sgl-project/sglang/releases
+    - llama.cpp Releases:
+        - abbr: LC
+          href: https://github.com/ggml-org/llama.cpp/releases
+    - vLLM Releases:
+        - abbr: VL
+          href: https://github.com/vllm-project/vllm/releases
+    - LiteLLM Releases:
+        - abbr: LL
+          href: https://github.com/BerriAI/litellm/releases
+    - Hugging Face Blog:
+        - abbr: HF
+          href: https://huggingface.co/blog
+    - r/LocalLLaMA:
+        - abbr: RL
+          href: https://www.reddit.com/r/LocalLLaMA/
