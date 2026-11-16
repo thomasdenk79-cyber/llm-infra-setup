@@ -397,6 +397,37 @@ else
   good 'Chat-Dienst haelt einen eigenen Gateway-Schluessel (nicht den Master)'
 fi
 
+# 17 Waechter -------------------------------------------------------------------
+title 'Waechter'
+# Beide Waechter gehoeren zum Stapel: der Gateway-Waechter startet nur litellm neu,
+# der Laufzeit-Waechter warnt standardmaessig nur. Ein Timer, der nicht wieder
+# bewaffnet wird, ist schlimmer als gar keiner - er wirkt aktiv und prueft nie wieder.
+for timer in llm-litellm-watchdog.timer llm-runtime-watchdog.timer; do
+  fall=''
+  case "${timer}" in
+    llm-litellm-watchdog.*) fall='./scripts/litellm-watchdog.sh --install' ;;
+    llm-runtime-watchdog.*) fall='./scripts/runtime-watchdog.sh --install' ;;
+  esac
+  if ! systemctl --user is-active --quiet "${timer}" 2>/dev/null; then
+    warn "Timer ${timer} laeuft nicht; die Ueberwachung faellt still weg." "${fall}"
+    continue
+  fi
+  real="$(systemctl --user show "${timer}" -p NextElapseUSecRealtime --value 2>/dev/null)"
+  mono="$(systemctl --user show "${timer}" -p NextElapseUSecMonotonic --value 2>/dev/null)"
+  if [[ -z "${real}" && -z "${mono}" ]]; then
+    warn "Timer ${timer} ist aktiv, hat aber keine naechste Laufzeit - er feuert einmal und dann nie wieder." \
+      "systemctl --user restart ${timer}   (und nachsehen: systemctl --user cat ${timer})"
+  else
+    # Die show-Werte sind Uhrzeitpunkte (Realtime bzw. Monotonic), keine Countdowns -
+    # die Leserbereitung holt sich die Restzeit lieber aus der Timer-Liste selbst.
+    plan="$(systemctl --user list-timers --all --no-pager 2>/dev/null | grep -F "${timer}" | head -1)"
+    ueber="$(printf '%s' "${plan}" \
+      | sed -E 's/^[A-Za-z]{3} [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} +[A-Za-z]{2,5} +//; s/[A-Za-z]{3} [0-9]{4}-.*$//' \
+      | sed -E 's/ +$//')"
+    good "Timer ${timer} laeuft, naechster Lauf in ${ueber:-bald}"
+  fi
+done
+
 # Abschluss -------------------------------------------------------------------
 printf '\n\033[1mErgebnis\033[0m\n'
 printf '  %d Pruefpunkte, %d Fehler, %d Warnungen\n' "${checks}" "${fails}" "${warns}"

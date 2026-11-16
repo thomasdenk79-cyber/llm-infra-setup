@@ -1,4 +1,37 @@
 # Aenderungsprotokoll
+## 2026-11-16 (Runde: Ueberwachung lueckenlos - Waechter, Dashboards, Lektuere)
+
+- **Beide Waechter laufen jetzt wirklich.** `llm-litellm-watchdog.timer` prueft alle
+  5 Minuten (Lebensanzeige plus 1-Token-Ruf durch den Router),
+  `llm-runtime-watchdog.timer` alle 60 Sekunden. Bis dahin war **kein** Waechter
+  installiert, obwohl `docs/architecture.md` den Laufzeit-Timer beschrieb.
+- **Defekt am Gateway-Waechter (fail-open auf todender Messgroesse).** Die Zahl
+  laufender Anfragen wurde auf Port 8001 gegen `sglang:num_running_reqs` gefragt -
+  dort antwortet auf diesem Rechner niemand, und das Ergebnis `unknown` galt als
+  Freifahrtschein fuer den Neustart, obwohl gerade Anfragen laufen koennen. Gefragt
+  wird jetzt der Weiterleiter (`VLLM_METRICS_PORT`, `vllm:num_requests_running`) und
+  dann die Runtime; das sglang-Muster bleibt fuer Pennyroyal-Rechner stehen, und ohne
+  Zahl wird der Neustart verschoben.
+- **Defekt am Laufzeit-Waechter (falsche Unit, falscher Port).** Er pruefte
+  `/health` auf Port 8001 (hier: 30000) und wollte `pennyroyal.service` neu starten -
+  die es hier nicht gibt. Bei Installation haette er die gesunde Laufzeit dauerhaft
+  fuer krank gehalten. Port kommt aus `RUNTIME_PORT`, die Unit aus `RUNTIME_UNIT` oder
+  der Suche nach der Unit zu `RUNTIME_CONTAINER`; ohne Treffer bleibt es bei der
+  Warnung. Automatischer Neustart bleibt standardmaessig AUS
+  (`PENNY_WATCHDOG_RESTART=0`) - ein Runtime-Neustart ist ein eigener, angekuendigter
+  Schritt und keine Timer-Automatik.
+- **Neuer Arztlauf-Pruefpunkt 17 „Waechter“, gegentested.** Er prueft nicht nur
+  `is-active`, sondern ob der Timer eine naechste Laufzeit hat: ein Timer, der einmal
+  feuert und nie wieder bewaffnet wird, wirkt aktiv und ueberwacht nichts. Gegentest:
+  Timer gestoppt -> WARNUNG mit `./scripts/runtime-watchdog.sh --install`.
+- **Speicher-Dashboard ohne totes Ziel.** Das Panel „Modell und PLE auf der Platte“
+  frage `llm_ple_backing_bytes` - eine Reihe, die ohne PLE nie existiert; Panel heisst
+  „Modell auf der Platte“ und zeigt nur noch die beiden lebenden Reihen. damit
+  liefern **alle 101 sichtbaren Messwert-Abfragen der fuenf Dashboards Daten**
+  (Panel fuer Panel gegen Prometheus gemessen); die 12 Reihen ohne Daten liegen
+  bewusst in der ausgeklappten ZFS/PLE-Zeile, das Logs-Panel ist leer, weil es keine
+  Fehler gibt (Strom nachgewiesen).
+
 ## 2026-11-16 (Runde: drei Betreiberentscheidungen - Drift, Laufzeit-Unit, Alarmkanal)
 
 - **Lektüre auf den Stand gebracht.** Die README-Tabelle nennt jetzt die benannten

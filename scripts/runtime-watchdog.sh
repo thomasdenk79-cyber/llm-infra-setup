@@ -3,12 +3,18 @@
 # Neustart ~15 Minuten dauert und laufende Anfragen abbricht. Automatischen
 # Neustart nur einschalten, wenn das bewusst gewollt ist:
 #   PENNY_WATCHDOG_RESTART=1 ./scripts/runtime-watchdog.sh --install
+#
+# Die Unit wird nicht geraten: zuerst gilt RUNTIME_UNIT aus config/host.env, sonst
+# wird die Unit gesucht, deren ContainerName zu RUNTIME_CONTAINER passt. Ohne
+# Treffer bleibt der Waechter bei der Warnung und startet nichts.
 set -Eeuo pipefail
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 source "${root}/lib/common.sh"
 source "${root}/lib/units.sh"
 [[ -f "${root}/config/host.env" ]] && source "${root}/config/host.env"
 : "${PENNYROYAL_PORT:=8001}"
+: "${RUNTIME_PORT:=${PENNYROYAL_PORT:-8001}}"   # hier: 30000 (vLLM)
+: "${VLLM_METRICS_PORT:=30001}"                 # Weiterleiter, bringt vLLM-Metriken ins Netz
 : "${PENNY_WATCHDOG_RESTART:=0}"
 : "${PENNY_WATCHDOG_FAILURES:=3}"
 state_file="${STATE_DIR}/watchdog.state"
@@ -17,11 +23,39 @@ mkdir -p "${STATE_DIR}"
 
 say() { printf '[%s] %s\n' "$(date -Is)" "$*" | tee -a "${log_file}"; }
 
-check_health() { curl -fsS --max-time 10 "http://127.0.0.1:${PENNYROYAL_PORT}/health" >/dev/null 2>&1; }
+check_health() { curl -fsS --max-time 10 "http://127.0.0.1:${RUNTIME_PORT}/health" >/dev/null 2>&1; }
+
+laufzeit_unit_bestimmen() {
+  # Wie in apply-runtime-unit.sh: erst die Ansage, sonst die Unit zum Container.
+  [[ -n "${RUNTIME_UNIT:-}" ]] && { printf '%s' "${RUNTIME_UNIT}"; return 0; }
+  local datei
+  for datei in "${root}"/quadlet/*.container; do
+    [[ -f "${datei}" ]] || continue
+    if grep -qs "^ContainerName=${RUNTIME_CONTAINER:-__keiner__}\$" "${datei}"; then
+      printf '%s' "$(basename "${datei}" .container)"
+      return 0
+    fi
+  done
+  return 1
+}
 
 running_requests() {
-  curl -fsS --max-time 5 "http://127.0.0.1:${PENNYROYAL_PORT}/metrics" 2>/dev/null \
-    | awk '/^sglang:num_running_reqs\{/ {print $2; found=1} END{if(!found) print "unknown"}'
+  # Erst der Weiterleiter (vLLM-Metriken), dann die Runtime selbst; das
+  # sglang-Muster bleibt fuer Rechner mit Pennyroyal stehen. Ohne Zahl kommt
+  # 'unbekannt' - der Aufrufer verschiebt dann, statt zu raten.
+  local orte port mess wert
+  orte=("${VLLM_METRICS_PORT:-30001}" "${RUNTIME_PORT:-8001}" "${PENNYROYAL_PORT:-8001}")
+  for port in "${orte[@]}"; do
+    mess="$(curl -fsS --max-time 5 "http://127.0.0.1:${port}/metrics" 2>/dev/null)" || continue
+    wert="$(printf '%s\n' "${mess}" \
+      | awk '/^vllm:num_requests_running\{/ {print $2; gefunden=1; exit}
+              /^sglang:num_running_reqs\{/ {print $2; gefunden=1; exit}
+              END { if (!gefunden) print "unbekannt" }')"
+    [[ "${wert}" == 'unbekannt' || -z "${wert}" ]] && continue
+    printf '%s' "${wert}"
+    return 0
+  done
+  printf 'unbekannt'
 }
 
 case "${1:-check}" in
@@ -48,7 +82,8 @@ case "${1:-check}" in
     fi
     fails=$((fails + 1)); echo "${fails}" > "${state_file}"
     say "FEHLER: /health beantwortet nicht (Versuch ${fails}/${PENNY_WATCHDOG_FAILURES})."
-    say '  Erste Hilfe: journalctl --user -u pennyroyal.service -n 120 --no-pager'
+    laufzeit_unit="$(laufzeit_unit_bestimmen || true)"
+    say "  Erste Hilfe: journalctl --user -u ${laufzeit_unit:-LAUFZEIT_UNIT}.service -n 120 --no-pager"
     say '  Naechster Schritt: ./scripts/doctor.sh'
     if (( fails < PENNY_WATCHDOG_FAILURES )); then exit 0; fi
     if [[ "${PENNY_WATCHDOG_RESTART}" != 1 ]]; then
@@ -57,12 +92,17 @@ case "${1:-check}" in
       exit 1
     fi
     running="$(running_requests)"
-    if [[ "${running}" != "0" && "${running}" != "unknown" ]]; then
-      say 'Auto-Neustart verschoben: es laufen gerade Anfragen (running='"${running}"').'
+    if [[ "${running}" == 'unbekannt' || "${running%.*}" != "0" ]]; then
+      say 'Auto-Neustart verschoben: laufende Anfragen ('"${running}"') oder keine Zahl erreichbar.'
       exit 0
     fi
+    laufzeit_unit="$(laufzeit_unit_bestimmen || true)"
+    if [[ -z "${laufzeit_unit}" ]]; then
+      say 'Keine Unit zur Laufzeit gefunden - kein Auto-Neustart. RUNTIME_UNIT in config/host.env setzen.'
+      exit 1
+    fi
     say 'Auto-Neustart ausgelöst (Runtime war krank und leer).'
-    systemctl --user restart pennyroyal.service || say 'Neustart fehlgeschlagen; Journal prüfen.'
+    systemctl --user restart "${laufzeit_unit}.service" || say 'Neustart fehlgeschlagen; Journal prüfen.'
     echo 0 > "${state_file}"
     ;;
   *)

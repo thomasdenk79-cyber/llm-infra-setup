@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-11-16T15:36:05+01:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-11-16T15:41:30+01:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe (2026-11-16)
 
@@ -27,6 +27,12 @@ Das Repository ist das Backup.
   fehlenden Teilen mit Rueckgabewert 1 und naechstem Befehl — ein Lauf mit 0 bedeutet
   also wirklich vollstaendig. Nicht enthalten (bewusst): Grafanas Ausfuhrordner
   `png/csv/pdf`.
+* Beide Waechter sind installiert und laufen: `llm-litellm-watchdog.timer`
+  (5 Minuten, startet nur `litellm.service`) und `llm-runtime-watchdog.timer`
+  (60 Sekunden, **warnt nur** - `PENNY_WATCHDOG_RESTART=0`). Beide fragen die Zahl
+  laufender Anfragen jetzt beim Weiterleiter (`vllm:num_requests_running`) und
+  verschieben bei fehlender Zahl, statt zu raten. Arztlauf-Pruefpunkt 17 prueft,
+  ob die Timer eine naechste Laufzeit haben.
 * Alarmierung ist entschieden: **ohne Empfaenger** (Betreiberentscheidung 2026-11-16).
   ntfy und E-Mail bleiben vorbereitet und auskommentiert; Begruendung und Umschaltweg
   in `docs/monitoring.md#alarmkanal`.
@@ -430,3 +436,7 @@ laektuere auf stand: README, install.md und skriptkarte
 ## Notiz 2026-11-16T15:36:05+01:00
 
 speicher-dashboard ohne totes ple-ziel, alle sichtbaren panels mit daten
+
+## Notiz 2026-11-16T15:41:30+01:00
+
+waechter installiert und fail-closed, dashboards ohne tote zeile

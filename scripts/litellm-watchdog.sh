@@ -12,8 +12,10 @@
 # Schutzregeln (Warum: andere Agenten teilen sich diese Maschine):
 #  * GPU-Sperre: haelt ${XDG_RUNTIME_DIR}/copilot-sm120-gpu.lock ein flock vor
 #    (ein anderer Agent arbeitet an der Grafikkarte), passiert nichts.
-#  * Laufende Anfragen: vor jedem Neustart wird sglang:num_running_reqs auf der
-#    Runtime gelesen; ungleich 0 bedeutet "verschieben, nicht stoeren".
+#  * Laufende Anfragen: vor jedem Neustart wird die Zahl laufender Anfragen der
+#    Runtime gelesen (vLLM: vllm:num_requests_running, sglang: num_running_reqs).
+#    Ungleich 0 heisst 'verschieben, nicht stoeren'; ist keine Zahl erreichbar,
+#    wird ebenfalls verschoben - eine fehlende Zahl ist kein Freifahrtschein.
 #  * Loopsperre: nach drei Neustarts ohne Gesundheitsnachweis ist bis zum
 #    manuellen --reset Schluss mit Automatik (verhindert Restart-Schleifen).
 set -Eeuo pipefail
@@ -23,6 +25,8 @@ source "${root}/lib/units.sh"
 [[ -f "${root}/config/host.env" ]] && source "${root}/config/host.env"
 : "${LITELLM_PORT:=4000}"
 : "${PENNYROYAL_PORT:=8001}"
+: "${RUNTIME_PORT:=${PENNYROYAL_PORT:-8001}}"   # hier: 30000 (vLLM)
+: "${VLLM_METRICS_PORT:=30001}"                # Weiterleiter, bringt vLLM-Metriken ins Netz
 : "${LITELLM_WATCHDOG_SMOKE:=1}"      # 0 = nur liveliness, kein Modellaufruf
 : "${LITELLM_WATCHDOG_MAX_RESTARTS:=3}"
 state_dir="${STATE_DIR}/litellm-watchdog"
@@ -57,8 +61,23 @@ smoke() {
 }
 
 running_requests() {
-  curl -fsS --max-time 5 "http://127.0.0.1:${PENNYROYAL_PORT}/metrics" 2>/dev/null \
-    | awk '/^sglang:num_running_reqs\{/ {print $2; found=1} END{if(!found) print "unknown"}'
+  # Zahl der laufenden Anfragen. Erst der Weiterleiter (vLLM-Metriken), dann die
+  # Runtime selbst: auf diesem Rechner laeuft vLLM, das sglang-Muster bleibt fuer
+  # Rechner mit Pennyroyal stehen. Ohne Zahl kommt 'unbekannt' zurueck - der
+  # Aufrufer verschiebt dann den Neustart statt zu raten.
+  local orte port mess wert
+  orte=("${VLLM_METRICS_PORT:-30001}" "${RUNTIME_PORT:-8001}" "${PENNYROYAL_PORT:-8001}")
+  for port in "${orte[@]}"; do
+    mess="$(curl -fsS --max-time 5 "http://127.0.0.1:${port}/metrics" 2>/dev/null)" || continue
+    wert="$(printf '%s\n' "${mess}" \
+      | awk '/^vllm:num_requests_running\{/ {print $2; gefunden=1; exit}
+              /^sglang:num_running_reqs\{/ {print $2; gefunden=1; exit}
+              END { if (!gefunden) print "unbekannt" }')"
+    [[ "${wert}" == 'unbekannt' || -z "${wert}" ]] && continue
+    printf '%s' "${wert}"
+    return 0
+  done
+  printf 'unbekannt'
 }
 
 gpu_lock_busy() {
@@ -112,8 +131,8 @@ case "${1:-check}" in
       exit 0
     fi
     running="$(running_requests)"
-    if [[ "${running}" != "0" && "${running}" != "unknown" ]]; then
-      say 'Neustart verschoben: es laufen gerade Anfragen an der Runtime (running='"${running}"').'
+    if [[ "${running}" == 'unbekannt' || "${running%.*}" != "0" ]]; then
+      say 'Neustart verschoben: laufende Anfragen ('"${running}"') oder keine Zahl erreichbar - ohne Zahl wird nicht neu gestartet.'
       exit 0
     fi
     restarts=$((restarts + 1)); echo "${restarts}" > "${restarts_file}"

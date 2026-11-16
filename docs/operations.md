@@ -229,14 +229,33 @@ Luna direkt 1,73 s. Referenz der ersten bewiesenen Kette: 9,78 s Gesamt bei
 
 Der Timer `llm-litellm-watchdog.timer` prueft die keyless Lebensanzeige
 (`/health/liveliness`) plus einen 1-Token-Ruf durch den Router. Bei Ausfall:
-laufende Anfragen der Runtime abfragen (`sglang:num_running_reqs`), GPU-Sperre
-`${XDG_RUNTIME_DIR}/copilot-sm120-gpu.lock` per `flock -n` respektieren, dann
-und nur dann ausschliesslich `litellm.service` neu starten - nie die Runtime.
+laufende Anfragen der Runtime abfragen - zuerst der Weiterleiter auf
+`${VLLM_METRICS_PORT:-30001}` (`vllm:num_requests_running`), dann die Runtime selbst
+(`sglang:num_running_reqs` bleibt fuer Pennyroyal-Rechner stehen). **Ohne Zahl wird
+verschoben, nicht neu gestartet**: eine nicht erreichbare Messgroesse ist kein
+Freifahrtschein. Dann die GPU-Sperre
+`${XDG_RUNTIME_DIR}/copilot-sm120-gpu.lock` per `flock -n` respektieren und erst
+dann ausschliesslich `litellm.service` neu starten - nie die Runtime.
 Nach drei ergebnislosen Neustarts greift die Loopsperre. Protokoll:
 `state/litellm-watchdog/watchdog.log`. Das ist die Gateway-Ergaenzung zum
-Runtime-Waechter `scripts/runtime-watchdog.sh`; als Ueberwachungsluecke war er
+Runtime-Waechter `scripts/runtime-watchdog.sh`; als Ueberwachungsluecke waren beide
 bislang ein M4-artiger Fall aus `docs/GRAFANA-DRIFT-AUDIT-2026-10-08.md`
 (Soll-Ist-Widerspruch ohne aktiven Nachweis).
+
+Der Runtime-Waechter laeuft auf diesem Rechner als `llm-runtime-watchdog.timer`
+(alle 60 Sekunden) und **warnt nur**: `PENNY_WATCHDOG_RESTART` steht standardmaessig
+auf 0, weil ein Runtime-Neustart ~15 Minuten kostet und laufende Anfragen wirft -
+gegen die Regel, dass ein Neustart ein eigener, angekuendigter Schritt ist. An
+laufenden Anfragen und an einer nicht lesbaren Anfragezahl verschiebt er sich
+dasselbe Mal; welche Unit er meint, nimmt er aus `RUNTIME_UNIT` oder sucht die Unit
+zum `ContainerName` aus `RUNTIME_CONTAINER` - geraten wird keine Unit, ohne Treffer
+bleibt es bei der Warnung. Kontrollieren:
+
+```bash
+systemctl --user list-timers --all | grep watchdog   # beide muessen einen NEXT zeigen
+journalctl --user -u llm-runtime-watchdog.service --no-pager -n 5
+tail -5 state/litellm-watchdog/watchdog.log
+```
 
 ### Luna-Token: Persistenz und Geraet-Login
 
