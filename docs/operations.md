@@ -10,6 +10,61 @@ Kurzfassung fuer jede Woche, Ausfuehrliche fuer den ersten Tag.
 
 Nichts zu tun, wenn da `Alles in Ordnung.` steht.
 
+## Dieser Rechner: Laufzeit und Gateway (Stand 2026-11-16)
+
+Es laeuft NICHT Pennyroyal. Die Inferenz-Laufzeit ist der unmanaged Container
+`flash-next-v3` (vLLM, Bild `localhost/qwen38-fp4-tp1:v3`), gestartet mit
+`podman run` und veroeffentlicht nur auf `127.0.0.1:30000`. Die kanonische
+Ansprache kommt aus `config/host.env` (`RUNTIME_CONTAINER=flash-next-v3`,
+`RUNTIME_UNIT=` leer, `RUNTIME_PORT=30000`), Pruefskripte und
+Kennzahlensammler ziehen daraus Containername, Port und Logweg
+(`runtime_identity` in `lib/units.sh`). Wer
+`systemctl --user status pennyroyal.service` fragt, bekommt korrekt
+`inactive` mit `not-found`: Die Unit existiert auf diesem Rechner nicht.
+
+```bash
+podman ps --filter name=flash-next-v3 --format '{{.Names}}\t{{.Status}}\t{{.Ports}}'
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:30000/health   # 200
+```
+
+Damit Container im Inferenz-Netz (Prometheus, LiteLLM) die Runtime erreichen,
+stellt ein Weiterleiter API und Metriken auf Port 30001 bereit. Laeuft als
+Repo-Unit: `scripts/73-setup-vllm-forwarder.sh` mit
+`scripts/vllm-pub-forwarder.py` und `systemd/llm-vllm-forwarder.service`.
+Gebunden wird an Loopback plus die Host-Adressen - rootless pasta reicht die
+Host-Loopback nicht an Container durch, Details und Verengungsoptionen in
+`docs/runtime.md`. Die fruehere auswaertige Unit ist retired
+(`~/.config/systemd/user/luni-vllm-pub.service.retired-20261116`); zwei
+Instanzen streiten sonst um Port 30001:
+
+```bash
+./scripts/73-setup-vllm-forwarder.sh --check
+systemctl --user status llm-vllm-forwarder.service
+```
+
+Der Gateway (`quadlet/litellm.container`, nur `127.0.0.1:4000`) haelt das
+Modell `chatgpt/gpt-6-luna` zurueck: Der Generator `scripts/60-install-gateway.sh`
+entfernt den Modelleintrag und seine Fallback-Zeilen aus
+`config/litellm.yaml`, solange unter `~/.config/llm-infra/chatgpt-tokens` kein
+echtes Token liegt (eine JSON-Datei mit `access_token`, `refresh_token`,
+`tokens` oder `token_bundle`). Grund: ohne gespeicherte Token ruft der Proxy
+beim Start den OpenAI-Geraetefluss (Device-Code) auf und der Endpunkt 4000
+bindet nicht - der Gateway bliebe stumm, ohne dass ein Fehler dazu fuehrt.
+Eine reine Merkdatei mit Geraeteanfrage-Zeitstempel (heute der Stand:
+`auth.json` enthaelt nur `device_code_requested_at`) zaehlt nicht als
+Anmeldung. Der Ausfall der Stufe ist ungefaehrlich: Die Faellkette
+`qwen3.8-flash-next -> bonsai-2-27b` bleibt erhalten, nur der dritte Ausweg
+entfaellt. Reaktivieren: den Geraetelogin einmalig durchfuehren (der
+Device-Code erscheint im Gateway-Journal), danach den Generator erneut laufen
+lassen - er nimmt Luna dann wieder auf:
+
+```bash
+./scripts/60-install-gateway.sh && systemctl --user restart litellm.service
+curl -s http://127.0.0.1:4000/v1/models -H "Authorization: Bearer $(sed -n 's/^LITELLM_MASTER_KEY=//p' ~/.config/llm-infra/gateway.env)" | python3 -c 'import json,sys;print([m["id"] for m in json.load(sys.stdin)["data"]])'
+```
+
+(Wenn die Liste `gpt-6-luna` enthaelt, ist die Stufe wieder drin.)
+
 ## Start und Stopp
 
 ```bash
@@ -41,7 +96,7 @@ podman ps --format '{{.Names}}\t{{.Status}}'
 | Portal | http://127.0.0.1:3002 | Einstieg fuer Menschen |
 | Chat (Open WebUI) | http://127.0.0.1:3001 | erster Account ist Admin |
 | Gateway (OpenAI-kompatibel) | http://127.0.0.1:4000/v1 | Schluessel aus `credentials.txt` |
-| Runtime direkt | http://127.0.0.1:8001/v1 | nur fuer Diagnose und lokale Tools |
+| Runtime direkt | http://127.0.0.1:30000/v1 | vLLM-Container `flash-next-v3`, nur fuer Diagnose und lokale Tools; bei Quadlet-Betrieb waere es Pennyroyal auf 8001 |
 | Grafana | http://127.0.0.1:3000 | |
 | Prometheus | http://127.0.0.1:9090 | Targetspruefung: `/targets` |
 | Dozzle | http://127.0.0.1:8080 | |
@@ -54,6 +109,10 @@ ssh -L 3000:127.0.0.1:3000 -L 3001:127.0.0.1:3001 deinrechner
 ```
 
 ## Gateway-Fallback in drei Stufen
+
+Hinweis 2026-11-16: Auf diesem Rechner ist die dritte Stufe derzeit
+abgeschaltet (kein Geraet-Token, Generator streicht `gpt-6-luna`); die Kette
+laeuft als zwei Stufen. Reaktivierung siehe Abschnitt "Dieser Rechner" oben.
 
 Der Gateway (Modellalias `qwen3.8-flash-next`) failovert ueber eine dreistufige Kette: primaer
 Pennyroyal auf der Blackwell; nach drei Retries im Abstand von 5 s Stufe zwei,
@@ -152,7 +211,7 @@ in der Runtime selbst; sie ist Teil der `serve-flash-next-frspec.sh`.
 make nvidia-driver         # danach Neustart noetig
 sudo systemctl reboot
 # nach dem Login:
-cd ~/work/llm-infra-setup
+cd /srv/work/llm-infra-setup
 make podman                # CDI neu erzeugen (wichtig nach Hardwareaenderung!)
 make deploy-ready
 ./scripts/doctor.sh

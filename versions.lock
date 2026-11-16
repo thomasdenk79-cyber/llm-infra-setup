@@ -9,7 +9,15 @@ model_id: RadixArk/Qwen3.8-Flash-Next-NVFP4
 model_revision: 7b719225242aacd3dbd3f9407468c2ee9a9d2594
 model_context_length: 524288
 sglang_profile: FR-Spec (NextN spekulativ, NVFP4, fp8 KV, TP1)
-litellm: v1.101.0
+# Aktive Laufzeit auf diesem Rechner: vLLM im Container flash-next-v3, Port nur
+# auf 127.0.0.1:30000. Bild wird lokal gebaut (siehe scripts/50-install-pennyroyal.sh
+# fuer den Referenzweg) - der Digest ist der Stand vom 16.11.2026.
+runtime: vllm
+runtime_image: localhost/qwen38-fp4-tp1:v3
+runtime_image_digest: sha256:882dfe6215e4de04f50aa79c2cfe7773b89ed64dd611d63aab6461e36a37f779
+litellm: v1.105.0
+litellm_image: docker.litellm.ai/berriai/litellm:v1.105.0
+litellm_image_digest: sha256:c2eea0ab9754c1d8460fd140c36daa3139020cffa2f671e9f0dc4cc25ee18393
 open_webui: v0.11.4
 postgres: 16.4
 prometheus: v3.5.0
@@ -18,10 +26,17 @@ nvidia_gpu_exporter: 1.4.0
 grafana: 12.1.1
 loki: 3.5.2
 alloy: v1.10.2
+alertmanager: v0.27.0
+alertmanager_image_digest: sha256:11f11916f8cdfb17c1da74b20deb2075d778357b4d60474d82453303f8d461f5
 dozzle: v8.14.7
 homepage: v2.4.0
 komodo_periphery: 2.3.3
 autossh_base_image: docker.io/library/alpine:3.20
-docs_tooling: mkdocs-material==9.6.18
+docs_tooling: mkdocs-material==9.8.1
+# Wiki-Portal (statischer Auslieferer) und der oeffentliche Zugang auf dem
+# Gateway-Rechner. Der Gateway-Caddy kommt dort vom Distropaket (gemessen 2.11.9).
+caddy_wiki: docker.io/library/caddy:2-alpine
+caddy_wiki_digest: sha256:5813f7eb9b94fac4970f9f576695fe1ed1d53d41586fd3eaa350caf7c4627d9c
+caddy_gateway: 2.11.9
 gpu_model: NVIDIA RTX PRO 6000 Blackwell Workstation Edition
 driver_family: nvidia-open-dkms (siehe state/host-facts.txt fuer die exakte Version)

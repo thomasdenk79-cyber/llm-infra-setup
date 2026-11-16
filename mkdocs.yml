@@ -23,6 +23,8 @@ nav:
   - Architektur: architecture.md
   - Installation: install.md
   - Betrieb: operations.md
+  - Laufzeit und Weiterleiter: runtime.md
+  - Oeffentlicher Zugang: gateway-proxy.md
   - Geschwindigkeit: performance.md
   - Beobachtung: monitoring.md
   - Sicherheit: security.md

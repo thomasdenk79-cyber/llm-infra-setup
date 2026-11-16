@@ -1,166 +1,154 @@
 # Projektstatus
 
-Stand: 2026-10-07, Review- und Ausbauphase
+Stand: 2026-11-16, geprueft am selben Tag. Fruehere Stiche (WSL-Zeit,
+Pennyroyal-Kaltstarts, Tuning-Runden) stehen im `CHANGELOG.md` und im
+Git-Verlauf: `git show HEAD:docs/status.md`. Fortsetzungsanker ist
+`docs/HANDOFF.md`.
 
-## Bonsai 2 als LiteLLM-Fallback (2026-10-08)
+## Verifizierter Zustand (2026-11-16)
 
-Bonsai 2 27B PTQ1_0 laeuft als rootless Quadlet-Container `bonsai.service` in CachyOS/WSL auf der RTX 3500 Ada. OpenAI-kompatibler Port: 8082; Kontext: 8192 Token mit Q8-KV-Cache. Die LiteLLM-Gruppe `qwen3.8-flash-next` bleibt primaer Pennyroyal und faellt bei Fehlern auf das separate Deployment `bonsai-2-27b` zurueck. Die Laufzeitquelle ist `~/work/llm-infra-setup`; Modelladresse/Name liegen in der lokalen `config/host.env`, der nicht-authentifizierende lokale llama-server erhaelt nur einen Dummy-Key aus `~/.config/llm-infra/gateway.env`.
+### Inferenz-Laufzeit
 
-Verifiziert: HTTP-Health 200 fuer Pennyroyal, LiteLLM und Bonsai; Chat-Completion vom Bonsai; eine isolierte LiteLLM-Testinstanz mit absichtlich nicht erreichbarem Primaer-Endpunkt routete eine Anfrage mit dem primaeren Alias auf Bonsai (`FALLBACK VERIFIZIERT`, 45,1 Token/s). LiteLLM wurde danach mit der neuen Konfiguration neu gestartet und meldete wieder Health 200. Bonsai-Quadlet ist aktiv und in `default.target.wants` verknuepft. GPU-Stichprobe: Ada rund 10,8 GiB belegt; Blackwell rund 93,2 GiB, keine messbare Zusatzbelegung durch Bonsai.
+Der unmanaged Container `flash-next-v3` (vLLM, Bild
+`localhost/qwen38-fp4-tp1:v3`) laeuft und bindet sein API nur auf
+`127.0.0.1:30000`. Pennyroyal gibt es auf diesem Rechner nicht; die
+Identitaet der Laufzeit steht in `config/host.env`. Metriken stellt der
+Weiterleiter aus diesem Repo bereit: User-Unit `llm-vllm-forwarder.service`
+auf Port 30001, gebunden an Loopback und die Host-Adressen (rootless pasta
+reicht die Host-Loopback nicht an Container durch - Begruendung in
+`docs/runtime.md`). Die auswaertige `luni-vllm-pub.service` ist retired.
 
-Der Fallback gilt fuer Clients, die `qwen3.8-flash-next` ueber diesen LiteLLM-Gateway anfragen; direkte Pennyroyal-Aufrufe umgehen ihn. Nach bis zu drei Primaer-Retries wird Bonsai verwendet; nach 60 s Cooldown kann der Primaer erneut versucht werden. Siehe `HANDOFF.md` und `CHANGELOG.md`.
+```bash
+podman ps --filter name=flash-next-v3 --format '{{.Names}}\t{{.Status}}\t{{.Ports}}'
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:30000/health          # 200
+./scripts/73-setup-vllm-forwarder.sh --check                                     # OK: Runtime-Weiterleiter laeuft
+ss -tln | grep 30001                                                             # LISTEN 127.0.0.1, 192.168.0.198, ...
+```
 
-## Aktuelle WSL-Stichprobe (2026-10-07)
+### Gateway und Datenbank
 
-Der Gateway-, Chat- und Beobachtungsstack lief in der CachyOS-WSL-Stichprobe.
-`llm-node-exporter` protokollierte doppelte Dateisystem-Metriken unter
-`/run/user`; das ist ein echter Exporterfehler und separat zu untersuchen.
-Ein frueherer Pennyroyal-Startversuch scheiterte mit `CUDA_VISIBLE_DEVICES=1`,
-weil PyTorch null sichtbare CUDA-Geraete meldete. Die aktuelle Quadlet-
-Konfiguration verwendet eine GPU-UUID; der Container lief beim letzten Check
-noch im Zustand `starting`, und `/health` war noch nicht erreichbar. Das ist
-unabhaengig von Shellfarben oder Fish; keinen weiteren Kaltstart ausloesen,
-solange der Ladevorgang laeuft.
-Die Fehlerprotokolle enthalten fuer diesen Exit keinen OOM: Kernel-Journal
-und `coredumpctl` waren leer. Prometheus zeigte in einer Stichprobe 119,9 GB
-verfuegbaren WSL-RAM und den vollen 32-GiB-Swap; Pennyroyals systemd-cgroup
-hatte eine gemeldete Spitze von 82,1 GB. Der Host-Verlauf ist daher kein
-Beleg fuer RAM-Erschoepfung. Container-RAM wird von der aktuellen Grafana-
-Konfiguration nicht historisiert. Fuer den naechsten Start sind CPU-Threads
-und Loader auf 4, HiCache auf 8 GiB zurueckgestellt; Ergebnis noch offen.
-Einzelheiten zu Laufzeitnamen und Grafana stehen in [`HANDOFF.md`](HANDOFF.md).
-Aeltere Laufzeitangaben weiter unten sind historische Messungen, kein
-Live-Healthcheck.
+`litellm` (Bild `docker.litellm.ai/berriai/litellm:v1.105.0`, nur
+`127.0.0.1:4000`, startet nach `litellm-postgres`) antwortet keylos auf die
+Liveliness. Der Modellkatalog in `config/litellm.yaml` fuehrt 13 Modelle:
+Profile `direct-*`, `standard-*`, `local-*`, dazu `qwen3.8-flash-next`,
+`bonsai-2-27b` und zwei Siemens-Modelle. `gpt-6-luna` ist ausgelassen, weil
+`~/.config/llm-infra/chatgpt-tokens/auth.json` nur den Geraeteanfrage-
+Zeitstempel traegt, kein Token (Einordnung in `docs/operations.md`).
 
-`llmlogs` zeigt die systemd-Journald-Eintraege im nativen Format mit den
-Journal-Prioritaetsfarben und vermeidet doppelte, rohe Podman-Streams.
-`NO_COLOR=1` deaktiviert Farben; Bedienung:
-[`operations.md`](operations.md#logs-mit-llmlogs).
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:4000/health/liveliness   # 200
+grep -c 'model_name:' config/litellm.yaml                                           # 13
+python3 -c "import json;d=json.load(open('$HOME/.config/llm-infra/chatgpt-tokens/auth.json'));print(sorted(d))"
+```
 
-## Done
+### Oeffentlicher Zugang (443 am Azure-Gateway)
 
-* Preflight erfasst Host, GPU, PCIe-Breite, Treiber, CDI, ZFS, Smart, Timer und
-  User-Units in `state/preflight-report.txt` und der Kurzfassung `state/host-facts.txt`.
-* Modell ist vollstaendig auf ZFS, Pruefung ueber Index- und Shard-Dateien,
-  Hub-Revision in `versions.lock`.
-* Pennyroyal v2.5.3 laeuft rootless als Quadlet, Bild per Digest gesperrt, API nur
-  auf `127.0.0.1:8001`; Health-Endpunkt beantwortet, Smoke-Anfrage erfolgreich.
-* PLE-Speicher ist als ext4-Loop mit **fest eingetragener fstab-Zeile**
-  (`nofail`) vorbereitet; `scripts/47-setup-ple-storage.sh --verify` prueft das,
-  und die Kennzahl `llm_ple_in_fstab` alarmiert, wenn der Eintrag fehlt.
-* ZFS-Parameter begruendet gesetzt (lz4, recordsize 1 MiB, atime aus,
-  `primarycache=metadata`, ARC-Deckel 16 GiB).
-* Beobachtungsstufe ist vollstaendig im Einsatz: Prometheus, Grafana, Loki, Alloy,
-  Dozzle, Portal, node_exporter (mit Host-Einhaengung), GPU-Exporter,
-  Kennzahlen-Timer, vier eigene Dashboards mit menschenlesbaren Einheiten,
-  Alarmregeln in `config/monitoring/alerts.yml`.
-* Alloy sammelt Container-Protokolle inklusive Pennyroyal (Labels `container`,
-  `image`, `job`), damit die Logsuche pro Dienst funktioniert.
-* Gateway-Kette (PostgreSQL, LiteLLM, Open WebUI, Homepage) laeuft ohne GPU.
-* Alle Zugangswerte sind Zufallswerte ausserhalb von Git; die alten
-  Standard-Passwoerter sind aus dem Code entfernt, `make validate` prueft darauf.
-* Deployment-Pfade sind vereinheitlicht: eine Installationsregel in `lib/units.sh`,
-  drei Einstiegspfade (`deploy`, `deploy-non-gpu`, `deploy-ready`), ein sicherer
-  Umschalter (`apply-runtime-unit.sh`) mit Schutz laufender Anfragen.
-* Runtime-Waechter als User-Timer (warnt standardmaessig, Neustart nur nach drei
-  Fehlversuchen und nur im Leerlauf, abschaltbar).
-* Benchmark misst Vorlaufzeit und Schreibrate getrennt, mit Warmup, echter
-  Parallelitaet, GPU-Kontext und Geschichtsdatei.
-* `scripts/doctor.sh` prueft 13 Punkte und nennt zu jedem Fehler den passenden
-  Befehl; Kurzform `make healthcheck`.
-* `make drift` prueft, dass Generatoren die committeten Units exakt erzeugen;
-  GitHub-Actions-Workflow laeuft bei jedem Push.
-* Doku aufgeraeumt: Duplikate mit Gross-/Kleinschreibung sind entfernt,
-  mkdocs-Navigation zeigt auf die aktuellen Dateien, 13 ADRs dokumentieren die
-  Entscheidungen.
-* Geschwindigkeit ist gemessen und eingeordnet (Thunderbolt x4/16 GT/s als
-  Hauptgrenze), siehe `docs/performance.md` und ADR 0012.
-* `versions.lock` enthaelt nur noch gepinnte Referenzen; der beobachtete Hoststand
-  steht in `state/host-facts.txt`.
+Tunnel-Unit aktiv und aktiviert; die vier oeffentlichen Routen liefern die
+erwarteten Codes, per DNS-Name und uber die Roh-IP identisch (Einzelheiten:
+`docs/gateway-proxy.md`). Basic-Auth-Personen: 5
+(`owner, thomas, martin, johannes, holger`). Die retired Unit liegt als
+`~/.config/systemd/user/reverse-tunnel.service.retired-20261116`.
 
-## Laufender Zustand (geprueft 2026-10-02)
+```bash
+systemctl --user is-active llm-reverse-tunnel.service               # active
+systemctl --user is-enabled llm-reverse-tunnel.service              # enabled
+cut -d' ' -f1 ~/.config/llm-infra/gateway-proxy/team-users.txt      # 5 Namen
+for p in /health/liveliness /v1/models / /grafana/; do
+  printf '%-22s %s\n' "$p" "$(curl -sk -o /dev/null -w '%{http_code}' \
+    --resolve edipoc-gateway.westeurope.cloudapp.azure.com:443:20.73.54.102 \
+    https://edipoc-gateway.westeurope.cloudapp.azure.com$p)"
+done                                                                        # 200 401 401 401
+```
 
-* Runtime aktiv, `/health` 200, VRAM 94,9 von 97,9 GiB belegt.
-* Alle Beobachtungsziele `up`: pennyroyal, node, gpu, loki, prometheus.
-* Messungen: 157,88 Token/s (normal, 1 Anfrage), 119,01 Token/s (lang),
-  242,47 Token/s (normal, 4 Anfragen). Vorlaufzeit 1,5 bis 4,5 Sekunden.
-* Alarm `PCIeAnbindungReduziert` steht absichtlich auf "pending": er zeigt die
-  echte Anbindungslimite des Rechners.
+### Beobachtungsstapel
 
-## Neu seit dem vorletzten Stand (2026-10-03)
+Prometheus, Grafana, Loki, Alloy, Alertmanager, Dozzle, node- und
+GPU-Exporter laufen. Alertmanager `/-/ready` liefert 200 und haelt drei
+aktive Alarme bereit (2x `PCIeAnbindungReduziert`, `SwapAktiv`) - der Weg
+Prometheus -> Alertmanager ist damit belegt, ein Versandkanal ist bewusst
+noch nicht gewaehlt. Alloy sammelt die Quadlet-Container ueber die
+Docker-API und `flash-next-v3` ueber das Journal.
 
-* Native Blockflaeche fuer die Einbettungstabellen: ZFS-Volumen
-  `zpcachyossrv/srv/ple-vol` (4K-Blockgroesse) mit ext4 (4K), `noatime`,
-  `nofail`-Eintrag in `/etc/fstab`, Einhängepunkt `/srv/llm/ple-native`.
-  Umzugswerkzeuge: `scripts/46-create-ple-volume.sh`, `scripts/49-migrate-ple.sh`,
-  Seitenspeicher-Analyse `scripts/ple-preload.sh --status`.
-  Warum kein echtes Partition: die Scheibe ist ein einziger 512-GiB-Datenträger
-  in zwei ZFS-Pools, und ZFS-Vdevs lassen sich nicht verkleinern.
-* Die Runtime-Startwerte sind als Umgebungsvariablen gesetzt (mem-fraction,
-  Spekulationsschritte, sleep-on-idle, chunked-prefill, HiCache).
-* `scripts/apply-tuning.sh` fuehrt die heisse Phase autonom aus: Pruefen,
-  Sichern, Anwenden, Neustart, Messen, automatischer Rueckfaller.
-* Richtigstellung: die Thunderbolt-Strecke ist **nicht** die Schreibraten-Grenze
-  (gemessen 3-25 MB/s bei 61 % GPU-Auslastung und 275 W von 600 W Limit);
-  Details in `docs/adr/0012-*.md`.
-* Kapazitätsgrenzen fuer mehrere Sitzungen gemessen und dokumentiert
-  (`docs/performance.md`: 524288 pro Anfrage, 824384 gemeinsam).
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:9093/-/ready       # 200
+curl -s http://127.0.0.1:9093/api/v2/alerts | python3 -c 'import json,sys;print(len(json.load(sys.stdin)),"aktive Alarme")'
+curl -s 'http://127.0.0.1:9090/api/v1/targets' | python3 -c '
+import json,sys
+for t in json.load(sys.stdin)["data"]["activeTargets"]:
+    print("%-14s %s" % (t["labels"]["job"], t["health"]))'
+```
 
-## Behoben: Grafana-Dashboards ohne Daten (2026-10-08)
+Erwartetes Bild: alle acht Jobs up - `alertmanager, alloy, gpu, grafana,
+loki, node, prometheus, vllm`. Der Job `grafana` braucht `metrics_path:
+/grafana/metrics`, weil Grafana im Unterpfad laeuft (`docs/monitoring.md`).
 
-Ursache war kein fehlender Stream, sondern die Anbindung der Dashboards an
-Prometheus: Der Datenquelle-Eintrag zeigte auf `http://prometheus:9090`, aber
-der Prometheus-Container hatte keinen Netz-Alias namens `prometheus` (nur den
-Namen `systemd-prometheus`). Grafana-Log ab 07:22: `dial tcp: lookup prometheus
-... no such host` bei jeder Panel-Abfrage - Prometheus selbst war healthy und
-lieferte alle Daten. Dazu zwei stille Folgefehler: Die Dashboards 02/03/04
-referenzierten die Datenquelle per UID `prometheus`/`loki` (existieren nicht),
-und 01 vertauschte die beiden Provisionierungs-UIDs.
+### Dashboards
 
-Behoben (alles im Repo, Idempotent):
-- `quadlet/prometheus.container`: `NetworkAlias=prometheus` - DNS-Name fuehrt
-  jetzt, wie von alloy/loki/grafana bereits genutzt.
-- `config/.../datasources.yml`: feste `uid:`-Felder (PBFA97CFB590B2093 /
-  P8E80F9AEF21F6940), damit Dashboard-UIDs bei Neuinstallationen stabil bleiben.
-- `config/.../dashboards/0*.json`: alle Panel-UIDs auf die provisionierten
-  gesetzt; PCIe-Panel auf `nvidia_smi_pcie_link_*` umgestellt (der
-  sysfs-Collector `llm_pcie_*` liefert in WSL keine Werte, GPU-nahe Messung
-  uebernimmt der gpu-exporter).
-- `scripts/rotate-secrets.sh`: `podman exec grafana` -> `systemd-grafana`
-  (falscher Containername, das Admin-Passwort wurde deshalb nie in der
-  Grafana-DB realiniert) und politiktaugliches Passwortformat (Grafana 12
-  lehnt reines Hex ab).
-- Live: Prometheus-Unit neu gerendert und Prometheus neu gestartet, Grafana
-  neu gestartet; das Grafana-DB-Admin-Passwort wurde auf ein politiktaugliches
-  Neues gesetzt und Podman-Secret + credentials.txt nachgezogen (DB, Secret
-  und Dokumentation tragen jetzt denselben Wert). Dashboard-Provider laedt die
-  JSONs alle 30 s nach.
+Fuenf provisionierte Dashboards, zusammen 121 Panel-Abfragen. Die
+Browser-Pruefung am 2026-11-16 (Playwright, Chromium headless, 1680x1000,
+eingeloggt als admin): 89 Panelfelder, davon 8 ohne Daten - ausschliesslich
+ZFS/ARC-Panels aus `04-speicher.json` (dieser Rechner hat kein ZFS), alle
+anderen gefuellen. Kein `sglang`-
+Verweis mehr in Regeln und Dashboards, Loki-Panels haengen an der
+provisionierten Loki-Datenquelle.
 
-Datenstand danach: 79/95 Panel-Abfragen liefern ueber den Grafana-Datenquellen-
-Proxy Daten. Die 16 Luecken sind Umgebungs- und Sammler-Grenzen, keine
-Verdrahtungsfehler: ZFS/SMART-/PLE-Panels (04) und Taktfrequenz (03) liefern
-nur auf dem echten KVM-Host Werte (in WSL gibt es kein ZFS, keine NVMe-SMART,
-keine CPU-Frequenz-Skala); drei Loki-Panels pruefte ich direkt gegen Loki-API
-(siehe unten) - dort kommen Streams mit Linien an.
+```bash
+grep -o '"expr"' config/monitoring/grafana/provisioning/dashboards/0*.json | wc -l   # 121
+grep -c sglang config/monitoring/grafana/provisioning/dashboards/0*.json             # alles 0
+podman exec systemd-prometheus promtool check rules /etc/prometheus/alerts.yml   # SUCCESS: 24 rules
+./scripts/validate.sh                                                            # rc=0
+```
 
-## Todo
+Aktueller Befund dabei: `./scripts/validate.sh` meldet drei Panels ohne
+Anfrage in `05-agent-observatorium.json` ("Auslastung je Geraet",
+"VRAM-Bedarf je Geraet", "VRAM-Fuellstand"); in HEAD hatten sie noch je eine
+Anfrage, die Umstellung hat sie geleert. Nachzuziehen ist sie in einer
+Code-Runde (siehe `docs/HANDOFF.md`, offene Punkte).
 
-1. Runtime einmal neu starten, damit die neue Unit (Healthcheck, Observability-Netz
-   fuer Prometheus, `RestartSec`) aktiv wird - Zeitpunkt waehlen, wenn keine
-   Anfragen laufen: `./scripts/apply-runtime-unit.sh --restart-only`.
-2. PLE auf einer echten NVMe-Partition messen gegen die Loop-Datei (`PLE_BLOCK_DEVICE`).
-3. DCGM-Exporter gegen nvidia-smi messen, danach Entscheidung welches bleibt.
-4. Seccomp-Profil schreiben, das nur io_uring zulaesst (statt `unconfined`).
-5. Komodo und Wartungstunnel erst mit echten Zugangsdaten aktivieren
-   (`make komodo`, `make autossh`).
-6. Woechentliche Regel aus Backup + Pruefung (`./scripts/restore.sh --check`).
-7. KVM/libvirt als getrennte Phase, ohne GPU-Durchreichung.
-8. Web-Verwaltung (Cockpit oder Podman Desktop) bewerten - erst nach Klärung der
-   Frage, wer darauf zugreifen darf.
+### Wiki und Timer
+
+`~/work/hermes-wiki` ist geklont, der `site/`-Build entsteht durch
+`scripts/wiki-rebuild.sh` (venv mit mkdocs-material). Der Rebuild-Timer laeuft
+alle 30 Minuten und hat nichts zu tun, wenn kein neuer Commit anliegt
+(`site/.built-sha` gleicht HEAD). Der Kennzahlentimer laeuft wie vorgesehen;
+Runtime-, Gateway-, Crashguard- und GitOps-Timer sind auf diesem Rechner
+bewusst (noch) nicht installiert.
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3003/    # 200
+git -C ~/work/hermes-wiki rev-parse HEAD | head -c 12; echo; cat ~/work/hermes-wiki/site/.built-sha
+systemctl --user list-timers --no-pager | head -5
+```
+
+## Bekannte Abweichungen (bewusst, dokumentiert)
+
+- Der Weiterleiter bindet Port 30001 an die Host-Adressen, also auch ins LAN.
+  Begruendung und Verengung auf eine Adresse: `docs/runtime.md`.
+- `gpt-6-luna` ist ohne echtes Geraet-Token aus dem Katalog gestrichen;
+  Reaktivierung in `docs/operations.md`.
+- 8 Panels in `04-speicher.json` (ZFS und ARC) zeigen "keine Daten", weil dieser
+  Rechner nichts davon hat; auf dem ZFS-Referenzrechner fuellen sie sich.
+- Browser-Pruefung am 2026-11-16 mit Playwright (Chromium headless, 1680x1000):
+  89 Panelfelder in fuenf Dashboards, 8 ohne Daten (ZFS/ARC), sonst keine
+  "No data"-Felder; Dozzle zeigt alle sieben erwarteten Container; das Portal
+  meldet keine fehlerhaften Widgets. Screenshots: `/tmp/qa/screens/`.
+- Die Arbeiten des Tages 2026-11-16 sind in mehreren Themen-Commits gesichert
+  (`git log --oneline -8`, `./scripts/session-checkpoint.sh --status`);
+  offene Punkte stehen in `docs/HANDOFF.md`.
 
 ## Betriebsregeln
 
-* Keine ZFS-Pools erstellen, zerstoeren oder umstrukturieren.
-* Dauerhafte Aenderungen nur ueber dieses Repository.
-* Geheimnisse bleiben ausserhalb von Git.
-* Die Grafikkarte bleibt exklusiv beim Modell (ADR 0013).
+- Keine ZFS-Pools erstellen, zerstoeren oder umstrukturieren.
+- Dauerhafte Aenderungen nur ueber dieses Repository.
+- Geheimnisse bleiben ausserhalb von Git.
+- Die Grafikkarte bleibt exklusiv beim Modell (ADR 0013).
+
+## Naechste Befehle
+
+```bash
+cd /srv/work/llm-infra-setup
+./scripts/doctor.sh                        # gefuehrte Diagnose, nennt den naechsten Befehl
+./scripts/70-setup-gateway-proxy.sh --check  # oeffentlicher Zugang in Ordnung?
+./scripts/60-install-monitoring.sh --check   # Beobachtungsstufe vollstaendig?
+./scripts/session-checkpoint.sh --status     # was ist noch ungesichert?
+```

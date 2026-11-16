@@ -1,4 +1,109 @@
 # Aenderungsprotokoll
+## 2026-11-16 – Oeffentlicher Zugang, Alarmweg, Beobachtungskorrektur
+
+- Repo umgezogen nach `/srv/work/llm-infra-setup`; alle Docs auf diesen Pfad
+  gezogen (README und install.md folgen, siehe offene Punkte).
+- Gateway-Unit neu geschrieben: die unverwaltete `reverse-tunnel.service`
+  (Direkt-Tunnel ohne `permitlisten`) ist gestoppt, deaktiviert und
+  wiederherstellbar umbenannt auf
+  `~/.config/systemd/user/reverse-tunnel.service.retired-20261116`. Neu ist
+  die verwaltete `llm-reverse-tunnel.service` (autossh, `-N`,
+  `ExitOnForwardFailure=yes`, jeder Forward auf Loopback) aus
+  `scripts/70-setup-gateway-proxy.sh` mit eigenem Tunnel-Schluessel,
+  `authorized_keys`-Zeile mit `restrict,port-forwarding,no-agent-forwarding,no-X11-forwarding` plus
+  `permitlisten` nur fuer `127.0.0.1:4000|3000|3002`
+  und Erstversorgung ueber `GATEWAY_BOOTSTRAP_KEY`.
+- Oeffentlicher Zugang nur ueber Port 443 des Azure-Gateways
+  (`edipoc-gateway.westeurope.cloudapp.azure.com`, 20.73.54.102): Caddy
+  rendert die Vorlage `config/gateway/Caddyfile.template`, Admin-API auf 127.0.0.1:2019,
+  Vorher-Sicherung `/etc/caddy/Caddyfile.bak.<UTC>`. Routen gemessen:
+  `/health/liveliness` 200, `/v1/models` 401 ohne Schluessel, `/` 401,
+  `/grafana/` 401; Roh-IP gleich, mit Zertifikatswarnung (`tls internal` +
+  `default_sni`). Basic-Auth-Personen in
+  `~/.config/llm-infra/gateway-proxy/team-users.txt` (5: owner, thomas,
+  martin, johannes, holger). Doku: `docs/gateway-proxy.md`.
+- Alertmanager aufgenommen (`quadlet/alertmanager.container`,
+  prom/alertmanager:v0.27.0, nur 127.0.0.1:9093,
+  `config/monitoring/alertmanager.yml`); Prometheus meldet ueber den
+  `alerting:`-Block. Kanaele (ntfy, E-Mail) sind vorbereitet und bewusst
+  deaktiviert, bis der Betreiber waehlt (`docs/monitoring.md#alarmkanal`).
+  Damit laufen die Regeln nicht mehr ins Leere; erster Nachweis: 3 aktive
+  Alarme im Alertmanager.
+- Alloy-Journal-Fix: `/var/log/journal` nur-lesend eingehaengt und
+  `--server.http.listen-addr=0.0.0.0:12345`; ohne beides lieferte
+  `loki.source.journal` null Stroeme. flash-next-v3 (journald-Logtreiber,
+  Docker-API liefert dazu keinen Stream) ist jetzt ueber
+  `CONTAINER_NAME=flash-next-v3` in Loki sichtbar.
+- Alarmregeln von `sglang:*` auf die tatsaechlich vorhandenen `vllm:*`
+  umgelenkt (`config/monitoring/alerts.yml`, kein sglang-Verweis mehr); dazu
+  neue Jobs `grafana`, `alloy`, `alertmanager` und `vllm` in
+  `config/monitoring/prometheus.yml`; `pennyroyal` und `litellm-liveliness`
+  bleiben mit Begruendung im Kommentar auskommentiert.
+- Dashboards auf vLLM umgelenkt und an die Loki-Datenquelle
+  (uid P8E80F9AEF21F6940) angeschlossen; drei Panels ohne Anfrage
+  ("Auslastung je Geraet", "VRAM-Bedarf je Geraet", "VRAM-Fuellstand") gegen
+  lebende `nvidia_smi:*`-Abfragen getauscht. Stand: 121 Panel-Abfragen, keine
+  sglang-Referenz. Browser-Pruefung (Playwright, Chromium headless, eingeloggt):
+  89 Panelfelder, 8 ohne Daten - ausschliesslich ZFS/ARC-Panels aus
+  `04-speicher.json` (dieser Rechner hat kein ZFS; sie zeigen "keine Daten"
+  als Hinweis), alle uebrigen gefüllt.
+- Grafana-Unterpfad: `~/.config/llm-infra/grafana.env`
+  (`GF_SERVER_ROOT_URL=.../grafana/`, `GF_SERVER_SERVE_FROM_SUB_PATH=true`),
+  erzeugt von `scripts/60-install-monitoring.sh`, Vorlage
+  `config/grafana.env.example`. Nebenwirkung war der down-Job `grafana`
+  (301 auf die oeffentliche Adresse, x509 der Caddy-CA); behoben mit
+  `metrics_path: /grafana/metrics` im Job - Beobachtung in `docs/monitoring.md`.
+- Wiki in Betrieb: `~/work/hermes-wiki` geklont, `site/`-Build ueber
+  `scripts/wiki-rebuild.sh` (venv + mkdocs-material), `wiki-rebuild.timer`
+  enabled+aktiv, `wiki.service` liefert http://127.0.0.1:3003/ (200).
+- Runtime ist auf diesem Rechner der unmanaged Container `flash-next-v3`
+  (127.0.0.1:30000, kein Pennyroyal); Metriken ueber die Repo-Unit
+  `llm-vllm-forwarder.service` (`scripts/73-setup-vllm-forwarder.sh` +
+  `scripts/vllm-pub-forwarder.py`), Bindung Loopback plus Host-Adressen,
+  Begruendung in `docs/runtime.md`. Die auswaertige `luni-vllm-pub.service`
+  ist gestoppt, deaktiviert und umbenannt auf
+  `~/.config/systemd/user/luni-vllm-pub.service.retired-20261116`.
+  LiteLLM: der Generator
+  nimmt `chatgpt/gpt-6-luna` erst auf, wenn unter
+  `~/.config/llm-infra/chatgpt-tokens` ein echtes Geraet-Token liegt; ohne
+  Token wird das Modell ausgesteuert, weil der ungebundene
+  OpenAI-Device-Code-Flow die Bindung von :4000 verhindert haette.
+- Persoenliche Virtual-Keys: `scripts/71-gateway-keys.sh` legt das Team `luni`
+  an (ohne Team lehnt LiteLLM Schluessel mit 404 ab), stellt pro Person einen
+  Schluessel aus, listet (`--list`, maskiert) und widerruft (`--revoke`) nach
+  Alias oder Hash. Ausgestellt fuer owner, thomas, martin, johannes, holger;
+  Ablage `~/.config/llm-infra/gateway-proxy/issued-keys.txt` (0600).
+  Chat-Antworten gemessen: lokal ueber 4000, oeffentlich ueber 443 (DNS und
+  Roh-IP) mit personifiziertem Schluessel.
+- OpenCode an den Gateway angebracht: `scripts/72-setup-opencode.py` schreibt
+  die Provider `luni-gateway` (Loopback) und `luni-oeffentlich` (443) in
+  `~/.config/opencode/opencode.jsonc`, legt Schluessel und Gateway-CA unter
+  `~/.config/llm-infra/gateway-proxy/` ab und sichert die Betreiberdatei mit
+  Zeitstempel. Der bisherige Platzhalter `apiKey: "local"` war gegen den
+  schluempflichtigen Gateway 401. Die Caddy-CA wird auf Wunsch
+  (`--ca-import`) als Systemtrust verankert - Bun beruecksichtigt
+  `NODE_EXTRA_CA_CERTS` nicht, ohne Verankerung bricht der oeffentliche Pfad
+  mit `UNABLE_TO_GET_ISSUER_CERT_LOCALLY`.
+- Portal (Homepage) repariert: `HOMEPAGE_ALLOWED_HOSTS` kommt aus
+  `config/host.env` (die laufende Unit erlaubte noch 8443- und LAN-Hosts),
+  das ununterstuetzte `rss`-Widget ist weg, die Grafana-Karten zeigen jetzt
+  auf `/grafana/`, die Komodo-Karte (Dienst nicht installiert) ist entfernt,
+  Alertmanager und Laufzeit sind ergaenzt, und `bookmarks.yaml` nutzt das
+  Format, das v2.4.0 wirklich liest (`href`). Das Laufzeit-Protokoll
+  `config/homepage/logs/homepage.log` ist aus dem Git-Index genommen.
+- Defekter Rueckbau in `scripts/check-drift.sh`: bei gefundener Drift stellte
+  das Skript den committeten Stand eigenhändig wieder her
+  (`git restore -- quadlet config/litellm.yaml`) und vernichtete damit
+  unbeabsichtigt eigene Arbeit. Jetzt bleibt das Arbeitsverzeichnis
+  unveraendert; der Rueckbau braucht ein ausdrueckliches `--restore`.
+- Doku: `docs/gateway-proxy.md` (neu, erfuellt die
+  `Documentation=`-Angabe der Tunnel-Unit) und `docs/runtime.md` (neu) sind in
+  `mkdocs.yml` navigierbar; `versions.lock` auf gemessenem Stand (LiteLLM
+  v1.105.0, Alertmanager v0.27.0, Runtime-Bild mit Digest, Caddy, mkdocs-material).
+- Verifikation: `--check`-Pfade der Skripte, `curl`-Messungen lokal und
+  oeffentlich (siehe `docs/status.md`), Alertmanager `/-/ready` 200, alle
+  Targets ausser `grafana` up.
+
 ## 2026-10-08 – Gateway-Haertung: Monitoring-Auth, Waechter, Drill
 
 - Root-Cause 401-Welle: interne Prueflaeufer ohne gueltigen Bearer trafen die
