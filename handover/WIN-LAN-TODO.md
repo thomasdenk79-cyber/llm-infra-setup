@@ -1,6 +1,6 @@
 # Todo: LAN-Zugang vom Windows-Notebook (einmal durchlaufen)
 
-## Prompt fuer den Windows-Agenten (kopieren und einfügen)
+## Prompt fuer den Windows-Agenten (kopieren und einfuegen)
 
 > Lies in diesem Repo `handover/WIN-LAN-HANDOVER.md` und dieses Dokument, und
 > arbeite beide Punkte exakt in der angegebenen Reihenfolge durch (Schritt 1 bis
