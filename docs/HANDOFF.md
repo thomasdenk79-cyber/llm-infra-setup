@@ -132,8 +132,9 @@ Das Repository ist das Backup.
   ueber `littlem` ein echter `chat/completions`-Durchlauf mit
   `qwen3.8-flash-next`, Loopback unveraendert, `--check` rc=0. Doku:
   `docs/operations.md` (LAN, Windows 11, Rueckbau, Fehlerbilder,
-  Tunnel-Lebensdauer), `docs/status.md`. Offen bleibt die Pruefung am Windows-PC
-  (Nr. 18).
+  Tunnel-Lebensdauer), `docs/status.md`. Die Windows-Abnahme ist in
+  `handover/WIN-LAN-REPORT-2026-11-17.md` dokumentiert; die Browserwarnung wurde
+  nicht unabhaengig beobachtet.
 * Review-Runde 2026-11-17 (vier Gegenpruefer auf der lokalen Modellplatte):
   drei stille Defekte gefixt und gemessen - (a) der Proxy lud nach
   `write_if_changed` weiterhin die alte Caddyfile (Einzel-Datei-Bindung folgt
@@ -149,8 +150,7 @@ Das Repository ist das Backup.
   bindet nur noch die bevorzugte Standard-Route (WLAN zu), `loginctl
   enable-linger` gesetzt (der Benutzermanager startet damit ohne
   Desktop-Anmeldung), Doku-Deckung `docs/en/` neu, HANDOFF-Punkte 5-8
-  entstaubt. Offen: Nr. 18 (Windows-Abnahme), Nr. 19 (Weiterleiter aus dem LAN),
-  Nr. 20 (DHCP-Festlegung), Nr. 21 (Router-DNS).
+  entstaubt. Offen: Nr. 20 (DHCP-Festlegung), Nr. 21 (Router-DNS).
 * Verifizierter Einzelzustand mit den Beweis-Befehlen: `docs/status.md`.
 
 ## 2. Was ist offen
@@ -257,33 +257,21 @@ wie "Nr. 18" gelten weiter).*
     `scripts/74-setup-local-proxy.sh`, die Werte stammen aus `config/host.env`.
     Naechster Befehl bei Veraenderungen: `./scripts/74-setup-local-proxy.sh --plan`
     vor `make local-proxy`, danach `make drift`.
-18. **LAN-Zugang am Windows-PC nachmessen (einzig offener Punkt der
-    LAN-Aufgabe).** Auf dem Linux-Rechner ist alles gemessen (`--check` rc=0,
-    401/200-Paare, echter Chat-Durchlauf ueber `littlem`, 2026-11-17 erneut bestaetigt);
-    der Windows-PC war aus dieser Sitzung nicht erreichbar. Kuerzester Weg:
-    `./scripts/74-setup-local-proxy.sh --windows-setup` auf dem Linux-Rechner
-    ausgeben und den Block in eine PowerShell als Administrator einfügen (Namen,
-    Routentest, Root-Import mit Fingerabdruck, alle Gegenproben). Ohne dieses
-    Repo auf dem Geraet sind es dieselben Schritte von Hand: hosts-Zeile aus
-    `./scripts/74-setup-local-proxy.sh --print-hosts` in
-    `C:\Windows\System32\drivers\etc\hosts`, `Test-NetConnection 192.168.0.198
-    -Port 443`, Root per `scp` holen und nach
-    `./scripts/74-setup-local-proxy.sh --ca-export` importieren
-    (`certutil -addstore -f ROOT`, Fingerprint vorher gegen `certutil -dump`
-    vergleichen), dann die Gegenproben aus `docs/operations.md`. Firewall ist
-    nicht die Ursache: `sudo ufw status numbered` zeigt `443/tcp ALLOW IN
-    192.168.0.0/24`. Danach in `docs/status.md` (Abschnitt LAN) und
-    `docs/cmdb.yaml` (`next` der Karte `local-proxy`) die Abnahme eintragen.
-19. **Weiterleiter auf vertrauenswuerdiges Kabel-LAN begrenzen (Betreiberentscheidung).**
-    Port 30001 und `direct-llm` liefern die Modell-API dort ohne Zugangswerte;
-    dies ist die gewaehlte LAN-Zugangsgrenze. Die naheliegende Verengung des
-    Weiterleiters auf Loopback plus Podman-Gateways ist **nicht** ausfuehrbar -
-    gemessen 2026-11-17: `up{job="vllm"}` fiel von 1 auf 0 und `direct-llm` auf
-    502, weil die Gateways im Host-Namespace nicht bindbar sind (Details und
-    Messprotokoll: `docs/runtime.md`, Fund `.omo-work/review-codex.md` F1).
-    Der Weiterleiter bindet nur die Adresse der bevorzugten Standard-Route;
-    die WLAN-Adresse ist nicht gebunden. Falls die Netzgrenze spaeter erweitert
-    wird, muss die Bindung neu bewertet werden.
+18. **Abgeschlossen 2026-11-17: LAN-Zugang am Windows-PC.** Ethernet-DNS wurde
+    auf `192.168.0.198` gesetzt, der Caddy-Root-Fingerprint geprueft/importiert
+    und alle Routen erfolgreich getestet. `direct-llm/v1/models` liefert ohne
+    Key HTTP 200; `littlem` und `llm-direct` liefern mit dem vorhandenen
+    Prozess-Schluessel HTTP 200. Fuer Windows-curl war `--ssl-no-revoke` noetig;
+    der erste Lauf endete mit Exitcode 35. Browserwarnung/Cache wurden nicht
+    unabhaengig geprueft. Vollstaendige Messung:
+    `handover/WIN-LAN-REPORT-2026-11-17.md`.
+19. **Abgeschlossen 2026-11-17: vertrauenswuerdiges Kabel-LAN ist die
+    Zugangsgrenze.** Port 30001 und `direct-llm` liefern die Modell-API dort
+    ohne Zugangswerte; direct-llm wurde so ausgerollt und geprueft. Der
+    Weiterleiter bindet nur die Adresse der bevorzugten Standard-Route; die
+    WLAN-Adresse ist nicht gebunden. Loopback plus Podman-Gateways blieb
+    technisch nicht ausfuehrbar (Messung und Begruendung: `docs/runtime.md`).
+    Bei Erweiterung des Netzes muss die Bindung neu bewertet werden.
 20. **LAN-Bindung gegen DHCP-Wechsel sichern (Betreiberentscheidung).** Aendert
     der DHCP die Adresse des Hosts, ist `llm-proxy.service` nicht mehr startbar
     (`pasta: Cannot assign requested address`) und reisst auch

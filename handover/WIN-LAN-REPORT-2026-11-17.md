@@ -1,8 +1,10 @@
 # Notebook-Abnahme 2026-11-17, Geraet: Windows-Notebook (Hostname nicht erhoben)
 
-Pruefung vom Windows-Notebook gegen `192.168.0.198`. Keine Aenderungen an
-Firewall, Router oder Linux-Rechner. Zugangswerte wurden weder ausgegeben noch
-in Dateien oder dieses Protokoll geschrieben.
+Pruefung vom Windows-Notebook gegen `192.168.0.198`. Firewall und Router blieben
+unveraendert. Nach der Betreiberkorrektur wurde ausschliesslich die verwaltete
+Caddy-Proxy-Konfiguration auf CachyOS per Generator ausgerollt; die vLLM-Runtime
+wurde nicht neu gestartet. Zugangswerte wurden weder ausgegeben noch in Dateien
+oder dieses Protokoll geschrieben.
 
 | Schritt | Befehl | erwartet | erhalten | Bewertung |
 |---|---|---|---|---|
@@ -15,10 +17,11 @@ in Dateien oder dieses Protokoll geschrieben.
 | 2b | `nslookup homepage.cachyos-x8664 192.168.0.198`; `ipconfig /flushdns` | Zone liefert `.198`; Cache geleert | Zone liefert `.198`; Cache-Leerung mit `gsudo` erfolgreich | Teilweise OK; Browser-Cache nicht direkt geprueft |
 | 3 | Zertifikat herunterladen und SHA-256 pruefen | Fingerprint `6A:C7:44:AE:12:0E:66:FE:25:8A:FA:5C:D2:68:F1:42:E8:C3:90:92:48:60:BB:ED:77:96:9B:5C:2D:88:31:09` | Fingerprint stimmt exakt ueberein | OK |
 | 3 | `certutil -addstore -f Root ...` | Zertifikat im Root-Speicher | Import mit `gsudo` erfolgreich | OK |
-| 4 | Fuenf HTTPS-Routen plus direct-llm `/v1/models` | `200/200/200/301/401`; direct-llm ohne Key `200` | Alle sechs `000`; curl-Exitcode `35` | ABWEICHUNG |
-| 4 | Grafana-Weiterleitung | `200`, URL endet `/grafana/` | `000`, URL blieb `https://grafana.cachyos-x8664/` | ABWEICHUNG |
-| 4b | `/v1/models` auf `llm-direct` und `littlem` mit vorhandenem Gateway-Wert | `200` mit Modelliste | Beide HTTP-Status `000`; kein Body | ABWEICHUNG |
-| 4b | `/v1/models` auf `direct-llm` ohne Zugangswerte | `200` ohne API-Schluessel oder Proxy-Login | curl vor der Konfigurationsaenderung: HTTP-Status `000`, Exitcode `35`; Browser-Abfrage war noch die alte Konfiguration | NICHT GEPRUEFT |
+| 4 | Fuenf HTTPS-Routen plus direct-llm `/v1/models` | `200/200/200/301/401`; direct-llm ohne Key `200` | `200/200/200/301/401`; direct-llm `200` | OK |
+| 4 (erster Versuch) | Dokumentierte `curl.exe`-Aufrufe | HTTP-Codes wie oben | Alle sechs `000`; curl-Exitcode `35`; mit `--ssl-no-revoke` erfolgreich wiederholt | BEHOBEN |
+| 4 | Grafana-Weiterleitung mit `-L` | `200`, URL endet `/grafana/` | `200`, URL `https://grafana.cachyos-x8664/grafana/` | OK |
+| 4b | `/v1/models` auf `llm-direct` und `littlem` mit vorhandenem Prozess-Schluessel | `200` mit Modelliste | Beide HTTP `200`; Schluessel nicht ausgegeben oder protokolliert | OK |
+| 4b | `/v1/models` auf `direct-llm` ohne Zugangswerte | `200` ohne API-Schluessel oder Proxy-Login | HTTP `200`; Modelle `flash-next`, `qwen3.8-flash-next` | OK |
 | 5 | Browser: `https://homepage.cachyos-x8664/`, ohne Zertifikatswarnung | Seite erreichbar, keine Warnung | Benutzer bestaetigte, dass die URL jetzt aufrufbar ist; Warnungsstatus nicht unabhaengig beobachtet | Benutzerbestaetigt, teilweise geprueft |
 
 ## Ausgaben der erfolgreichen Pruefungen
@@ -240,27 +243,42 @@ littlem 000
 direct-llm without Basic-Auth 000
 ```
 
-Die dokumentierten `curl.exe -s`-Aufrufe lieferten keinen Body; die
-Statusabfragen ergaben `000`. Der direkte Aufruf ohne Zugangswerte endete mit
-curl-Exitcode `35`. Der Benutzer bestaetigte anschliessend, dass der Browser
-bei `https://direct-llm.cachyos-x8664/v1/models` nach Benutzer und Passwort
-fragt. Diese Beobachtung betraf die alte Konfiguration; der Betreiber stellte
-danach klar, dass `direct-llm` ohne API-Schluessel und Proxy-Anmeldung direkt
-zur vLLM-API fuehren soll. Die neue Repo-Konfiguration ist daher noch separat
-auszurollen und von Windows zu pruefen. Es wurden keine Zugangswerte
-ausgegeben oder protokolliert.
+Die ersten dokumentierten `curl.exe -s`-Aufrufe lieferten keinen Body; alle
+Statusabfragen ergaben `000` und der direkte Aufruf endete mit Exitcode `35`.
+Der Browser zeigte zu diesem Zeitpunkt noch die Benutzer/Passwort-Abfrage der
+alten Proxy-Konfiguration. Der Betreiber stellte klar, dass `direct-llm` ohne
+API-Schluessel oder Proxy-Anmeldung direkt zur vLLM-API fuehren soll. Nach dem
+Commit und Rollout dieser Aenderung meldete CachyOS:
+
+```text
+OK: LAN-Zugang auf 192.168.0.198:443 - sechs Namen geprueft, Dozzle mit Basic-Auth
+OK: HTTPS-Zugang ist erreichbar, die Backend-Ports bleiben am Loopback
+```
+
+Wiederholungen von Windows mit `curl.exe --ssl-no-revoke` ergaben:
+
+```text
+homepage 200
+littlem 200
+llm-direct 200
+grafana 301
+dozzle 401
+grafana followed 200 https://grafana.cachyos-x8664/grafana/
+direct-llm /v1/models HTTP 200
+littlem /v1/models mit vorhandenem Prozess-Schluessel HTTP 200
+llm-direct /v1/models mit vorhandenem Prozess-Schluessel HTTP 200
+```
+
+`Invoke-WebRequest` ohne Zugangswerte auf `direct-llm/v1/models` ergab HTTP
+`200` und die Modellnamen `flash-next` sowie `qwen3.8-flash-next`. Der
+Prozess-Schluessel wurde weder ausgegeben noch gespeichert. Dass
+`--ssl-no-revoke` die curl-Aufrufe erfolgreich macht, deutet auf ein Problem
+mit der Schannel-Sperrpruefung hin; die genaue Ursache ist nicht isoliert.
 
 ## Nicht geprueft
 
 - Die Browser-Host-Cache-Seite und ein InPrivate-Aufruf wurden nicht unabhaengig
   bedient. Der Benutzer bestaetigte spaeter, dass die Homepage aufrufbar ist;
   ob dabei eine Zertifikatswarnung erschien, wurde nicht beobachtet.
-- Der erwartete direkte `direct-llm`-Modelllistenabruf nach der
-  Konfigurationsaenderung ist noch nicht geprueft; der dokumentierte Windows-
-  curl-Aufruf scheiterte vorher mit Status `000`.
-- Die HTTPS-Routen und die Gateway-Modelllisten blieben mit `curl.exe` bei
-  Status `000` (curl-Exitcode `35`); die Abnahme dieser Endpunkte ist daher
-  offen, auch wenn der Benutzer die Homepage im Browser inzwischen aufrufen
-  konnte.
 - Der Windows-Hostname wurde nicht erhoben, da dafuer kein Befehl in der
   freigegebenen Handover-Prueffolge stand.

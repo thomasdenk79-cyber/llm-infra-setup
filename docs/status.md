@@ -290,8 +290,12 @@ Hashes in Ruhe (`ensure_auth_file` ist idempotent).
 und Proxy-Anmeldung direkt zur vLLM-API fuehren. Der private Kabel-LAN-Bereich
 ist die vorgesehene Zugangsgrenze; `littlem` und `llm-direct` behalten die
 LiteLLM-Bearer-Authentifizierung. Der Generator und die zugehoerigen Pruefungen
-sind angepasst; der Live-Proxy muss nach dem Commit noch ausgerollt und geprueft
-werden.
+sind im Commit `2092e7d` angepasst und auf CachyOS ausgerollt. `--check` endet
+erfolgreich; Windows liefert auf `direct-llm/v1/models` ohne Zugangswerte 200,
+und `littlem`/`llm-direct` liefern mit dem vorhandenen Prozess-Schluessel 200.
+Die Windows-Routenchecks benoetigten `curl.exe --ssl-no-revoke`; mit der
+Standardoption gab Schannel zuvor Exitcode 35 zurueck. Einzelheiten stehen in
+`handover/WIN-LAN-REPORT-2026-11-17.md`.
 
 **Warum nicht 80/443 auf allen Adaptern:** veroeffentlicht wird nur, was in
 `LAN_BIND_IPS` steht. Der Kerneltrenner `net.ipv4.ip_unprivileged_port_start=443`
@@ -319,11 +323,14 @@ und `HOMEPAGE_ALLOWED_HOSTS` aendern.
 2026-11-16 (nur Loopback) wieder erreicht, ohne Veraenderungen an Unit, Caddy-CA
 oder Tunnel.
 
-**Windows-Seite:** noch nicht am Geraet geprueft (kein Zugriff auf den
-Windows-PC aus dieser Sitzung). Die Befehle dafuer sind dokumentiert:
-`--print-hosts` (hosts-Datei) und `--ca-export` (Root-Import, Fingerprint-Vergleich)
-in `docs/operations.md`, Abschnitt "Windows 11". Abnahme dort nachtragen, sobald
-der PC erreicht werden kann.
+**Windows-Seite (geprueft 2026-11-17):** Ethernet-DNS wurde auf
+`192.168.0.198` vor dem Router-DNS gesetzt; die Namen loesten danach auf, der
+Root-Fingerprint stimmte und das Zertifikat wurde importiert. Die Routen und
+Gateway-Model-Listen sind mit `curl.exe --ssl-no-revoke` erfolgreich; ohne diese
+Option scheiterte der erste curl-Lauf mit Exitcode 35. Der Benutzer bestaetigte,
+dass die Homepage im Browser aufrufbar ist; Browserwarnung und Cache-Seite
+wurden nicht unabhaengig geprueft. Vollstaendiger Ablauf und Ergebnisse:
+`handover/WIN-LAN-REPORT-2026-11-17.md`.
 
 ## Lokaler HTTPS-Zugang ueber Namen - gemessener Stand 2026-11-16
 

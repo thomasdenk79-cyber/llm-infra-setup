@@ -42,10 +42,9 @@ services:
       der Backend-Ports); --status fuer Unit, Listener, Netze"
     docs: "docs/operations.md (Abschnitte HTTPS-Zugang, LAN, Windows 11, Rueckbau);
       Windows-Hilfsskript scripts/windows-lan-client-setup.ps1"
-    next: "Abnahme am Windows-Geraet (docs/HANDOFF.md, offener Punkt 18):
-      windows-lan-client-setup.ps1 als Administrator laufen lassen (hosts-Datei,
-      Root-Import, Gegenproben); danach in docs/status.md (Abschnitt LAN)
-      eintragen"
+    next: "Windows-Abnahme abgeschlossen (docs/HANDOFF.md Punkt 18,
+      handover/WIN-LAN-REPORT-2026-11-17.md). Bei Erweiterung des Netzes
+      LAN_BIND_IPS und die unauthentifizierte vLLM-Freigabe neu bewerten."
   observability:
     what: "Prometheus+Loki+Alloy+Grafana+Dozzle, Host-Fakten via Textfile-Timer"
     where: "quadlet/*.container, config/monitoring/ (Dashboards provisiert)"

@@ -8,8 +8,10 @@
   entfernt beim Ausrollen alte `direct-llm`-Zugangswerte; Basic-Auth bleibt
   ausschliesslich fuer Dozzle.
 - Handover-, Sicherheits- und Diagnosehinweise auf das Verhalten ohne Anmeldung
-  angepasst; die urspruengliche Windows-Messung mit TLS-Fehlern bleibt als
-  Abweichung im Abnahmebericht dokumentiert.
+  angepasst. Der Proxy wurde ausgerollt und `--check` war erfolgreich;
+  Windows-Routenchecks liefen mit `curl.exe --ssl-no-revoke` erfolgreich.
+  Die erste Messung mit TLS-Fehlern bleibt als behobene Abweichung im
+  Abnahmebericht dokumentiert.
 
 ## 2026-11-17 (Runde: Namensaufloesung im Netz - ein Handgriff, nicht sechs)
 
