@@ -42,12 +42,14 @@ def main() -> None:
         raise SystemExit("Paketdatei(en) fehlen: " + ", ".join(missing))
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(OUTPUT, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+    with zipfile.ZipFile(OUTPUT, "w", compression=zipfile.ZIP_STORED) as archive:
         for name in FILES:
             info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
-            info.compress_type = zipfile.ZIP_DEFLATED
+            info.compress_type = zipfile.ZIP_STORED
             info.external_attr = 0o100644 << 16
-            archive.writestr(info, (SOURCE / name).read_bytes())
+            content = (SOURCE / name).read_bytes()
+            content = content.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+            archive.writestr(info, content)
     with zipfile.ZipFile(OUTPUT) as archive:
         bad = archive.testzip()
         if bad:
