@@ -16,12 +16,11 @@
 # dort aufloesen (gemessen: getent hosts grafana -> 10.89.1.x, litellm nur in
 # llm-inference, die Runtime ueber den Weiterleiter auf dem Host).
 #
-# Schutz im LAN: LiteLLM verlangt seinen eigenen Schluessel (401 ohne), Dozzle
-# nutzt Basic-Auth mit Hash aus ~/.config/llm-infra/proxy/lan-auth.env (0600,
-# ausserhalb von Git). direct-llm ist eine schluessellose vLLM-Route, erreichbar
-# nur auf den explizit konfigurierten LAN-Adressen. Prometheus, Alertmanager,
-# Loki, Dozzle-, Grafana- und Gateway-Port bleiben auf Loopback. Der getrennte
-# vLLM-Weiterleiter 30001 ist die unauthentifizierte LAN-Ausnahme (docs/runtime.md).
+# Schutz im LAN: LiteLLM verlangt seinen eigenen Schluessel (401 ohne); Dozzle,
+# Grafana und direct-llm haben keine Proxy-Anmeldung und sind nur auf den
+# explizit konfigurierten LAN-Adressen erreichbar. Prometheus, Alertmanager,
+# Loki, Dozzle- und Gateway-Port bleiben auf Loopback. Der getrennte
+# vLLM-Weiterleiter 30001 ist ebenfalls ohne Authentifizierung (docs/runtime.md).
 #
 # Zertifikate: Caddy-eigene lokale CA ("tls internal"), Bestand unter
 # ~/.local/share/llm-infra/caddy/data. Ohne Verankerung im Systemtrust
@@ -88,8 +87,7 @@ grafana.localhost {
 # Gerendert aus config/proxy/Caddyfile.template durch scripts/74-setup-local-proxy.sh.
 # Alle Namen enden auf den Rechnernamen (cachyos-x8664); Windows-Clients tragen sie in
 # C:\Windows\System32\drivers\etc\hosts ein (docs/operations.md, Abschnitt LAN-Zugang).
-# Dozzle's Basic-Auth-Zugang steht in /home/z000g9hu/.config/llm-infra/proxy/lan-auth.env (0600, ausserhalb von Git);
-# im Caddyfile stehen nur {env.*}-Platzhalter.
+# Dozzle, Grafana und direct-llm sind ohne Proxy-Anmeldung fuer das private LAN.
 
 homepage.cachyos-x8664 {
 	tls internal
@@ -132,12 +130,9 @@ llm-direct.cachyos-x8664 {
 	reverse_proxy litellm:4000
 }
 
-# Container-Logs: Basic-Auth, weil Logs Zugangswerte enthalten koennen.
+# Container-Logs: ohne Anmeldung, nur auf den vertrauenswuerdigen LAN-Adressen.
 dozzle.cachyos-x8664 {
 	tls internal
-	basic_auth {
-		{env.LLM_LAN_DOZZLE_USER} {env.LLM_LAN_DOZZLE_HASH}
-	}
 	encode zstd gzip
 	reverse_proxy dozzle:8080
 }
@@ -150,12 +145,10 @@ direct-llm.cachyos-x8664 {
 	reverse_proxy host.containers.internal:30001
 }
 
-# Wurzelzertifikat ausliefern: ein Client, der die Namen noch nicht kennt, muss
-# dafuer weder scp noch ssh benutzen. Ueber die reine Adresse geht kein TLS - eine
-# IP sendet kein SNI, also scheitert der Handshake an der Zertifikatswahl. Deshalb
-# klarer HTTP auf Port 80, und zwar genau ein Pfad: die oeffentliche Wurzel ist ein
-# oeffentlicher Schluessel, kein Geheimnis; die Pruefung laeuft ueber den
-# Fingerabdruck, bevor importiert wird. Alles andere antwortet 404.
+# Bootstrap fuer Clients, die die Namen/CA noch nicht kennen: HTTP auf Port 80
+# (am Host 8081) liefert nur das oeffentliche Root-Zertifikat und das ZIP.
+# Die Root-Echtheit wird vor dem Import per Fingerabdruck geprueft; alle anderen
+# Pfade antworten 404.
 :80 {
 	@wurzel {
 		path /caddy-local-authority-root.crt
@@ -164,8 +157,15 @@ direct-llm.cachyos-x8664 {
 		root * /srv/llm-proxy/ca
 		file_server
 	}
+	@anleitung {
+		path /anleitung/anleitung.zip
+	}
+	handle @anleitung {
+		root * /srv/llm-proxy/site
+		file_server
+	}
 	handle {
-		respond "Nur das Wurzelzertifikat: /caddy-local-authority-root.crt" 404
+		respond "Nur Wurzelzertifikat und Installationspaket" 404
 	}
 }
 
