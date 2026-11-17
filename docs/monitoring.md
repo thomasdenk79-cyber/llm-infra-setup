@@ -112,7 +112,7 @@ Neu aktiv in `config/monitoring/prometheus.yml`:
 | `alloy` | `alloy:12345` | Protokollsammler aus, keine Logs in Loki -> `ProtokollsammlungSteht` |
 | `alertmanager` | `alertmanager:9093` | Alarmweg kaputt -> `AlarmwegFehlt` |
 | `caddy` | `llm-proxy:8080` | Der LAN-Proxy ist ein eigener Dienst und braucht ein Metrikziel (Regel in `AGENTS.md`). Der Port ist nicht veroeffentlicht; durchgereicht wird nur `/metrics` auf den Caddy-Admin-Endpunkt, der den Host-Wert auf `127.0.0.1:2019` braucht (sonst 403) |
-| `vllm` | `host.containers.internal:30001` | Runtime-Metriken ueber den Weiterleiter; Scrape ueber das Host-Gateway (`AddHost=host.containers.internal:host-gateway` im Prometheus-Quadlet), weil rootless Prometheus nicht an den Host-Loopback kann (Einzelheiten in `docs/operations.md`) |
+| `vllm` | `host.containers.internal:30000` | Runtime metrics (vLLM or SGLang) scraped directly on the stable runtime port via the host gateway (`AddHost=host.containers.internal:host-gateway`); the runtime must bind 0.0.0.0. `config/monitoring/runtime-compat.yml` records `sglang:*` under the `vllm:*` names used by dashboards and alerts |
 
 Nach jeder Aenderung an `config/monitoring/prometheus.yml` oder `alerts.yml`:
 `systemctl --user reload prometheus.service` (SIGHUP). Prometheus kennt kein

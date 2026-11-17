@@ -1,0 +1,27 @@
+# Runtime-neutral inference metrics. Dashboards, alerts and the homepage use
+# the vLLM metric vocabulary (vllm:*). When SGLang serves on :30000 it exports
+# sglang:* instead; these rules record the SGLang series under the vLLM names
+# so the same panels work for both runtimes. With vLLM running, the sglang:*
+# inputs are absent and no series are recorded (no duplicates).
+# Not mappable: vllm:inter_token_latency_seconds_* and spec-decode counters
+# (SGLang exports spec_accept_length as a gauge; see alerts.yml).
+groups:
+  - name: runtime-compat-sglang
+    rules:
+      - { record: "vllm:num_requests_running", expr: "sglang:num_running_reqs" }
+      - { record: "vllm:num_requests_waiting", expr: "sglang:num_queue_reqs" }
+      - { record: "vllm:kv_cache_usage_perc", expr: "sglang:token_usage" }
+      - { record: "vllm:prompt_tokens_total", expr: "sglang:prompt_tokens_total" }
+      - { record: "vllm:generation_tokens_total", expr: "sglang:generation_tokens_total" }
+      - { record: "vllm:prompt_tokens_cached_total", expr: "sglang:cached_tokens_total" }
+      - { record: "vllm:prefix_cache_hits_total", expr: "sglang:cached_tokens_total" }
+      - { record: "vllm:prefix_cache_queries_total", expr: "sglang:prompt_tokens_total" }
+      - { record: "vllm:request_success_total", expr: "sglang:num_requests_total" }
+      - { record: "vllm:request_prompt_tokens_count", expr: "sglang:prompt_tokens_histogram_count" }
+      - { record: "vllm:request_prompt_tokens_sum", expr: "sglang:prompt_tokens_histogram_sum" }
+      - { record: "vllm:time_to_first_token_seconds_bucket", expr: "sglang:time_to_first_token_seconds_bucket" }
+      - { record: "vllm:time_to_first_token_seconds_sum", expr: "sglang:time_to_first_token_seconds_sum" }
+      - { record: "vllm:time_to_first_token_seconds_count", expr: "sglang:time_to_first_token_seconds_count" }
+      - { record: "vllm:e2e_request_latency_seconds_bucket", expr: "sglang:e2e_request_latency_seconds_bucket" }
+      - { record: "vllm:e2e_request_latency_seconds_sum", expr: "sglang:e2e_request_latency_seconds_sum" }
+      - { record: "vllm:e2e_request_latency_seconds_count", expr: "sglang:e2e_request_latency_seconds_count" }

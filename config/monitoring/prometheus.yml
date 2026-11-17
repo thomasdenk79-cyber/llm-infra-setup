@@ -8,6 +8,7 @@ global:
 
 rule_files:
   - /etc/prometheus/conf/alerts.yml
+  - /etc/prometheus/conf/runtime-compat.yml
 
 # Alarme laufen zum Alertmanager dieses Stapels. Ohne diesen Abschnitt werden
 # die Regeln in alerts.yml zwar ausgewertet, aber nirgends hingegeben - ein
@@ -111,14 +112,14 @@ scrape_configs:
       - targets: ["llm-proxy:8080"]
         labels: { service: proxy }
 
-  # LUNI-Delta (P0-V3, 2026-11-15): vLLM-Metriken der Runtime. Die Runtime laeuft
-  # hier als ad-hoc Container flash-next-v3 mit Loopback-Bindung 127.0.0.1:30000;
-  # der User-Dienst luni-vllm-pub stellt die Metriken auf 0.0.0.0:30001 bereit.
-  # Scrape ueber das Host-Gateway (AddHost=host.containers.internal:host-gateway),
-  # weil rootless Podman von Prometheus aus nicht an den Loopback des Hosts kann.
-  # Kein Label-Zusatz zustaendig: job-Label "vllm" + instance genugen.
+  # LUNI-Delta (2026-11-17): inference runtime metrics, scraped directly on the
+  # stable runtime port 30000 via the host gateway (AddHost=
+  # host.containers.internal:host-gateway). Requires the runtime to bind
+  # 0.0.0.0 (SGLang launcher does; ufw limits 30000 to the LAN). The job name
+  # "vllm" is kept stable for dashboards/alerts regardless of runtime (vLLM or
+  # SGLang); runtime-compat.yml maps sglang:* onto the vllm:* names.
   - job_name: vllm
     metrics_path: /metrics
     scrape_interval: 15s
     static_configs:
-      - targets: ["host.containers.internal:30001"]
+      - targets: ["host.containers.internal:30000"]
