@@ -90,12 +90,12 @@ if [[ -f /etc/cdi/nvidia.yaml ]]; then
   age=$(( $(date +%s) - $(stat -c %Y /etc/cdi/nvidia.yaml 2>/dev/null || echo "$(date +%s)") ))
   if (( age > 86400 )); then
     warn "CDI-Beschreibung ist $(( age / 3600 )) h alt; nach Treiber- oder Hardwareaenderungen veraltet." \
-         'make podman'
+         'make podman   (erst wenn keine Inferenz laeuft - die GPU gehoert der Laufzeit, AGENTS.md Regel 2)'
   else
     good "CDI vorhanden (${age} s alt)"
   fi
 else
-  bad 'Keine CDI-Gerätedefinition; Container sehen die GPU nicht.' 'make podman'
+  bad 'Keine CDI-Gerätedefinition; Container sehen die GPU nicht.' 'make podman   (Laufzeit vorher stilllegen - AGENTS.md Regel 2)'
 fi
 
 # 5 Modell --------------------------------------------------------------------
@@ -351,48 +351,209 @@ fi
 
 # 14 Lokaler Zugang ueber Namen ------------------------------------------------
 title 'Lokaler Zugang ueber Namen'
-# Prueft den verwalteten Proxy und beide benannten Flaechen. curl laeuft ohne -k:
-# faellt die Verankerung der lokalen Caddy-CA weg, liefert die Abfrage 000 und
-# dieser Pruefpunkt schlaegt fehl, statt eine funktionsfreie Kachel zu melden.
-if systemctl --user is-active --quiet llm-proxy.service 2>/dev/null; then
+# http_code <url> [weitere curl-Schalter...] -> dreistelliger Code, '000' bei
+# Abbruch. curl schreibt den Formatstring auch beim Abbruch, ein zweites '000'
+# daneben ergaebe "000000" - deshalb hier die eine Quelle.
+http_code() {
+  local url="$1"; shift
+  local c
+  c="$(curl -s -o /dev/null -w '%{http_code}' "$@" "${url}" 2>/dev/null)"
+  [[ "${c}" =~ ^[0-9]{3}$ ]] || c='000'
+  printf '%s' "${c}"
+}
+# Jeder benannte Zugang fuehrt durch denselben Container llm-proxy. Geprueft wird
+# deshalb von aussen nach innen und die Kette endet beim ersten Ausfall: Unit ->
+# Listener -> Vertrauen -> Zugaege. Sonst erschiene ein einziger Ausloeser (eine
+# geaenderte DHCP-Adresse zum Beispiel) als vier gleiche Fehlerzeilen.
+proxy_unit='llm-proxy.service'
+proxy_ca="${HOME}/.local/share/llm-infra/caddy/ca/caddy-local-authority-root.crt"
+proxy_chain=1
+if systemctl --user is-active --quiet "${proxy_unit}" 2>/dev/null; then
   good 'Lokaler Proxy (llm-proxy) laeuft'
-else
-  warn 'Lokaler Proxy laeuft nicht; die benannten Zugaege sind dann nicht erreichbar.' './scripts/74-setup-local-proxy.sh'
-fi
-for url in 'https://homepage.localhost/' 'https://grafana.localhost/grafana/'; do
-  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 6 "${url}" 2>/dev/null || printf '000')"
-  if [[ "${code}" == '200' ]]; then
-    good "Benannter Zugang antwortet: ${url}"
+  # "laeuft" heisst nur, dass podman den Container angelegt hat. Horcht Caddy
+  # auch? Ohne diese Zeile gilt eine Unit als gesund, die keinen einzigen Zugang
+  # beantwortet (Bildfall: Sysctl-Grenze zurueckgesetzt, Container steht da).
+  if ss -tlnH 2>/dev/null | grep -q '127\.0\.0\.1:443 '; then
+    good 'Listener auf 127.0.0.1:443'
   else
-    bad "Benannter Zugang antwortet nicht (${code}): ${url}" './scripts/74-setup-local-proxy.sh --check'
+    bad 'Unit laeuft, aber auf 127.0.0.1:443 horcht niemand.' \
+        "journalctl --user -u ${proxy_unit} -n 80 --no-pager   (Veroeffentlichungen: systemctl --user cat ${proxy_unit})"
+    proxy_chain=0
   fi
-done
+else
+  # Der Grund entscheidet ueber den naechsten Befehl: 'Permission denied' ist die
+  # Sysctl-Grenze, 'Cannot assign requested address' eine Adresse, die dem
+  # Rechner nicht (mehr) gehoert, 'no such host' ein Zielname im falschen Netz.
+  # Ein Neustart der Unit ueberlebt nichts davon - erst --check lesen.
+  grund="$(journalctl --user -u "${proxy_unit}" -n 60 --no-pager 2>/dev/null \
+    | grep -Eo 'Listen failed[^"]*|Cannot assign requested address|Permission denied|no such host' | tail -1)"
+  if [[ -n "${grund}" ]]; then
+    bad "Lokaler Proxy laeuft nicht; letzte Meldung: ${grund}." \
+        './scripts/74-setup-local-proxy.sh --check   (Adressen: ip -4 addr   Grenze: sysctl net.ipv4.ip_unprivileged_port_start)'
+  else
+    bad 'Lokaler Proxy laeuft nicht; die benannten Zugaege sind dann nicht erreichbar.' \
+        "journalctl --user -u ${proxy_unit} -n 80 --no-pager   (danach ausrollen: ./scripts/74-setup-local-proxy.sh)"
+  fi
+  proxy_chain=0
+fi
+# Vertrauen: ohne verankerte Caddy-CA antwortet der Proxy zwar, aber curl und
+# Browser brechen ab. Das ist ein Warnung mit eigenem Befehl, kein Zugangsausfall
+# - mit --cacert funktioniert alles.
+ca_im_trust() {
+  # True, wenn das System dem Caddy-Stamm vertraut. Zuerst die Ausliste des
+  # trust-Programms; findet sie nichts, entscheidet das Verhalten eines echten
+  # request (200 ohne -k) - dasselbe Ergebnis, aber auf jedem System gleich.
+  if command -v trust >/dev/null 2>&1 \
+     && trust list --filter=ca-anchors 2>/dev/null | grep -qi 'Caddy Local Authority'; then
+    return 0
+  fi
+  [[ "$(http_code 'https://homepage.localhost/' --max-time 6)" == '200' ]]
+}
+if [[ ! -f "${proxy_ca}" ]]; then
+  warn "CA-Datei ${proxy_ca} fehlt; kein Client kann den Zertifikaten vertrauen." \
+       './scripts/74-setup-local-proxy.sh --ca-export   (CA-Datei und Fingerabdruck ausgeben; danach --ca-import)'
+elif (( ${proxy_chain} == 1 )); then
+  if ca_im_trust; then
+    good 'Caddy-CA im Systemvertrauen verankert (curl und Browser ohne Warnung)'
+  else
+    warn 'Caddy-CA ist nicht im Systemvertrauen; curl ohne -k und der Browser brechen ab.' \
+         './scripts/74-setup-local-proxy.sh --ca-import   (sudo, nur dieser Rechner)'
+  fi
+fi
+if (( ${proxy_chain} == 1 )); then
+  for url in 'https://homepage.localhost/' 'https://grafana.localhost/grafana/'; do
+    code="$(http_code "${url}" --max-time 6)"
+    if [[ "${code}" == '200' ]]; then
+      good "Benannter Zugang antwortet: ${url}"
+      continue
+    fi
+    # Unterscheide "niemand antwortet" von "Antwort, aber niemand vertraut ihr":
+    # mit der CA-Datei als Vorlage funktioniert derselbe request wieder.
+    if [[ -f "${proxy_ca}" ]] \
+       && [[ "$(http_code "${url}" --max-time 6 --cacert "${proxy_ca}")" == '200' ]]; then
+      warn "Benannter Zugang antwortet nur mit ausdruecklicher CA: ${url} (${code})" \
+           './scripts/74-setup-local-proxy.sh --ca-import'
+    else
+      bad "Benannter Zugang antwortet nicht (${code}): ${url}" './scripts/74-setup-local-proxy.sh --check'
+    fi
+  done
+fi
 
 # LAN-Anteil: nur wenn config/host.env Adressen nennt. Der Arztlauf bleibt knapp
-# (Listener, Portal, eine Basic-Auth-Route); die vollstaendige Pruefung - alle
-# Namen, 401/200-Paare, Loopback-Ausschliesslichkeit der Backend-Ports - macht
-# der Generator selbst mit ./scripts/74-setup-local-proxy.sh --check.
+# (Adresse, Listener, Portal, eine Basic-Auth-Route, Zugangswerte, Weiterleiter);
+# die vollstaendige Pruefung - alle Namen, 401/200-Paare, Loopback-
+# Ausschliesslichkeit der Backend-Ports - macht der Generator selbst mit
+# ./scripts/74-setup-local-proxy.sh --check.
 if [[ -n "${LAN_BIND_IPS//[[:space:],]/}" ]]; then
   lan_dom="${LAN_DOMAIN:-$(hostname 2>/dev/null || echo llmhost)}"
   lan_ip="$(printf '%s' "${LAN_BIND_IPS}" | tr ',' ' ' | awk '{print $1}')"
-  if ss -tlnH 2>/dev/null | grep -q "${lan_ip}:443 "; then
-    good "LAN-Listener auf ${lan_ip}:443"
+  # Erste Frage vor jedem Listener: gehoert die Adresse ueberhaupt zu diesem
+  # Rechner? Wechselt DHCP die Adresse, verweigert podman die Veroeffentlichung
+  # (gemessen: pasta "Listen failed ... Cannot assign requested address") und der
+  # Container startet GAR NICHT mehr - auch nicht fuer 127.0.0.1:443. Der
+  # Loopback-Zugang faellt also mit, nicht nur der Zugang im Netz.
+  if ip -4 -o addr show scope global 2>/dev/null | grep -qE "[[:space:]]${lan_ip}/"; then
+    good "LAN-Adresse ${lan_ip} ist auf diesem Rechner konfiguriert"
   else
-    bad "Kein LAN-Listener auf ${lan_ip}:443" './scripts/74-setup-local-proxy.sh'
+    bad "LAN_BIND_IPS nennt ${lan_ip}, aber der Rechner hat diese Adresse nicht - der Proxy startet deshalb nicht (auch 127.0.0.1:443 fehlt)." \
+        "ip -4 addr show   (dann LAN_BIND_IPS in config/host.env auf die aktuelle Adresse setzen, danach: ./scripts/74-setup-local-proxy.sh)"
+    proxy_chain=0
   fi
-  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 8 --resolve "homepage.${lan_dom}:443:${lan_ip}" "https://homepage.${lan_dom}/" 2>/dev/null || printf '000')"
-  if [[ "${code}" == '200' ]]; then
-    good "LAN-Zugang antwortet: https://homepage.${lan_dom}/"
-  else
-    bad "LAN-Zugang antwortet nicht (${code}): https://homepage.${lan_dom}/" './scripts/74-setup-local-proxy.sh --check'
+  if (( ${proxy_chain} == 1 )); then
+    if ss -tlnH 2>/dev/null | grep -q "${lan_ip}:443 "; then
+      good "LAN-Listener auf ${lan_ip}:443"
+    else
+      bad "Kein LAN-Listener auf ${lan_ip}:443" \
+          "journalctl --user -u ${proxy_unit} -n 80 --no-pager   (danach: ./scripts/74-setup-local-proxy.sh --check)"
+      proxy_chain=0
+    fi
   fi
-  # Die Log-Route muss ohne Zugangswerte abweisen, sonst haengt jemand im Netz
-  # in den Container-Protokollen.
-  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 8 -k --resolve "dozzle.${lan_dom}:443:${lan_ip}" "https://dozzle.${lan_dom}/" 2>/dev/null || printf '000')"
-  if [[ "${code}" == '401' ]]; then
-    good "LAN-Log-Route weist ohne Zugangswerte ab (401)"
+  if (( ${proxy_chain} == 1 )); then
+    # Reachbarkeit ist die Frage, nicht das Vertrauen - dafuer oben die CA-Zeile.
+    # Mit der CA-Datei als Vorlage geprueft, damit ein fehlendes Systemvertrauen
+    # nicht zusaetzlich als Zugangsausfall erscheint.
+    if [[ -f "${proxy_ca}" ]]; then
+      code="$(http_code "https://homepage.${lan_dom}/" --max-time 8 --cacert "${proxy_ca}" --resolve "homepage.${lan_dom}:443:${lan_ip}")"
+    else
+      code="$(http_code "https://homepage.${lan_dom}/" --max-time 8 -k --resolve "homepage.${lan_dom}:443:${lan_ip}")"
+    fi
+    if [[ "${code}" == '200' ]]; then
+      good "LAN-Zugang antwortet: https://homepage.${lan_dom}/"
+    elif [[ "${code}" == '400' ]]; then
+      # Das Portal prueft seinen eigenen Host-Header; der Proxy ist unschuldig.
+      bad "Portal weist unter https://homepage.${lan_dom}/ mit 400 ab (Host-Header abgelehnt)." \
+          "homepage.${lan_dom} in HOMEPAGE_ALLOWED_HOSTS in config/host.env eintragen, dann: make homepage"
+    else
+      bad "LAN-Zugang antwortet nicht (${code}): https://homepage.${lan_dom}/" './scripts/74-setup-local-proxy.sh --check'
+    fi
+    # Die Log-Route muss ohne Zugangswerte abweisen, sonst haengt jemand im Netz
+    # in den Container-Protokollen.
+    code="$(http_code "https://dozzle.${lan_dom}/" --max-time 8 -k --resolve "dozzle.${lan_dom}:443:${lan_ip}")"
+    if [[ "${code}" == '401' ]]; then
+      good "LAN-Log-Route weist ohne Zugangswerte ab (401)"
+    else
+      bad "LAN-Log-Route antwortet mit ${code} statt 401 - Zugangswerte pruefen" './scripts/74-setup-local-proxy.sh --check'
+    fi
+  fi
+  # Zugangswerte: der haufigste Betreiberfall ist "Wert vergessen". Der Arztlauf
+  # nennt Pfade und Benutzernamen, nie Werte.
+  lan_auth_file="${SECRETS_DIR}/proxy/lan-auth.env"
+  lan_cred_file="${SECRETS_DIR}/proxy/lan-credentials.txt"
+  fehlend=''
+  for var in LLM_LAN_DOZZLE_USER LLM_LAN_DOZZLE_HASH LLM_LAN_DIRECT_LLM_USER LLM_LAN_DIRECT_LLM_HASH; do
+    grep -q "^${var}=.\+" "${lan_auth_file}" 2>/dev/null || fehlend="${fehlend} ${var}"
+  done
+  if [[ -z "${fehlend}" ]]; then
+    good "Basic-Auth-Hashes fuer beide Routen vorhanden (${lan_auth_file})"
   else
-    bad "LAN-Log-Route antwortet mit ${code} statt 401 - Zugangswerte pruefen" './scripts/74-setup-local-proxy.sh --check'
+    bad "In ${lan_auth_file} fehlt oder ist leer:${fehlend}" \
+        './scripts/74-setup-local-proxy.sh   (ergaenzt fehlende Hashes; vorhandene bleiben erhalten)'
+  fi
+  if [[ -f "${lan_cred_file}" ]]; then
+    good "Zugangsdatei des Betreibers: ${lan_cred_file}"
+    note "Benutzer: ${LAN_DOZZLE_USER:-operator} (Logs) und ${LAN_DIRECT_LLM_USER:-operator} (direkte vLLM-Route). Wert vergessen: cat ${lan_cred_file}"
+    if [[ "$(stat -c %a "${lan_cred_file}" 2>/dev/null || echo 000)" != '600' ]]; then
+      warn "Zugangsdatei ist nicht 0600 geschuetzt ($(stat -c %a "${lan_cred_file}" 2>/dev/null))." "chmod 600 ${lan_cred_file}"
+    fi
+  else
+    warn "Zugangsdatei ${lan_cred_file} fehlt - niemand kennt dann die Werte der beiden Basic-Auth-Routen." \
+         './scripts/74-setup-local-proxy.sh --lan-credentials   (Pfade zeigen; ausrollen bei Bedarf: ./scripts/74-setup-local-proxy.sh)'
+  fi
+  # Die Route https://direct-llm.<dom>/ haengt am Weiterleiter des Rechners
+  # (scripts/73). Prueft man sie ohne Zugangswerte, sieht sie gesund aus (401),
+  # auch wenn der Weiterleiter tot ist - Caddy fragt die Basic-Auth VOR dem
+  # Weiterreichen. Deshalb hier der Blick auf Unit und Host-Port.
+  if systemctl --user is-active --quiet llm-vllm-forwarder.service 2>/dev/null; then
+    if runtime_is_running; then
+      fwd_port="${VLLM_FORWARD_PORT:-30001}"
+      fwd_code="$(http_code "http://127.0.0.1:${fwd_port}/v1/models" --max-time 6)"
+      if [[ "${fwd_code}" == '200' ]]; then
+        good "Weiterleiter reicht durch (127.0.0.1:${fwd_port}) - die direkte vLLM-Route ist nutzbar"
+      else
+        warn "Weiterleiter-Unit laeuft, aber 127.0.0.1:${fwd_port} antwortet nicht (${fwd_code}); https://direct-llm.${lan_dom}/ liefert dann 502." \
+             './scripts/73-setup-vllm-forwarder.sh --check   (docs/runtime.md, Abschnitt Ausfallbilder)'
+      fi
+    else
+      note 'Weiterleiter nur der Unit nach geprueft - die Laufzeit antwortet gerade nicht.'
+    fi
+  else
+    warn "Weiterleiter (llm-vllm-forwarder.service) steht; https://direct-llm.${lan_dom}/ und der Prometheus-Job vllm fallen aus." \
+         './scripts/73-setup-vllm-forwarder.sh --check   (starten: ./scripts/73-setup-vllm-forwarder.sh)'
+  fi
+  # Repo-Regel aus AGENTS.md: jeder neue Dienst hat ein Metrikziel in Prometheus.
+  # Solange der Proxy keins hat, ist das ein HINWEIS ohne Fehlerzaehler - sonst
+  # waere der Arztlauf dauerhaft gelb, ohne dass ein Betreiber etwas tun koennte.
+  if curl -s --max-time 4 'http://127.0.0.1:9090/-/ready' >/dev/null 2>&1; then
+    jobliste="$(curl -s --max-time 5 'http://127.0.0.1:9090/api/v1/label/job/values' 2>/dev/null || true)"
+    if printf '%s' "${jobliste}" | grep -qiE '"(llm-proxy|caddy|proxy)"'; then
+      if curl -s --max-time 5 'http://127.0.0.1:9090/api/v1/query?query=up' 2>/dev/null | grep -q '"job":"\(llm-\)\?\(proxy\|caddy\)"'; then
+        good 'Proxy-Metrikziel ist in Prometheus gemeldet'
+      else
+        warn 'Proxy-Metrikziel ist in Prometheus gemeldet, aber nicht erreichbar.' 'curl -s http://127.0.0.1:9090/targets | grep -i proxy'
+      fi
+    else
+      note 'Der Proxy hat kein Metrikziel in Prometheus (seine Logs laufen ueber Loki). Anlegen: config/monitoring/prometheus.yml, docs/operations.md.'
+    fi
   fi
 else
   note 'LAN ist zu (LAN_BIND_IPS in config/host.env leer) - Zugang nur auf diesem Rechner.'
@@ -425,6 +586,83 @@ elif [[ -n "${master_schluessel}" && "${chat_schluessel}" == "${master_schluesse
     "chat_schluessel-Zeile in ${SECRETS_DIR}/open-webui.env loeschen, dann ./scripts/60-install-open-webui.sh --provision"
 else
   good 'Chat-Dienst haelt einen eigenen Gateway-Schluessel (nicht den Master)'
+fi
+
+# 16b Neustartfestigkeit -------------------------------------------------------
+title 'Neustartfestigkeit (Autostart nach Neustart)'
+# Ein Reboot ist der eigentliche Test dieses Stapels. Zwei Bedingungen bestimmen,
+# ob der benannte HTTPS-Zugang danach wieder da ist: der Benutzermanager muss ohne
+# Anmeldung laufen (linger) und die Unit muss in default.target.wants stehen.
+betreiber_name="${USER:-$(id -un)}"
+linger=''
+command -v loginctl >/dev/null 2>&1 && linger="$(loginctl show-user "${betreiber_name}" -p Linger --value 2>/dev/null)"
+if [[ "${linger}" == 'yes' ]]; then
+  good 'linger ist aktiv - der Benutzermanager startet ohne Anmeldung'
+elif [[ -z "${linger}" ]]; then
+  note 'loginctl nicht verfuegbar - linger konnte nicht geprueft werden.'
+else
+  # Kein automatischer Fehler: laeuft der Benutzermanager in dieser Boot-Runde
+  # nachweislich schon (Desktop-Anmeldung startet ihn mit), ist der Zustand
+  # aktuell bedienbar - aber nur so lange die Anmeldung mitmacht.
+  benutzer_start="$(systemctl show "user@$(id -u).service" -p ExecMainStartTimestamp --value 2>/dev/null)"
+  boot_tag="$(uptime -s 2>/dev/null | cut -d' ' -f1)"
+  # Die Zeitstempel tragen den Wochentag vor ("Sun 2026-11-15 04:26:35 CET"),
+  # uptime -s nicht - verglichen wird deshalb der Datumsanteil, nicht der Anfang.
+  if [[ -n "${benutzer_start}" && "${benutzer_start}" != 'n/a' && -n "${boot_tag}" \
+        && "${benutzer_start}" == *"${boot_tag}"* ]]; then
+    warn "linger ist nicht gesetzt; der Benutzermanager lief in dieser Boot-Runde nur wegen der Desktop-Anmeldung (${benutzer_start}). Ohne grafische Anmeldung startet der ganze Stapel nicht - auch llm-proxy nicht." \
+         "sudo loginctl enable-linger ${betreiber_name}   (pruefen: loginctl show-user ${betreiber_name} -p Linger)"
+  else
+    bad 'linger ist nicht gesetzt und der Benutzermanager lief in dieser Boot-Runde nicht von selbst - nach einem Neustart bleibt der gesamte Stapel stehen.' \
+        "sudo loginctl enable-linger ${betreiber_name}   (danach: systemctl --user is-enabled llm-proxy.service)"
+  fi
+fi
+# Autostart des Proxies: quadlet/llm-proxy.container traegt WantedBy=default.target,
+# also muss der Verweis in default.target.wants liegen (setzt lib/units.sh beim
+# Ausrollen). Fehlt er, startet die Unit beim naechsten Boot nicht mit.
+if [[ -e "${HOME}/.config/containers/systemd/default.target.wants/llm-proxy.container" ]]; then
+  good 'llm-proxy ist in default.target.wants eingetragen'
+else
+  warn 'llm-proxy hat keinen Autostart-Verweis; nach einem Neustart bleibt der benannte Zugang weg.' \
+       './scripts/74-setup-local-proxy.sh   (setzt den Verweis ueber lib/units.sh)'
+fi
+if [[ -f "${HOME}/.config/containers/systemd/llm-proxy.container" ]]; then
+  good 'installierte Proxy-Unit vorhanden'
+  # Laeuft etwas anderes als der Repo-Stand? Das ist der Fall "Repo geaendert,
+  # der Rechner startet morgen die alte Unit weiter".
+  if installed_unit_diff 'llm-proxy.container' >/dev/null 2>&1; then
+    good 'installierte Proxy-Unit entspricht dem Repo (reine Caddyfile-Aenderungen laden nur nach)'
+  else
+    warn 'Die installierte Proxy-Unit unterscheidet sich vom Repo; sie laeuft bis zum naechsten Ausrollen weiter.' \
+         './scripts/74-setup-local-proxy.sh --plan   (zeigt den Unterschied, aendert nichts)'
+  fi
+else
+  bad 'Die installierte Proxy-Unit fehlt in ~/.config/containers/systemd/.' \
+      './scripts/74-setup-local-proxy.sh   (danach: systemctl --user daemon-reload)'
+fi
+# Neustart-Schleifen bleiben sonst unsichtbar: Restart=on-failure holt Caddy alle
+# 15 s zurueck, und "active" kann trotzdem ein kaputtes Ziel bedeuten.
+nrestarts="$(systemctl --user show "${proxy_unit}" -p NRestarts --value 2>/dev/null)"
+ergebnis="$(systemctl --user show "${proxy_unit}" -p Result --value 2>/dev/null)"
+if [[ -n "${nrestarts}" && "${nrestarts}" != '0' ]]; then
+  warn "llm-proxy ist in dieser Boot-Runde ${nrestarts}-mal neu gestartet (Result: ${ergebnis:-?})." \
+       "journalctl --user -u ${proxy_unit} --since -1h --no-pager | tail -40"
+elif [[ -n "${ergebnis}" && "${ergebnis}" != 'ok' && "${ergebnis}" != 'success' && "${ergebnis}" != 'done' ]]; then
+  # "success" ist der Normalzustand einer laufenden Unit, kein Ausfall.
+  warn "Letzter Ausfall von llm-proxy: Result=${ergebnis}." "journalctl --user -u ${proxy_unit} -n 80 --no-pager"
+fi
+# Speicher unter ~/.local/share/llm-infra/caddy (Zertifikate und Bestand der
+# lokalen CA): waechst normal nur im KB-Bereich; ein Sprung deutet auf ein
+# zerschossenes Zertifikats-Verhalten hin.
+caddy_home="${HOME}/.local/share/llm-infra/caddy"
+if [[ -d "${caddy_home}" ]]; then
+  caddy_kb="$(du -sk "${caddy_home}" 2>/dev/null | awk '{print $1}')"
+  if [[ -n "${caddy_kb}" ]] && (( caddy_kb > 204800 )); then
+    warn "Der Proxy-Bestand unter ${caddy_home} ist $(( caddy_kb / 1024 )) MiB gross (ueblich sind einige hundert KiB)." \
+         'du -h --max-depth=2 ~/.local/share/llm-infra/caddy   (CA-Bestand: docs/operations.md, Abschnitt Zertifikate)'
+  else
+    good "Proxy-Bestand unter ${caddy_home}: ${caddy_kb:-?} KiB"
+  fi
 fi
 
 # 17 Waechter -------------------------------------------------------------------

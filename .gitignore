@@ -21,3 +21,10 @@ state/config-backup-*.tar.gz
 
 # Laufzeit-Protokoll des Portals (schreibt der Container in die Bind-Mount)
 config/homepage/logs/
+
+# Arbeitsordner einer Sitzung: Pruefberichte, Kratzer-Mapfen und Entwuerfe sind
+# Momentaufnahmen, kein Repo-Inhalt. Sie enthalten oft Passworthuelle oder
+# Attrappen davon - deshalb bleiben sie ausserhalb von Git. Versionierte
+# Arbeitslisten (todo-*.md) sind davon ausgenommen.
+.omo-work/*
+!.omo-work/todo-*.md

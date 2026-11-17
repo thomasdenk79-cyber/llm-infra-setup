@@ -126,11 +126,6 @@ Loopback-Zugang:
 | https://homepage.localhost/ | Portal (`llm-homepage:3000`) | `curl -s -o /dev/null -w '%{http_code}' https://homepage.localhost/` -> 200 |
 | https://grafana.localhost/grafana/ | Grafana (`grafana:3000`, Unterpfad bleibt) | `curl -s -o /dev/null -w '%{http_code}' https://grafana.localhost/grafana/` -> 200 ohne Login |
 
-| Adresse | Ziel | Gegencheck |
-|---|---|---|
-| https://homepage.localhost/ | Portal (`llm-homepage:3000`) | `curl -s -o /dev/null -w '%{http_code}' https://homepage.localhost/` -> 200 |
-| https://grafana.localhost/grafana/ | Grafana (`grafana:3000`, Unterpfad bleibt) | `curl -s -o /dev/null -w '%{http_code}' https://grafana.localhost/grafana/` -> 200 ohne Login |
-
 Warum Container-Namen statt 127.0.0.1: rootless pasta reicht die Host-Loopback
 nicht an Container durch - der Proxy muss im Netz wohnen und gegen
 `llm-homepage:3000`/`grafana:3000` proxen (gemessen mit `getent hosts` im Netz).
@@ -153,6 +148,25 @@ Caddyfile, Quadlet und installierter Unit, ohne etwas anzufassen. Eine Aenderung
 an Port-, Netz- oder Umgebungskonfiguration startet den Container neu (sie wird
 von podman beim Anlegen abgearbeitet); eine reine Aenderung am Caddyfile laedt
 Caddy ueber `ExecReload` ohne Container-Neustart nach.
+
+Nachweis, dass das wirklich schonend laeuft (der Container-Startzeitpunkt darf
+sich dabei nicht aendern). Ein Neustart von `llm-proxy` gefaehrdet uebrigens
+nicht die Inferenz - die Grafikkarte haelt er nicht - sondern laesst nur fuer
+Sekunden die Zugangsseite weg.
+
+```bash
+systemctl --user show llm-proxy.service -p ExecReload --value   # podman exec ... caddy reload
+podman inspect llm-proxy --format '{{.State.StartedAt}}'        # merken
+systemctl --user reload llm-proxy.service                       # 0,2 s, kein Exit
+podman inspect llm-proxy --format '{{.State.StartedAt}}'        # unveraendert
+journalctl --user -u llm-proxy.service --since -2min --no-pager # "config is unchanged" bzw. "load complete"
+```
+
+Ein Reload kostet rund sechs Journalzeilen (davon zwei laute
+`podman`-Pruefzeilen); von einem Neustart-Boom ist also nichts zu erwarten.
+Wer den Unterschied pruefen will, ohne zu raten: `./scripts/doctor.sh`,
+Pruefpunkt *Neustartfestigkeit*, meldet "reine Caddyfile-Aenderungen laden nur
+nach", solange die installierte Unit dem Repo entspricht.
 
 Nach dem ersten Ausrollen einmal `--ca-import` laufen lassen: erst dann gehen
 `curl` ohne `-k` und der Browser ohne Warnung (Pruefung: `trust list
@@ -192,8 +206,8 @@ Entscheidungen, nichts davon liegt in Git:
 |---|---|---|
 | https://homepage.cachyos-x8664/ | Portal (`llm-homepage:3000`) | offen (Portal selbst, `/anleitung/` eingeschlossen) |
 | https://grafana.cachyos-x8664/grafana/ | Grafana (`grafana:3000`) | bewusst ohne Anmeldung: anonyme **Lese**-Rolle |
-| https://littlem.cachyos-x8664/v1 | Gateway LiteLLM (`litellm:4000`) | Gateway-Schluessel, 401 ohne |
-| https://llm-direct.cachyos-x8664/v1 | Alias von `littlem` (Name von 2026-11-17) | Gateway-Schluessel, 401 ohne |
+| https://littlem.cachyos-x8664/v1/models | Gateway LiteLLM (`litellm:4000`) | Gateway-Schluessel, 401 ohne |
+| https://llm-direct.cachyos-x8664/v1/models | Alias von `littlem` (Name von 2026-11-17) | Gateway-Schluessel, 401 ohne |
 | https://dozzle.cachyos-x8664/ | Container-Logs (`dozzle:8080`) | Basic-Auth, 401 ohne |
 | https://direct-llm.cachyos-x8664/v1/models | vLLM direkt ueber den Weiterleiter (`host.containers.internal:30001`) | Basic-Auth, 401 ohne |
 | jeder andere Name | Fallback-Site | 403, kein Weiterreichen an ein Backend |
@@ -269,8 +283,12 @@ Danach auf Windows pruefen (gleiche Pruefungen wie `--check`, aber ohne
 `--resolve`, weil die hosts-Datei ja jetzt greift):
 
 ```powershell
+# Erwartete Codes (gemessen 2026-11-17): homepage 200, grafana 301 (leitet auf
+# /grafana/ um), dozzle 401, direct-llm 401 - die beiden letzten ohne Zugangswerte.
 foreach ($h in "homepage","grafana","dozzle","direct-llm") { curl.exe -s -o NUL -w "$h %{http_code}`n" "https://$h.cachyos-x8664/" }
-curl.exe -s -u "inference:<zugangsdaten>" https://direct-llm.cachyos-x8664/v1/models
+curl.exe -s -o NUL -w "grafana/anon %{http_code}`n" https://grafana.cachyos-x8664/grafana/    # 200
+curl.exe -s -o NUL -w "littlem      %{http_code}`n" https://littlem.cachyos-x8664/v1/models   # 401 ohne Schluessel
+curl.exe -s -u "inference:<zugangsdaten>" https://direct-llm.cachyos-x8664/v1/models          # Modelliste, 200
 ```
 
 Der Linux-Rechner selbst braucht keine hosts-Eintraege: `--check` prueft die
@@ -278,20 +296,122 @@ LAN-Namen mit `curl --resolve <name>:443:<LAN-IP>`, und der Loopback-Zugang
 (`homepage.localhost`) bleibt unveraendert in Betrieb - auch dann, wenn der
 LAN-Teil spaeter wieder abgeschaltet wird.
 
-### LAN zuruecknehmen (Rueckbau)
+### Nach einem Neustart: ist der Zugang wieder da?
+
+Der Proxy ist eine ganz normale Benutzer-Unit (`WantedBy=default.target`,
+Autostart-Verweis in `~/.config/containers/systemd/default.target.wants/`). Nach
+einem Neustart gilt deshalb dieselbe Regel wie fuer den Rest des Stapels - und
+dieselbe Voraussetzung: **der Benutzermanager muss ohne Anmeldung laufen**. Das
+leistet linger.
 
 ```bash
-# in config/host.env:  LAN_BIND_IPS=   (leer setzen)
-./scripts/74-setup-local-proxy.sh      # rendert ohne LAN, Unit ohne LAN-Veroeffentlichung
+loginctl show-user "$(id -un)" -p Linger              # erwartet: Linger=yes
+ls ~/.config/containers/systemd/default.target.wants/ # erwartet: u. a. llm-proxy.container
+systemctl --user is-enabled llm-proxy.service         # erwartet: generated (Quadlet-Generator)
+./scripts/doctor.sh | sed -n '/Neustartfestigkeit/,/^$/p'
+```
+
+Ist linger nicht gesetzt, startet beim Boot gar nichts im Benutzerbereich - der
+Zugang ist dann weg, bis sich jemand anmeldet. Diesem Rechner hilft aktuell die
+Desktop-Anmeldung auf die Spruenge (gemessen: `user@1000.service` läuft seit
+neun Sekunden nach dem Systemstart, `Linger=no`). Verlassen sollte sich niemand
+darauf: `sudo loginctl enable-linger "$(id -un)"` ist die dauerhafte Loesung und
+wirkt erst beim naechsten Boot - geprueft wird sie mit `./scripts/doctor.sh`,
+Pruefpunkt *Neustartfestigkeit*.
+
+Der Rest der Startreihenfolge ist abgesichert und braucht keine Handarbeit:
+`Wants=`/`After=` der beiden Netzwerk-Units haelt die Netze `llm-observability`
+und `llm-inference` vor, `Restart=on-failure` (15 s) faengt einen zu fruehen
+Start ab. Stromaufwaerts muss nichts hochgefahren sein, bevor Caddy startet -
+ein nicht aufloesbares Ziel (zum Beispiel der noch stehende Weiterleiter) laesst
+Caddy trotzdem anlaufen; die Route antwortet dann erst mit `502`, sobald das
+Ziel da ist. Gemessen mit einem Wegwerf-Container gegen einen erfundenen
+Hostnamen: Caddy bleibt oben.
+
+Volle Pruefung nach dem Boot (dauert keine halbe Minute):
+
+```bash
+./scripts/74-setup-local-proxy.sh --status   # Unit, Listener, Netze, LAN, CA, Sysctl
+./scripts/74-setup-local-proxy.sh --check    # Ende-zu-Ende auf alle Namen
+```
+
+### Wenn sich die Adresse des Rechners aendert (DHCP-Wechsel)
+
+`LAN_BIND_IPS` ist eine Veroeffentlichungsangabe fuer podman, keine laufende
+Anpassung. Wechselt der DHCP-Server die Adresse des Rechners, hoert die Unit beim
+naechsten Start auf, podman abzuarbeiten:
+
+```
+pasta failed with exit code 1:
+Listen failed for HOST TCP port 192.168.0.198/443: Cannot assign requested address
+```
+
+Wichtig fuer den Betreiber: **dann ist auch der Loopback-Zugang weg**
+(`homepage.localhost`, `grafana.localhost`), nicht nur der Zugang im Netz -
+podman legt den Container nie an. Der Doctor meldet den Fall als FEHLER mit der
+Adresse in der Meldung und nennt den Weg:
+
+```bash
+ip -4 addr show                              # aktuelle Adresse ablesen
+./scripts/74-setup-local-proxy.sh --check    # meldet "ist auf diesem Rechner nicht konfiguriert"
+nano config/host.env                         # LAN_BIND_IPS=<neue Adresse>
+./scripts/74-setup-local-proxy.sh            # neu rendern, Unit neu anlegen
 ./scripts/74-setup-local-proxy.sh --check
 ```
 
-Damit ist der Rechner wieder genau so erreichbar wie vor dem LAN-Ausbau: nur
-Loopback. Die Basic-Auth-Dateien duerfen bleiben (sie gehoren zu keiner
-Veroeffentlichung mehr); der Kerneltrenner `sysctl` darf ebenfalls bleiben, er
-allein oeffnet nichts.
+Auf den Windows-Clients muss zusaetzlich die hosts-Zeile mitziehen -
+`./scripts/74-setup-local-proxy.sh --print-hosts` liefert sie fertig, das
+Begleit-Skript schreibt sie neu (`-LanIp <neue Adresse>`). Dauert das Wechseln
+der Adresse oeffter, ist eine feste Adresse im Router (DHCP-Reservierung) die
+ruhigere Loesung als dauernde Pflege von `config/host.env`.
 
-### Fehlerbilder LAN
+### LAN zuruecknehmen (Rueckbau)
+
+Der LAN-Teil ist in vier Schritten zurueckgenommen; jeder einzelne ist
+idempotent und laesst den Rest des Stapels unberuehrt.
+
+```bash
+# 1) Rechner: LAN ausschalten (rendern ohne LAN, Unit ohne LAN-Veroeffentlichung)
+nano config/host.env          # LAN_BIND_IPS=  (leer setzen)
+./scripts/74-setup-local-proxy.sh
+./scripts/74-setup-local-proxy.sh --check     # erwartet: HINWEIS "LAN ist zu", sonst zwei OK-Zeilen
+ss -tlnH | awk '{print $4}' | grep ':443$'    # erwartet: nur noch 127.0.0.1:443
+```
+
+```powershell
+# 2) Windows-PC: hosts-Eintraege dieses Rechners entfernen (PowerShell als Admin)
+.\windows-lan-client-setup.ps1 -RemoveOnly
+ipconfig /flushdns
+# 3) Windows-PC: vertrauten Caddy-Stamm wieder entfernen
+certutil -delstore ROOT "Caddy Local Authority"
+```
+
+```bash
+# 4) Rechner: Zertifikatsvertrauen und Kernelgrenze zuruecknehmen (sudo)
+sudo trust anchor --remove ~/.local/share/llm-infra/caddy/ca/caddy-local-authority-root.crt
+sudo rm -f /etc/sysctl.d/99-llm-infra-local-proxy.conf
+# Die laufende Grenze bleibt sonst stehen: Datei loeschen allein wirkt nicht.
+sudo sysctl -w net.ipv4.ip_unprivileged_port_start=1024   # oder: neu starten
+sysctl -n net.ipv4.ip_unprivileged_port_start             # erwartet: 1024
+```
+
+Damit ist der Rechner wieder genau so erreichbar wie vor dem LAN-Ausbau: nur
+Loopback, nur ueber die Namen. Zwei Dinge duerfen bleiben:
+
+- Die Basic-Auth-Dateien unter `~/.config/llm-infra/proxy/` (`lan-auth.env`,
+  `lan-credentials.txt`, beide 0600). Sie hoeren zu keiner Veroeffentlichung
+  mehr; loeschen ist optional: `rm -f ~/.config/llm-infra/proxy/lan-*.env ~/.config/llm-infra/proxy/lan-credentials.txt`.
+- Die Kernelgrenze, falls sie fuer andere rootless-Dienste weiter benoetigt
+  wird. Sie allein oeffnet nichts - ohne Veroeffentlichung in der Unit hoert
+  niemand im Netz.
+
+Der Loopback-Zugang (`homepage.localhost`, `grafana.localhost`) bleibt bei allen
+vier Schritten in Betrieb; er haengt an keiner LAN-Adresse. Der oeffentliche
+Tunnel zur Gateway-VM (Autossh) wird ebenfalls nicht beruehrt.
+
+### Fehlerbilder am HTTPS-Zugang
+
+**LAN** (betrifft die Namen auf `LAN_DOMAIN`):
 
 - `400` vom Portal unter `homepage.cachyos-x8664`: `HOMEPAGE_ALLOWED_HOSTS` in
   `config/host.env` um `homepage.<LAN_DOMAIN>` ergaenzen, dann
@@ -303,15 +423,23 @@ allein oeffnet nichts.
 - `502` auf `direct-llm`: der Weiterleiter laeuft nicht - `systemctl --user
   status llm-vllm-forwarder.service`, Gegencheck `curl
   http://127.0.0.1:30001/v1/models`.
-- `404` auf `littlem`: Pfad vergisst - die API haengt unter `/v1`, die
-  Swagger-Oberflaeche unter `/docs`.
+- `404` auf `littlem` oder `llm-direct`: der Pfad allein ist schon die Antwort.
+  `/v1` ist kein Endpunkt (gemessen 404), die API haengt unter `/v1/models`
+  (401 ohne Schluessel, 200 mit) und `/v1/chat/completions`. Die Swagger-
+  Oberflaeche `/docs` liefert auf diesem Gateway ebenfalls 404 (gemessen) - sie
+  ist kein Beweis fuer einen Ausfall des Proxys. Gegenprobe des Gateway selbst:
+  `curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:4000/health/liveliness`
+  muss 200 liefern.
 - Verbindung bricht sofort ab (TLS-Fehler): hosts-Eintrag zeigt auf die falsche
   Adresse, oder das Root wurde nicht importiert (`certutil -dump`, Fingerprint
   vergleichen).
-- KeinListener auf der LAN-Adresse: Unit neu starten -
-  `systemctl --user restart llm-proxy.service`, dann `--check`.
+- KeinListener auf der LAN-Adresse: erst pruefen, ob die Adresse ueberhaupt noch
+  zu diesem Rechner gehoert (`ip -4 addr show`, Gegenprobe `--check`), dann Unit
+  neu starten - `systemctl --user restart llm-proxy.service`, danach `--check`.
+  Mit einer nicht vorhandenen Adresse startet sie nicht wieder (Abschnitt "Wenn
+  sich die Adresse des Rechners aendert").
 
-Fehlerbilder:
+**Loopback und allgemein** (betrifft beide Wege):
 
 - `400` vom Portal unter `homepage.localhost`: Host-Liste in
   `config/host.env` (`HOMEPAGE_ALLOWED_HOSTS`) ergaenzen, dann
@@ -322,8 +450,17 @@ Fehlerbilder:
 - `Permission denied` beim Starten von `llm-proxy.service`: Sysctl-Grenze
   zurueckgesetzt - `./scripts/74-setup-local-proxy.sh --apply` erneut laufen
   lassen.
-- Zertifikatswarnung: `--ca-import` fehlt oder das Root hat gewechselt (Caddy
-  erneuert die CA nach 8 Tagen Gueltigkeit) - `--ca-import` ist idempotent.
+- Zertifikatswarnung im Browser oder `curl`-Abbruch ohne `-k`: dem Rechner fehlt
+  die Verankerung - `./scripts/74-setup-local-proxy.sh --ca-import` (idempotent,
+  Gegenprobe `trust list | grep -i Caddy`). Das importierte **Root** ist
+  langgueltig und muss im Normalbetrieb nie erneuert werden (gemessen:
+  ausgestellt 2026-11-16, gueltig bis 2036-09-24). Kurzlebig sind allein die
+  Namen-Zertifikate, die Caddy daraus fuer jeden Hostnamen selbst ausstellt -
+  darum kueddert sich niemand von Hand darum. Neu verankern musst du nur nach
+  Verlust des Bestands `~/.local/share/llm-infra/caddy/data` (Container-Reset,
+  `podman system reset`): dann legt Caddy einen frischen Stamm an, und auf dem
+  Windows-PC sind `certutil -delstore ROOT "Caddy Local Authority"` plus erneuter
+  Import faellig.
 - Weisse Panel-Flaeche im Portal-iframe: `GF_SECURITY_ALLOW_EMBEDDING` fehlt
   (dann steht `X-Frame-Options: deny` im Kopf des d-solo-Aufrufs).
 
@@ -333,6 +470,67 @@ Gateway verlangt weiterhin Basic-Auth vor `/grafana/` und `/v1/models`
 Auswaertige: die Wurzeladresse zeigt jetzt auf den lokalen Namen, daher
 zeigen absolute Links der Grafana-Seite auf `grafana.localhost` - Details in
 `docs/HANDOFF.md` (offene Punkte).
+
+### Beobachtung des Proxies
+
+Der Proxy ist ein Dienst wie jeder andere im Stapel - AGENTS.md verlangt von
+jedem neuen Dienst ein Metrikziel in Prometheus und einen Diagnosefall im
+Doctor. Der Doctor-Fall ist Pruefpunkt *Lokaler Zugang ueber Namen* und
+*Neustartfestigkeit*; was fehlt, sind die Kennzahlen.
+
+| Weg | Status | Pruefung |
+|---|---|---|
+| Logs in Loki | in Betrieb (Container `llm-proxy` haelt `stack="llm-infra"`, `job="containerlogs"`) | `curl -sG 'http://127.0.0.1:3100/loki/api/v1/label/container/values' \| tr ',' '\n' \| grep proxy` |
+| Journal auf dem Rechner | in Betrieb | `journalctl --user -u llm-proxy.service -n 60 --no-pager` |
+| Dozzle im LAN | in Betrieb, hinter Basic-Auth | `https://dozzle.<LAN_DOMAIN>/` |
+| Prometheus-Job | **fehlt** | `curl -s 'http://127.0.0.1:9090/api/v1/label/job/values' \| tr ',' '\n' \| grep -iE 'proxy\|caddy'` (leer) |
+| Dashboard-Panel | fehlt (kein Job, keine Messgroessen) | Dashboards unter `config/monitoring/grafana/provisioning/dashboards/` |
+
+Der Doctor nennt die Luecke als HINWEIS (nicht als Fehler, sonst laeuft der
+Arztlauf dauerhaft gelb auf). Nachgetragen werden kann sie so - **Vorschlag, in
+dieser Runde noch nicht ausgerollt und noch nicht an Prometheus gemessen**:
+
+Caddy liefert seine Messgroessen nur ueber die Admin-API, und die horcht
+absichtlich nur im Container-Loopback (gemessen: `podman exec llm-proxy wget -qO-
+http://127.0.0.1:2019/metrics` -> acht `caddy_*`-Messreihen; `curl
+http://127.0.0.1:2019/metrics` auf dem Host -> keine Verbindung). Prometheus kommt
+also weder an den Host-Loopback noch an die Container-Loopback. Der uebliche Weg
+ist deshalb die Caddy-Direktive `metrics`, die dieselben Messgroessen in einen
+laengst veroeffentlichten Server durchreicht (mit `caddy validate` geprueft:
+gueltige Konfiguration):
+
+```caddyfile
+# In der Vorlage config/proxy/Caddyfile.template, Fallback-Site:
+:443 {
+	tls internal
+	metrics /metrics        # reicht die Admin-Messgroessen in diesen Server durch
+	respond "Unbekannter Name" 403
+}
+```
+
+```yaml
+# In config/monitoring/prometheus.yml (Prometheus haelt bereits llm-observability):
+  - job_name: llm-proxy
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scheme: https
+    static_configs:
+      - targets: ["llm-proxy:443"]
+        labels: { service: "llm-proxy" }
+    tls_config:
+      insecure_skip_verify: true    # privates Caddy-Root, kein oeffentliches Vertrauen
+```
+
+Beides geaendert wird am Generator `scripts/74-setup-local-proxy.sh` (Vorlage
+`config/proxy/Caddyfile.template`), nie an der committeten Unit - AGENTS.md:
+"Aendern im Generator, nicht in der Datei". Offene Frage fuer die Runde: ist ein
+offener `/metrics`-Pfad auf der Fallback-Site akzeptabel (er nennt nur Zaehler,
+keine Zugangswerte), oder soll dafuer eine eigene Loopback-Veroeffentlichung
+(`PublishPort=127.0.0.1:2019:2019`) plus Sammler auf dem Host dienen? Letzteres
+umgeht die pasta-Einschraenkung, dass Container die Host-Loopback nicht
+erreichen - dieselbe Ursache, wegen der es den vLLM-Weiterleiter gibt
+(`docs/runtime.md`).
+
 
 ### Zwei Wege, zwei Adressen: LAN und Azure-Tunnel
 

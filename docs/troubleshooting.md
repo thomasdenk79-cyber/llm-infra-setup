@@ -144,6 +144,62 @@ Runtime-Metriken (`sglang:num_running_reqs`), Bonsai-Log und Cooldown-Ereignisse
 im Gateway-Journal pruefen; notfalls mit
 `./scripts/litellm-failover-drill.sh` die Stufen durchmessen.
 
+## Der benannte HTTPS-Zugang klemmt (llm-proxy)
+
+Alles, was ueber Namen läuft (`homepage.localhost`, `grafana.localhost` und die
+LAN-Namen auf `LAN_DOMAIN`), haengt an einem Container: `llm-proxy`. Deshalb
+immer in dieser Reihenfolge ansehen - sie ist dieselbe wie im Doctor
+(aussen nach innen):
+
+```bash
+./scripts/doctor.sh | sed -n '/Lokaler Zugang/,/^$/p'   # gefuehrte Diagnose
+./scripts/74-setup-local-proxy.sh --status              # Unit, Listener, Netze, LAN, CA, Sysctl
+./scripts/74-setup-local-proxy.sh --check               # Ende-zu-Ende gegen alle Namen
+journalctl --user -u llm-proxy.service -n 80 --no-pager # Caddy oder podman?
+```
+
+| Bild | Ursache | naechster Befehl |
+|---|---|---|
+| `curl` ohne `-k` bricht ab, mit `--cacert` geht es | Caddy-CA nicht im Systemvertrauen | `./scripts/74-setup-local-proxy.sh --ca-import` |
+| Unit `active`, aber kein Listener auf 443 | Caddy startet durch, podman konnte den Port nicht binden | `journalctl --user -u llm-proxy.service -n 80 --no-pager`; Sysctl-Grenze: `sysctl -n net.ipv4.ip_unprivileged_port_start` (muss <= 443) |
+| Unit startet gar nicht mehr, Journal: `Listen failed ... Cannot assign requested address` | `LAN_BIND_IPS` nennt eine Adresse, die der Rechner nicht (mehr) hat - DHCP-Wechsel | `ip -4 addr show`, dann `LAN_BIND_IPS` in `config/host.env` nachziehen und `./scripts/74-setup-local-proxy.sh` |
+| Journal: `Permission denied` beim Binden | Kernelgrenze zurueckgesetzt (System-Update, `sysctl --system`) | `./scripts/74-setup-local-proxy.sh` (schreibt `/etc/sysctl.d/99-llm-infra-local-proxy.conf` neu) |
+| `502` auf einer Route | Ziel loest im Netz nicht auf oder der Dienst steht | `podman network inspect llm-observability`, `podman ps`; fuer `direct-llm`: `systemctl --user status llm-vllm-forwarder.service` |
+| `403` oder TLS-Abbruch auf einem Namen | kein `handle` fuer den Namen - die Fallback-Site antwortet | Namen in der Vorlage `config/proxy/Caddyfile.template` ergaenzen, dann `make local-proxy` |
+| `401` trotz richtiger Zugangswerte | Tippfehler im Client | Wert gegenpruefen: `cat ~/.config/llm-infra/proxy/lan-credentials.txt` (Datei 0600, niemals ins Git) |
+| `400` vom Portal unter `homepage.<LAN_DOMAIN>` | Host-Header nicht freigegeben | `HOMEPAGE_ALLOWED_HOSTS` in `config/host.env` ergaenzen, dann `make homepage` |
+| Reload hilft nicht, Konfig aendert nichts | `ExecReload`pruefen, dann erst neu starten | `systemctl --user show llm-proxy.service -p ExecReload --value`; Gegenprobe `podman inspect llm-proxy -f '{{.State.StartedAt}}'` vor und nach `systemctl --user reload llm-proxy.service` |
+
+Nach einem Neustart des Rechners zusaetzlich die Autostart-Kette pruefen
+(linger, `default.target.wants`): `./scripts/doctor.sh`, Pruefpunkt
+*Neustartfestigkeit*. Anleitung: `docs/operations.md`, Abschnitt "Nach einem
+Neustart: ist der Zugang wieder da?".
+
+## Windows-Client sieht nichts im Netz
+
+Drei Moeglichkeiten, in dieser Reihenfolge:
+
+```powershell
+# 1) Name bekannt?  (hosts-Datei, kein DNS)
+ping homepage.cachyos-x8664          # muss auf die LAN-Adresse des Rechners zeigen
+# 2) Route da?      (erwartete Codes: 200, 301, 401, 401)
+curl.exe -s -o NUL -w "%{http_code}`n" https://homepage.cachyos-x8664/
+# 3) Root vertraut? (Zertifikatsfehler = Stamm fehlt oder Stamm ist ein anderer)
+certutil -dump C:\temp\caddy-local-authority-root.crt   # Fingerprint gegen --ca-export
+```
+
+Der Linux-Rechner liefert beide Voraussetzungen:
+
+```bash
+./scripts/74-setup-local-proxy.sh --print-hosts   # hosts-Zeile
+./scripts/74-setup-local-proxy.sh --ca-export     # Stammdatei und Fingerprint
+```
+
+Einmal gesetzt macht das das Begleit-Skript auf Windows (`-RemoveOnly` fuer den
+Rueckbau): `windows-lan-client-setup.ps1 -LanIp <adresse> -Domain <name> -CertPath <datei>`. Bricht TLS sofort ab, ist fast immer die hosts-Zeile auf eine alte
+Adresse gerichtet (DHCP-Wechsel auf diesem Rechner) oder der Stamm wurde nach
+einem Container-Reset neu ausgestellt, auf Windows aber nicht erneut importiert.
+
 ## Etwas wurde versehentlich von Hand geaendert
 
 Repo und Laeufer laufen auseinander:

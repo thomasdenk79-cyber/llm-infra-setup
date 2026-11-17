@@ -71,7 +71,7 @@ sys.exit(bad)
 PY
 
 echo '--- Geheimnisse ---'
-if rg -n --hidden -g '!state/**' -g '!.git/**' -g '!setup_prompt.md' \
+if rg -n --hidden -g '!state/**' -g '!.git/**' -g '!setup_prompt.md' -g '!.omo-work/**' \
    '(hf_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{20,}|BEGIN (OPENSSH|RSA|EC) PRIVATE KEY)' .; then
   echo 'MOEGLICHES GEHEIMNIS gefunden (siehe Zeilen oben).' >&2
   rc=1
@@ -81,6 +81,7 @@ fi
 # Die alten Standard-Passwoerter duerfen nicht mehr in versionierten Dateien stehen.
 # Ausgenommen sind nur die beiden Pruefskripte selbst, die diese Werte suchen.
 if rg -n --hidden -g '!.git/**' -g '!state/**' -g '!docs/**' -g '!README.md' -g '!setup_prompt.md' \
+   -g '!.omo-work/**' \
    -g '!scripts/validate.sh' -g '!scripts/doctor.sh' -g '!CHANGELOG.md' \
    'sk-llm-infra-local|llm-infra-salt|llm-infra-webui-local|POSTGRES_PASSWORD=llm-infra$' .; then
   echo 'SCHWACHES STANDARD-PASSWORT in versionierter Datei gefunden.' >&2
@@ -99,15 +100,15 @@ echo '--- Prometheus-Konfiguration ---'
 if command -v promtool >/dev/null 2>&1; then
   promtool check rules config/monitoring/alerts.yml || rc=1
   tmpcfg="$(mktemp --suffix=.yml)"
-  sed "s#/etc/prometheus/#${root}/config/monitoring/#" config/monitoring/prometheus.yml > "${tmpcfg}"
+  sed "s#/etc/prometheus/conf/#${root}/config/monitoring/#" config/monitoring/prometheus.yml > "${tmpcfg}"
   promtool check config "${tmpcfg}" || rc=1
   rm -f "${tmpcfg}"
 elif command -v podman >/dev/null 2>&1 && \
      [[ "$(podman ps --format '{{.Names}}' 2>/dev/null || true)" == *systemd-prometheus* ]]; then
   # promtool ist nicht installiert, aber der laufende Prometheus-Container hat es
   # und prueft damit exakt die Dateien, die er auch benutzt.
-  podman exec systemd-prometheus promtool check rules /etc/prometheus/alerts.yml || rc=1
-  podman exec systemd-prometheus promtool check config /etc/prometheus/prometheus.yml || rc=1
+  podman exec --user 0 systemd-prometheus promtool check rules /etc/prometheus/conf/alerts.yml || rc=1
+  podman exec --user 0 systemd-prometheus promtool check config /etc/prometheus/conf/prometheus.yml || rc=1
 else
   echo 'weder promtool noch ein laufender Prometheus-Container vorhanden; nur YAML-Pruefung.'
 fi

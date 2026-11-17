@@ -46,7 +46,13 @@ set -Eeuo pipefail
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 source "${root}/lib/common.sh"
 source "${root}/lib/units.sh"
-[[ -f "${root}/config/host.env" ]] && source "${root}/config/host.env"
+# host.env ist eine Shell-Datei: ein Wert mit Leerzeichen ohne Anfuehrungszeichen
+# (LAN_BIND_IPS=1.2.3.4 5.6.7.8) laeuft als Befehl und bricht hier mit einer
+# Rohtmeldung der Shell ab. Die Ansage nennt die Abhilfe gleich mit.
+if [[ -f "${root}/config/host.env" ]]; then
+  source "${root}/config/host.env" \
+    || die "config/host.env liesst sich nicht einlesen (siehe Zeile der Shell oben). Mehrere Adressen immer in Anfuehrungszeichen setzen: LAN_BIND_IPS=\"192.168.0.198 192.168.0.47\". Danach: ./scripts/74-setup-local-proxy.sh --plan"
+fi
 
 CADDY_IMAGE='docker.io/library/caddy:2-alpine'   # wie wiki.container, hier schon im Bestand
 TEMPLATE="${root}/config/proxy/Caddyfile.template"
@@ -84,7 +90,7 @@ ist_ipv4() {
   # ist_ipv4 <text> -> 0 bei gueltiger IPv4 in Punktnotation. Die Zahlenbereiche
   # werden mitgeprueft: "192.168.0.999" ist keine Adresse, auch wenn sie vier
   # Zifferngruppen hat, und podman wuerde die Veroeffentlichung still ignorieren.
-  local ip="$1" teil
+  local ip="$1" teil teile=()
   [[ "${ip}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]] || return 1
   IFS='.' read -r -a teile <<< "${ip}"
   for teil in "${teile[@]}"; do
@@ -94,24 +100,60 @@ ist_ipv4() {
 }
 
 # --- LAN-Konfiguration (Werte in config/host.env) -----------------------------
-: "${LAN_DOMAIN:=$(hostname 2>/dev/null || echo llmhost)}"
-: "${LAN_BIND_IPS:=}"
+# Alle Bedingungen stehen in dieser einen Datei. Kein Blick auf den laufenden
+# Zustand (Container, Ports, Eintrage unter ~/.config): make drift vergleicht die
+# gerenderten Dateien, und ein Prueflauf auf einem anderen Rechner soll dasselbe
+# Ergebnis sehen wie der Ausrolllauf.
+lan_domain_aus_default=0
+if [[ -z "${LAN_DOMAIN:-}" ]]; then
+  # Der Rechnername ist nur der Notbehelf fuer einen ersten Versuch. Wo LAN-Routen
+  # entstehen, die in Git landen, wird er angesagt (siehe unten) - sonst haengen die
+  # Adressen unbemerkt am Rechnernamen und aendern sich mit jedem Umbenennen.
+  LAN_DOMAIN="$(hostname 2>/dev/null || echo llmhost)"
+  lan_domain_aus_default=1
+fi
 : "${LAN_DOZZLE_USER:=operator}"
 : "${LAN_DIRECT_LLM_USER:=operator}"
-if [[ -z "${LAN_BIND_IPS//[[:space:],]/}" && -f "${LEGACY_BIND_IP_FILE}" ]]; then
-  LAN_BIND_IPS="$(tr -d ' \t\r\n' < "${LEGACY_BIND_IP_FILE}")"
+# Uebergangsform von 2026-11-17: die Bind-Adressen lagen zuerst in einer eigenen
+# Datei unter ~/.config/llm-infra. Die Datei zaehlt nur, wenn host.env die Zeile
+# ueberhaupt nicht enthaelt. Ein bewusst geleeres LAN_BIND_IPS ist die dokumentierte
+# Ansage "LAN zu" (docs/status.md, Rueckweg) und darf nicht daraus zurueckgeholt
+# werden - sonst bleibt der Zugang im Netz, obwohl der Betreiber ihn zugemacht hat.
+if [[ ! -v LAN_BIND_IPS && -f "${LEGACY_BIND_IP_FILE}" ]]; then
+  LAN_BIND_IPS="$(tr -cd '0-9.,[:space:]' < "${LEGACY_BIND_IP_FILE}")"
 fi
+: "${LAN_BIND_IPS:=}"
+# Trenner sind Leerzeichen, Tab, Umbruch oder Komma. Ein normales `read -a` hoert am
+# ersten Umbruch auf und wuerde weitere Adressen stillschweigend verlieren - die
+# Veroeffentlichung fehlt dann in der Unit, ohne dass eine Meldung darauf hinweist.
 LAN_IPS=()
-read -r -a LAN_IPS <<< "${LAN_BIND_IPS//,/ }" || true
+lan_eingabe="$(printf '%s' "${LAN_BIND_IPS}" | tr -s '[:space:], ' ' ')"
+read -r -d '' -a LAN_IPS <<< "${lan_eingabe}" || true
 lan_enabled=0
 if (( ${#LAN_IPS[@]} > 0 )); then
   lan_enabled=1
   for lan_ip in "${LAN_IPS[@]}"; do
     ist_ipv4 "${lan_ip}" || die \
-      "LAN_BIND_IPS enthaelt keine gueltige IPv4: '${lan_ip}'. Setzen in ${root}/config/host.env (zum Beispiel LAN_BIND_IPS=192.168.0.198), dann: ./scripts/74-setup-local-proxy.sh"
+      "LAN_BIND_IPS enthaelt keine gueltige IPv4: '${lan_ip}'. Setzen in ${root}/config/host.env (zum Beispiel LAN_BIND_IPS=\"192.168.0.198 192.168.0.47\"), dann: ./scripts/74-setup-local-proxy.sh --plan"
+    lan_anzahl=0
+    for lan_pruef in "${LAN_IPS[@]}"; do
+      [[ "${lan_pruef}" == "${lan_ip}" ]] && lan_anzahl=$(( lan_anzahl + 1 ))
+    done
+    (( lan_anzahl <= 1 )) || die \
+      "LAN_BIND_IPS enthaelt ${lan_ip} mehrfach - jede Adresse nur einmal in ${root}/config/host.env eintragen, sonst lehnt podman die doppelte Veroeffentlichung ab. Danach: ./scripts/74-setup-local-proxy.sh --plan"
   done
   [[ "${LAN_DOMAIN}" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,62}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,62}[A-Za-z0-9])?)*$ ]] || die \
     "LAN_DOMAIN ist kein gueltiger Rechnername: '${LAN_DOMAIN}'. Setzen in ${root}/config/host.env, dann erneut ausfuehren."
+  # Zugangsdaten: ein Name mit Leerzeichen, Gleichheitszeichen oder Umbruch wirde
+  # die Zugangsdatei (KEY=WERT) zerstoeren und damit beide Basic-Auth-Routen
+  # unbrauchbar machen. Lieber hier scheitern als mit einem tauben 401.
+  for lan_benutzer in "${LAN_DOZZLE_USER}" "${LAN_DIRECT_LLM_USER}"; do
+    [[ "${lan_benutzer}" =~ ^[A-Za-z0-9._@-]+$ ]] || die \
+      "Benutzername der Basic-Auth ungueltig oder leer: '${lan_benutzer}'. Erlaubt sind Buchstaben, Zahlen und . _ @ - in LAN_DOZZLE_USER bzw. LAN_DIRECT_LLM_USER (${root}/config/host.env). Danach: ./scripts/74-setup-local-proxy.sh"
+  done
+  if (( ${lan_domain_aus_default} == 1 )); then
+    log "LAN_DOMAIN nicht gesetzt - gerendert wird mit dem Rechnernamen '${LAN_DOMAIN}'. Feste Ansage: LAN_DOMAIN=... in ${root}/config/host.env"
+  fi
 fi
 # Reihenfolge ist Teil der gerenderten Dateien: gleiche Reihenfolge = gleiche
 # Ausgabe, und darauf vergleicht make drift.
@@ -119,7 +161,7 @@ LAN_ROLES=(homepage grafana littlem llm-direct dozzle direct-llm)
 # Ports, die ausschliesslich auf dem Loopback bleiben muessen (--check). Der
 # Weiterleiter-Port 30001 fehlt bewusst: er bindet den Host, damit Container im
 # Inferenz-Netz die Runtime erreichen (docs/runtime.md).
-LOOPBACK_ONLY_PORTS=(3000 3001 3002 3100 4000 5432 8080 9090 9093 9835 30000)
+LOOPBACK_ONLY_PORTS=(3000 3001 3002 3100 4000 5432 8080 9090 9093 9835 30000 3003 9100 12345 8120)
 
 lan_hosts() {
   # LAN-Rechnernamen in fester Reihenfolge; fuer Checks, hosts-Datei und Ausgabe.
@@ -155,9 +197,14 @@ homepage.${LAN_DOMAIN} {
 grafana.${LAN_DOMAIN} {
 	# Bewusst ohne Anmeldung: anonyme Lese-Rolle in ~/.config/llm-infra/grafana.env.
 	# Der Unterpfad /grafana/ bleibt, damit GF_SERVER_ROOT_URL weiterhin passt.
+	# Grafana leitet auf seine root_url https://grafana.localhost/grafana/ und
+	# wuerfe LAN-Besucher damit auf den Loopback-Namen zurueck, den nur dieser
+	# Rechner kennt. Die Umleitung bleibt deshalb auf dem Namen der Anfrage.
 	tls internal
 	encode zstd gzip
-	reverse_proxy ${GRAFANA_UPSTREAM}
+	reverse_proxy ${GRAFANA_UPSTREAM} {
+		header_down Location "https://grafana.localhost/" "https://{http.request.host}/"
+	}
 }
 
 # Gateway (LiteLLM): verlangt den eigenen Virtual-Key, 401 ohne Schluessel.
@@ -276,6 +323,12 @@ UNIT
 
 write_if_changed() {
   # write_if_changed <datei> <quelle-auf-stdout>  -> 0 wenn geschrieben, 1 wenn gleich
+  #
+  # Bestehende Dateien werden in ihrer INODE ueberschrieben, nicht ersetzt: der
+  # Proxy haengt am Caddyfile als Einzel-Datei-Bindung. Wird die Datei ausgetauscht
+  # (install, mv), sieht der Container weiter die alte Fassung und der Reload ueber
+  # die Admin-API laedt stillschweigend die alten Seiten. Gemessen 2026-11-17:
+  # Host-Inode 919969 (5723 B) gegen Container-Inode 918478 (5324 B).
   local ziel="$1" tmp
   tmp="$(mktemp)"
   cat > "${tmp}"
@@ -283,12 +336,19 @@ write_if_changed() {
     rm -f "${tmp}"; return 1
   fi
   install -d -m 0755 "$(dirname -- "${ziel}")"
-  install -m 0644 "${tmp}" "${ziel}"
+  if [[ -f "${ziel}" ]]; then
+    cat "${tmp}" > "${ziel}"
+    chmod 0644 "${ziel}"
+  else
+    install -m 0644 "${tmp}" "${ziel}"
+  fi
   rm -f "${tmp}"; return 0
 }
 
 render_files() {
-  # Nur Dateien schreiben (Pfad von make drift): kein podman, kein systemctl.
+  # Nur Dateien schreiben (der Pfad, den make drift und --check vergleichen): kein
+  # podman, kein systemctl, kein sudo. Verglichen wird das Quadlet von
+  # scripts/check-drift.sh, das Caddyfile von --check in diesem Skript.
   local changed=0
   render_caddyfile | write_if_changed "${RENDERED}" && { log "Caddyfile gerendert: ${RENDERED}"; changed=1; }
   render_quadlet | write_if_changed "${QUADLET}" && { log "Quadlet geschrieben: ${QUADLET}"; changed=1; }
@@ -297,7 +357,10 @@ render_files() {
 }
 
 validate_caddyfile() {
+  # validate_caddyfile <datei>  -> laesst Caddy die gerenderte Fassung pruefen,
+  # BEVOR sie ins Repo geschrieben und ausgerollt wird.
   need_cmd podman 'Jetzt ausführen: make install'
+  [[ -f "${1:-}" ]] || die "Zu pruefende Caddyfile fehlt: ${1:-<keine Angabe>}. Nachfahren: ./scripts/74-setup-local-proxy.sh --render"
   podman image exists "${CADDY_IMAGE}" \
     || die "Bild fehlt: ${CADDY_IMAGE} - zuerst: podman pull ${CADDY_IMAGE} (wie wiki.container es nutzt)"
   local -a opts=()
@@ -307,21 +370,25 @@ validate_caddyfile() {
     [[ -f "${AUTH_ENV_FILE}" ]] || die "Zugangsdatei fehlt: ${AUTH_ENV_FILE} - zuerst ausrollen: ./scripts/74-setup-local-proxy.sh"
     opts+=(--env-file "${AUTH_ENV_FILE}")
   fi
-  podman run --rm "${opts[@]}" -v "${RENDERED}:/etc/caddy/Caddyfile:ro" "${CADDY_IMAGE}" \
+  podman run --rm "${opts[@]}" -v "${1}:/etc/caddy/Caddyfile:ro" "${CADDY_IMAGE}" \
     caddy validate --adapter caddyfile --config /etc/caddy/Caddyfile
 }
 
 new_password() {
   # 24 Zeichen aus [A-Za-z0-9]: gut abtippbar auf einem zweiten Geraet.
   local roh
-  roh="$(dd if=/dev/urandom bs=64 count=1 2>/dev/null | base64 | tr -d '+/=\n')"
+  roh="$(dd if=/dev/urandom bs=64 count=1 2>/dev/null | base64 | tr -d '+/=\n')" || roh=''
+  (( ${#roh} >= 24 )) || die "Zufallswert aus /dev/urandom war zu kurz (${#roh} Zeichen) - dd und base64 muessen verfuegbar sein. Von Hand nachfahren: dd if=/dev/urandom bs=64 count=1 | base64 , danach erneut: ./scripts/74-setup-local-proxy.sh"
   printf '%s' "${roh:0:24}"
 }
 
 caddy_hash() {
-  # caddy_hash <klartext> -> bcrypt-Hash. Der Klartext lebt nur in einer Variable
-  # dieser Shell und taucht in keiner Protokolldatei auf.
-  podman run --rm --entrypoint caddy "${CADDY_IMAGE}" hash-password --plaintext "$1" 2>/dev/null \
+  # caddy_hash <klartext> -> bcrypt-Hash. Der Klartext geht über die
+  # Standardeingabe in den Container: als Befehlszeilenargument stünde er waehrend
+  # der Laufzeit im Prozessbaum (ps, auditd, Journale) und waere damit fuer jeden
+  # anderen Prozess auf dem Rechner lesbar. Die Fehlerausgabe von podman bleibt
+  # sichtbar - sonst endet ein Lauf schweigend und der Betreiber raetselt.
+  printf '%s' "$1" | podman run -i --rm --entrypoint caddy "${CADDY_IMAGE}" hash-password \
     | tail -n 1 | tr -d '[:space:]'
 }
 
@@ -385,8 +452,10 @@ ensure_auth_file() {
     auth_set_var "${var_user}" "${benutzer}"
     grep -q "^${var_hash}=" "${AUTH_ENV_FILE}" && continue
     klartext="$(new_password)"
-    hash="$(caddy_hash "${klartext}")"
-    [[ "${hash}" == '$2'* ]] || die "Caddy erzeugte keinen bcrypt-Hash (Bild ${CADDY_IMAGE}). Nachfahren: podman run --rm ${CADDY_IMAGE} caddy hash-password --plaintext test"
+    # Ein fehlgeschlagenes podman darf nicht schweigend enden: zuweisung mit
+    # Auffang, damit die Meldung unten den naechsten Befehl nennt (Regel 7).
+    hash="$(caddy_hash "${klartext}")" || hash=''
+    [[ "${hash}" == '$2'* ]] || die "Caddy erzeugte keinen bcrypt-Hash (Bild ${CADDY_IMAGE}, podman laeuft?). Von Hand nachfahren: printf test | podman run -i --rm --entrypoint caddy ${CADDY_IMAGE} hash-password , danach erneut: ./scripts/74-setup-local-proxy.sh"
     auth_set_var "${var_hash}" "${hash}"
     # Rollenweise ablegen (LLM_LAN_DOZZLE_PASSWORD, LLM_LAN_DIRECT_LLM_PASSWORD):
     # beide Routen duerften denselben Benutzernamen tragen, und ein Schluessel
@@ -422,15 +491,22 @@ ensure_sysctl() {
   sudo sysctl -w net.ipv4.ip_unprivileged_port_start=443
 danach erneut: ./scripts/74-setup-local-proxy.sh"
   fi
-  sudo -n sysctl -w "${SYSCTL_KEY}=${SYSCTL_WANT}" >/dev/null
+  sudo -n sysctl -w "${SYSCTL_KEY}=${SYSCTL_WANT}" >/dev/null \
+    || die "sysctl -w ${SYSCTL_KEY}=${SYSCTL_WANT} schlug fehl (sudo ohne Passwort?). Von Hand: sudo sysctl -w ${SYSCTL_KEY}=${SYSCTL_WANT} , danach erneut: ./scripts/74-setup-local-proxy.sh"
   log "Grenze auf ${SYSCTL_WANT} gesenkt (entfernen: sudo rm ${SYSCTL_FILE} && sudo sysctl --system)"
 }
 
 lan_allowed_hosts_ok() {
   # Das Portal prueft den Host-Header: der LAN-Name muss in HOMEPAGE_ALLOWED_HOSTS stehen.
+  # Normierung wie beim Port-Generator (scripts/60-install-homepage.sh trennt ebenfalls
+  # nur auf Komma und wirft vorher jeden Whitespace weg): sonst meldet --check ein
+  # fehlendes Eintrag, obwohl laengst gesetzt - nur mit Leerzeichen nach dem Komma.
+  # Ein '*' bedeutet "keine Pruefung" und braucht dann keinen Namen in der Liste.
   (( ${lan_enabled} == 1 )) || return 0
-  local erwartet="homepage.${LAN_DOMAIN}"
-  case ",${HOMEPAGE_ALLOWED_HOSTS:-}," in
+  local erwartet="homepage.${LAN_DOMAIN}" freigabe
+  freigabe="$(printf '%s' "${HOMEPAGE_ALLOWED_HOSTS:-}" | tr -d '[:space:]')"
+  [[ "${freigabe}" == '*' ]] && return 0
+  case ",${freigabe}," in
     *",${erwartet},"*|*",${erwartet}:443,"*) return 0 ;;
     *) return 1 ;;
   esac
@@ -467,26 +543,49 @@ apply_all() {
     return 0
   fi
   ensure_auth_file
+  # Erst pruefen, dann schreiben: ein ungueltiges Caddyfile darf weder in Git
+  # landen noch ausgerollt werden. Geprueft wird die gerenderte Fassung in state/.
+  local kandidat="${STATE_DIR}/caddyfile-kandidat"
+  install -d -m 0755 "${STATE_DIR}"
+  render_caddyfile > "${kandidat}"
+  if ! validate_caddyfile "${kandidat}"; then
+    rm -f "${kandidat}"
+    die "Caddyfile ist ungueltig - nichts ausgerollt. Vorlage pruefen: ${TEMPLATE}; von Hand nachfahren: ./scripts/74-setup-local-proxy.sh --render und dann podman-Fehler ansehen"
+  fi
+  rm -f "${kandidat}"
   render_files
-  validate_caddyfile || die "Caddyfile ist ungueltig - nichts ausgerollt"
   install -d -m 0755 "${CADDY_HOME}/data" "${CADDY_HOME}/config" "${CA_DIR}"
   ensure_sysctl
   # Aenderungserkennung fuer den Restart: war die Unit schon in Betrieb und hat
   # sich ihre Konfiguration gerade geaendert?
   local was_active=0
   local unit_changed=0
+  local live_stale=0
   unit_is_active "${UNIT}" && was_active=1
   if [[ -f "${UNIT_DIR}/${UNIT}" ]] && ! installed_unit_diff "${UNIT}" >/dev/null; then
     unit_changed=1
   fi
+  # Laeuft im Container eine andere Fassung als auf dem Host, reicht Reload nicht:
+  # die Einzel-Datei-Bindung folgt dem Inode nicht. Der Vergleich zwingt den Weg
+  # ueber einen Neustart, damit die ausgerollte Fassung wirklich ankommt.
+  if [[ "${was_active}" == 1 ]] && command -v podman >/dev/null 2>&1; then
+    local live host_sum
+    live="$(podman exec llm-proxy sha256sum /etc/caddy/Caddyfile 2>/dev/null | awk '{print $1}')"
+    host_sum="$(sha256sum "${RENDERED}" 2>/dev/null | awk '{print $1}')"
+    if [[ -n "${live}" && -n "${host_sum}" && "${live}" != "${host_sum}" ]]; then
+      live_stale=1
+      log 'Der Container nutzt eine aeltere Caddyfile als das Repo - Noetig ist ein Neustart des Proxies.'
+    fi
+  fi
   render_unit "${UNIT}"
   systemd_reload
   if [[ "${was_active}" == 1 ]]; then
-    if [[ "${unit_changed}" == 1 ]]; then
+    if [[ "${unit_changed}" == 1 || "${live_stale}" == 1 ]]; then
       # Port-, Netz- und EnvironmentFile-Zeilen knuepfen podman an, nicht Caddy:
-      # ein Reload ueber die Admin-API reicht dafuer nicht.
+      # ein Reload ueber die Admin-API reicht dafuer nicht. Dasselbe gilt, wenn im
+      # Container eine alte Caddyfile gebunden ist (live_stale).
       systemctl --user restart llm-proxy.service
-      log 'Proxy neu gestartet (Port-, Netzwerk- oder Umgebungskonfiguration geaendert)'
+      log 'Proxy neu gestartet (Port-, Netzwerk- oder Umgebungskonfiguration geaendert, oder Container hatte eine veraltete Caddyfile)'
     elif systemctl --user reload llm-proxy.service 2>/dev/null; then
       log 'Proxy neu geladen (schonend ueber Admin-API)'
     else
@@ -550,15 +649,36 @@ ca_import() {
   fi
   sudo -n trust anchor --store "${CA_FILE}" \
     || die "trust anchor --store ${CA_FILE} schlug fehl - sudo -n pruefen und von Hand nachholen"
-  have update-ca-trust && sudo -n update-ca-trust
+  if have update-ca-trust; then
+    sudo -n update-ca-trust || log "WARNUNG: update-ca-trust lief nicht - von Hand: sudo update-ca-trust , danach pruefen mit: trust list --filter=ca-anchors | grep -i caddy"
+  fi
   log 'Caddy-CA im Systemtrust verankert (curl ohne -k und Browser ohne Warnung)'
   log "Entfernen: sudo trust anchor --remove ${CA_FILE}"
 }
 
 ca_export() {
   extract_ca
+  # Der Fingerabdruck erlaubt dem Windows-Betreiber eine Aussage ueber die
+  # Echtheit der uebertragenen Wurzel, bevor er sie importiert (Gegprobe:
+  # certutil -dump zeigt denselben Wert).
+  if command -v openssl >/dev/null 2>&1 && [[ -f "${CA_FILE}" ]]; then
+    local finger
+    finger="$(openssl x509 -in "${CA_FILE}" -noout -fingerprint -sha256 2>/dev/null | sed 's/^.*=//')"
+    [[ -n "${finger}" ]] && log "Fingerabdruck der Wurzel (SHA-256): ${finger}"
+    [[ -n "${finger}" ]] && log '  Gegprobe auf Windows:  certutil -dump C:\temp\caddy-local-authority-root.crt'
+  fi
   log 'Diese Datei auf den Windows-PC uebertragen, zum Beispiel:'
   log "  scp ${CA_FILE} <nutzer>@<windows-pc>:C:/temp/"
+  if (( ${lan_enabled} == 0 )); then
+    # Ohne LAN gibt es keine LAN-Namen und damit nichts, was ein Windows-Client
+    # eintragen koennte. Die CA ist trotzdem brauchbar - nur die Windows-Anleitung
+    # waere in diesem Zustand falsch.
+    log 'LAN ist zu (LAN_BIND_IPS in config/host.env ist leer) - es gibt nur die Loopback-Namen.'
+    log "Pruefen auf diesem Rechner:  curl -s -o /dev/null -w '%{http_code}' --cacert ${CA_FILE} https://homepage.localhost/   muss 200 liefern"
+    log 'Fuer den Windows-PC zuerst das LAN einschalten: LAN_BIND_IPS in config/host.env setzen,'
+    log 'dann ausrollen und danach erneut: ./scripts/74-setup-local-proxy.sh --ca-export'
+    return 0
+  fi
   log 'Windows 11, PowerShell als Administrator - am einfachsten das Skript aus dem Repo'
   log "  Skript im Repo: scripts/windows-lan-client-setup.ps1 (hosts-Datei, Root-Import, alle Routen pruefen)"
   log '  Set-ExecutionPolicy -Scope Process Bypass -Force'
@@ -599,29 +719,71 @@ lan_credential_path() {
   fi
 }
 
+https_code() {
+  # https_code <url> [weitere curl-Argumente]  -> HTTP-Code, '000' bei Abbruch.
+  # curl schreibt seinen Formatstring auch bei fehlgeschlagener Verbindung (dann
+  # 000) und geht mit Fehler raus. Ein zweites "|| echo 000" hinter dem Aufruf
+  # haette "000000" ergeben; fehlt die Ausgabe ganz (curl nicht auffindbar), steht
+  # sonst eine leere Variable in der Meldung.
+  local url="$1"; shift
+  local ausgabe
+  ausgabe="$(curl -s -o /dev/null -m 20 "$@" -w '%{http_code}' "${url}" 2>/dev/null)" || true
+  [[ -n "${ausgabe}" ]] || ausgabe='000'
+  printf '%s' "${ausgabe}"
+}
+
 check_all() {
+  local fehlt=0
+  need_cmd curl 'Jetzt ausführen: sudo pacman -S curl' || fehlt=1
+  need_cmd ss   'Jetzt ausführen: sudo pacman -S iproute2' || fehlt=1
+  need_cmd ip   'Jetzt ausführen: sudo pacman -S iproute2' || fehlt=1
+  if (( ${fehlt} == 1 )); then
+    printf 'FEHLT: Pruefwerkzeug fehlt (siehe Zeilen oben) - nachinstallieren, dann: ./scripts/74-setup-local-proxy.sh --check\n'
+    return 1
+  fi
   rc=0
   local tmp
-  tmp="$(mktemp)"
+  tmp="$(mktemp "${STATE_DIR}/pruefung.XXXXXX")"
   render_caddyfile > "${tmp}"
   cmp -s "${tmp}" "${RENDERED}" || { printf 'FEHLT: %s weicht von der Vorlage ab - 74-setup-local-proxy.sh ausführen\n' "${RENDERED}"; rc=1; }
   render_quadlet > "${tmp}"
   cmp -s "${tmp}" "${QUADLET}" || { printf 'FEHLT: %s weicht vom Generator ab\n' "${QUADLET}"; rc=1; }
   rm -f "${tmp}"
+  # Repo und installierte Unit muessen dieselbe Sprache reden: sonst laeuft ein
+  # Proxy, den kein Prueflauf des Repos beschreibt (Port, Netz, EnvironmentFile).
+  installed_unit_diff "${UNIT}" >/dev/null 2>&1 \
+    || { printf 'FEHLT: installierte Unit weicht von quadlet/%s ab (oder fehlt) - ausrollen: ./scripts/74-setup-local-proxy.sh\n' "${UNIT}"; rc=1; }
+  # Der laufende Container muss dieselbe Fassung nutzen wie das Repo. Eine
+  # Einzel-Datei-Bindung folgt keinem Inode-Wechsel,darum kann ein Reload ins
+  # Leere laufen, obwohl Datei und Unit auf dem Host stimmen (siehe
+  # write_if_changed). Nur der Vergleich mit dem Container deckt das auf.
+  if command -v podman >/dev/null 2>&1 && unit_is_active "${UNIT}"; then
+    local live host_sum
+    live="$(podman exec llm-proxy sha256sum /etc/caddy/Caddyfile 2>/dev/null | awk '{print $1}')"
+    host_sum="$(sha256sum "${RENDERED}" 2>/dev/null | awk '{print $1}')"
+    if [[ -z "${live}" ]]; then
+      printf 'FEHLT: laufende Caddyfile nicht lesbar - Container llm-proxy erreichbar? (podman ps --filter name=llm-proxy)\n'
+      rc=1
+    elif [[ "${live}" != "${host_sum}" ]]; then
+      printf 'FEHLT: der laufende Proxy nutzt eine andere Caddyfile als die committete - der letzte Reload lief ins Leere\n'
+      printf '  Jetzt ausführen: ./scripts/74-setup-local-proxy.sh   (Wenn das nicht hilft: podman restart llm-proxy)\n'
+      rc=1
+    fi
+  fi
   unit_is_active "${UNIT}" || { printf 'FEHLT: llm-proxy.service laeuft nicht (journalctl --user -u llm-proxy.service -n 80)\n'; rc=1; }
   ss -tln 2>/dev/null | grep -q '127\.0\.0\.1:443 ' || { printf 'FEHLT: kein Listener auf 127.0.0.1:443\n'; rc=1; }
   local ca_opt=(-k) ca_hint='(ohne -k mit: ./scripts/74-setup-local-proxy.sh --ca-import)'
   [[ -f "${CA_FILE}" ]] && ca_opt=(--cacert "${CA_FILE}")
   local code
-  code="$(curl -s -o /dev/null -m 15 "${ca_opt[@]}" -w '%{http_code}' https://homepage.localhost/ || echo 000)"
+  code="$(https_code https://homepage.localhost/ "${ca_opt[@]}")"
   [[ "${code}" == "200" ]] || { printf 'FEHLT: https://homepage.localhost/ liefert %s statt 200 %s\n' "${code}" "${ca_hint}"; rc=1; }
-  code="$(curl -s -o /dev/null -m 15 "${ca_opt[@]}" -w '%{http_code}' https://grafana.localhost/grafana/ || echo 000)"
+  code="$(https_code https://grafana.localhost/grafana/ "${ca_opt[@]}")"
   [[ "${code}" == "200" ]] || { printf 'FEHLT: https://grafana.localhost/grafana/ liefert %s statt 200 %s\n' "${code}" "${ca_hint}"; rc=1; }
   if curl -sI -m 15 "${ca_opt[@]}" https://grafana.localhost/grafana/ | grep -qi 'location:.*azure'; then
     printf 'FEHLT: Grafana leitet auf die Gateway-Adresse um (301/302 auf azure)\n'; rc=1
   fi
   if ca_im_systemtrust; then
-    code="$(curl -s -o /dev/null -m 15 -w '%{http_code}' https://homepage.localhost/ || echo 000)"
+    code="$(https_code https://homepage.localhost/)"
     [[ "${code}" == "200" ]] || { printf 'FEHLT: Systemtrust sagt nein (curl ohne -k liefert %s)\n' "${code}"; rc=1; }
   else
     printf 'HINWEIS: Caddy-CA nicht im Systemtrust - ./scripts/74-setup-local-proxy.sh --ca-import\n'
@@ -650,12 +812,16 @@ check_backend_ports() {
 
 lan_curl() {
   # lan_curl <vorname> <pfad> [benutzer:klartext]  -> HTTP-Code
-  local vorname="$1" pfad="$2" creds="${3:-}" code
+  # --resolve erspart die hosts-Datei auf diesem Rechner. Bei TLS-Abbruch gibt curl
+  # seinen Formatstring ('000') selbst aus und geht mit Fehler raus; fehlt die
+  # Ausgabe ganz, steht sonst eine leere Variable da und die Meldung ist wertlos.
+  local vorname="$1" pfad="$2" creds="${3:-}"
   local -a args=(-s -o /dev/null -m 20 "${ca_opt[@]}" --resolve "${vorname}.${LAN_DOMAIN}:443:${LAN_IPS[0]}" -w '%{http_code}')
-  [[ -n "${creds}" ]] && args+=(-u "${creds}")
-  # Bei TLS-Abbruch liefert curl 000 im Formatstring und geht mit Fehler raus -
-  # ohne das "|| code=000" hier stünde dann "000000" in der Variable.
-  curl "${args[@]}" "https://${vorname}.${LAN_DOMAIN}${pfad}" 2>/dev/null || code='000'
+  if [[ -n "${creds}" ]]; then args+=(-u "${creds}"); fi
+  local ausgabe
+  ausgabe="$(curl "${args[@]}" "https://${vorname}.${LAN_DOMAIN}${pfad}" 2>/dev/null)" || true
+  [[ -n "${ausgabe}" ]] || ausgabe='000'
+  printf '%s' "${ausgabe}"
 }
 
 check_lan() {
@@ -704,6 +870,11 @@ check_lan() {
     if creds="$(lan_password_fuer "LLM_LAN_$(printf '%s' "${host}" | tr '[:lower:]' '[:upper:]' | tr '-' '_')_USER")"; then
       code="$(lan_curl "${host}" "${pfad}" "${creds}")"
       [[ "${code}" == "200" ]] || { printf 'FEHLT: https://%s.%s%s mit Zugangswerten liefert %s statt 200\n' "${host}" "${LAN_DOMAIN}" "${pfad}" "${code}"; rc=1; lan_rc=1; }
+      # Gegenprobe: ein falsches Passwort muss 401 bringen. Ohne sie bliebe ein
+      # Basic-Auth-Zweig unentdeckt, der nur den Benutzernamen vergleicht.
+      local falsch_code
+      falsch_code="$(lan_curl "${host}" "${pfad}" "${creds%%:*}:sicher-nicht-das-passwort")"
+      [[ "${falsch_code}" == '401' ]] || { printf 'FEHLT: https://%s.%s%s laesst ein falsches Passwort durch (%s) - Basic-Auth prueft nicht beide Teile\n' "${host}" "${LAN_DOMAIN}" "${pfad}" "${falsch_code}"; rc=1; lan_rc=1; }
     else
       printf 'FEHLT: keine Zugangswerte fuer %s in %s\n' "${host}" "${CRED_FILE}"; rc=1; lan_rc=1
     fi
@@ -712,25 +883,51 @@ check_lan() {
   # Mit -k geprueft: fuer einen unbekannten Namen stellt Caddy kein passende
   # Zertifikat aus; ein Abbruch der TLS-Verbindung (000) ist dasselbe Ergebnis wie
   # 403 - keineswegs ein Weiterreichen an ein Backend. Beides ist akzeptiert.
-  code="$(curl -s -o /dev/null -m 20 -k --resolve "kein-host.${LAN_DOMAIN}:443:${LAN_IPS[0]}" -w '%{http_code}' https://kein-host.${LAN_DOMAIN}/ 2>/dev/null)" || code='000' 
+  code="$(https_code "https://kein-host.${LAN_DOMAIN}/" -k --resolve "kein-host.${LAN_DOMAIN}:443:${LAN_IPS[0]}")"
   [[ "${code}" =~ ^(000|403)$ ]] || { printf 'FEHLT: unbekannter Name liefert %s statt 403 (Fallback-Site fehlt?)\n' "${code}"; rc=1; lan_rc=1; }
   if [[ "${lan_rc}" == 0 ]]; then
-    printf 'OK: LAN-Zugang auf %s:443 - fuenf Namen erreichbar, zwei davon mit Basic-Auth\n' "${LAN_IPS[0]}"
+    printf 'OK: LAN-Zugang auf %s:443 - sechs Namen geprueft, zwei davon mit Basic-Auth\n' "${LAN_IPS[0]}"
   fi
 }
 
 status_all() {
+  # Kurzbild des Ist-Zustands. Die Zeilen sind Absicht in dieser Reihenfolge:
+  # Unit, Listener, Netze, Zugang, Vertrauensanker, Kernelgrenze, letzte Logs.
+  local lan_text basic_text benutzer
+  if (( ${lan_enabled} == 1 )); then
+    lan_text="an (${LAN_IPS[*]}, Name ${LAN_DOMAIN})"
+  else
+    lan_text='zu (LAN_BIND_IPS in config/host.env ist leer)'
+  fi
+  if [[ -f "${AUTH_ENV_FILE}" ]]; then
+    # Nur die Benutzernamen (stehen ohnehin in config/host.env), nie die Hashes.
+    benutzer="$(grep '^LLM_LAN_[A-Z_]*_USER=' "${AUTH_ENV_FILE}" 2>/dev/null | cut -d= -f2- | tr '\n' ' ' | sed 's/ *$//')"
+    basic_text="Datei ${AUTH_ENV_FILE} (Benutzer: ${benutzer:-keine})"
+  else
+    basic_text="fehlt - ausrollen: ./scripts/74-setup-local-proxy.sh"
+  fi
   printf 'Unit           %s\n' "$(systemctl --user is-active llm-proxy.service 2>&1)"
   printf 'Listener 443   %s\n' "$(ss -tlnH 2>/dev/null | awk '{print $4}' | grep -E ':443$' | tr '\n' ' ')"
   printf 'Container      %s\n' "$(podman ps --filter name=llm-proxy --format '{{.Status}}' 2>/dev/null)"
   printf 'Netze          %s\n' "$(podman inspect llm-proxy --format '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}' 2>/dev/null)"
-  printf 'LAN            %s\n' "$(( ${lan_enabled} == 1 )) && printf 'an (%s, Name %s)' "${LAN_IPS[*]}" "${LAN_DOMAIN}" || printf 'zu (LAN_BIND_IPS leer)')"
-  printf 'Basic-Auth     %s\n' "$([[ -f ${AUTH_ENV_FILE} ]] && printf 'Datei %s (Benutzer: %s)' "${AUTH_ENV_FILE}" "$(cut -d= -f1 "${CRED_FILE}" 2>/dev/null | tr '\n' ' ')" || printf 'fehlt (apply erzeugen)')"
+  printf 'LAN            %s\n' "${lan_text}"
+  printf 'Basic-Auth     %s\n' "${basic_text}"
   printf 'CA-Datei       %s\n' "$([[ -f ${CA_FILE} ]] && echo vorhanden || echo fehlt)"
   printf 'Systemtrust    %s\n' "$(ca_im_systemtrust && echo verankert || echo 'NICHT verankert (sudo trust anchor --store ...)')"
   printf 'Sysctl-Grenze  %s (Ziel <= %d, Datei %s)\n' "$(sysctl -n ${SYSCTL_KEY} 2>/dev/null || echo ?)" "${SYSCTL_WANT}" "$([[ -f ${SYSCTL_FILE} ]] && echo da || echo fehlt)"
   podman logs --tail 5 llm-proxy 2>/dev/null | cut -c1-160 || true
 }
+
+# Die Drift-Kapsel aus lib/units.sh verdeckt systemctl (sonst wuerde ein Prueflauf
+# den laufenden Proxy neu starten). Dieselbe Kapsel macht aber jede Pruefung blind:
+# "unit_is_active" sagt dann immer ja. Pruefen und Ausgeben deshalb nur ohne Kapsel
+# - make drift braucht ausschliesslich den Datei-Zweig.
+if [[ "${LLM_DRIFT:-0}" == '1' ]]; then
+  case "${1:---apply}" in
+    --apply|--render) ;;
+    *) die "LLM_DRIFT=1 ist die Kapsel von make drift und prueft nichts (systemctl ist verdeckt). Ohne die Variable ausführen: ./scripts/74-setup-local-proxy.sh ${1:---check}" ;;
+  esac
+fi
 
 case "${1:---apply}" in
   --apply)   apply_all ;;

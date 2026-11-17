@@ -1,4 +1,95 @@
 # Aenderungsprotokoll
+## 2026-11-17 (Runde: Deep-Review mit vier Gegenpruefern, drei stille Defekte)
+
+- **Stiller Defekt 1 - Proxy lud die alte Konfiguration:** `write_if_changed`
+  ersetzte Dateien ueber `install` (neuer Inode), der haelt das Caddyfile aber als
+  Einzel-Datei-Bindung im Container. Jeder Reload nach einer reinen
+  Caddyfile-Aenderung lud stillschweigend die alten Seiten; weder `--check` noch
+  `make drift` sahen das. Beweis: Host-Inode 919969 (5723 B) gegen
+  Container-Inode 918478 (5324 B). Der Generator ueberschreibt bestehende Dateien
+  jetzt in ihrer Inode, vergleicht vor dem Neustart die laufende Fassung und
+  `--check` meldet die Abweichung mit dem naechsten Befehl. Gegenprobe eingebaut:
+  veraltete Container-Fassung liefert `FEHLT` und rc=1, nach dem Ausrollen wieder
+  rc=0.
+- **Stiller Defekt 2 - Prometheus ohne Reload:** das Quadlet hatte weder
+  `ExecReload` noch eine Reload-Moeglichkeit und montierte `prometheus.yml` und
+  `alerts.yml` als Einzeldateien (nach `git pull` haette der Container die alte
+  Fassung gehalten). Neu: Ordnermount nach `/etc/prometheus/conf`,
+  `ExecReload=/usr/bin/podman kill --signal HUP systemd-%N`, Wege in
+  `validate.sh` und Doku nachgezogen. Eigenfehler der Runde dokumentiert:
+  `--config.reload.interval` existiert bei Prometheus v3.5 nicht und brachte die
+  Unit in eine Crash-Schleife - entfernt, Reload ist SIGHUP.
+- **Stiller Defekt 3 - Grafana warf LAN-Besucher auf den Loopback:**
+  `https://grafana.cachyos-x8664/login` antwortete `301 ->
+  https://grafana.localhost/grafana/login` (root_url), ein Geraet aus dem LAN
+  landete ins Leere. Die Route setzt die `Location` jetzt auf den Namen der
+  Anfrage; Loopback unveraendert (beides gemessen).
+- **Metrikziel fuer den Proxy (AGENTS.md-Regel):** neuer Job `caddy` gegen
+  `llm-proxy:8080`, der nur `/metrics` auf den Caddy-Admin-Endpunkt durchreicht
+  (ohne `header_up Host 127.0.0.1:2019` antwortet der Admin-API 403). gemessen:
+  Target up, 10 Serien mit `caddy_`-Praefix.
+- **Weiterleiter aus dem WLAN gezogen:** `auto` band bisher jede Schnittstelle,
+  auch `192.168.0.47` (wlan0), und bot dort die Modell-API ohne Zugangswert.
+  Neu bindet `auto` Loopback, die Adresse der bevorzugten Standard-Route und die
+  Podman-Gateways; `VLLM_PUBLIC_BIND=all` stellt den alten Zustand her.
+  Gegenbeweis gegen den Review-Vorschlag "nur Loopback plus Gateways": dabei
+  fielen `up{job="vllm"}` von 1 auf 0 und `direct-llm` auf 502, weil Gateways im
+  Host-Namespace nicht bindbar sind. Regressionslauf
+  `./scripts/test-vllm-forwarder.sh` bleibt gruen. Weiterer Weg in
+  `docs/HANDOFF.md` Nr. 19.
+- **Haerte im Prueflauf:** `--check` prueft beide Basic-Auth-Faelle inklusive
+  bewusst falschem Passwort, `LOOPBACK_ONLY_PORTS` waechst um 3003, 9100, 12345
+  und 8120, `--ca-export` zeigt den SHA-256-Fingerabdruck der Wurzel mit
+  `certutil`-Gegprobe, und `check-drift.sh` vergleicht jetzt auch
+  `config/proxy/Caddyfile` (bislang unprueft).
+- **Betrieb:** `sudo loginctl enable-linger` gesetzt - der Benutzermanager und
+  damit der ganze Stapel starten ohne Desktop-Anmeldung (war die Voraussetzung
+  von `scripts/30-nvidia-podman.sh`, wurde aber nie gesetzt). Der Arztlauf
+  empfiehlt `make podman` nur noch mit dem Hinweis, dass die GPU der Laufzeit
+  gehoert (AGENTS.md Regel 2).
+- **Praxisnebenwirkung:** die Gegenpruefer loeschten die
+  `/etc/hosts`-Eintraege fuer die LAN-Namen; wiederhergestellt aus
+  `./scripts/74-setup-local-proxy.sh --print-hosts`. Sitzungsunterlagen unter
+  `.omo-work/` sind jetzt gitignore- und scan-ausgenommen, weil sie Attrappen von
+  Zugangswerten enthalten koennen (`validate.sh` lief deshalb rot).
+- **Belege der Runde:** `--check` rc=0, `./scripts/doctor.sh` 18 Pruefpunkte
+  0 Fehler, `./scripts/validate.sh` rc=0, Prometheus up (`vllm`, `caddy`,
+  `grafana`), `https://direct-llm.cachyos-x8664/v1/models` 401 ohne / 200 mit
+  Zugang, 401 mit falschem Passwort.
+
+## 2026-11-17 (Runde: Doku-Deckung eng und Zahlen-Nachpruefung)
+
+- **Englisches Spiegel-Ensemble auf Stand gebracht:** `docs/en/index.md`
+  beschrieb noch die WSL-Zeit (Pennyroyal auf 8001, ZFS "in Betrieb"); es zeigt
+  jetzt die laufende Fassung (vLLM `flash-next-v3` 30000, Weiterleiter 30001,
+  Gateway v1.105.0, Beobachtungsstapel inklusive Alertmanager 9093) und die
+  HTTPS-Einstiege. Neu `docs/en/lan-access.md`: Adressen, Schutzmodell,
+  Windows-11-Client (Hilfsskript und Handweg), Rueckbau und Befehlsliste -
+  eigenstaendige englische Fassung, kein Duplikat der deutschen Abschnitte.
+  `docs/en/operations.md` nennt jetzt die echten Logquellen (unmanaged
+  Runtime-Container, User-Units) und verweist auf die LAN-Seite.
+  `mkdocs.yml` fuehrt die neue Seite in der nav.
+- **Zahlen gegen Messung gezogen (2026-11-17):** Dashboard-Abfragen 121 -> 120
+  (`grep -o '"expr"' ... | wc -l`); die "drei Panels ohne Anfrage" in
+  `05-agent-observatorium.json` sind seit `5fa6ab0` behoben, `validate.sh`
+  meldet keine mehr; `llm_unit_active`zaehlt jetzt 19 von 20 Serien mit Wert 1
+  (neu dabei `llm-proxy`, `wiki`; `pennyroyal` meldet bewusst 0). Belege:
+  `docs/status.md`.
+- **CMDB berichtigt:** `docs/cmdb.yaml` fuehrte LiteLLM als v1.101.0, gemessen
+  und gepinnt ist v1.105.0 (`versions.lock`, `quadlet/litellm.container`);
+  Dienstkarte `local-proxy` verweist bei `docs`/`next` jetzt auf das
+  Windows-Hilfsskript und die Abnahme (HANDOFF Nr. 18).
+- **Uebergabe entstaubt:** `docs/HANDOFF.md` - Datum auf 2026-11-17, Loopback-
+  Proxy-Punkt nicht mehr als "nur 127.0.0.1" (der LAN-Ausbau steht im naechsten
+  Punkt), Dashboard-Zaehlung vereinheitlicht, offene Punkte 5-8 auf den
+  heutigen Stand geschrieben (README ist sauber; Chat-Konto vorhanden und
+  Anmeldung gemessen; beide Waechter-Timer installiert), Nr. 18 nennt das
+  PowerShell-Hilfsskript als Kuerzesten Weg; Nummernhinweis 9-14 ergaenzt.
+- **Unabhaengig nachgemessen:** `--check` rc=0, alle LAN-Codes wie dokumentiert
+  (200/401/403), oeffentlich 200/401 am Azure-Gateway, Doctor 17 Pruefpunkte
+  0 Fehler, `validate.sh` OK, `make docs-build` (mkdocs --strict) durch.
+  Befehle: siehe `docs/HANDOFF.md` Abschnitt 3.
+
 ## 2026-11-17 (Runde: LAN-HTTPS fuer den Windows-Arbeitsplatz)
 
 Offene Aufgabe aus `.omo-work/todo-local-llm-network.md`; Zugangsvoraussetzung

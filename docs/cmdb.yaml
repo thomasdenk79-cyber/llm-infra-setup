@@ -19,7 +19,7 @@ services:
     tuning_open: "max_running_requests 8 = Engpass bei Kollegen-Keys;
       chunked_prefill 4096 vs. 8192/16384 A/B ueber benchmark.sh"
   litellm:
-    what: "OpenAI-kompatibles Gateway (v1.101.0) - Routing, Keys, Spend-Logs"
+    what: "OpenAI-kompatibles Gateway (v1.105.0, Stand versions.lock) - Routing, Keys, Spend-Logs"
     where: "Podman quadlet, config/litellm.yaml, Postgres-Lager (litellm-postgres)"
     api: "http://127.0.0.1:4000/v1; Master-Key in gateway.env"
     consumers: ["alle Agenten + open-webui + morning-brief"]
@@ -39,9 +39,12 @@ services:
     health: "./scripts/74-setup-local-proxy.sh --check (End-zu-End-Requests auf
       allen Namen, 401/200 der Basic-Auth-Routen, Loopback-Ausschliesslichkeit
       der Backend-Ports); --status fuer Unit, Listener, Netze"
-    docs: "docs/operations.md (Abschnitte HTTPS-Zugang, LAN, Windows 11)"
-    next: "Windows-Seite am Geraet pruefen (hosts-Datei, Root-Import,
-      Fingerprint-Vergleich) - Befehle dokumentiert, Abnahme steht noch aus"
+    docs: "docs/operations.md (Abschnitte HTTPS-Zugang, LAN, Windows 11, Rueckbau);
+      Windows-Hilfsskript scripts/windows-lan-client-setup.ps1"
+    next: "Abnahme am Windows-Geraet (docs/HANDOFF.md, offener Punkt 18):
+      windows-lan-client-setup.ps1 als Administrator laufen lassen (hosts-Datei,
+      Root-Import, Gegenproben); danach in docs/status.md (Abschnitt LAN)
+      eintragen"
   observability:
     what: "Prometheus+Loki+Alloy+Grafana+Dozzle, Host-Fakten via Textfile-Timer"
     where: "quadlet/*.container, config/monitoring/ (Dashboards provisiert)"

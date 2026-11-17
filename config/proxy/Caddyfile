@@ -1,4 +1,5 @@
-# GENERIERT von scripts/74-setup-local-proxy.sh - dort ändern, nicht hier.
+# GENERIERT von scripts/74-setup-local-proxy.sh aus dieser Vorlage - aendern nur in
+# config/proxy/Caddyfile.template, nie im gerendeten config/proxy/Caddyfile.
 # Vorlage: config/proxy/Caddyfile.template. Ausgerollt wird die eingesetzte
 # Fassung nach config/proxy/Caddyfile; gerendert und gerollt wird nur ueber
 # den Generator (caddy validate laeuft vor dem Ausrollen).
@@ -67,6 +68,21 @@ grafana.localhost {
 	reverse_proxy grafana:3000
 }
 
+# Metriken des Proxies selbst fuer den Prometheus-Job "caddy" (AGENTS.md: jeder
+# Dienst bekommt ein Metrikziel). Der Admin-Endpunkt von Caddy horcht nur auf der
+# Container-Loopback; hier wird ausschliesslich /metrics durchgereicht. Der Port
+# ist nicht veroeffentlicht, erreichbar also nur fuer Container in den Netzen
+# llm-observability und llm-inference - Prometheus erreichte den Host-Loopback
+# bei rootless Podman nie, die Container-Namen aber jederzeit.
+:8080 {
+	# Der Admin-Endpunkt von Caddy prueft den Host-Namen und antwortet 403 fuer
+	# fremde Namen (Schutz vor DNS-Rebinding) - deshalb hier die Loopback-Adresse
+	# als Host, sonst liefert der Job nur 403.
+	reverse_proxy /metrics 127.0.0.1:2019 {
+		header_up Host 127.0.0.1:2019
+	}
+}
+
 # --- LAN-Zugang ---------------------------------------------------------------
 # Gerendert aus config/proxy/Caddyfile.template durch scripts/74-setup-local-proxy.sh.
 # Alle Namen enden auf den Rechnernamen (cachyos-x8664); Windows-Clients tragen sie in
@@ -91,9 +107,14 @@ homepage.cachyos-x8664 {
 grafana.cachyos-x8664 {
 	# Bewusst ohne Anmeldung: anonyme Lese-Rolle in ~/.config/llm-infra/grafana.env.
 	# Der Unterpfad /grafana/ bleibt, damit GF_SERVER_ROOT_URL weiterhin passt.
+	# Grafana leitet auf seine root_url https://grafana.localhost/grafana/ und
+	# wuerfe LAN-Besucher damit auf den Loopback-Namen zurueck, den nur dieser
+	# Rechner kennt. Die Umleitung bleibt deshalb auf dem Namen der Anfrage.
 	tls internal
 	encode zstd gzip
-	reverse_proxy grafana:3000
+	reverse_proxy grafana:3000 {
+		header_down Location "https://grafana.localhost/" "https://{http.request.host}/"
+	}
 }
 
 # Gateway (LiteLLM): verlangt den eigenen Virtual-Key, 401 ohne Schluessel.

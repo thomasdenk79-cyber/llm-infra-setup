@@ -1,6 +1,6 @@
 Zuletzt gesichert: 2026-11-17T07:42:50+01:00 durch `scripts/session-checkpoint.sh`
 
-# Arbeitsstand und Uebergabe (2026-11-16)
+# Arbeitsstand und Uebergabe (2026-11-17)
 
 **Diese Seite ist der Fortsetzungsanker.** Wenn eine Sitzung abreisst, der
 Rechner neu startet oder ein anderer Agent uebernimmt: hier steht, was gilt.
@@ -8,7 +8,7 @@ Regel aus `AGENTS.md`: Nach jedem abgeschlossenen Schritt
 `./scripts/session-checkpoint.sh` (aktualisiert diese Seite, committet, pusht).
 Das Repository ist das Backup.
 
-## 1. Was gilt jetzt (2026-11-16)
+## 1. Was gilt jetzt (Stand 2026-11-17, Beweis-Befehle am 2026-11-17 erneut bestaetigt)
 
 * Repo-Wurzel ist `/srv/work/llm-infra-setup` (nicht mehr `~/work/...`).
   Die Arbeiten des Tages sind in Themen-Commits gesichert (`git log --oneline -8`);
@@ -77,8 +77,9 @@ Das Repository ist das Backup.
   liegt wiederherstellbar unter
   `~/.config/systemd/user/reverse-tunnel.service.retired-20261116`.
   Doku: `docs/gateway-proxy.md`.
-* Lokaler HTTPS-Zugang ueber Namen (2026-11-16, neuer Rund): Container
-  `llm-proxy` (Caddy, Netz `llm-observability`, nur `127.0.0.1:443`) bedient
+* Lokaler HTTPS-Zugang ueber Namen (2026-11-16): Container
+  `llm-proxy` (Caddy; Netz `llm-observability`, bei aktivem LAN zusaetzlich
+  `llm-inference`; Veroeffentlichung `127.0.0.1:443` plus LAN - siehe naechster Punkt) bedient
   `https://homepage.localhost/` (Portal) und `https://grafana.localhost/grafana/`
   (Grafana ohne Anmeldung, Unterpfad bleibt). Generator
   `scripts/74-setup-local-proxy.sh` (`make local-proxy`, `--check`,
@@ -99,8 +100,10 @@ Das Repository ist das Backup.
   `flash-next-v3` ueber das Journal (`/var/log/journal` read-only, Alloy
   lauscht auf `0.0.0.0:12345`). Alle Alarmregeln und Dashboards sind von
   `sglang:*` auf die vorhandenen `vllm:*`-Messgroessen umgelenkt;
-  Dashboard-Check 2026-11-16: 104 OK / 12 leer / 0 Fehler (die 12: ZFS/PLE,
-  dieser Rechner hat beides nicht). Grafana haengt wegen des oeffentlichen
+  Dashboard-Stand 2026-11-17: 120 Panel-Abfragen (`grep -o '"expr"' ... | wc -l`),
+  `validate.sh` meldet keine leeren Panels mehr; Browser-Pruefung 2026-11-16: 89
+  Panelfelder, 8 ohne Daten (allein ZFS/ARC/PLE in `04-speicher.json` - dieser
+  Rechner hat nichts davon). Grafana haengt wegen des oeffentlichen
   Unterpfads an `~/.config/llm-infra/grafana.env`
   (`GF_SERVER_ROOT_URL=.../grafana/`, `GF_SERVER_SERVE_FROM_SUB_PATH=true`).
 * Wiki: `wiki.service` liefert `http://127.0.0.1:3003/` (200),
@@ -130,6 +133,23 @@ Das Repository ist das Backup.
   `docs/operations.md` (LAN, Windows 11, Rueckbau, Fehlerbilder,
   Tunnel-Lebensdauer), `docs/status.md`. Offen bleibt die Pruefung am Windows-PC
   (Nr. 18).
+* Review-Runde 2026-11-17 (vier Gegenpruefer auf der lokalen Modellplatte):
+  drei stille Defekte gefixt und gemessen - (a) der Proxy lud nach
+  `write_if_changed` weiterhin die alte Caddyfile (Einzel-Datei-Bindung folgt
+  keinem Inode-Wechsel, der Reload lief ins Leere); der Generator prueft jetzt
+  die laufende Fassung im Container und rollt bei Bedarf neu, `--check` meldet
+  die Abweichung, (b) Prometheus bekam kein `ExecReload` und montierte die
+  Konfiguration als Einzeldateien (neu: Ordner `/etc/prometheus/conf`, Reload
+  ueber `systemctl --user reload prometheus.service`), (c) Grafana warf
+  LAN-Besucher per 301 auf `grafana.localhost` zurueck (Location wird jetzt auf
+  den Namen der Anfrage gesetzt). Dazu: Metrikziel `caddy` (AGENTS.md-Regel,
+  10 Serien), Gegenprobe "falsches Passwort" und vier zusaetzliche
+  Loopback-Hafen in `--check`, `--ca-export` mit Fingerabdruck, Weiterleiter
+  bindet nur noch die bevorzugte Standard-Route (WLAN zu), `loginctl
+  enable-linger` gesetzt (der Benutzermanager startet damit ohne
+  Desktop-Anmeldung), Doku-Deckung `docs/en/` neu, HANDOFF-Punkte 5-8
+  entstaubt. Offen: Nr. 18 (Windows-Abnahme), Nr. 19 (Weiterleiter aus dem LAN),
+  Nr. 20 (DHCP-Festlegung).
 * Verifizierter Einzelzustand mit den Beweis-Befehlen: `docs/status.md`.
 
 ## 2. Was ist offen
@@ -164,6 +184,10 @@ Das Repository ist das Backup.
   unbearbeitet, Unit-Verzeichnis und Container unveraendert. `--restore` ist
   weggefallen (nichts mehr zurueckzuholen).
 
+*Nummernhinweis: Die Liste fuehrt die Nummern 1-8 und 15-20; 9-14 sind in frueheren
+Runden erledigt entfallen. Die Nummern bleiben als Referenzanker stabil (Verweise
+wie "Nr. 18" gelten weiter).*
+
 1. Nach jeder Aenderung sichern: `./scripts/session-checkpoint.sh "kurze Notiz"`
    (AGENTS Grundregel 0; prueft, committet, pushed).
 2. Alarmkanal waehlen und eintragen: `docs/monitoring.md#alarmkanal`
@@ -175,28 +199,32 @@ Das Repository ist das Backup.
 4. Falls Luna gewollt ist: Geraetelogin durchfuehren (echtes Token unter
    `~/.config/llm-infra/chatgpt-tokens`), danach `./scripts/60-install-gateway.sh`
    erneut ausfuehren.
-5. Altbestand in den Docs, ausserhalb der heutigen Sechserliste: `README.md`
-   (zeigt Pennyroyal auf 8001, Pfad `~/work/llm-infra-setup`),
-   `docs/install.md` (alter Pfad), `docs/troubleshooting.md` und
-   `docs/performance.md` (sglang-Formulierungen), `AGENTS.md` Zweckzeile
-   (Pennyroyal/SGLang). Nachziehen in einer eigenen Runde.
-6. `make drift` ist nicht gruen, und der Grund ist grosser als zuerst angenommen:
-   `quadlet/pennyroyal.container` (Referenzrechner, Bild `localhost/flash-next-sm120:serving`,
-   `Ulimit`-Deckel, Start-Gate) weicht in mehreren Feldern von dem ab, was
-   `scripts/50-install-pennyroyal.sh` schreibt (pinned `sglang-rtxpro6000:v2.5.3`, keine
-   Deckel, Modellpfad `/srv/llm-models`). Entscheidung noetig, welche Fassung die
-   Referenz ist; dann Generator nachziehen, nicht die Datei. Die Unit laeuft hier nicht.
-   (Die fruehere Annahme, es sei nur die Gate-Zeile, war falsch und ist zurueckgenommen.)
-7. Chat-Oberflaeche Open WebUI (Port 127.0.0.1:3001): es gibt noch kein Konto - das
-   erste Konto wird Administrator. `credentials.txt` sagt bisher "beim ersten Start ein
-   eigenes Konto anlegen" Dafuer liegt `scripts/64-setup-open-webui-account.sh`
-   (erzeugt Zugangswert, schreibt ihn in `credentials.txt` 0600, prueft die Anmeldung,
-   idempotent, keine Ausgabe des Werts). Nach dem Anlegen haingt die Playwright-Pruefung
-   der Chat-Antwort noch fest. Anbieter und Grundadresse sind richtig
-   (`quadlet/open-webui.container`, Datenvolumen haelt unter `~/.local/share/llm-infra/open-webui`).
-8. Waechter- und GitOps-Timer (`llm-runtime-watchdog`, `llm-litellm-watchdog`,
-   `llm-crashguard`, `llm-infra-gitops`) sind auf diesem Rechner nicht
-   installiert; bei Bedarf ueber die `--install`-Pfade der jeweiligen Skripte.
+5. Altbestand in den Docs, ausserhalb der heutigen Sechserliste: `docs/install.md`
+   (zeigt noch `~/work/llm-infra-setup` als Pfad, Zeilen 10-11), `docs/performance.md`
+   (acht sglang-Formulierungen, drei Befehle auf `127.0.0.1:8001`),
+   `docs/troubleshooting.md` (ein sglang-Verweis). Der README ist inzwischen sauber
+   (kein 8001, kein `~/work`-Pfad; die Zahlentabelle ist als Stand 2026-10-02
+   ausgewiesen); die Zweckzeile in `AGENTS.md` kennzeichnet Pennyroyal/SGLang
+   inzwischen ausdrücklich als Referenz. Nachziehen in einer eigenen Runde.
+6. **Pennyroyal-Ausnahme in `check-drift.sh` aufloesen.** Die Betreiberentscheidung
+   vom 2026-11-16 ist gefallen (siehe `docs/status.md`, Abschnitt "Pennyroyal-Abweichung"):
+   der Fork `localhost/flash-next-sm120:serving` bleibt die committete Wahrheit, und
+   `make drift` ist gruen **ueber die dokumentierte Ausnahmeliste** in
+   `scripts/check-drift.sh`. Offen ist nur noch das Aufloesen: Fork-Werte (Bild,
+   `Ulimit`-Deckel, Modellpfad, Start-Gate) in `scripts/50-install-pennyroyal.sh`
+   eintragen, dann kann die Ausnahme leer. Die Unit laeuft hier nicht.
+   Naechster Befehl: `make drift` (meldet die Ausnahme mit Statistik und Aufloeseweg).
+7. **Erledigt 2026-11-16: Chat-Konto existiert und haelt einen eigenen Schluessel.**
+   Das erste Konto ist angelegt (`scripts/64-setup-open-webui-account.sh`, Zugangswert
+   in `~/.config/llm-infra/credentials.txt` 0600); gemessen 2026-11-17:
+   `./scripts/64-setup-open-webui-account.sh --check` meldet "Konto vorhanden und
+   Anmeldung erfolgreich", die Playwright-Pruefung der Chat-Antwort ist bestanden
+   (siehe `docs/status.md`, Abschnitt Chat). Der fruehere Zustand "kein Konto" ist
+   damit gegenstandslos. Naechster Befehl: `./scripts/60-install-open-webui.sh --check`.
+8. Waechter- und GitOps-Timer: `llm-runtime-watchdog` und `llm-litellm-watchdog`
+   sind installiert und laufend gemessen (doctor Pruefpunkt 17, 2026-11-17:
+   beide Timer mit naechstem Lauf); offen bleiben `llm-crashguard` und
+   `llm-infra-gitops` - bei Bedarf ueber die `--install`-Pfade der jeweiligen Skripte.
 
 15. **Erledigt 2026-11-16: Portal-Symbole und Tabs laufen lokal.** Das Portal
     laeuft digest-pinnt auf v2.6.0 (`versions.lock`), die sechs Tabs aus
@@ -230,14 +258,41 @@ Das Repository ist das Backup.
     vor `make local-proxy`, danach `make drift`.
 18. **LAN-Zugang am Windows-PC nachmessen (einzig offener Punkt der
     LAN-Aufgabe).** Auf dem Linux-Rechner ist alles gemessen (`--check` rc=0,
-    401/200-Paare, echter Chat-Durchlauf ueber `littlem`); der Windows-PC war aus
-    dieser Sitzung nicht erreichbar. Drei Schritte dort: hosts-Zeile aus
+    401/200-Paare, echter Chat-Durchlauf ueber `littlem`, 2026-11-17 erneut bestaetigt);
+    der Windows-PC war aus dieser Sitzung nicht erreichbar. Kuerzester Weg am Geraet:
+    `scripts/windows-lan-client-setup.ps1` als Administrator laufen lassen (hosts-Datei,
+    Root-Import, alle Gegenproben in einem Lauf; Aufruf mit `-LanIp 192.168.0.198
+    -Domain cachyos-x8664 -CertPath ...` in `docs/operations.md`, Abschnitt
+    "Windows 11"). Von Hand sind es drei Schritte: hosts-Zeile aus
     `./scripts/74-setup-local-proxy.sh --print-hosts` in
     `C:\Windows\System32\drivers\etc\hosts`, Root-Import nach
     `./scripts/74-setup-local-proxy.sh --ca-export` (`certutil -addstore -f ROOT`,
-    Fingerprint vorher vergleichen), dann die Gegenproben aus
-    `docs/operations.md` (Abschnitt "Windows 11"). Danach in `docs/status.md`
-    (Abschnitt LAN) die Abnahme eintragen.
+    Fingerprint vorher gegen `certutil -dump` vergleichen), dann die Gegenproben aus
+    `docs/operations.md`. Danach in `docs/status.md` (Abschnitt LAN) und
+    `docs/cmdb.yaml` (`next` der Karte `local-proxy`) die Abnahme eintragen.
+19. **Weiterleiter aus dem LAN holen (groesstes offenes Risiko der LAN-Aufgabe).**
+    Port 30001 liefert die Modell-API ohne jeden Zugangswert ins Kabel-LAN; die
+    Basic-Auth von `direct-llm` schuetzt nur ihren eigenen Pfad. Die naheliegende
+    Verengung auf Loopback plus Podman-Gateways ist **nicht** ausfuehrbar -
+    gemessen 2026-11-17: `up{job="vllm"}` fiel von 1 auf 0 und `direct-llm` auf
+    502, weil die Gateways im Host-Namespace nicht bindbar sind (Details und
+    Messprotokoll: `docs/runtime.md`, Fund `.omo-work/review-codex.md` F1). Der
+    saubere Weg: eigener Weiterleiter-Container in `llm-inference` und
+    `llm-observability` mit `--network=pasta,map_host_loopback=true`, dann
+    Konsumenten von `host.containers.internal:30001` auf
+    `llm-vllm-forwarder:30001` umstellen (`config/monitoring/prometheus.yml` Job
+    `vllm`, LiteLLM-Basis, `DIRECT_LLM_UPSTREAM` im 74-Generator, Autossh-Quadlet)
+    und `VLLM_PUBLIC_BIND` aus der Unit nehmen. Zwischenstand dieser Runde:
+    `auto` bindet nur noch die Adresse der bevorzugten Standard-Route, die
+    WLAN-Adresse ist zu.
+20. **LAN-Bindung gegen DHCP-Wechsel sichern (Betreiberentscheidung).** Aendert
+    der DHCP die Adresse des Hosts, ist `llm-proxy.service` nicht mehr startbar
+    (`pasta: Cannot assign requested address`) und reisst auch
+    `127.0.0.1:443` mit - der Arzt meldet es, reparieren kann er es nicht.
+    Empfehlung: DHCP-Reservierung am Router fuer `192.168.0.198`; sonst nach
+    jedem Adresswechsel `LAN_BIND_IPS` in `config/host.env` nachziehen und
+    `./scripts/74-setup-local-proxy.sh` laufen lassen. Zu pruefen nach einem
+    Neustart: `./scripts/doctor.sh` (Pruefpunkt "Lokaler Zugang ueber Namen").
 
 ## 3. Welche Befehle braucht der naechste Leser
 
@@ -253,6 +308,11 @@ cd /srv/work/llm-infra-setup
 ./scripts/70-setup-gateway-proxy.sh --check
 ./scripts/70-setup-gateway-proxy.sh --status
 ./scripts/71-gateway-keys.sh --list
+
+# LAN-Zugang (Windows-Arbeitsplatz)
+./scripts/74-setup-local-proxy.sh --check    # alle LAN-Namen, Basic-Auth, Loopback-Ausschluss
+./scripts/74-setup-local-proxy.sh --status   # Unit, Listener, Netze, LAN, CA
+./scripts/74-setup-local-proxy.sh --print-hosts  # hosts-Zeile fuer den Windows-PC
 
 # Beobachtung
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:9093/-/ready

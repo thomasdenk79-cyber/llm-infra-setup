@@ -1,6 +1,7 @@
 # Projektstatus
 
-Stand: 2026-11-16, geprueft am selben Tag. Fruehere Stiche (WSL-Zeit,
+Stand: 2026-11-16, geprueft am selben Tag; Beweis-Befehle am 2026-11-17 erneut
+bestaetigt (LAN-Abschnitt, Dashboard-Zaehlbild, Einheiten-Messgroesse). Fruehere Stiche (WSL-Zeit,
 Pennyroyal-Kaltstarts, Tuning-Runden) stehen im `CHANGELOG.md` und im
 Git-Verlauf: `git show HEAD:docs/status.md`. Fortsetzungsanker ist
 `docs/HANDOFF.md`.
@@ -82,7 +83,9 @@ schlaegt fehl, wenn der Master doch wieder im Chat steht (gegentestet).
 Gateway-Eigenmetriken (`litellm_*`) fehlen in Prometheus **bewusst**: das
 Chainguard-Image enthaelt kein `prometheus-client`, `/metrics` liefert 404. Die
 Lebensdauer laeuft ueber `llm_unit_active{unit="litellm"}` aus
-`scripts/collect-host-facts.sh`; gemessen melden 18 Einheiten den Wert 1. Freischaltweg
+`scripts/collect-host-facts.sh`; gemessen (2026-11-17) melden 19 von 20 Serien den
+Wert 1 - die zwanzigste ist `pennyroyal` und meldet bewusst 0 (Referenz-Unit, laeuft
+hier nicht). Freischaltweg
 fuer echte Gateway-Metriken: `docs/monitoring.md`.
 
 ### Inferenz-Laufzeit
@@ -92,15 +95,16 @@ Der unmanaged Container `flash-next-v3` (vLLM, Bild
 `127.0.0.1:30000`. Pennyroyal gibt es auf diesem Rechner nicht; die
 Identitaet der Laufzeit steht in `config/host.env`. Metriken stellt der
 Weiterleiter aus diesem Repo bereit: User-Unit `llm-vllm-forwarder.service`
-auf Port 30001, gebunden an Loopback und die Host-Adressen (rootless pasta
-reicht die Host-Loopback nicht an Container durch - Begruendung in
-`docs/runtime.md`). Die auswaertige `luni-vllm-pub.service` ist retired.
+auf Port 30001, gebunden an Loopback und die Adresse der bevorzugten
+Standard-Route (rootless pasta reicht die Host-Loopback nicht an Container
+durch - Begruendung in `docs/runtime.md`). Die auswaertige
+`luni-vllm-pub.service` ist retired.
 
 ```bash
 podman ps --filter name=flash-next-v3 --format '{{.Names}}\t{{.Status}}\t{{.Ports}}'
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:30000/health          # 200
 ./scripts/73-setup-vllm-forwarder.sh --check                                     # OK: Runtime-Weiterleiter laeuft
-ss -tln | grep 30001                                                             # LISTEN 127.0.0.1, 192.168.0.198, ...
+ss -tln | grep 30001                                                             # LISTEN 127.0.0.1, 192.168.0.198
 ```
 
 ### Gateway und Datenbank
@@ -200,7 +204,9 @@ loki, node, prometheus, vllm`. Der Job `grafana` braucht `metrics_path:
 
 ### Dashboards
 
-Fuenf provisionierte Dashboards, zusammen 121 Panel-Abfragen. Die
+Fuenf provisionierte Dashboards, zusammen 120 Panel-Abfragen (Nachzaehlung
+2026-11-17; nach dem Umbau in `5fa6ab0` waren es kurz 121, eine Abfrage fiel seither
+weg). Die
 Browser-Pruefung am 2026-11-16 (Playwright, Chromium headless, 1680x1000,
 eingeloggt als admin): 89 Panelfelder, davon 8 ohne Daten - ausschliesslich
 ZFS/ARC-Panels aus `04-speicher.json` (dieser Rechner hat kein ZFS), alle
@@ -209,17 +215,16 @@ Verweis mehr in Regeln und Dashboards, Loki-Panels haengen an der
 provisionierten Loki-Datenquelle.
 
 ```bash
-grep -o '"expr"' config/monitoring/grafana/provisioning/dashboards/0*.json | wc -l   # 121
+grep -o '"expr"' config/monitoring/grafana/provisioning/dashboards/0*.json | wc -l   # 120
 grep -c sglang config/monitoring/grafana/provisioning/dashboards/0*.json             # alles 0
-podman exec systemd-prometheus promtool check rules /etc/prometheus/alerts.yml   # SUCCESS: 24 rules
+podman exec systemd-prometheus promtool check rules /etc/prometheus/conf/alerts.yml   # SUCCESS: 24 rules
 ./scripts/validate.sh                                                            # rc=0
 ```
 
-Aktueller Befund dabei: `./scripts/validate.sh` meldet drei Panels ohne
-Anfrage in `05-agent-observatorium.json` ("Auslastung je Geraet",
-"VRAM-Bedarf je Geraet", "VRAM-Fuellstand"); in HEAD hatten sie noch je eine
-Anfrage, die Umstellung hat sie geleert. Nachzuziehen ist sie in einer
-Code-Runde (siehe `docs/HANDOFF.md`, offene Punkte).
+Ehemaliger Befund, inzwischen behoben: die drei Panels ohne Anfrage in
+`05-agent-observatorium.json` ("Auslastung je Geraet", "VRAM-Bedarf je Geraet",
+"VRAM-Fuellstand") fragen seit `5fa6ab0` lebende `nvidia_smi:*`-Reihen;
+`./scripts/validate.sh` meldet aktuell keine Panels ohne Anfrage mehr.
 
 ### Wiki und Timer
 
@@ -265,10 +270,12 @@ gegen die exportierte Caddy-CA, `--check` endet mit rc=0):**
 | https://homepage.localhost/ , https://grafana.localhost/grafana/ | unveraendert 200 (Loopback-Fallback bleibt) |
 
 **Kein Backend-Port im Netz:** `--check` prueft die Ports 3000, 3001, 3002,
-3100, 4000, 5432, 8080, 9090, 9093, 9835 und 30000 auf Loopback-Ausschliesslichkeit;
-alle 11 sind Loopback-only (gemessen mit `ss -tlnH`). Absichtlich ausgenommen ist
-30001, der Weiterleiter: er muss den Host-Adressen binden, damit Container im
-Inferenz-Netz die Runtime erreichen (`docs/runtime.md`).
+3100, 4000, 5432, 8080, 9090, 9093, 9835, 30000, 3003, 9100, 12345 und 8120 auf
+Loopback-Ausschliesslichkeit; alle 15 sind Loopback-only (gemessen mit
+`ss -tlnH`; 12345 und 8120 horchen nur in den Containernetzen, erscheinen auf dem
+Host also gar nicht). Absichtlich ausgenommen ist 30001, der Weiterleiter: er
+ muss die geroutete Adresse des Hosts bedienen, damit Container im Inferenz-Netz
+die Runtime erreichen (`docs/runtime.md`).
 
 **Zugangsdaten:** Basic-Auth nur fuer Dozzle und die direkte vLLM-Route (beide
 ohne eigene Anmeldung stromaufwaerts). Hashes in
@@ -382,8 +389,10 @@ Grafana ohne Anmeldung; die oeffentliche Flaeche bleibt bei `/v1/*` (Schluessel 
 
 ## Bekannte Abweichungen (bewusst, dokumentiert)
 
-- Der Weiterleiter bindet Port 30001 an die Host-Adressen, also auch ins LAN.
-  Begruendung und Verengung auf eine Adresse: `docs/runtime.md`.
+- Der Weiterleiter bindet Port 30001 an die Adresse der bevorzugten
+  Standard-Route, also ins Kabel-LAN; die WLAN-Adresse ist seit 2026-11-17 zu.
+  Begruendung, Messung und der Weg zur sauberen Loesung (Weiterleiter als
+  Container): `docs/runtime.md`, Aufgabe `docs/HANDOFF.md` Nr. 19.
 - `make drift` ist auf diesem Rechner nicht gruen, und zwar grundlegend: die
   committete `quadlet/pennyroyal.container` ist seit laengerem Handarbeit, nicht
   Generator-Ausgabe. Der Generator schreibt eine andere Unit (Bild
@@ -397,7 +406,7 @@ Grafana ohne Anmeldung; die oeffentliche Flaeche bleibt bei `/v1/*` (Schluessel 
   davon ungeprueft anwenden: `apply-runtime-unit.sh` wuerde das Referenzbild tauschen.
 - `gpt-6-luna` ist ohne echtes Geraet-Token aus dem Katalog gestrichen;
   Reaktivierung in `docs/operations.md`.
-- 8 Panels in `04-speicher.json` (ZFS und ARC) zeigen "keine Daten", weil dieser
+- 8 Panels in `04-speicher.json` (ZFS, ARC und PLE) zeigen "keine Daten", weil dieser
   Rechner nichts davon hat; auf dem ZFS-Referenzrechner fuellen sie sich.
 - Die Chat-Oberflaeche zeigt in den Administratoren-Verstellungen rohe
   Uebersetzungsschluessel. Grund liegt im Bild, nicht in dieser Konfiguration:

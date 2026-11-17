@@ -1,4 +1,5 @@
-# GENERIERT von scripts/74-setup-local-proxy.sh - dort ändern, nicht hier.
+# GENERIERT von scripts/74-setup-local-proxy.sh aus dieser Vorlage - aendern nur in
+# config/proxy/Caddyfile.template, nie im gerendeten config/proxy/Caddyfile.
 # Vorlage: config/proxy/Caddyfile.template. Ausgerollt wird die eingesetzte
 # Fassung nach config/proxy/Caddyfile; gerendert und gerollt wird nur ueber
 # den Generator (caddy validate laeuft vor dem Ausrollen).
@@ -65,6 +66,21 @@ grafana.localhost {
 	tls internal
 	encode zstd gzip
 	reverse_proxy __GRAFANA_UPSTREAM__
+}
+
+# Metriken des Proxies selbst fuer den Prometheus-Job "caddy" (AGENTS.md: jeder
+# Dienst bekommt ein Metrikziel). Der Admin-Endpunkt von Caddy horcht nur auf der
+# Container-Loopback; hier wird ausschliesslich /metrics durchgereicht. Der Port
+# ist nicht veroeffentlicht, erreichbar also nur fuer Container in den Netzen
+# llm-observability und llm-inference - Prometheus erreichte den Host-Loopback
+# bei rootless Podman nie, die Container-Namen aber jederzeit.
+:8080 {
+	# Der Admin-Endpunkt von Caddy prueft den Host-Namen und antwortet 403 fuer
+	# fremde Namen (Schutz vor DNS-Rebinding) - deshalb hier die Loopback-Adresse
+	# als Host, sonst liefert der Job nur 403.
+	reverse_proxy /metrics 127.0.0.1:2019 {
+		header_up Host 127.0.0.1:2019
+	}
 }
 
 __LAN_SITES__

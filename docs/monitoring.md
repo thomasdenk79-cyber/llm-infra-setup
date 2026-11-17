@@ -111,7 +111,17 @@ Neu aktiv in `config/monitoring/prometheus.yml`:
 | `grafana` | `grafana:3000` | Panels koennen still sein, ohne Alarm - der Job macht es zum Alarm (`BeobachtungZieltNicht`) |
 | `alloy` | `alloy:12345` | Protokollsammler aus, keine Logs in Loki -> `ProtokollsammlungSteht` |
 | `alertmanager` | `alertmanager:9093` | Alarmweg kaputt -> `AlarmwegFehlt` |
+| `caddy` | `llm-proxy:8080` | Der LAN-Proxy ist ein eigener Dienst und braucht ein Metrikziel (Regel in `AGENTS.md`). Der Port ist nicht veroeffentlicht; durchgereicht wird nur `/metrics` auf den Caddy-Admin-Endpunkt, der den Host-Wert auf `127.0.0.1:2019` braucht (sonst 403) |
 | `vllm` | `host.containers.internal:30001` | Runtime-Metriken ueber den Weiterleiter; Scrape ueber das Host-Gateway (`AddHost=host.containers.internal:host-gateway` im Prometheus-Quadlet), weil rootless Prometheus nicht an den Host-Loopback kann (Einzelheiten in `docs/operations.md`) |
+
+Nach jeder Aenderung an `config/monitoring/prometheus.yml` oder `alerts.yml`:
+`systemctl --user reload prometheus.service` (SIGHUP). Prometheus kennt kein
+selbsttaetiges Neuladen - ein Flag wie `--config.reload.interval` gibt es nicht,
+und der Versuch bringt die Unit in eine Crash-Schleife. Gemaenderte Dateien
+erreichen den Container zuverlaessig, weil der Ordner
+`config/monitoring` nach `/etc/prometheus/conf` gemountet ist statt der
+Einzeldateien (Einzel-Datei-Bindungen folgen keinem Inode-Wechsel, `git pull`
+aber tauscht sie aus).
 
 Ist-Zustand am 2026-11-16: alle acht Jobs up. Der Job `grafana` war zeitweise
 down, und zwar nicht wegen Grafana, sondern wegen des Unterpfads:
@@ -158,7 +168,7 @@ config/monitoring/alerts.yml` liefert 0).
 Syntax mit dem mitgelieferten promtool im laufenden Container pruefen:
 
 ```bash
-podman exec systemd-prometheus promtool check rules /etc/prometheus/alerts.yml
+podman exec systemd-prometheus promtool check rules /etc/prometheus/conf/alerts.yml
 ```
 
 ### Grafana-Unterpfad (Voraussetzung der oeffentlichen Route)

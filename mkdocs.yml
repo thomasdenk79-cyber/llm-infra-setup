@@ -56,3 +56,4 @@ nav:
   - English:
       - Overview: en/index.md
       - Operations: en/operations.md
+      - LAN HTTPS access: en/lan-access.md

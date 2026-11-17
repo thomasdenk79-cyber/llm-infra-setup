@@ -38,7 +38,7 @@ if ! command -v podman >/dev/null 2>&1; then
   exit 0
 fi
 
-tracked="$(git status --porcelain -- quadlet config/litellm.yaml 2>/dev/null)"
+tracked="$(git status --porcelain -- quadlet config/litellm.yaml config/proxy/Caddyfile 2>/dev/null)"
 if [[ -n "${tracked}" ]]; then
   echo 'Im Arbeitsverzeichnis liegen ungecommittete Aenderungen an generierten Dateien.'
   echo 'Bitte zuerst committen oder mit git restore zuruecknehmen, dann erneut pruefen:'
@@ -101,7 +101,7 @@ ausnahmen=( 'quadlet/pennyroyal.container' )
 
 # Der Vergleich nimmt die Ausnahmen per Pfadausschluss heraus; geprueft wird trotzdem
 # gegen dieselbe weggeworfene Kopfe.
-pruef_pfade=( quadlet config/litellm.yaml )
+pruef_pfade=( quadlet config/litellm.yaml config/proxy/Caddyfile )
 for ausnahme in "${ausnahmen[@]}"; do
   pruef_pfade+=( ":(exclude)${ausnahme}" )
 done
@@ -124,8 +124,8 @@ echo 'DRIFT GEFUNDEN - die Generatoren erzeugen etwas anderes als committet ist:
 git -C "${wt}" --no-pager diff -- "${pruef_pfade[@]}"
 echo
 echo 'Das Arbeitsverzeichnis ist unveraendert; verglichen wurde die weggeworfene Kopfe.'
-echo 'Entweder die Aenderung ist gewollt: git add quadlet config/litellm.yaml && git commit'
-echo 'Oder sie war ein Versehen:          git restore -- quadlet config/litellm.yaml'
+echo 'Entweder die Aenderung ist gewollt: git add quadlet config/litellm.yaml config/proxy/Caddyfile && git commit'
+echo 'Oder sie war ein Versehen:          git restore -- quadlet config/litellm.yaml config/proxy/Caddyfile'
 echo 'Und wenn der Generator selbst falsch ist: im Generator-Skript aendern, dann erneut pruefen.'
 echo 'Neue Ausnahme anlegen: nur in diesem Skript, mit Begruendung und Datum - nie durch stillschweigendes Weglassen.'
 exit 1

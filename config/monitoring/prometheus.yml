@@ -7,7 +7,7 @@ global:
     stack: llm-infra
 
 rule_files:
-  - /etc/prometheus/alerts.yml
+  - /etc/prometheus/conf/alerts.yml
 
 # Alarme laufen zum Alertmanager dieses Stapels. Ohne diesen Abschnitt werden
 # die Regeln in alerts.yml zwar ausgewertet, aber nirgends hingegeben - ein
@@ -101,6 +101,15 @@ scrape_configs:
     static_configs:
       - targets: ["alertmanager:9093"]
         labels: { service: alerts }
+
+  # Der LAN-Proxy ist ein eigener Dienst und bekommt deshalb ein eigenes
+  # Metrikziel (Regel in AGENTS.md). Scrape gegen den Container-Namen: Prometheus
+  # haengt in denselben Podman-Netzen wie llm-proxy, der Host-Loopback waere ihm
+  # bei rootless Podman verschlossen. Der Port 8080 ist nicht veroeffentlicht.
+  - job_name: caddy
+    static_configs:
+      - targets: ["llm-proxy:8080"]
+        labels: { service: proxy }
 
   # LUNI-Delta (P0-V3, 2026-11-15): vLLM-Metriken der Runtime. Die Runtime laeuft
   # hier als ad-hoc Container flash-next-v3 mit Loopback-Bindung 127.0.0.1:30000;
