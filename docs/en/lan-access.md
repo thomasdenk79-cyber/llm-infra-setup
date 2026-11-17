@@ -23,23 +23,24 @@ Published only on `127.0.0.1` and the addresses listed in `LAN_BIND_IPS`
 | `https://littlem.<LAN_DOMAIN>/v1` | LiteLLM gateway | 401 without a gateway key |
 | `https://llm-direct.<LAN_DOMAIN>/v1` | alias of `littlem` | 401 without a key |
 | `https://dozzle.<LAN_DOMAIN>/` | container logs | 401 without / 200 with Basic-Auth |
-| `https://direct-llm.<LAN_DOMAIN>/v1/models` | vLLM via the metrics forwarder | 401 without / 200 with Basic-Auth |
+| `https://direct-llm.<LAN_DOMAIN>/v1/models` | vLLM via the metrics forwarder | 200 without an API key or proxy login |
 | any other name | fallback site | 403 or TLS abort, never proxied |
 
 ## Protection model
 
 - LiteLLM (`littlem`, `llm-direct`) guards itself with its Virtual-Keys -
   a second password in front would be double work and would bypass key accounting.
-- Dozzle and the direct vLLM route have no upstream login, so the proxy adds
-  Basic-Auth (bcrypt). Hashes live in `~/.config/llm-infra/proxy/lan-auth.env`,
-  readable values in `~/.config/llm-infra/proxy/lan-credentials.txt`, both 0600
-  and outside Git; the Caddyfile only contains `{env.*}` placeholders. The
-  generator creates them on first roll-out and never overwrites existing hashes.
+- Dozzle has no upstream login, so the proxy adds Basic-Auth (bcrypt). Its hash
+  lives in `~/.config/llm-infra/proxy/lan-auth.env` and its readable value in
+  `~/.config/llm-infra/proxy/lan-credentials.txt`, both 0600 and outside Git.
+- The direct vLLM route intentionally has no API key or proxy login. Its trust
+  boundary is the private network addressed by `LAN_BIND_IPS`; the host forwarder
+  on port 30001 is also unauthenticated (`docs/runtime.md`).
 - Grafana is reachable without login **by design** (anonymous read role, local
   network only).
-- No backend port leaves the host: only 443 is published, and `--check`
-  verifies loopback-only binding of the eleven backend ports. The forwarder
-  port 30001 is the documented exception (`docs/runtime.md`).
+- The proxy publishes HTTPS 443 on `LAN_BIND_IPS`; the separate vLLM forwarder
+  on port 30001 is also reachable on the trusted private LAN and has no
+  authentication (`docs/runtime.md`). Other backend ports remain loopback-only.
 - `HOMEPAGE_ALLOWED_HOSTS` in `config/host.env` must include
   `homepage.<LAN_DOMAIN>`, otherwise the portal answers 400.
 
@@ -102,8 +103,8 @@ Compare the fingerprint printed by `--ca-export` with
 verify from the PC (same checks as `--check`, without `--resolve`):
 
 ```powershell
-foreach ($h in "homepage","grafana","dozzle","direct-llm") { curl.exe -s -o NUL -w "$h %{http_code}`n" "https://$h.cachyos-x8664/" }
-curl.exe -s -u "inference:<see lan-credentials.txt>" https://direct-llm.cachyos-x8664/v1/models
+foreach ($h in "homepage","grafana","dozzle") { curl.exe -s -o NUL -w "$h %{http_code}`n" "https://$h.cachyos-x8664/" }
+curl.exe -s -o NUL -w "direct-llm models %{http_code}`n" https://direct-llm.cachyos-x8664/v1/models
 ```
 
 `llm-direct` is the LiteLLM gateway and answers 401 `No api key passed in.`
@@ -115,8 +116,9 @@ is `LITELLM_MASTER_KEY` in `~/.config/llm-infra/gateway.env` (print it with
 curl.exe -s https://llm-direct.cachyos-x8664/v1/models -H "Authorization: Bearer <master-key>"
 ```
 
-Expected: 200 with the model list. `dozzle` and `direct-llm` are the Basic-Auth
-routes; `llm-direct` deliberately uses the gateway key instead.
+Expected: 200 with the model list. Only `dozzle` uses Basic-Auth; `direct-llm`
+is intentionally unauthenticated on the trusted LAN, while `llm-direct` uses
+the gateway key.
 
 ### One name works, another does not
 
@@ -150,15 +152,15 @@ Acceptance at the device is the one open point (tracked as open item 18 in
 ```
 
 The machine is then reachable exactly as before the LAN rollout (loopback
-only). The Basic-Auth files and the sysctl limit may stay; neither publishes
-anything on its own. The public Azure tunnel is independent of all of this.
+only). The Dozzle Basic-Auth files and the sysctl limit may stay; neither
+publishes anything on its own. The public Azure tunnel is independent of this.
 
 ## Command list
 
 ```bash
 make local-proxy                        # roll out: render, caddy validate, start/reload
 ./scripts/74-setup-local-proxy.sh --plan             # show pending changes, change nothing
-./scripts/74-setup-local-proxy.sh --check            # end-to-end checks incl. LAN and Basic-Auth
+./scripts/74-setup-local-proxy.sh --check            # end-to-end checks incl. LAN and Dozzle Basic-Auth
 ./scripts/74-setup-local-proxy.sh --status           # unit, listeners, networks, LAN, CA, sysctl
 ./scripts/74-setup-local-proxy.sh --ca-import        # put the Caddy CA into the system trust (sudo, this host)
 ./scripts/74-setup-local-proxy.sh --ca-export        # CA file, fingerprint and Windows commands

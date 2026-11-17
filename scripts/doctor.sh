@@ -544,29 +544,28 @@ if [[ -n "${LAN_BIND_IPS//[[:space:],]/}" ]]; then
   lan_auth_file="${SECRETS_DIR}/proxy/lan-auth.env"
   lan_cred_file="${SECRETS_DIR}/proxy/lan-credentials.txt"
   fehlend=''
-  for var in LLM_LAN_DOZZLE_USER LLM_LAN_DOZZLE_HASH LLM_LAN_DIRECT_LLM_USER LLM_LAN_DIRECT_LLM_HASH; do
+  for var in LLM_LAN_DOZZLE_USER LLM_LAN_DOZZLE_HASH; do
     grep -q "^${var}=.\+" "${lan_auth_file}" 2>/dev/null || fehlend="${fehlend} ${var}"
   done
   if [[ -z "${fehlend}" ]]; then
-    good "Basic-Auth-Hashes fuer beide Routen vorhanden (${lan_auth_file})"
+    good "Dozzle-Basic-Auth-Hash vorhanden (${lan_auth_file})"
   else
     bad "In ${lan_auth_file} fehlt oder ist leer:${fehlend}" \
         './scripts/74-setup-local-proxy.sh   (ergaenzt fehlende Hashes; vorhandene bleiben erhalten)'
   fi
   if [[ -f "${lan_cred_file}" ]]; then
     good "Zugangsdatei des Betreibers: ${lan_cred_file}"
-    note "Benutzer: ${LAN_DOZZLE_USER:-operator} (Logs) und ${LAN_DIRECT_LLM_USER:-operator} (direkte vLLM-Route). Wert vergessen: cat ${lan_cred_file}"
+    note "Benutzer: ${LAN_DOZZLE_USER:-operator} (Logs). Wert vergessen: cat ${lan_cred_file}"
     if [[ "$(stat -c %a "${lan_cred_file}" 2>/dev/null || echo 000)" != '600' ]]; then
       warn "Zugangsdatei ist nicht 0600 geschuetzt ($(stat -c %a "${lan_cred_file}" 2>/dev/null))." "chmod 600 ${lan_cred_file}"
     fi
   else
-    warn "Zugangsdatei ${lan_cred_file} fehlt - niemand kennt dann die Werte der beiden Basic-Auth-Routen." \
+    warn "Zugangsdatei ${lan_cred_file} fehlt - der Dozzle-Basic-Auth-Wert ist nicht verfuegbar." \
          './scripts/74-setup-local-proxy.sh --lan-credentials   (Pfade zeigen; ausrollen bei Bedarf: ./scripts/74-setup-local-proxy.sh)'
   fi
   # Die Route https://direct-llm.<dom>/ haengt am Weiterleiter des Rechners
-  # (scripts/73). Prueft man sie ohne Zugangswerte, sieht sie gesund aus (401),
-  # auch wenn der Weiterleiter tot ist - Caddy fragt die Basic-Auth VOR dem
-  # Weiterreichen. Deshalb hier der Blick auf Unit und Host-Port.
+  # (scripts/73). Die API ist ohne Schluessel oder Proxy-Anmeldung erreichbar;
+  # deshalb prueft der Arztlauf Unit und Host-Port statt einen 401 zu erwarten.
   if systemctl --user is-active --quiet llm-vllm-forwarder.service 2>/dev/null; then
     if runtime_is_running; then
       fwd_port="${VLLM_FORWARD_PORT:-30001}"

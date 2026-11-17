@@ -6,8 +6,9 @@ fuer das Netz bestimmt ist.
 
 ## Was bereits umgesetzt ist
 
-* **Kein Port im Netz.** Alle Dienste binden an `127.0.0.1` (siehe
-  `quadlet/*.container`). Kein Client kann im LAN anfragen.
+* **Gezielte LAN-Freigabe.** Die Backend-Dienste bleiben auf Loopback. Caddy
+  443 und der vLLM-Weiterleiter 30001 sind die dokumentierten Ausnahmen;
+  beide sind auf das vertrauenswuerdige Kabel-LAN begrenzt.
 * **Kein Root.** Alles laeuft rootless als Benutzer; nur Paket-, Treiber- und
   ZFS-Schritte brauchen `sudo`.
 * **Zwei Netze.** Inferenz und Beobachtung sind getrennt; Prometheus ist der
@@ -65,16 +66,18 @@ Was tatsächlich im Netz hoert (`ss -tlnH`, Gegenprobe `--check`):
 | `127.0.0.1:443` und `LAN_BIND_IPS:443` (Caddy `llm-proxy`) | LAN und Loopback | TLS; pro Route wie folgt |
 | Portal, Grafana, Anleitung | ueber 443 | Portal prueft Host-Header (`HOMEPAGE_ALLOWED_HOSTS`); Grafana anonym **lesend** (`GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer`, gemessen) |
 | Gateway-Routen `littlem`, `llm-direct` | ueber 443 | LiteLLM-Schluessel, 401 ohne |
-| `dozzle`, `direct-llm` | ueber 443 | Basic-Auth im Proxy (bcrypt, siehe unten) |
+| `dozzle` | ueber 443 | Basic-Auth im Proxy (bcrypt, siehe unten) |
+| `direct-llm` | ueber 443 | ohne API-Schluessel/Proxy-Login, nur an `LAN_BIND_IPS` |
 | unbekannter Hostname | Fallback-Site | gemessen: TLS-Abbruch ohne passendes Zertifikat, sonst `403 "Unbekannter Name"`; reicht an kein Backend weiter |
-| `30001` (vLLM-Weiterleiter) | **Adresse der bevorzugten Standard-Route, also Kabel-LAN** (WLAN seit 2026-11-17 zu) | **kein** - offene Aufgabe, siehe unten und `docs/runtime.md` |
+| `30001` (vLLM-Weiterleiter) | **Adresse der bevorzugten Standard-Route, also Kabel-LAN** (WLAN seit 2026-11-17 zu) | keine Anmeldung; bewusste Grenze ist das private LAN |
 
-Die elf in `--check` geprueften Ports (3000, 3001, 3002, 3100, 4000, 5432, 8080,
-9090, 9093, 9835, 30000) lauschen alle auf Loopback. Nicht in der Liste und
-deshalb ungeprueft: 3003 (Wiki), 9100 (node_exporter), 12345 (Alloy, lauscht
-nur im Container-Netz), 8001 (Referenz-Unit), 8120 (Komodo-Peripherie).
+Die 15 in `--check` geprueften Ports (3000, 3001, 3002, 3100, 4000, 5432, 8080,
+9090, 9093, 9835, 30000, 3003, 9100, 12345, 8120) sind loopback-only oder
+werden nur in Containernetzen gebunden. Ausgenommen ist 30001, der bewusst auf
+der bevorzugten LAN-Adresse lauscht; 8001 gehoert zur nicht laufenden
+Referenz-Unit.
 
-**Basic-Auth-Qualitaet (gemessen).** Caddy v2.11.9; Hashes `$2a$14$...`
+**Basic-Auth-Qualitaet (gemessen).** Caddy v2.11.9; der Dozzle-Hash `$2a$14$...`
 (bcrypt, Kostenfaktor 14 - Caddy-Standard, gegen die Hashwerte selbst geprueft,
 nicht gegen das Bild). Realm `restricted`. Falscher Benutzer und falsches
 Passwort liefern dieselbe 401-Antwort - keine Aufzaehlung. Kein Sperrverhalten
@@ -92,19 +95,19 @@ Maschine. Behoben werden kann es durch Uebergabe per stdin
 gemessen) bzw. `curl --config -`.
 
 **Kopfzeilen stromaufwaerts.** Caddy entfernt den `Authorization`-Kopf nach
-erfolgreicher Basic-Auth nicht; Dozzle und vLLM ignorieren ihn heute, nehmen
-aber keine Credentials ab. Sobald stromaufwaerts eine eigene Anmeldung
-eingefuehrt wird, kann der weitergereichte Kopf dort Konflikte oder
-Protokolleintraege erzeugen - vorgesehenes Gegenmittel: `header_up -Authorization`
-in den zwei Basic-Auth-Routen. `X-Forwarded-*` setzt Caddy; kein Backend
-entscheidet damit ueber Zugang.
+erfolgreicher Dozzle-Basic-Auth nicht; Dozzle nimmt heute keine Credentials ab.
+`direct-llm` hat absichtlich keine vorgeschaltete Anmeldung. Sobald Dozzle
+stromaufwaerts eine eigene Anmeldung eingefuehrt wird, kann der weitergereichte
+Kopf dort Konflikte oder Protokolleintraege erzeugen - vorgesehenes Gegenmittel:
+`header_up -Authorization` in der Dozzle-Route. `X-Forwarded-*` setzt Caddy;
+kein Backend entscheidet damit ueber Zugang.
 
 **Host-Header und Fallback (Gegenproben gemessen).** `Host: evil` an der
 LAN-Adresse liefert 403 (Fallback), `Host: dozzle.*` an der IP scheitert am
 TLS (kein Zertifikat fuer unbekannte Namen), SNI/Host-Mismatch wird nach dem
-Host-Header geroutet - die Basic-Auth der getroffenen Site greift dabei
-(z. B. SNI=grafana + Host=dozzle -> 401). Ein Weg durch die Fallback-Site an
-ein Backend existiert nicht. Beachte: die `.localhost`-Namen beantwortet der
+Host-Header geroutet - die Dozzle-Basic-Auth greift, wenn deren Hostname
+getroffen wird. Ein Weg durch die Fallback-Site an ein Backend existiert nicht.
+Beachte: die `.localhost`-Namen beantwortet der
 Proxy auch an der LAN-Adresse (Caddy bindet nach Port, nicht nach Interface);
 die Inhalte sind deckungsgleich mit den LAN-Namen; eine Zusatzexposition ist
 damit nicht verbunden.
@@ -133,31 +136,29 @@ aendert sich `LAN_DOMAIN`, das Ausstellungsblatt wird automatisch neu ausgestell
 Import auf Windows laesst sich der SHA-256-Fingerprint erzwingen:
 `-ExpectedThumbprint '<wert von openssl x509 -noout -fingerprint -sha256>'`.
 
-## Was noch fehlt (offene Aufgaben)
+## Bewusste LAN-Grenze und weitere Verbesserungen
 
 * eigenes seccomp-Profil statt `unconfined`
 * ~~HTTPS fuer Portal/Grafana, falls je ein echtes Netz bedient werden soll~~
   - erledigt 2026-11-17 (LAN-Zugang, Abschnitt oben); uebrig gebliebene Luecken:
-* **Weiterleiter-Port 30001 ohne jede Anmeldung im Kabel-LAN.** Er bindet die
-  Adresse der bevorzugten Standard-Route (`VLLM_PUBLIC_BIND=auto`) und reicht
-  unauthentifiziert an die vLLM-Runtime weiter - die Basic-Auth der Route
-  `direct-llm` wird damit umgangen. Seit dieser Runde ist die WLAN-Adresse
-  nicht mehr gebunden. Eine Verengung auf Loopback plus Podman-Gateway ist
-  **nicht** ausfuehrbar (gemessen: `up{job="vllm"}` auf 0, `direct-llm` auf 502,
-  weil Gateways im Host-Namespace nicht bindbar sind); der richtige Weg ist ein
-  Weiterleiter als Container in den Podman-Netzen - Begruendung und Messung in
-  `docs/runtime.md`, Aufgabe in `docs/HANDOFF.md` (Hochnummer 19).
+* **`direct-llm` und Port 30001 sind ohne Anmeldung im privaten Kabel-LAN**
+  erreichbar. Das ist die gewaehlte Vertrauensgrenze, keine per-Benutzer-
+  Authentifizierung; die WLAN-Adresse ist nicht gebunden. Falls das Netz spaeter
+  erweitert wird, muss die Freigabe neu bewertet werden. Eine Verengung auf
+  Loopback plus Podman-Gateway ist **nicht** ausfuehrbar (gemessen:
+  `up{job="vllm"}` auf 0, `direct-llm` auf 502, weil Gateways im Host-Namespace
+  nicht bindbar sind); Begruendung und Messung in `docs/runtime.md`.
 * ~~Loopback-Pruefliste der 74er-Generators um 3003, 9100, 12345 (und 8001, 8120)
   erweitern~~ - erledigt 2026-11-17 (3003, 9100, 12345, 8120 in
   `LOOPBACK_ONLY_PORTS`; 8001 bleibt aus, weil die Pennyroyal-Runtime bewusst
   ad hoc laeuft).
-* `Authorization`-Kopf in den zwei Basic-Auth-Routen stromaufwaerts entfernen
+* `Authorization`-Kopf in der Dozzle-Basic-Auth-Route stromaufwaerts entfernen
   (`header_up -Authorization`), bevor dort eine eigene Anmeldung einzieht.
   Bewusst noch nicht getan: die Gateway-Routen brauchen den Kopf fuer die
   API-Schluessel, ein pauschales Entfernen wuerde LiteLLM brechen.
 * ~~Gegenprobe "falsches Passwort liefert 401" in `--check` ergaenzen~~ -
-  erledigt 2026-11-17 (beide Basic-Auth-Routen pruefen jetzt beide Faelle:
-  "ohne" und "mit" Zugangswerten, zuschaetzlich ein bewusst falsches Passwort).
+  erledigt 2026-11-17 (die Dozzle-Basic-Auth-Route prueft Zugang, fehlenden
+  Zugang und ein bewusst falsches Passwort).
 * Pruefung, dass `PENNYROYAL_PROTECT` vor Aenderungen an der GPU gesetzt ist
 * regelmaessiger Test, ob die Wiederherstellung wirklich klappt
   (siehe letzter Abschnitt in `docs/backup-restore.md`)

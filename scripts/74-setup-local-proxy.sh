@@ -19,8 +19,8 @@
 #   1. config/proxy/Caddyfile       - gerendert aus config/proxy/Caddyfile.template
 #   2. quadlet/llm-proxy.container  - Unit-Datei mit Header "GENERIERT von"
 #   3. die Benutzer-Unit llm-proxy.service (Netze, 127.0.0.1:443, ggf. LAN-Adressen)
-#   4. ~/.config/llm-infra/proxy/lan-auth.env         (0600) bcrypt-Hashes fuer Caddy
-#      ~/.config/llm-infra/proxy/lan-credentials.txt (0600) dieselben Zugangsdaten lesbar
+#   4. ~/.config/llm-infra/proxy/lan-auth.env         (0600) bcrypt-Hash fuer Dozzle
+#      ~/.config/llm-infra/proxy/lan-credentials.txt (0600) Dozzle-Zugang lesbar
 #
 # Sites: Loopback immer, LAN nur mit LAN_BIND_IPS in config/host.env.
 #   Loopback  homepage.localhost, grafana.localhost                     (Bestand)
@@ -29,11 +29,12 @@
 # Wer was schuetzt:
 #   - LiteLLM ("littlem", Alias "llm-direct") verlangt den Gateway-Schluessel selbst,
 #     ohne Schluessel 401. Ein eigenes Passwort waere Doppelarbeit.
-#   - Dozzle und die direkte vLLM-Route haben stromaufwaerts keine Anmeldung, deshalb
-#     Basic-Auth im Proxy. Die Zugangsdaten liegen ausserhalb von Git (0600); das
-#     Caddyfile enthaelt nur {env.*}-Platzhalter.
-#   - Prometheus, Alertmanager, Loki, Grafana-, Dozzle-, Gateway- und Runtime-Port
-#     bleiben auf dem Loopback; nur 443 geht aufs LAN (--check prueft das nach).
+#   - Dozzle hat stromaufwaerts keine Anmeldung, deshalb Basic-Auth im Proxy.
+#     direct-llm ist bewusst ohne API-Schluessel oder Proxy-Anmeldung; der
+#     Zugang ist auf die konfigurierten LAN-Adressen beschraenkt.
+#   - Prometheus, Alertmanager, Loki, Grafana-, Dozzle- und Gateway-Port bleiben
+#     auf Loopback. 443 und der separate vLLM-Weiterleiter 30001 sind die LAN-
+#     Ausnahmen; 30001 hat keine Authentifizierung (docs/runtime.md).
 #
 # rootless podman: Der Container hoert im Netz auf 443, aber das Veroeffentlichen
 # auf dem Host macht rootlessport als normaler Benutzer - unterhalb der
@@ -116,7 +117,6 @@ if [[ -z "${LAN_DOMAIN:-}" ]]; then
   lan_domain_aus_default=1
 fi
 : "${LAN_DOZZLE_USER:=operator}"
-: "${LAN_DIRECT_LLM_USER:=operator}"
 # Uebergangsform von 2026-11-17: die Bind-Adressen lagen zuerst in einer eigenen
 # Datei unter ~/.config/llm-infra. Die Datei zaehlt nur, wenn host.env die Zeile
 # ueberhaupt nicht enthaelt. Ein bewusst geleeres LAN_BIND_IPS ist die dokumentierte
@@ -147,12 +147,11 @@ if (( ${#LAN_IPS[@]} > 0 )); then
   done
   [[ "${LAN_DOMAIN}" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,62}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,62}[A-Za-z0-9])?)*$ ]] || die \
     "LAN_DOMAIN ist kein gueltiger Rechnername: '${LAN_DOMAIN}'. Setzen in ${root}/config/host.env, dann erneut ausfuehren."
-  # Zugangsdaten: ein Name mit Leerzeichen, Gleichheitszeichen oder Umbruch wirde
-  # die Zugangsdatei (KEY=WERT) zerstoeren und damit beide Basic-Auth-Routen
-  # unbrauchbar machen. Lieber hier scheitern als mit einem tauben 401.
-  for lan_benutzer in "${LAN_DOZZLE_USER}" "${LAN_DIRECT_LLM_USER}"; do
+  # Zugangsdaten: ein Name mit Leerzeichen, Gleichheitszeichen oder Umbruch wuerde
+  # die Zugangsdatei (KEY=WERT) zerstoeren und Dozzles Basic-Auth unbrauchbar machen.
+  for lan_benutzer in "${LAN_DOZZLE_USER}"; do
     [[ "${lan_benutzer}" =~ ^[A-Za-z0-9._@-]+$ ]] || die \
-      "Benutzername der Basic-Auth ungueltig oder leer: '${lan_benutzer}'. Erlaubt sind Buchstaben, Zahlen und . _ @ - in LAN_DOZZLE_USER bzw. LAN_DIRECT_LLM_USER (${root}/config/host.env). Danach: ./scripts/74-setup-local-proxy.sh"
+      "Benutzername der Basic-Auth ungueltig oder leer: '${lan_benutzer}'. Erlaubt sind Buchstaben, Zahlen und . _ @ - in LAN_DOZZLE_USER (${root}/config/host.env). Danach: ./scripts/74-setup-local-proxy.sh"
   done
   if (( ${lan_domain_aus_default} == 1 )); then
     log "LAN_DOMAIN nicht gesetzt - gerendert wird mit dem Rechnernamen '${LAN_DOMAIN}'. Feste Ansage: LAN_DOMAIN=... in ${root}/config/host.env"
@@ -180,8 +179,8 @@ render_lan_sites() {
 # Gerendert aus config/proxy/Caddyfile.template durch scripts/74-setup-local-proxy.sh.
 # Alle Namen enden auf den Rechnernamen (${LAN_DOMAIN}); Windows-Clients tragen sie in
 # C:\Windows\System32\drivers\etc\hosts ein (docs/operations.md, Abschnitt LAN-Zugang).
-# Die Zugangsdaten der Basic-Auth-Routen stehen in ${AUTH_ENV_FILE}
-# (0600, ausserhalb von Git); im Caddyfile stehen nur {env.*}-Platzhalter.
+# Dozzle's Basic-Auth-Zugang steht in ${AUTH_ENV_FILE} (0600, ausserhalb von Git);
+# im Caddyfile stehen nur {env.*}-Platzhalter.
 
 homepage.${LAN_DOMAIN} {
 	tls internal
@@ -234,13 +233,10 @@ dozzle.${LAN_DOMAIN} {
 	reverse_proxy ${DOZZLE_UPSTREAM}
 }
 
-# vLLM direkt (Diagnose, lokale Werkzeuge): die Runtime selbst kennt keine
-# Anmeldung, deshalb Basic-Auth hier. Ziel ist der Weiterleiter auf dem Host.
+# vLLM direkt, ohne API-Schluessel oder Proxy-Anmeldung. Der Zugriff auf diese
+# Site ist auf LAN_BIND_IPS beschraenkt; Ziel ist der Weiterleiter auf dem Host.
 direct-llm.${LAN_DOMAIN} {
 	tls internal
-	basic_auth {
-		{env.LLM_LAN_DIRECT_LLM_USER} {env.LLM_LAN_DIRECT_LLM_HASH}
-	}
 	encode zstd gzip
 	reverse_proxy ${DIRECT_LLM_UPSTREAM}
 }
@@ -396,7 +392,7 @@ validate_caddyfile() {
   podman image exists "${CADDY_IMAGE}" \
     || die "Bild fehlt: ${CADDY_IMAGE} - zuerst: podman pull ${CADDY_IMAGE} (wie wiki.container es nutzt)"
   local -a opts=()
-  # Die {env.*}-Platzhalter der Basic-Auth-Routen muss Caddy beim Pruefen sehen,
+  # Den {env.*}-Platzhalter der Dozzle-Basic-Auth muss Caddy beim Pruefen sehen,
   # sonst meldet es "username and password are required" statt eines echten Fehlers.
   if (( ${lan_enabled} == 1 )); then
     [[ -f "${AUTH_ENV_FILE}" ]] || die "Zugangsdatei fehlt: ${AUTH_ENV_FILE} - zuerst ausrollen: ./scripts/74-setup-local-proxy.sh"
@@ -465,13 +461,18 @@ ensure_auth_file() {
   [[ -f "${AUTH_ENV_FILE}" ]] || { : > "${AUTH_ENV_FILE}"; chmod 0600 "${AUTH_ENV_FILE}"; }
   [[ -f "${CRED_FILE}" ]]     || { : > "${CRED_FILE}";     chmod 0600 "${CRED_FILE}"; }
 
+  # Die direkte vLLM-Route benoetigt keine Anmeldung mehr; alte, vom Generator
+  # verwaltete Basic-Auth-Werte werden deshalb aus den privaten Dateien entfernt.
+  drop_var "${AUTH_ENV_FILE}" LLM_LAN_DIRECT_LLM_USER
+  drop_var "${AUTH_ENV_FILE}" LLM_LAN_DIRECT_LLM_HASH
+  drop_var "${CRED_FILE}" LLM_LAN_DIRECT_LLM_PASSWORD
+
   local eintrag var_user var_hash benutzer klartext hash
-  for eintrag in "LLM_LAN_DOZZLE_USER:LLM_LAN_DOZZLE_HASH:${LAN_DOZZLE_USER}" \
-                 "LLM_LAN_DIRECT_LLM_USER:LLM_LAN_DIRECT_LLM_HASH:${LAN_DIRECT_LLM_USER}"; do
+  for eintrag in "LLM_LAN_DOZZLE_USER:LLM_LAN_DOZZLE_HASH:${LAN_DOZZLE_USER}"; do
     var_user="${eintrag%%:*}"
     var_hash="${eintrag#*:}"; var_hash="${var_hash%%:*}"
     benutzer="${eintrag##*:}"
-    [[ -n "${benutzer}" ]] || die "Benutzername fuer ${var_user} ist leer - LAN_DOZZLE_USER bzw. LAN_DIRECT_LLM_USER in config/host.env setzen"
+    [[ -n "${benutzer}" ]] || die "Benutzername fuer ${var_user} ist leer - LAN_DOZZLE_USER in config/host.env setzen"
     # Namen der Datei anpassen: ein geänderter Benutzer in config/host.env gehört
     # zu einem neuen Zugang, sonst würde der alte Hash mit einem neuen Namen weiterlaufen.
     local gespeichert
@@ -489,10 +490,8 @@ ensure_auth_file() {
     hash="$(caddy_hash "${klartext}")" || hash=''
     [[ "${hash}" == '$2'* ]] || die "Caddy erzeugte keinen bcrypt-Hash (Bild ${CADDY_IMAGE}, podman laeuft?). Von Hand nachfahren: printf test | podman run -i --rm --entrypoint caddy ${CADDY_IMAGE} hash-password , danach erneut: ./scripts/74-setup-local-proxy.sh"
     auth_set_var "${var_hash}" "${hash}"
-    # Rollenweise ablegen (LLM_LAN_DOZZLE_PASSWORD, LLM_LAN_DIRECT_LLM_PASSWORD):
-    # beide Routen duerften denselben Benutzernamen tragen, und ein Schluessel
-    # "benutzer=wert" waere dann nicht eindeutig. Der Klartext bleibt hier, damit
-    # der Betreiber ihn abtippen kann; in Git landet er nie.
+    # Der Klartext bleibt hier, damit der Betreiber ihn abtippen kann; in Git
+    # landet er nie.
     cred_set_var "${var_hash%_HASH}_PASSWORD" "${klartext}"
     log "Zugang erzeugt: ${benutzer} (${var_hash}) - Wert steht in ${CRED_FILE} (0600, nicht in Git)"
   done
@@ -548,7 +547,7 @@ plan_all() {
   printf 'Konfiguration (config/host.env)\n'
   printf '  LAN_DOMAIN       %s\n' "${LAN_DOMAIN}"
   printf '  LAN_BIND_IPS     %s\n' "${LAN_BIND_IPS:-<leer: Zugang nur auf diesem Rechner>}"
-  printf '  Basic-Auth       dozzle=%s  direct-llm=%s\n' "${LAN_DOZZLE_USER}" "${LAN_DIRECT_LLM_USER}"
+  printf '  Basic-Auth       dozzle=%s; direct-llm ohne Anmeldung\n' "${LAN_DOZZLE_USER}"
   printf '  vLLM-Ziel        %s\n' "${DIRECT_LLM_UPSTREAM}"
   printf '  Zugangsdatei     %s %s\n' "${AUTH_ENV_FILE}" \
     "$([[ -f ${AUTH_ENV_FILE} ]] && echo '(vorhanden, Hashes bleiben erhalten)' || echo '(fehlt - wird beim Ausrollen erzeugt)')"
@@ -746,7 +745,7 @@ windows_setup() {
   # vergleichen, importieren, alle Routen gegen die erwarteten Codes. Der Weg bis
   # hier war Handarbeit aus zwei Abschnitten - ein Versehen (Tippfehler, falscher
   # Pfad, fehlender Fingerabdruck) ist damit ausgeschlossen. Es stehen keine
-  # Zugangswerte in der Ausgabe; die zwei Basic-Auth-Routen pruefen auf 401.
+  # Zugangswerte werden nicht ausgegeben; nur Dozzle prueft hier auf 401.
   (( ${lan_enabled} == 1 )) || die 'LAN ist zu (LAN_BIND_IPS in config/host.env ist leer) - nichts auszugeben.'
   extract_ca >/dev/null 2>&1 || true
   local ip namen finger basis rolle pfad erwartet
@@ -775,13 +774,13 @@ windows_setup() {
       homepage)      pfad='/';            erwartet='200' ;;
       grafana)       pfad='/grafana/';    erwartet='200 (die Wurzel / leitet mit 301)' ;;
       dozzle)        pfad='/';            erwartet='401 ohne Zugangswerte' ;;
-      direct-llm)    pfad='/v1/models';   erwartet='401 ohne Zugangswerte' ;;
+      direct-llm)    pfad='/v1/models';   erwartet='200 ohne Zugangswerte' ;;
       *)             pfad='/v1/models';   erwartet='401 ohne Schluessel' ;;
     esac
     printf 'curl.exe -s -o NUL -w "%%{http_code}`n" https://%s.%s%s   # %s\n' \
       "${rolle}" "${LAN_DOMAIN}" "${pfad}" "${erwartet}"
   done
-  printf '# Zugangswerte der zwei Basic-Auth-Routen (0600, nie in Git): %s\n' "${CRED_FILE}"
+  printf '# Dozzle-Zugangsdaten liegen ausserhalb von Git (0600): %s\n' "${CRED_FILE}"
   printf '# Rueckbau: hosts-Zeile loeschen und certutil -delstore ROOT "Caddy Local Authority"\n'
   printf '# Mit dem Repo auf dem Notebook erledigt das Skript alles in einem Lauf:\n'
   printf '#   .\\scripts\\windows-lan-client-setup.ps1 -LanIp %s -Domain %s -CertPath C:\\temp\\%s\n' \
@@ -792,7 +791,7 @@ lan_credential_path() {
   printf 'Caddy-Zugangsdatei (bcrypt-Hashes): %s\n' "${AUTH_ENV_FILE}"
   printf 'Betreiberdatei (lesbare Zugangsdaten): %s\n' "${CRED_FILE}"
   if [[ -f "${CRED_FILE}" ]]; then
-    printf 'Rollen: %s\n' "$(grep -oE '^LLM_LAN_[A-Z_]+_PASSWORD' "${CRED_FILE}" | sed 's/^LLM_LAN_//; s/_PASSWORD$//' | tr '\n' ' ')"
+    printf 'Rolle: Dozzle (einzige Basic-Auth-Route)\n'
     printf 'Die Werte selbst werden hier nicht ausgegeben - ansehen: cat %s\n' "${CRED_FILE}"
   else
     printf 'Noch keine Zugangsdaten - ausrollen: ./scripts/74-setup-local-proxy.sh\n'
@@ -918,7 +917,7 @@ check_lan() {
     fi
     ss -tlnH 2>/dev/null | grep -q "${ip}:443 " || { printf 'FEHLT: kein Listener auf %s:443 (llm-proxy.service neu starten)\n' "${ip}"; rc=1; lan_rc=1; }
   done
-  for var in LLM_LAN_DOZZLE_USER LLM_LAN_DOZZLE_HASH LLM_LAN_DIRECT_LLM_USER LLM_LAN_DIRECT_LLM_HASH; do
+  for var in LLM_LAN_DOZZLE_USER LLM_LAN_DOZZLE_HASH; do
     grep -q "^${var}=.\\+" "${AUTH_ENV_FILE}" 2>/dev/null \
       || { printf 'FEHLT: %s fehlt oder ist leer in %s - ausrollen: ./scripts/74-setup-local-proxy.sh\n' "${var}" "${AUTH_ENV_FILE}"; rc=1; lan_rc=1; }
   done
@@ -941,24 +940,22 @@ check_lan() {
         [[ "${code}" == "200" ]] || { printf 'FEHLT: https://%s.%s%s liefert %s statt 200\n' "${host}" "${LAN_DOMAIN}" "${pfad}" "${code}"; rc=1; lan_rc=1; } ;;
     esac
   done
-  # Basic-Auth-Routen: ohne Zugangswerte 401, mit Zugangswerten 200.
-  for host in dozzle direct-llm; do
-    pfad='/'
-    [[ "${host}" == 'direct-llm' ]] && pfad='/v1/models'
-    code="$(lan_curl "${host}" "${pfad}")"
-    [[ "${code}" == "401" ]] || { printf 'FEHLT: https://%s.%s%s ohne Zugangswerte liefert %s statt 401\n' "${host}" "${LAN_DOMAIN}" "${pfad}" "${code}"; rc=1; lan_rc=1; }
-    if creds="$(lan_password_fuer "LLM_LAN_$(printf '%s' "${host}" | tr '[:lower:]' '[:upper:]' | tr '-' '_')_USER")"; then
-      code="$(lan_curl "${host}" "${pfad}" "${creds}")"
-      [[ "${code}" == "200" ]] || { printf 'FEHLT: https://%s.%s%s mit Zugangswerten liefert %s statt 200\n' "${host}" "${LAN_DOMAIN}" "${pfad}" "${code}"; rc=1; lan_rc=1; }
-      # Gegenprobe: ein falsches Passwort muss 401 bringen. Ohne sie bliebe ein
-      # Basic-Auth-Zweig unentdeckt, der nur den Benutzernamen vergleicht.
-      local falsch_code
-      falsch_code="$(lan_curl "${host}" "${pfad}" "${creds%%:*}:sicher-nicht-das-passwort")"
-      [[ "${falsch_code}" == '401' ]] || { printf 'FEHLT: https://%s.%s%s laesst ein falsches Passwort durch (%s) - Basic-Auth prueft nicht beide Teile\n' "${host}" "${LAN_DOMAIN}" "${pfad}" "${falsch_code}"; rc=1; lan_rc=1; }
-    else
-      printf 'FEHLT: keine Zugangswerte fuer %s in %s\n' "${host}" "${CRED_FILE}"; rc=1; lan_rc=1
-    fi
-  done
+  # Die direkte vLLM-API ist bewusst ohne Schluessel oder Proxy-Anmeldung.
+  code="$(lan_curl direct-llm /v1/models)"
+  [[ "${code}" == "200" ]] || { printf 'FEHLT: https://direct-llm.%s/v1/models ohne Zugangswerte liefert %s statt 200\n' "${LAN_DOMAIN}" "${code}"; rc=1; lan_rc=1; }
+
+  # Dozzle ist die einzige Basic-Auth-Route.
+  code="$(lan_curl dozzle /)"
+  [[ "${code}" == "401" ]] || { printf 'FEHLT: https://dozzle.%s/ ohne Zugangswerte liefert %s statt 401\n' "${LAN_DOMAIN}" "${code}"; rc=1; lan_rc=1; }
+  if creds="$(lan_password_fuer LLM_LAN_DOZZLE_USER)"; then
+    code="$(lan_curl dozzle / "${creds}")"
+    [[ "${code}" == "200" ]] || { printf 'FEHLT: https://dozzle.%s/ mit Zugangswerten liefert %s statt 200\n' "${LAN_DOMAIN}" "${code}"; rc=1; lan_rc=1; }
+    local falsch_code
+    falsch_code="$(lan_curl dozzle / "${creds%%:*}:sicher-nicht-das-passwort")"
+    [[ "${falsch_code}" == '401' ]] || { printf 'FEHLT: https://dozzle.%s/ laesst ein falsches Passwort durch (%s) - Basic-Auth prueft nicht beide Teile\n' "${LAN_DOMAIN}" "${falsch_code}"; rc=1; lan_rc=1; }
+  else
+    printf 'FEHLT: keine Zugangswerte fuer dozzle in %s\n' "${CRED_FILE}"; rc=1; lan_rc=1
+  fi
   # Unbekannter Name: der Fallback antwortet, aber kein Backend.
   # Mit -k geprueft: fuer einen unbekannten Namen stellt Caddy kein passende
   # Zertifikat aus; ein Abbruch der TLS-Verbindung (000) ist dasselbe Ergebnis wie
@@ -966,7 +963,7 @@ check_lan() {
   code="$(https_code "https://kein-host.${LAN_DOMAIN}/" -k --resolve "kein-host.${LAN_DOMAIN}:443:${LAN_IPS[0]}")"
   [[ "${code}" =~ ^(000|403)$ ]] || { printf 'FEHLT: unbekannter Name liefert %s statt 403 (Fallback-Site fehlt?)\n' "${code}"; rc=1; lan_rc=1; }
   if [[ "${lan_rc}" == 0 ]]; then
-    printf 'OK: LAN-Zugang auf %s:443 - sechs Namen geprueft, zwei davon mit Basic-Auth\n' "${LAN_IPS[0]}"
+    printf 'OK: LAN-Zugang auf %s:443 - sechs Namen geprueft, Dozzle mit Basic-Auth\n' "${LAN_IPS[0]}"
   fi
 }
 
@@ -981,8 +978,8 @@ status_all() {
   fi
   if [[ -f "${AUTH_ENV_FILE}" ]]; then
     # Nur die Benutzernamen (stehen ohnehin in config/host.env), nie die Hashes.
-    benutzer="$(grep '^LLM_LAN_[A-Z_]*_USER=' "${AUTH_ENV_FILE}" 2>/dev/null | cut -d= -f2- | tr '\n' ' ' | sed 's/ *$//')"
-    basic_text="Datei ${AUTH_ENV_FILE} (Benutzer: ${benutzer:-keine})"
+    benutzer="$(grep '^LLM_LAN_DOZZLE_USER=' "${AUTH_ENV_FILE}" 2>/dev/null | cut -d= -f2- | head -n 1)"
+    basic_text="Dozzle-Datei ${AUTH_ENV_FILE} (Benutzer: ${benutzer:-keine}); direct-llm ohne Anmeldung"
   else
     basic_text="fehlt - ausrollen: ./scripts/74-setup-local-proxy.sh"
   fi

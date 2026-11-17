@@ -182,7 +182,7 @@ $Erwartet = @{
     'littlem'             = @{ Pfad = '/v1/models';       Erwartet = 401 }
     'llm-direct'          = @{ Pfad = '/v1/models';       Erwartet = 401 }
     'dozzle'              = @{ Pfad = '/';                Erwartet = 401 }
-    'direct-llm'          = @{ Pfad = '/v1/models';       Erwartet = 401 }
+    'direct-llm'          = @{ Pfad = '/v1/models';       Erwartet = 200 }
 }
 foreach ($Name in $Namen) {
     if (-not $Erwartet.ContainsKey($Name)) {
@@ -216,4 +216,4 @@ try {
 
 Write-Host ''
 Write-Host 'Weiter auf dem Linux-Rechner: ./scripts/74-setup-local-proxy.sh --check' -ForegroundColor Cyan
-Write-Host 'Zugangsdaten der beiden Basic-Auth-Routen: cat ~/.config/llm-infra/proxy/lan-credentials.txt' -ForegroundColor Cyan
+Write-Host 'Dozzle-Zugangsdaten (einzige Basic-Auth-Route): cat ~/.config/llm-infra/proxy/lan-credentials.txt' -ForegroundColor Cyan

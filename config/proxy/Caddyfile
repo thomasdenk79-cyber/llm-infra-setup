@@ -16,11 +16,12 @@
 # dort aufloesen (gemessen: getent hosts grafana -> 10.89.1.x, litellm nur in
 # llm-inference, die Runtime ueber den Weiterleiter auf dem Host).
 #
-# Schutz im LAN: LiteLLM verlangt seinen eigenen Schluessel (401 ohne), Dozzle und
-# die direkte vLLM-Route sind hinter Basic-Auth - die Hashes stehen in
-# ~/.config/llm-infra/proxy/lan-auth.env (0600, ausserhalb von Git), hier stehen
-# nur {env.*}-Platzhalter. Prometheus, Alertmanager, Loki, Dozzle-Port,
-# Grafana-Port, Gateway-Port und Runtime-Port bleiben auf dem Loopback.
+# Schutz im LAN: LiteLLM verlangt seinen eigenen Schluessel (401 ohne), Dozzle
+# nutzt Basic-Auth mit Hash aus ~/.config/llm-infra/proxy/lan-auth.env (0600,
+# ausserhalb von Git). direct-llm ist eine schluessellose vLLM-Route, erreichbar
+# nur auf den explizit konfigurierten LAN-Adressen. Prometheus, Alertmanager,
+# Loki, Dozzle-, Grafana- und Gateway-Port bleiben auf Loopback. Der getrennte
+# vLLM-Weiterleiter 30001 ist die unauthentifizierte LAN-Ausnahme (docs/runtime.md).
 #
 # Zertifikate: Caddy-eigene lokale CA ("tls internal"), Bestand unter
 # ~/.local/share/llm-infra/caddy/data. Ohne Verankerung im Systemtrust
@@ -87,8 +88,8 @@ grafana.localhost {
 # Gerendert aus config/proxy/Caddyfile.template durch scripts/74-setup-local-proxy.sh.
 # Alle Namen enden auf den Rechnernamen (cachyos-x8664); Windows-Clients tragen sie in
 # C:\Windows\System32\drivers\etc\hosts ein (docs/operations.md, Abschnitt LAN-Zugang).
-# Die Zugangsdaten der Basic-Auth-Routen stehen in /home/z000g9hu/.config/llm-infra/proxy/lan-auth.env
-# (0600, ausserhalb von Git); im Caddyfile stehen nur {env.*}-Platzhalter.
+# Dozzle's Basic-Auth-Zugang steht in /home/z000g9hu/.config/llm-infra/proxy/lan-auth.env (0600, ausserhalb von Git);
+# im Caddyfile stehen nur {env.*}-Platzhalter.
 
 homepage.cachyos-x8664 {
 	tls internal
@@ -141,13 +142,10 @@ dozzle.cachyos-x8664 {
 	reverse_proxy dozzle:8080
 }
 
-# vLLM direkt (Diagnose, lokale Werkzeuge): die Runtime selbst kennt keine
-# Anmeldung, deshalb Basic-Auth hier. Ziel ist der Weiterleiter auf dem Host.
+# vLLM direkt, ohne API-Schluessel oder Proxy-Anmeldung. Der Zugriff auf diese
+# Site ist auf LAN_BIND_IPS beschraenkt; Ziel ist der Weiterleiter auf dem Host.
 direct-llm.cachyos-x8664 {
 	tls internal
-	basic_auth {
-		{env.LLM_LAN_DIRECT_LLM_USER} {env.LLM_LAN_DIRECT_LLM_HASH}
-	}
 	encode zstd gzip
 	reverse_proxy host.containers.internal:30001
 }

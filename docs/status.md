@@ -254,8 +254,9 @@ veroeffentlicht 443 auf `127.0.0.1` plus der LAN-Adresse aus
 dem Generator und fehlen vollstaendig, wenn `LAN_BIND_IPS` leer ist - ohne LAN
 steht also kein einziges Zeichen Zugang ins Netz im Caddyfile.
 
-**Gemessen 2026-11-17 (Host 192.168.0.198, Name `cachyos-x8664`, mit `--cacert`
-gegen die exportierte Caddy-CA, `--check` endet mit rc=0):**
+**Historische Messung 2026-11-17 vor der Betreiberkorrektur** (Host
+192.168.0.198, Name `cachyos-x8664`, mit `--cacert` gegen die exportierte
+Caddy-CA, `--check` endet mit rc=0):
 
 | Adresse | Ergebnis |
 |---|---|
@@ -265,11 +266,11 @@ gegen die exportierte Caddy-CA, `--check` endet mit rc=0):**
 | https://littlem.cachyos-x8664/v1/models | 401 ohne Schluessel; mit Schluessel echte Antwort `qwen3.8-flash-next` ueber `/v1/chat/completions` (HTTP 200, Modelltext erhalten) |
 | https://llm-direct.cachyos-x8664/v1/models | 401 (Alias von `littlem`, gleiches Verhalten) |
 | https://dozzle.cachyos-x8664/ | 401 ohne / 200 mit Basic-Auth (`logs`) |
-| https://direct-llm.cachyos-x8664/v1/models | 401 ohne / 401 mit falschem / 200 mit richtigem Zugang (`inference`); Antwort nennt Modell `flash-next` |
+| https://direct-llm.cachyos-x8664/v1/models | Alter Stand: 401 ohne / 401 mit falschem / 200 mit richtigem Zugang; seither durch die gewaehlte Route ohne Auth ersetzt |
 | beliebiger anderer Name | TLS-Abbruch bzw. 403 - die Fallback-Site reicht an kein Backend weiter |
 | https://homepage.localhost/ , https://grafana.localhost/grafana/ | unveraendert 200 (Loopback-Fallback bleibt) |
 
-**Kein Backend-Port im Netz:** `--check` prueft die Ports 3000, 3001, 3002,
+**Loopback-Pruefung:** `--check` prueft die Ports 3000, 3001, 3002,
 3100, 4000, 5432, 8080, 9090, 9093, 9835, 30000, 3003, 9100, 12345 und 8120 auf
 Loopback-Ausschliesslichkeit; alle 15 sind Loopback-only (gemessen mit
 `ss -tlnH`; 12345 und 8120 horchen nur in den Containernetzen, erscheinen auf dem
@@ -277,13 +278,20 @@ Host also gar nicht). Absichtlich ausgenommen ist 30001, der Weiterleiter: er
  muss die geroutete Adresse des Hosts bedienen, damit Container im Inferenz-Netz
 die Runtime erreichen (`docs/runtime.md`).
 
-**Zugangsdaten:** Basic-Auth nur fuer Dozzle und die direkte vLLM-Route (beide
-ohne eigene Anmeldung stromaufwaerts). Hashes in
+**Zugangsdaten:** Basic-Auth nur fuer Dozzle (ohne eigene Anmeldung
+stromaufwaerts). Hashes in
 `~/.config/llm-infra/proxy/lan-auth.env`, lesbare Werte in
 `~/.config/llm-infra/proxy/lan-credentials.txt`, beide 0600 und ausserhalb von
 Git; das Caddyfile enthaelt nur `{env.*}`-Platzhalter. Erzeugt mit
 `caddy hash-password` aus dem gepinnten Bild. Ein zweiter Lauf laesst vorhandene
 Hashes in Ruhe (`ensure_auth_file` ist idempotent).
+
+**Betreiberentscheidung (2026-11-17):** `direct-llm` soll ohne API-Schluessel
+und Proxy-Anmeldung direkt zur vLLM-API fuehren. Der private Kabel-LAN-Bereich
+ist die vorgesehene Zugangsgrenze; `littlem` und `llm-direct` behalten die
+LiteLLM-Bearer-Authentifizierung. Der Generator und die zugehoerigen Pruefungen
+sind angepasst; der Live-Proxy muss nach dem Commit noch ausgerollt und geprueft
+werden.
 
 **Warum nicht 80/443 auf allen Adaptern:** veroeffentlicht wird nur, was in
 `LAN_BIND_IPS` steht. Der Kerneltrenner `net.ipv4.ip_unprivileged_port_start=443`

@@ -56,9 +56,11 @@ Zwei fruehere Zustandsquellen sind retired und duerfen nicht parallel laufen
 
 `auto` bindet die Adresse der bevorzugten Standard-Route, also `192.168.0.198`.
 Port 30001 ist damit im Kabel-LAN lesbar; er liefert die Modell-API und deren
-Metriken **ohne** Zugangswert - die Basic-Auth der Route `direct-llm` gilt nur
-fuer ihren eigenen Pfad. Das ist die bewusste Abweichung von der Regel "Ports nur
-auf 127.0.0.1", weil die Container sonst nichts erreichen. Seit der Review-Runde 2026-11-17 ist zumindest die WLAN-Adresse (`192.168.0.47`)
+Metriken **ohne** Zugangswert. Auch die HTTPS-Route `direct-llm` hat bewusst
+keinen API-Schluessel oder Proxy-Login; beide Wege sind nur fuer das
+vertrauenswuerdige Netz vorgesehen. Das ist die bewusste Abweichung von der
+Regel "Ports nur auf 127.0.0.1", weil die Container sonst nichts erreichen.
+Seit der Review-Runde 2026-11-17 ist zumindest die WLAN-Adresse (`192.168.0.47`)
 nicht mehr gebunden: zwei
 Default-Routes (LAN metric 100, WLAN metric 600) fuehrten dazu, dass der
 Weiterleiter das Funknetz mithoerte.
@@ -87,13 +89,11 @@ durch - also an genau diesen Weiterleiter, nicht an die Runtime. Zwei Folgen:
 
 * Der Weiterleiter ist ein betriebskritischer Pfad fuer den LAN-Zugang, nicht
   nur fuer Prometheus und Gateway. `./scripts/doctor.sh` prueft Unit und
-  Host-Port (Pruefpunkt *Lokaler Zugang ueber Namen*), weil ein Test der Route
-  ohne Zugangswerte immer `401` liefert und damit gesund aussieht, auch wenn der
-  Weiterleiter tot ist (Caddy fragt die Basic-Auth **vor** dem Weiterreichen ab).
-* Da der Proxy die Basic-Auth selbst prueft, bleibt die Route hinter einem
-  Zugangswert verborgen (`~/.config/llm-infra/proxy/lan-credentials.txt`, 0600).
-  Der offene Host-Port 30001 bleibt davon unbeeinflusst - er liefert weiterhin
-  ohne Zugangswert, weshalb `VLLM_PUBLIC_BIND` die Adresse eng halten sollte.
+  Host-Port; `./scripts/74-setup-local-proxy.sh --check` prueft zudem die
+  unauthentifizierte Modellroute auf HTTP 200.
+* Die Route besitzt absichtlich keine vorgeschaltete Anmeldung. Der offene
+  Host-Port 30001 bleibt ebenfalls ohne Zugangswert erreichbar; deshalb muss
+  `VLLM_PUBLIC_BIND` auf ein vertrauenswuerdiges Netz begrenzt bleiben.
 
 ## Ausfallbilder
 

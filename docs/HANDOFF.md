@@ -123,10 +123,11 @@ Das Repository ist das Backup.
   `.omo-work/todo-local-llm-network.md`): derselbe Caddy (`llm-proxy`) bedient
   jetzt `https://homepage|grafana|littlem|llm-direct|dozzle|direct-llm.cachyos-x8664/`
   auf `192.168.0.198:443` und bleibt auf `127.0.0.1:443`; unbekannte Namen laufen
-  in eine Fallback-Site (403), kein Backend-Port geht ins Netz. Konfiguration
-  steht in `config/host.env` (`LAN_BIND_IPS`, `LAN_DOMAIN`, `LAN_DOZZLE_USER`,
-  `LAN_DIRECT_LLM_USER`), Basic-Auth nur fuer Dozzle und `direct-llm` mit
-  Hashes aus `~/.config/llm-infra/proxy/lan-auth.env` (0600, nie in Git).
+  in eine Fallback-Site (403). Backend-Ports bleiben geschlossen mit Ausnahme
+  des bewusst im privaten Kabel-LAN erreichbaren vLLM-Weiterleiters auf 30001.
+  Konfiguration steht in `config/host.env` (`LAN_BIND_IPS`, `LAN_DOMAIN`,
+  `LAN_DOZZLE_USER`); Basic-Auth nutzt nur Dozzle. `direct-llm` ist ohne
+  API-Schluessel und Proxy-Anmeldung direkt mit vLLM verbunden.
   Gemessen: alle Adressen wie erwartet, `direct-llm` liefert die Modelliste,
   ueber `littlem` ein echter `chat/completions`-Durchlauf mit
   `qwen3.8-flash-next`, Loopback unveraendert, `--check` rc=0. Doku:
@@ -273,21 +274,16 @@ wie "Nr. 18" gelten weiter).*
     nicht die Ursache: `sudo ufw status numbered` zeigt `443/tcp ALLOW IN
     192.168.0.0/24`. Danach in `docs/status.md` (Abschnitt LAN) und
     `docs/cmdb.yaml` (`next` der Karte `local-proxy`) die Abnahme eintragen.
-19. **Weiterleiter aus dem LAN holen (groesstes offenes Risiko der LAN-Aufgabe).**
-    Port 30001 liefert die Modell-API ohne jeden Zugangswert ins Kabel-LAN; die
-    Basic-Auth von `direct-llm` schuetzt nur ihren eigenen Pfad. Die naheliegende
-    Verengung auf Loopback plus Podman-Gateways ist **nicht** ausfuehrbar -
+19. **Weiterleiter auf vertrauenswuerdiges Kabel-LAN begrenzen (Betreiberentscheidung).**
+    Port 30001 und `direct-llm` liefern die Modell-API dort ohne Zugangswerte;
+    dies ist die gewaehlte LAN-Zugangsgrenze. Die naheliegende Verengung des
+    Weiterleiters auf Loopback plus Podman-Gateways ist **nicht** ausfuehrbar -
     gemessen 2026-11-17: `up{job="vllm"}` fiel von 1 auf 0 und `direct-llm` auf
     502, weil die Gateways im Host-Namespace nicht bindbar sind (Details und
-    Messprotokoll: `docs/runtime.md`, Fund `.omo-work/review-codex.md` F1). Der
-    saubere Weg: eigener Weiterleiter-Container in `llm-inference` und
-    `llm-observability` mit `--network=pasta,map_host_loopback=true`, dann
-    Konsumenten von `host.containers.internal:30001` auf
-    `llm-vllm-forwarder:30001` umstellen (`config/monitoring/prometheus.yml` Job
-    `vllm`, LiteLLM-Basis, `DIRECT_LLM_UPSTREAM` im 74-Generator, Autossh-Quadlet)
-    und `VLLM_PUBLIC_BIND` aus der Unit nehmen. Zwischenstand dieser Runde:
-    `auto` bindet nur noch die Adresse der bevorzugten Standard-Route, die
-    WLAN-Adresse ist zu.
+    Messprotokoll: `docs/runtime.md`, Fund `.omo-work/review-codex.md` F1).
+    Der Weiterleiter bindet nur die Adresse der bevorzugten Standard-Route;
+    die WLAN-Adresse ist nicht gebunden. Falls die Netzgrenze spaeter erweitert
+    wird, muss die Bindung neu bewertet werden.
 20. **LAN-Bindung gegen DHCP-Wechsel sichern (Betreiberentscheidung).** Aendert
     der DHCP die Adresse des Hosts, ist `llm-proxy.service` nicht mehr startbar
     (`pasta: Cannot assign requested address`) und reisst auch

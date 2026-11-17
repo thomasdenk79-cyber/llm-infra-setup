@@ -1,4 +1,16 @@
 # Aenderungsprotokoll
+## 2026-11-17 (Betreiberentscheidung: direct-llm ohne Zugangsdaten)
+
+- `direct-llm` leitet `/v1/*` direkt an den vLLM-Weiterleiter und verlangt
+  absichtlich weder Basic-Auth noch einen API-Schluessel. Der private
+  `LAN_BIND_IPS`-Bereich ist die Zugangsgrenze; LiteLLM (`littlem` und
+  `llm-direct`) behaelt seine eigene Bearer-Key-Pruefung. Der Proxy-Generator
+  entfernt beim Ausrollen alte `direct-llm`-Zugangswerte; Basic-Auth bleibt
+  ausschliesslich fuer Dozzle.
+- Handover-, Sicherheits- und Diagnosehinweise auf das Verhalten ohne Anmeldung
+  angepasst; die urspruengliche Windows-Messung mit TLS-Fehlern bleibt als
+  Abweichung im Abnahmebericht dokumentiert.
+
 ## 2026-11-17 (Runde: Namensaufloesung im Netz - ein Handgriff, nicht sechs)
 
 - **Neu: `scripts/75-setup-local-dns.sh`** (und `make local-dns`). Die sechs

@@ -114,17 +114,19 @@ certutil -addstore -f Root "$env:USERPROFILE\caddy-root.crt"
 ## 4. Routen gegen ihre erwarteten Codes
 
 ```powershell
-foreach ($r in 'homepage=200','littlem=200','llm-direct=200','grafana=301','dozzle=401','direct-llm=401') {
+foreach ($r in 'homepage=200','littlem=200','llm-direct=200','grafana=301','dozzle=401') {
   $n, $c = $r -split '='
   $got = curl.exe -s -o NUL -w '%{http_code}' "https://$n.cachyos-x8664/"
   "{0,-11} erwartet {1}  erhalten {2}  {3}" -f $n, $c, $got, $(if ($got -eq $c) { 'OK' } else { 'ABWEICHUNG' })
 }
 curl.exe -s -o NUL -w 'grafana gefolgt: %{http_code} %{url_effective}\n' -L https://grafana.cachyos-x8664/
+curl.exe -s -o NUL -w 'direct-llm models: %{http_code}\n' https://direct-llm.cachyos-x8664/v1/models
 ```
 
-Erwartet: sechs Zeilen mit `OK`, letzte Zeile `grafana gefolgt: 200
-https://grafana.cachyos-x8664/grafana/`. **401** bei `dozzle` und `direct-llm`
-ist richtig - ohne Zugangswerte, und Zugangswerte gehoeren nirgends hin.
+Erwartet: fuenf Routen-Zeilen mit `OK`, letzte Zeile `grafana gefolgt: 200
+https://grafana.cachyos-x8664/grafana/` und `direct-llm models: 200`.
+**401** bei `dozzle` ohne Zugangswerte ist richtig; `direct-llm` antwortet
+absichtlich ohne API-Schluessel oder Proxy-Anmeldung.
 
 ## 4b. Mit Zugangswerten (beweist die Endpunkte, nicht nur die Route)
 
@@ -139,13 +141,11 @@ curl.exe -s https://llm-direct.cachyos-x8664/v1/models -H "Authorization: Bearer
 # erwartet: 200 mit Modelliste (qwen3.8-flash-next, standard-balanced, ...)
 curl.exe -s https://littlem.cachyos-x8664/v1/models -H "Authorization: Bearer $k"
 # erwartet: dasselbe - littlem und llm-direct sind beide der Gateway
-$basic = Read-Host 'direct-llm Zugang (Benutzer:Kennwort)'  # Benutzer steht in config/host.env
-curl.exe -s -u $basic https://direct-llm.cachyos-x8664/v1/models
-# erwartet: 200 mit den vLLM-Modellen
-$k = $null; $basic = $null; Clear-Host
+$k = $null; Clear-Host
 ```
 
-Ohne Werte ist **401** auf allen dreien das erwartete Ergebnis. Ein 401 mit
+Ohne Gateway-Schluessel ist **401** auf `littlem` und `llm-direct` erwartet.
+`direct-llm` liefert **200 ohne API-Schluessel**. Ein 401 mit
 `"No api key passed in."` zeigt: Route und TLS sind in Ordnung, es fehlt nur der
 Schluessel - also kein Netzfehler und kein Grund, an der Firewall zu drehen.
 
@@ -174,9 +174,9 @@ Datei `handover/WIN-LAN-REPORT-<JJJJ-MM-TT>.md` im Repo anlegen, Inhalt:
 | 1 | Test-NetConnection 443 | True |  |  |
 | 2 | Resolve-DnsName homepage | 192.168.0.198 |  |  |
 | 3 | Fingerprint | 6A:C7:...:31:09 |  |  |
-| 4 | sechs Routen | 200/200/200/301/401/401 |  |  |
+| 4 | fuenf Routen plus direct-llm Modelle | 200/200/200/301/401; direct-llm 200 |  |  |
 | 4b | llm-direct `/v1/models` mit Schluessel | 200 mit Modelliste |  |  |
-| 4b | direct-llm `/v1/models` mit Basic-Auth | 200 |  |  |
+| 4b | direct-llm `/v1/models` ohne Zugangswerte | 200 mit Modelliste |  |  |
 | 5 | Browser homepage | 200 ohne Warnung |  |  |
 
 ## Abweichungen

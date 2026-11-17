@@ -220,7 +220,7 @@ Entscheidungen, nichts davon liegt in Git:
 |---|---|
 | `LAN_BIND_IPS` | Adressen, auf denen 443 veroeffentlicht wird (`192.168.0.198`); leer = kein LAN |
 | `LAN_DOMAIN` | Namensraum der Adressen (`cachyos-x8664`,Standard: Rechnername) |
-| `LAN_DOZZLE_USER`, `LAN_DIRECT_LLM_USER` | Benutzer der beiden Basic-Auth-Routen (`logs`, `inference`) |
+| `LAN_DOZZLE_USER` | Benutzer der Dozzle-Basic-Auth-Route (`logs`) |
 | `HOMEPAGE_ALLOWED_HOSTS` | muss zusaetzlich `homepage.<LAN_DOMAIN>` enthalten, sonst antwortet das Portal mit 400 |
 
 | Adresse | Ziel | Schutz |
@@ -230,13 +230,16 @@ Entscheidungen, nichts davon liegt in Git:
 | https://littlem.cachyos-x8664/v1/models | Gateway LiteLLM (`litellm:4000`) | Gateway-Schluessel, 401 ohne |
 | https://llm-direct.cachyos-x8664/v1/models | Alias von `littlem` (Name von 2026-11-17) | Gateway-Schluessel, 401 ohne |
 | https://dozzle.cachyos-x8664/ | Container-Logs (`dozzle:8080`) | Basic-Auth, 401 ohne |
-| https://direct-llm.cachyos-x8664/v1/models | vLLM direkt ueber den Weiterleiter (`host.containers.internal:30001`) | Basic-Auth, 401 ohne |
+| https://direct-llm.cachyos-x8664/v1/models | vLLM direkt ueber den Weiterleiter (`host.containers.internal:30001`) | ohne API-Schluessel oder Anmeldung; nur ueber `LAN_BIND_IPS` erreichbar |
 | jeder andere Name | Fallback-Site | 403, kein Weiterreichen an ein Backend |
 
-Warum Dozzle und die direkte vLLM-Route ein zusaetzliches Passwort brauchen:
-beide Dienste haben stromaufwaerts keine Anmeldung. LiteLLM dagegen prueft seine
-Virtual-Keys selbst - ein zweites Passwort davor waere Doppelarbeit und wuerde
-die Schluesselabrechnung aushebeln.
+Dozzle braucht ein zusaetzliches Passwort, weil es stromaufwaerts keine
+Anmeldung hat. `direct-llm` ist absichtlich ohne API-Schluessel und Proxy-Login:
+die Grenze ist das private, vertrauenswuerdige Netz in `LAN_BIND_IPS`. Der
+Weiterleiter-Port 30001 ist bereits innerhalb dieses Netzes ebenfalls ohne
+Anmeldung erreichbar (`docs/runtime.md`). LiteLLM prueft seine Virtual-Keys
+selbst - ein zweites Passwort davor waere Doppelarbeit und wuerde die
+Schluesselabrechnung aushebeln.
 
 Die Zugangswerte erzeugt der Generator beim ersten Ausrollen und legt sie ausserhalb
 von Git ab (0600): `~/.config/llm-infra/proxy/lan-auth.env` (bcrypt-Hashes,
@@ -278,8 +281,9 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 .\windows-lan-client-setup.ps1 -LanIp 192.168.0.198 -Domain cachyos-x8664 -CertPath C:\temp\caddy-local-authority-root.crt
 ```
 
-Es prueft jede Route gegen den erwarteten Code (Portal und Grafana 200, Gateway und
-die beiden Basic-Auth-Routen 401 ohne Zugangswerte) und nennt den Titel der
+Es prueft jede Route gegen den erwarteten Code (Portal und Grafana 200, Gateway
+401 ohne Schluessel, Dozzle 401 ohne Zugangswerte und direct-llm `/v1/models`
+200 ohne Zugangswerte) und nennt den Titel der
 Startseite - damit ist in einem Durchlauf sichtbar, ob der Weg durch ist.
 Von Hand sind es zwei Befehle:
 
@@ -312,12 +316,11 @@ Danach auf Windows pruefen (gleiche Pruefungen wie `--check`, aber ohne
 `--resolve`, weil die hosts-Datei ja jetzt greift):
 
 ```powershell
-# Erwartete Codes (gemessen 2026-11-17): homepage 200, grafana 301 (leitet auf
-# /grafana/ um), dozzle 401, direct-llm 401 - die beiden letzten ohne Zugangswerte.
-foreach ($h in "homepage","grafana","dozzle","direct-llm") { curl.exe -s -o NUL -w "$h %{http_code}`n" "https://$h.cachyos-x8664/" }
+# Erwartete Codes: homepage 200, grafana 301, dozzle 401.
+foreach ($h in "homepage","grafana","dozzle") { curl.exe -s -o NUL -w "$h %{http_code}`n" "https://$h.cachyos-x8664/" }
 curl.exe -s -o NUL -w "grafana/anon %{http_code}`n" https://grafana.cachyos-x8664/grafana/    # 200
 curl.exe -s -o NUL -w "littlem      %{http_code}`n" https://littlem.cachyos-x8664/v1/models   # 401 ohne Schluessel
-curl.exe -s -u "inference:<zugangsdaten>" https://direct-llm.cachyos-x8664/v1/models          # Modelliste, 200
+curl.exe -s -o NUL -w "direct-llm   %{http_code}`n" https://direct-llm.cachyos-x8664/v1/models # 200 ohne Schluessel          # Modelliste, 200
 ```
 
 Der Linux-Rechner selbst braucht keine hosts-Eintraege: `--check` prueft die

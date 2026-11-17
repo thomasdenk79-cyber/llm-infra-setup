@@ -16,11 +16,12 @@
 # dort aufloesen (gemessen: getent hosts grafana -> 10.89.1.x, litellm nur in
 # llm-inference, die Runtime ueber den Weiterleiter auf dem Host).
 #
-# Schutz im LAN: LiteLLM verlangt seinen eigenen Schluessel (401 ohne), Dozzle und
-# die direkte vLLM-Route sind hinter Basic-Auth - die Hashes stehen in
-# ~/.config/llm-infra/proxy/lan-auth.env (0600, ausserhalb von Git), hier stehen
-# nur {env.*}-Platzhalter. Prometheus, Alertmanager, Loki, Dozzle-Port,
-# Grafana-Port, Gateway-Port und Runtime-Port bleiben auf dem Loopback.
+# Schutz im LAN: LiteLLM verlangt seinen eigenen Schluessel (401 ohne), Dozzle
+# nutzt Basic-Auth mit Hash aus ~/.config/llm-infra/proxy/lan-auth.env (0600,
+# ausserhalb von Git). direct-llm ist eine schluessellose vLLM-Route, erreichbar
+# nur auf den explizit konfigurierten LAN-Adressen. Prometheus, Alertmanager,
+# Loki, Dozzle-, Grafana- und Gateway-Port bleiben auf Loopback. Der getrennte
+# vLLM-Weiterleiter 30001 ist die unauthentifizierte LAN-Ausnahme (docs/runtime.md).
 #
 # Zertifikate: Caddy-eigene lokale CA ("tls internal"), Bestand unter
 # ~/.local/share/llm-infra/caddy/data. Ohne Verankerung im Systemtrust
