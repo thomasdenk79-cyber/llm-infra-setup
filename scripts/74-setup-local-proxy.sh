@@ -559,11 +559,15 @@ ca_export() {
   extract_ca
   log 'Diese Datei auf den Windows-PC uebertragen, zum Beispiel:'
   log "  scp ${CA_FILE} <nutzer>@<windows-pc>:C:/temp/"
-  log 'Windows 11, PowerShell als Administrator:'
+  log 'Windows 11, PowerShell als Administrator - am einfachsten das Skript aus dem Repo'
+  log "  Skript im Repo: scripts/windows-lan-client-setup.ps1 (hosts-Datei, Root-Import, alle Routen pruefen)"
+  log '  Set-ExecutionPolicy -Scope Process Bypass -Force'
+  log "  .\windows-lan-client-setup.ps1 -LanIp ${LAN_IPS[0]} -Domain ${LAN_DOMAIN} -CertPath C:\temp\caddy-local-authority-root.crt"
+  log 'Einzelne Schritte gehen auch einzeln:'
   log '  certutil -addstore -f ROOT C:\temp\caddy-local-authority-root.crt'
   log 'oder im Dialog: Datei doppelklicken -> "Zertifikat installieren" -> "Lokaler Computer"'
   log '  -> Speicher "Vertrauenswuerdige Stammzertifizierungsstellen".'
-  log 'Pruefung auf Windows (nach den hosts-Einträgen aus --print-hosts):'
+  log 'Pruefung auf Windows (nach den hosts-Eintraegen aus --print-hosts):'
   log "  curl.exe -s -o NUL -w \"%{http_code}\" https://homepage.${LAN_DOMAIN}/   muss 200 liefern, ohne -k"
   log 'Gegenpruefung des Fingerprints (hier auf dem Linux-Rechner ausgeben, auf Windows vergleichen):'
   have openssl && log "  openssl x509 -in ${CA_FILE} -noout -fingerprint -sha256"

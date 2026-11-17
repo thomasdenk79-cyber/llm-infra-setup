@@ -225,7 +225,20 @@ Generator liefert die fertige Zeile:
 ./scripts/74-setup-local-proxy.sh --print-hosts
 ```
 
-Umsetzung auf Windows 11 (PowerShell als Administrator):
+Am einfachsten auf Windows 11: das Begleit-Skript aus dem Repo erledigt hosts-Datei,
+Root-Import und alle Gegenproben in einem Lauf (idempotent, Pruefung auf
+Administratorrechte, `-RemoveOnly` fuer den Rueckbau):
+
+```powershell
+# Datei von diesem Rechner herueberholen, dann in einer PowerShell als Administrator
+Set-ExecutionPolicy -Scope Process Bypass -Force
+.\windows-lan-client-setup.ps1 -LanIp 192.168.0.198 -Domain cachyos-x8664 -CertPath C:\temp\caddy-local-authority-root.crt
+```
+
+Es prueft jede Route gegen den erwarteten Code (Portal und Grafana 200, Gateway und
+die beiden Basic-Auth-Routen 401 ohne Zugangswerte) und nennt den Titel der
+Startseite - damit ist in einem Durchlauf sichtbar, ob der Weg durch ist.
+Von Hand sind es zwei Befehle:
 
 ```powershell
 Add-Content -Encoding ascii C:\Windows\System32\drivers\etc\hosts "192.168.0.198 homepage.cachyos-x8664 grafana.cachyos-x8664 littlem.cachyos-x8664 llm-direct.cachyos-x8664 dozzle.cachyos-x8664 direct-llm.cachyos-x8664"
@@ -243,6 +256,7 @@ scp ~/.local/share/llm-infra/caddy/ca/caddy-local-authority-root.crt <nutzer>@<w
 
 ```powershell
 certutil -addstore -f ROOT C:\temp\caddy-local-authority-root.crt   # oder: Doppelklick -> Zertifikat installieren -> Lokaler Computer -> Vertrauenswuerdige Stammzertifizierungsstellen
+# (der obige Skript-Aufruf uebernimmt diesen Schritt automatisch)
 curl.exe -s -o NUL -w "%{http_code}" https://homepage.cachyos-x8664/         # muss 200 liefern, ohne -k
 certutil -delstore ROOT "Caddy Local Authority"                              # Rueckweg
 ```
