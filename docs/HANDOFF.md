@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-11-17T10:11:50+01:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-11-17T10:17:15+01:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe (2026-11-17)
 
@@ -581,3 +581,7 @@ Deep-Review-Runde: Proxy-/Prometheus-Reload-Defekte, Grafana-Location, Metrikzie
 ## Notiz 2026-11-17T10:11:50+01:00
 
 Neuer Modus --windows-setup: PowerShell-Block fuer das Notebook in einem Ausgeben; Doku und HANDOFF Nr. 18 nachgezogen
+
+## Notiz 2026-11-17T10:17:15+01:00
+
+LAN-DNS-Zone ausgerollt, Root-Download auf 8081, Uebergabe fuer Windows-Agent
