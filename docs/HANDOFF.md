@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-11-17T07:42:50+01:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-11-17T09:41:27+01:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe (2026-11-17)
 
@@ -561,3 +561,7 @@ LAN-HTTPS abgeschlossen (Aufgabe .omo-work/todo-local-llm-network.md): sieben Ro
 ## Notiz 2026-11-17T07:42:50+01:00
 
 Windows-Gegenprobe als Einzelfall vorbereitet: scripts/windows-lan-client-setup.ps1 (hosts, Root-Import, alle Routen gegen erwartete Codes). Abnahme am Geraet bleibt HANDOFF Nr. 18.
+
+## Notiz 2026-11-17T09:41:27+01:00
+
+Deep-Review-Runde: Proxy-/Prometheus-Reload-Defekte, Grafana-Location, Metrikziel caddy, Weiterleiter ohne WLAN
