@@ -118,6 +118,26 @@ curl.exe -s https://llm-direct.cachyos-x8664/v1/models -H "Authorization: Bearer
 Expected: 200 with the model list. `dozzle` and `direct-llm` are the Basic-Auth
 routes; `llm-direct` deliberately uses the gateway key instead.
 
+### One name works, another does not
+
+The DNS cache is keyed per name, not per zone. A name that was queried before
+the zone existed keeps a negative answer in the Windows cache and in the browser
+host cache, so it stays unfindable even though dnsmasq answers it. Prove it with
+the pair that bypasses the cache:
+
+```powershell
+Resolve-DnsName homepage.cachyos-x8664            # uses the cache - often fails here
+Resolve-DnsName homepage.cachyos-x8664 -DnsOnly   # asks the zone directly - the IP
+ipconfig /displaydns | Select-String homepage     # shows the stored entry
+ipconfig /flushdns
+```
+
+Then clear the browser host cache (`edge://net-internals/#dns` or
+`chrome://net-internals/#dns`) and retry in an InPrivate window. If `curl.exe`
+reaches the name but the browser does not, also turn off Secure DNS
+(`edge://settings/privacy`, `chrome://settings/security`): DNS-over-HTTPS asks
+public resolvers, which cannot know a private zone.
+
 Acceptance at the device is the one open point (tracked as open item 18 in
 `docs/HANDOFF.md`); record it in `docs/status.md` once done.
 
