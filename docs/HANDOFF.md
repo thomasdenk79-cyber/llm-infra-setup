@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-11-16T16:01:43+01:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-11-17T07:42:06+01:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe (2026-11-16)
 
@@ -493,3 +493,7 @@ uebernahme-warten an gemessene leerlauf-fenster angepasst
 ## Notiz 2026-11-16T16:01:43+01:00
 
 referenz-unit ohne autostart, autostart folgt der unit-datei
+
+## Notiz 2026-11-17T07:42:06+01:00
+
+LAN-HTTPS abgeschlossen (Aufgabe .omo-work/todo-local-llm-network.md): sieben Routen auf cachyos-x8664, Basic-Auth wo noetig, --check rc=0, Windows-Geraet bleibt als Abnahme offen (HANDOFF Nr. 18).
