@@ -116,6 +116,20 @@ Das Repository ist das Backup.
   installierte `scripts/60-install-homepage.sh` die Unit nie nach
   `~/.config/containers/systemd`, der Live-Container hing dadurch auf
   v2.4.0 fest. Beweise: `CHANGELOG.md`, `docs/status.md`.
+* LAN-HTTPS fuer den Windows-Arbeitsplatz (2026-11-17, offene Aufgabe aus
+  `.omo-work/todo-local-llm-network.md`): derselbe Caddy (`llm-proxy`) bedient
+  jetzt `https://homepage|grafana|littlem|llm-direct|dozzle|direct-llm.cachyos-x8664/`
+  auf `192.168.0.198:443` und bleibt auf `127.0.0.1:443`; unbekannte Namen laufen
+  in eine Fallback-Site (403), kein Backend-Port geht ins Netz. Konfiguration
+  steht in `config/host.env` (`LAN_BIND_IPS`, `LAN_DOMAIN`, `LAN_DOZZLE_USER`,
+  `LAN_DIRECT_LLM_USER`), Basic-Auth nur fuer Dozzle und `direct-llm` mit
+  Hashes aus `~/.config/llm-infra/proxy/lan-auth.env` (0600, nie in Git).
+  Gemessen: alle Adressen wie erwartet, `direct-llm` liefert die Modelliste,
+  ueber `littlem` ein echter `chat/completions`-Durchlauf mit
+  `qwen3.8-flash-next`, Loopback unveraendert, `--check` rc=0. Doku:
+  `docs/operations.md` (LAN, Windows 11, Rueckbau, Fehlerbilder,
+  Tunnel-Lebensdauer), `docs/status.md`. Offen bleibt die Pruefung am Windows-PC
+  (Nr. 18).
 * Verifizierter Einzelzustand mit den Beweis-Befehlen: `docs/status.md`.
 
 ## 2. Was ist offen
@@ -207,14 +221,23 @@ Das Repository ist das Backup.
     Befehl: mit einem Zugangsschluessel
     `curl -u person https://edipoc-gateway.westeurope.cloudapp.azure.com/grafana/`
     ziehen und die Link-Ziele im HTML zaehlen, bevor entschieden wird.
-17. **`make drift` wartet auf den Commit dieser Runde.** Die neue Datei
-    `quadlet/llm-proxy.container` und die geaenderten
-    `quadlet/homepage.container`/`quadlet/grafana.container` sind bewusst
-    nicht committet (Betreiberauftrag: nichts committen). Die
-    Drift-Pruefung weist ungecommittete generierte Dateien zurueck; vor der
-    Runde war sie auf dem Stand "nur die bekannte Pennyroyal-Abweichung".
-    Naechster Befehl: nach `git add ... && git commit` erneut `make drift`
-    (erwartet: wieder nur Pennyroyal).
+17. **Erledigt 2026-11-17: `make drift` ist wieder gruen.** Die ausstehenden
+    generierten Dateien (`quadlet/llm-proxy.container`, `quadlet/homepage.container`)
+    sind committet, die Pruefung laeuft wieder auf dem Stand "nur die bekannte
+    Pennyroyal-Abweichung". Generator fuer den Proxy ist
+    `scripts/74-setup-local-proxy.sh`, die Werte stammen aus `config/host.env`.
+    Naechster Befehl bei Veraenderungen: `./scripts/74-setup-local-proxy.sh --plan`
+    vor `make local-proxy`, danach `make drift`.
+18. **LAN-Zugang am Windows-PC nachmessen (einzig offener Punkt der
+    LAN-Aufgabe).** Auf dem Linux-Rechner ist alles gemessen (`--check` rc=0,
+    401/200-Paare, echter Chat-Durchlauf ueber `littlem`); der Windows-PC war aus
+    dieser Sitzung nicht erreichbar. Drei Schritte dort: hosts-Zeile aus
+    `./scripts/74-setup-local-proxy.sh --print-hosts` in
+    `C:\Windows\System32\drivers\etc\hosts`, Root-Import nach
+    `./scripts/74-setup-local-proxy.sh --ca-export` (`certutil -addstore -f ROOT`,
+    Fingerprint vorher vergleichen), dann die Gegenproben aus
+    `docs/operations.md` (Abschnitt "Windows 11"). Danach in `docs/status.md`
+    (Abschnitt LAN) die Abnahme eintragen.
 
 ## 3. Welche Befehle braucht der naechste Leser
 

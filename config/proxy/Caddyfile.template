@@ -3,24 +3,36 @@
 # Fassung nach config/proxy/Caddyfile; gerendert und gerollt wird nur ueber
 # den Generator (caddy validate laeuft vor dem Ausrollen).
 #
-# Lokaler HTTPS-Zugang ueber Namen, ausschliesslich Loopback (Host 127.0.0.1:443):
+# Lokaler HTTPS-Zugang ueber Namen, veroeffentlicht auf 127.0.0.1:443 und - wenn
+# config/host.env LAN_BIND_IPS setzt - zusaetzlich auf den LAN-Adressen:
 #   https://homepage.localhost/            -> Portal   (Container llm-homepage, intern 3000)
 #   https://grafana.localhost/grafana/     -> Grafana  (Netzalias grafana,   intern 3000)
+#   https://<name>.<LAN_DOMAIN>/           -> Portal, Grafana, Gateway, Logs, vLLM direkt
 #
-# Warum hier Container-Namen statt 127.0.0.1: rootless pasta reicht die
-# Host-Loopback nicht an Container durch. Der Proxy haengt deshalb im Netz
-# llm-observability und proxen gegen die Namen, die dort aufloesen
-# (gemessen: getent hosts grafana -> 10.89.1.x, getent hosts llm-homepage -> 10.89.1.y).
+# Warum Container-Namen statt 127.0.0.1: rootless pasta reicht die Host-Loopback
+# nicht an Container durch. Der Proxy haengt deshalb in den Netzen
+# llm-observability (und bei LAN llm-inference) und proxen gegen die Namen, die
+# dort aufloesen (gemessen: getent hosts grafana -> 10.89.1.x, litellm nur in
+# llm-inference, die Runtime ueber den Weiterleiter auf dem Host).
+#
+# Schutz im LAN: LiteLLM verlangt seinen eigenen Schluessel (401 ohne), Dozzle und
+# die direkte vLLM-Route sind hinter Basic-Auth - die Hashes stehen in
+# ~/.config/llm-infra/proxy/lan-auth.env (0600, ausserhalb von Git), hier stehen
+# nur {env.*}-Platzhalter. Prometheus, Alertmanager, Loki, Dozzle-Port,
+# Grafana-Port, Gateway-Port und Runtime-Port bleiben auf dem Loopback.
 #
 # Zertifikate: Caddy-eigene lokale CA ("tls internal"), Bestand unter
 # ~/.local/share/llm-infra/caddy/data. Ohne Verankerung im Systemtrust
 # zeigen Browser und curl Warnungen; dagegen hilft:
-#   ./scripts/74-setup-local-proxy.sh --ca-import
+#   ./scripts/74-setup-local-proxy.sh --ca-import      (dieser Rechner)
+#   ./scripts/74-setup-local-proxy.sh --ca-export      (Windows-PC, docs/operations.md)
 #
-# Platzhalter, eingesetzt vom Generator:
-#   __HOMEPAGE_UPSTREAM__   Container:Port des Portals   (llm-homepage:3000)
-#   __GRAFANA_UPSTREAM__    Container:Port der Grafana   (grafana:3000)
-
+# Einsatzwerte des Generators (in dieser Vorlage stehen Platzhalter): Portal
+# llm-homepage:3000, Grafana grafana:3000, Dozzle dozzle:8080, Gateway
+# litellm:4000, vLLM ueber den Weiterleiter host.containers.internal:30001,
+# LAN-Namen auf den Rechnernamen. Der LAN-Abschnitt kommt als Ganzer dazu und
+# faellt vollstaendig weg, wenn LAN_BIND_IPS in config/host.env leer ist -
+# deshalb ist diese Datei ohne LAN frei von jedem Zugang ins Netz.
 {
 	# Admin-API bewusst auf Loopback im Container: nicht veroeffentlicht, von
 	# aussen nicht erreichbar; erlaubt aber schonendes Reload ohne Aussenport.
@@ -54,3 +66,5 @@ grafana.localhost {
 	encode zstd gzip
 	reverse_proxy __GRAFANA_UPSTREAM__
 }
+
+__LAN_SITES__

@@ -1,4 +1,60 @@
 # Aenderungsprotokoll
+## 2026-11-17 (Runde: LAN-HTTPS fuer den Windows-Arbeitsplatz)
+
+Offene Aufgabe aus `.omo-work/todo-local-llm-network.md`; Zugangsvoraussetzung
+(Qwen3.8-Fork laeuft, GPU-Rauchtest bestanden) war erfuellt - Laufzeit
+`flash-next-v3` antwortet auf `127.0.0.1:30000/v1/models` mit 200.
+
+- **Neu ausgerichtet statt provisorisch:** der LAN-Teil haengt jetzt an
+  `config/host.env` (`LAN_BIND_IPS`, `LAN_DOMAIN`, `LAN_DOZZLE_USER`,
+  `LAN_DIRECT_LLM_USER`, `VLLM_FORWARD_PORT`) statt an einer einzelnen
+  Datei unter `~/.config/llm-infra`. Die alte Datei wird weiter gelesen, wenn
+  `host.env` nichts sagt, damit ein bereits eingerichteter Rechner nicht
+  stehen bleibt. `make drift` bleibt dicht: die Bedingungen stehen nur im
+  Generator, die committeten Dateien sind sein Ergebnis.
+- **Sieben LAN-Routen** in `config/proxy/Caddyfile.template` (Vorlage) bzw.
+  `config/proxy/Caddyfile`: `homepage`, `grafana`, `littlem` (Gateway),
+  `llm-direct` (Alias), `dozzle`, `direct-llm` (vLLM ueber den Weiterleiter)
+  auf `.<LAN_DOMAIN>` plus eine Fallback-Site, die unbekannte Namen mit 403
+  abweist statt an ein Backend weiterzureichen. Ohne `LAN_BIND_IPS` faellt der
+  ganze Block weg - dann enthaelt das Caddyfile nichts, was ins Netz zeigt.
+- **Basic-Auth nur wo es noetig ist:** Dozzle und `direct-llm` (stromaufwaerts
+  ohne Anmeldung) hinter bcrypt; LiteLLM nicht, weil es seine Virtual-Keys
+  selbst prueft (401 ohne Schluessel). Hashes in
+  `~/.config/llm-infra/proxy/lan-auth.env`, lesbare Werte in
+  `lan-credentials.txt`, beide 0600 und ausserhalb von Git; im Caddyfile stehen
+  nur `{env.*}`-Platzhalter. Erzeugt mit `caddy hash-password` aus dem
+  gepinnten Bild, idempotent (vorhandene Hashes bleiben).
+- **Zwei Fehler der Provisorien behoben:** (1) beide Routen teilten sich den
+  Benutzernamen `operator`, die Zugangsdatei war aber nach Benutzerenschluessel
+  abgelegt - der zweite Zugang bekam den ersten Wert (401 trotz richtigem
+  Passwort). Abgelegt wird jetzt nach Rolle (`LLM_LAN_DOZZLE_PASSWORD`,
+  `LLM_LAN_DIRECT_LLM_PASSWORD`), und ein geaenderter Benutzername in
+  `config/host.env` erzeugt gezielt einen neuen Zugang. (2) Der Generator
+  startete den Container bei jedem Lauf neu, weil die Unit kein `ExecReload`
+  hatte; jetzt laedt Caddy ueber `podman exec ... caddy reload` nach, ein
+  Neustart bleibt nur bei Port-, Netz- oder Umgebungsaenderungen.
+- **Neue Betriebsmodi** in `scripts/74-setup-local-proxy.sh`: `--plan`
+  (Unterschiede zeigen, nichts aendern), `--ca-export` (CA-Datei,
+  Windows-Befehle, Fingerprint), `--print-hosts` (Zeile fuer
+  `C:\Windows\System32\drivers\etc\hosts`), `--lan-credentials` (Pfade ohne
+  Werte). `--check` prueft zusaetzlich jeden LAN-Namen mit `--resolve`, die
+  401/200-Paare der Basic-Auth-Routen, den 403-Fallback und die
+  Loopback-Ausschliesslichkeit von elf Backend-Ports.
+- **Gemessen 2026-11-17:** alle sechs LAN-Adressen wie erwartet (200 bzw. 401
+  ohne Zugangswerte), `direct-llm` liefert die echte Modelliste, ueber
+  `littlem` ein vollstaendiger `chat/completions`-Durchlauf mit
+  `qwen3.8-flash-next` (HTTP 200, Modelltext), Loopback unveraendert 200,
+  unbekannter Name ohne Backend-Kontakt, oeffentlich weiterhin 200/401 am
+  Azure-Gateway. `./scripts/74-setup-local-proxy.sh --check` endet mit rc=0,
+  `make validate` und `make drift` bleiben gruen.
+- **Doku nachgezogen:** `docs/operations.md` (Abschnitte LAN-Zugang, Windows 11
+  mit hosts-Datei und Root-Import, Rueckbau, Fehlerbilder, Tunnel-Lebensdauer),
+  `docs/status.md` (gemessener Stand), `docs/cmdb.yaml` (Dienstkarte
+  `local-proxy`), `config/host.env.example` (neue Variablen).
+- **Offen:** die Windows-Seite am Geraet. Befehle sind dokumentiert
+  (`--print-hosts`, `--ca-export`, `certutil`), die Abnahme am PC steht aus.
+
 ## 2026-11-16 (Runde: Referenz-Unit nahm beim Login die Grafikkarte)
 
 - **Gefunden beim Blick auf den naechsten Hochlauf:** `render_unit()` in

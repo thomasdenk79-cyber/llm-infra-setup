@@ -96,6 +96,7 @@ podman ps --format '{{.Names}}\t{{.Status}}'
 | Portal | http://127.0.0.1:3002 | Einstieg fuer Menschen |
 | Portal ueber Namen | https://homepage.localhost/ | lokaler Proxy, nur 127.0.0.1:443 (Abschnitt unten) |
 | Grafana ohne Anmeldung | https://grafana.localhost/grafana/ | anonymes Lesen, Unterpfad /grafana/ (Abschnitt unten) |
+| LAN fuer den Windows-PC | https://homepage.cachyos-x8664/ , `grafana.`, `littlem.`, `dozzle.`, `direct-llm.` | derselbe Proxy, zusaetzlich auf 192.168.0.198:443 (Abschnitt LAN unten) |
 | Chat (Open WebUI) | http://127.0.0.1:3001 | erster Account ist Admin |
 | Gateway (OpenAI-kompatibel) | http://127.0.0.1:4000/v1 | Schluessel aus `credentials.txt` |
 | Runtime direkt | http://127.0.0.1:30000/v1 | vLLM-Container `flash-next-v3`, nur fuer Diagnose und lokale Tools; bei Quadlet-Betrieb waere es Pennyroyal auf 8001 |
@@ -110,11 +111,20 @@ Loopback gebunden. Von einem anderen Rechner im Netz kommst du so hin:
 ssh -L 3000:127.0.0.1:3000 -L 3001:127.0.0.1:3001 deinrechner
 ```
 
-## Lokaler HTTPS-Zugang ueber Namen
+## HTTPS-Zugang ueber Namen (Loopback und LAN)
 
 Ein verwalteter Caddy (Container `llm-proxy`, Quadlet
-`quadlet/llm-proxy.container`) hoert im Netz `llm-observability` und ist nur
-auf `127.0.0.1:443` veroeffentlicht. Er bedient zwei Sites:
+`quadlet/llm-proxy.container`) hoert im Netz `llm-observability` und bei
+aktivem LAN zusaetzlich in `llm-inference`. Veroeffentlicht wird ausschliesslich
+Port 443: immer auf `127.0.0.1`, und wenn `LAN_BIND_IPS` in `config/host.env`
+gesetzt ist, zusaetzlich auf den angegebenen LAN-Adressen. Kein Backend-Port
+geht ins Netz (`--check` prueft das nach). Ohne `LAN_BIND_IPS` bleibt es beim
+Loopback-Zugang:
+
+| Adresse | Ziel | Gegencheck |
+|---|---|---|
+| https://homepage.localhost/ | Portal (`llm-homepage:3000`) | `curl -s -o /dev/null -w '%{http_code}' https://homepage.localhost/` -> 200 |
+| https://grafana.localhost/grafana/ | Grafana (`grafana:3000`, Unterpfad bleibt) | `curl -s -o /dev/null -w '%{http_code}' https://grafana.localhost/grafana/` -> 200 ohne Login |
 
 | Adresse | Ziel | Gegencheck |
 |---|---|---|
@@ -128,11 +138,21 @@ nicht an Container durch - der Proxy muss im Netz wohnen und gegen
 Befehle (alles idempotent, Vorlage `config/proxy/Caddyfile.template`):
 
 ```bash
-make local-proxy                     # ausrollen: rendern, caddy validate, Unit starten
-./scripts/74-setup-local-proxy.sh --check    # pruefen ohne zu aendern
+make local-proxy                     # ausrollen: rendern, caddy validate, Unit starten/neu laden
+./scripts/74-setup-local-proxy.sh --plan      # zeigen, was sich aendert (aendert nichts)
+./scripts/74-setup-local-proxy.sh --check     # pruefen ohne zu aendern (inkl. LAN und Basic-Auth)
 ./scripts/74-setup-local-proxy.sh --ca-import # Caddy-CA in den Systemtrust (sudo, nur dieser Rechner)
-./scripts/74-setup-local-proxy.sh --status   # Unit, Listener, CA, Sysctl-Grenze
+./scripts/74-setup-local-proxy.sh --ca-export # CA-Datei und Windows-Befehle ausgeben
+./scripts/74-setup-local-proxy.sh --print-hosts  # hosts-Zeile fuer Windows
+./scripts/74-setup-local-proxy.sh --lan-credentials  # Pfad der Zugangsdaten (ohne Werte)
+./scripts/74-setup-local-proxy.sh --status    # Unit, Listener, Netze, LAN, CA, Sysctl-Grenze
 ```
+
+`--plan` ist der Schritt vor `make local-proxy`: er zeigt die Unterschiede von
+Caddyfile, Quadlet und installierter Unit, ohne etwas anzufassen. Eine Aenderung
+an Port-, Netz- oder Umgebungskonfiguration startet den Container neu (sie wird
+von podman beim Anlegen abgearbeitet); eine reine Aenderung am Caddyfile laedt
+Caddy ueber `ExecReload` ohne Container-Neustart nach.
 
 Nach dem ersten Ausrollen einmal `--ca-import` laufen lassen: erst dann gehen
 `curl` ohne `-k` und der Browser ohne Warnung (Pruefung: `trust list
@@ -156,6 +176,127 @@ curl -s -o /dev/null -b /dev/null -c /dev/null -w '%{http_code}\n' \
 curl -s -I -b /dev/null -c /dev/null 'http://127.0.0.1:3000/grafana/d-solo/llm-infra-gpu?panelId=2' | grep -i x-frame   # darf kein deny enthalten
 ```
 
+### LAN-Zugang fuer den Windows-Arbeitsplatz
+
+Der LAN-Teil wird aus `config/host.env` gerendert - dort stehen alle vier
+Entscheidungen, nichts davon liegt in Git:
+
+| Variable | Wirkung auf diesem Rechner |
+|---|---|
+| `LAN_BIND_IPS` | Adressen, auf denen 443 veroeffentlicht wird (`192.168.0.198`); leer = kein LAN |
+| `LAN_DOMAIN` | Namensraum der Adressen (`cachyos-x8664`,Standard: Rechnername) |
+| `LAN_DOZZLE_USER`, `LAN_DIRECT_LLM_USER` | Benutzer der beiden Basic-Auth-Routen (`logs`, `inference`) |
+| `HOMEPAGE_ALLOWED_HOSTS` | muss zusaetzlich `homepage.<LAN_DOMAIN>` enthalten, sonst antwortet das Portal mit 400 |
+
+| Adresse | Ziel | Schutz |
+|---|---|---|
+| https://homepage.cachyos-x8664/ | Portal (`llm-homepage:3000`) | offen (Portal selbst, `/anleitung/` eingeschlossen) |
+| https://grafana.cachyos-x8664/grafana/ | Grafana (`grafana:3000`) | bewusst ohne Anmeldung: anonyme **Lese**-Rolle |
+| https://littlem.cachyos-x8664/v1 | Gateway LiteLLM (`litellm:4000`) | Gateway-Schluessel, 401 ohne |
+| https://llm-direct.cachyos-x8664/v1 | Alias von `littlem` (Name von 2026-11-17) | Gateway-Schluessel, 401 ohne |
+| https://dozzle.cachyos-x8664/ | Container-Logs (`dozzle:8080`) | Basic-Auth, 401 ohne |
+| https://direct-llm.cachyos-x8664/v1/models | vLLM direkt ueber den Weiterleiter (`host.containers.internal:30001`) | Basic-Auth, 401 ohne |
+| jeder andere Name | Fallback-Site | 403, kein Weiterreichen an ein Backend |
+
+Warum Dozzle und die direkte vLLM-Route ein zusaetzliches Passwort brauchen:
+beide Dienste haben stromaufwaerts keine Anmeldung. LiteLLM dagegen prueft seine
+Virtual-Keys selbst - ein zweites Passwort davor waere Doppelarbeit und wuerde
+die Schluesselabrechnung aushebeln.
+
+Die Zugangswerte erzeugt der Generator beim ersten Ausrollen und legt sie ausserhalb
+von Git ab (0600): `~/.config/llm-infra/proxy/lan-auth.env` (bcrypt-Hashes,
+haengt als `EnvironmentFile=` an der Unit) und
+`~/.config/llm-infra/proxy/lan-credentials.txt` (lesbar fuer den Betreiber).
+Der Generator ueberschreibt vorhandene Hashes nicht; ein geaenderter Benutzername
+in `config/host.env` erzeugt dagegen gezielt einen neuen Zugang.
+
+```bash
+./scripts/74-setup-local-proxy.sh --lan-credentials   # Pfade zeigen (ohne Werte)
+cat ~/.config/llm-infra/proxy/lan-credentials.txt     # Betreiber liest die Werte
+```
+
+### Windows 11: Namen aufloesen und dem Zertifikat vertrauen
+
+Der Rechnername `cachyos-x8664` ist kein DNS-Eintrag, sondern die lokale
+Zusammenfassung - Windows braucht dafuer Eintraege in der hosts-Datei. Der
+Generator liefert die fertige Zeile:
+
+```bash
+./scripts/74-setup-local-proxy.sh --print-hosts
+```
+
+Umsetzung auf Windows 11 (PowerShell als Administrator):
+
+```powershell
+Add-Content -Encoding ascii C:\Windows\System32\drivers\etc\hosts "192.168.0.198 homepage.cachyos-x8664 grafana.cachyos-x8664 littlem.cachyos-x8664 llm-direct.cachyos-x8664 dozzle.cachyos-x8664 direct-llm.cachyos-x8664"
+ipconfig /flushdns
+```
+
+Zertifikat: Caddy nutzt seine eigene lokale CA (`tls internal`), die Zertifikate
+ fuer jeden dieser Namen ausstellt. Der Windows-PC muss nur das **Root** kennen.
+Auf dem Linux-Rechner ausgeben und herueberholen:
+
+```bash
+./scripts/74-setup-local-proxy.sh --ca-export          # zeigt Pfad und Fingerprint
+scp ~/.local/share/llm-infra/caddy/ca/caddy-local-authority-root.crt <nutzer>@<windows-pc>:C:/temp/
+```
+
+```powershell
+certutil -addstore -f ROOT C:\temp\caddy-local-authority-root.crt   # oder: Doppelklick -> Zertifikat installieren -> Lokaler Computer -> Vertrauenswuerdige Stammzertifizierungsstellen
+curl.exe -s -o NUL -w "%{http_code}" https://homepage.cachyos-x8664/         # muss 200 liefern, ohne -k
+certutil -delstore ROOT "Caddy Local Authority"                              # Rueckweg
+```
+
+Vor dem Import den Fingerprint vergleichen (Ausgabe von `--ca-export` auf Linux
+gegen `certutil -dump C:\temp\caddy-local-authority-root.crt` auf Windows): nur
+wenn beide uebereinstimmen, wurde niemand dazwischengeschoben.
+
+Danach auf Windows pruefen (gleiche Pruefungen wie `--check`, aber ohne
+`--resolve`, weil die hosts-Datei ja jetzt greift):
+
+```powershell
+foreach ($h in "homepage","grafana","dozzle","direct-llm") { curl.exe -s -o NUL -w "$h %{http_code}`n" "https://$h.cachyos-x8664/" }
+curl.exe -s -u "inference:<zugangsdaten>" https://direct-llm.cachyos-x8664/v1/models
+```
+
+Der Linux-Rechner selbst braucht keine hosts-Eintraege: `--check` prueft die
+LAN-Namen mit `curl --resolve <name>:443:<LAN-IP>`, und der Loopback-Zugang
+(`homepage.localhost`) bleibt unveraendert in Betrieb - auch dann, wenn der
+LAN-Teil spaeter wieder abgeschaltet wird.
+
+### LAN zuruecknehmen (Rueckbau)
+
+```bash
+# in config/host.env:  LAN_BIND_IPS=   (leer setzen)
+./scripts/74-setup-local-proxy.sh      # rendert ohne LAN, Unit ohne LAN-Veroeffentlichung
+./scripts/74-setup-local-proxy.sh --check
+```
+
+Damit ist der Rechner wieder genau so erreichbar wie vor dem LAN-Ausbau: nur
+Loopback. Die Basic-Auth-Dateien duerfen bleiben (sie gehoren zu keiner
+Veroeffentlichung mehr); der Kerneltrenner `sysctl` darf ebenfalls bleiben, er
+allein oeffnet nichts.
+
+### Fehlerbilder LAN
+
+- `400` vom Portal unter `homepage.cachyos-x8664`: `HOMEPAGE_ALLOWED_HOSTS` in
+  `config/host.env` um `homepage.<LAN_DOMAIN>` ergaenzen, dann
+  `make homepage && systemctl --user restart homepage.service`.
+- `401` trotz richtiger Zugangswerte: in den Client-Dialog hat sich ein
+  Tippfehler eingeschlichen - Wert mit `cat
+  ~/.config/llm-infra/proxy/lan-credentials.txt` gegenpruefen. `journalctl
+  --user -u llm-proxy.service -n 40` zeigt, ob Caddy oder das Ziel antwortet.
+- `502` auf `direct-llm`: der Weiterleiter laeuft nicht - `systemctl --user
+  status llm-vllm-forwarder.service`, Gegencheck `curl
+  http://127.0.0.1:30001/v1/models`.
+- `404` auf `littlem`: Pfad vergisst - die API haengt unter `/v1`, die
+  Swagger-Oberflaeche unter `/docs`.
+- Verbindung bricht sofort ab (TLS-Fehler): hosts-Eintrag zeigt auf die falsche
+  Adresse, oder das Root wurde nicht importiert (`certutil -dump`, Fingerprint
+  vergleichen).
+- KeinListener auf der LAN-Adresse: Unit neu starten -
+  `systemctl --user restart llm-proxy.service`, dann `--check`.
+
 Fehlerbilder:
 
 - `400` vom Portal unter `homepage.localhost`: Host-Liste in
@@ -178,6 +319,39 @@ Gateway verlangt weiterhin Basic-Auth vor `/grafana/` und `/v1/models`
 Auswaertige: die Wurzeladresse zeigt jetzt auf den lokalen Namen, daher
 zeigen absolute Links der Grafana-Seite auf `grafana.localhost` - Details in
 `docs/HANDOFF.md` (offene Punkte).
+
+### Zwei Wege, zwei Adressen: LAN und Azure-Tunnel
+
+Der LAN-Zugang (oben) und der oeffentliche Zugang der Kollegen sind getrennte
+Wege zum selben Stapel und schoessen sich nicht ins Gehege:
+
+| Weg | Endpunkt | Ankommen hier | Veroeffentlicht |
+|---|---|---|---|
+| LAN | Caddy-Container `llm-proxy` auf diesem Rechner | direkt | 443 auf `LAN_BIND_IPS` |
+| Kollegen | Caddy auf der Azure-Gateway-VM | `llm-reverse-tunnel.service` (autossh) nach `127.0.0.1:4000/3000/3002` | nur 443 der VM |
+
+Der Tunnel endet auf dem Loopback des Gateway und spricht die Backend-Ports
+direkt an; der LAN-Caddy ist fuer ihn nicht im Spiel. Lebensdauer des Tunnels
+(Pruefen, Neustart, Fehlerfaelle, Rueckbau) steht in
+`docs/gateway-proxy.md` - kurz:
+
+```bash
+./scripts/70-setup-gateway-proxy.sh --check    # Prueflauf, aendert nichts
+./scripts/70-setup-gateway-proxy.sh --status   # Unit, Forwards, oeffentliche Gegenprobe
+systemctl --user restart llm-reverse-tunnel.service   # nach Netzwerkwechsel oder Netzausfall
+journalctl --user -u llm-reverse-tunnel.service -n 50 --no-pager
+```
+
+Gegenprobe von aussen (muss ohne Zugangswerte 401 liefern, die Lebensanzeige 200):
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' https://edipoc-gateway.westeurope.cloudapp.azure.com/health/liveliness
+curl -s -o /dev/null -w '%{http_code}\n' https://edipoc-gateway.westeurope.cloudapp.azure.com/v1/models
+```
+
+Der Rueckbau des LAN-Teils laesst den Tunnel unangetastet (und umgekehrt): der
+Tunnel haelt sich an `127.0.0.1`, der LAN-Caddy an die in `config/host.env`
+gesetzten Adressen. Beide sind damit unabhaengig zuruecknehmbar.
 
 ## Gateway-Fallback in drei Stufen
 

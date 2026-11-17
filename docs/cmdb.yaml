@@ -24,6 +24,24 @@ services:
     api: "http://127.0.0.1:4000/v1; Master-Key in gateway.env"
     consumers: ["alle Agenten + open-webui + morning-brief"]
     next: "Team-Virtual-Keys mit Budget fuer Kollegen (offen, Besitzerentscheid)"
+  local-proxy:
+    what: "Caddy-Proxy fuer HTTPS-zugriff ueber Namen (Container llm-proxy,
+      Quadlet quadlet/llm-proxy.container)"
+    where: "Podman quadlet, Netze llm-observability + llm-inference, gerendert
+      von scripts/74-setup-local-proxy.sh aus config/proxy/Caddyfile.template"
+    api: "Loopback: https://homepage.localhost/ , https://grafana.localhost/grafana/
+      (Port 443). LAN (nur mit LAN_BIND_IPS in config/host.env):
+      homepage|grafana|littlem|llm-direct|dozzle|direct-llm.<LAN_DOMAIN>,
+      Basic-Auth fuer dozzle und direct-llm"
+    secrets: "~/.config/llm-infra/proxy/lan-auth.env (bcrypt, 0600, haengt als
+      EnvironmentFile an der Unit) und lan-credentials.txt (lesbar, 0600);
+      nie in Git - im Caddyfile stehen nur {env.*}-Platzhalter"
+    health: "./scripts/74-setup-local-proxy.sh --check (End-zu-End-Requests auf
+      allen Namen, 401/200 der Basic-Auth-Routen, Loopback-Ausschliesslichkeit
+      der Backend-Ports); --status fuer Unit, Listener, Netze"
+    docs: "docs/operations.md (Abschnitte HTTPS-Zugang, LAN, Windows 11)"
+    next: "Windows-Seite am Geraet pruefen (hosts-Datei, Root-Import,
+      Fingerprint-Vergleich) - Befehle dokumentiert, Abnahme steht noch aus"
   observability:
     what: "Prometheus+Loki+Alloy+Grafana+Dozzle, Host-Fakten via Textfile-Timer"
     where: "quadlet/*.container, config/monitoring/ (Dashboards provisiert)"

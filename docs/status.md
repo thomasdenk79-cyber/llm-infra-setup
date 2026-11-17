@@ -236,6 +236,64 @@ git -C ~/work/hermes-wiki rev-parse HEAD | head -c 12; echo; cat ~/work/hermes-w
 systemctl --user list-timers --no-pager | head -5
 ```
 
+## LAN-Zugang ueber HTTPS - gemessener Stand 2026-11-17
+
+Aufgabe aus `.omo-work/todo-local-llm-network.md` (LAN-HTTPS fuer den
+Windows-Arbeitsplatz), umgesetzt in `scripts/74-setup-local-proxy.sh`,
+`config/proxy/Caddyfile.template` und `quadlet/llm-proxy.container`.
+
+**Wie der Zustand erreicht wurde:** Der Proxy-Container haengt jetzt in
+`llm-observability` **und** `llm-inference` (litellm loest nur dort auf) und
+veroeffentlicht 443 auf `127.0.0.1` plus der LAN-Adresse aus
+`LAN_BIND_IPS` in `config/host.env`. Die LAN-Sites kommen als ganzer Block aus
+dem Generator und fehlen vollstaendig, wenn `LAN_BIND_IPS` leer ist - ohne LAN
+steht also kein einziges Zeichen Zugang ins Netz im Caddyfile.
+
+**Gemessen 2026-11-17 (Host 192.168.0.198, Name `cachyos-x8664`, mit `--cacert`
+gegen die exportierte Caddy-CA, `--check` endet mit rc=0):**
+
+| Adresse | Ergebnis |
+|---|---|
+| https://homepage.cachyos-x8664/ | 200 (Portal, Titel "LUNI Mission Control") |
+| https://homepage.cachyos-x8664/anleitung/ | 200 (statische Anleitung) |
+| https://grafana.cachyos-x8664/grafana/ | 200 ohne Anmeldung (anonyme Lese-Rolle) |
+| https://littlem.cachyos-x8664/v1/models | 401 ohne Schluessel; mit Schluessel echte Antwort `qwen3.8-flash-next` ueber `/v1/chat/completions` (HTTP 200, Modelltext erhalten) |
+| https://llm-direct.cachyos-x8664/v1/models | 401 (Alias von `littlem`, gleiches Verhalten) |
+| https://dozzle.cachyos-x8664/ | 401 ohne / 200 mit Basic-Auth (`logs`) |
+| https://direct-llm.cachyos-x8664/v1/models | 401 ohne / 401 mit falschem / 200 mit richtigem Zugang (`inference`); Antwort nennt Modell `flash-next` |
+| beliebiger anderer Name | TLS-Abbruch bzw. 403 - die Fallback-Site reicht an kein Backend weiter |
+| https://homepage.localhost/ , https://grafana.localhost/grafana/ | unveraendert 200 (Loopback-Fallback bleibt) |
+
+**Kein Backend-Port im Netz:** `--check` prueft die Ports 3000, 3001, 3002,
+3100, 4000, 5432, 8080, 9090, 9093, 9835 und 30000 auf Loopback-Ausschliesslichkeit;
+alle 11 sind Loopback-only (gemessen mit `ss -tlnH`). Absichtlich ausgenommen ist
+30001, der Weiterleiter: er muss den Host-Adressen binden, damit Container im
+Inferenz-Netz die Runtime erreichen (`docs/runtime.md`).
+
+**Zugangsdaten:** Basic-Auth nur fuer Dozzle und die direkte vLLM-Route (beide
+ohne eigene Anmeldung stromaufwaerts). Hashes in
+`~/.config/llm-infra/proxy/lan-auth.env`, lesbare Werte in
+`~/.config/llm-infra/proxy/lan-credentials.txt`, beide 0600 und ausserhalb von
+Git; das Caddyfile enthaelt nur `{env.*}`-Platzhalter. Erzeugt mit
+`caddy hash-password` aus dem gepinnten Bild. Ein zweiter Lauf laesst vorhandene
+Hashes in Ruhe (`ensure_auth_file` ist idempotent).
+
+**Warum nicht 80/443 auf allen Adaptern:** veroeffentlicht wird nur, was in
+`LAN_BIND_IPS` steht. Der Kerneltrenner `net.ipv4.ip_unprivileged_port_start=443`
+(`/etc/sysctl.d/99-llm-infra-local-proxy.conf`) bleibt, weil rootless Podman
+sonst gar kein 443 binden kann; er oeffnet nichts von allein.
+
+**Rueckweg:** `LAN_BIND_IPS=` in `config/host.env` leer setzen und
+`./scripts/74-setup-local-proxy.sh` laufen lassen - damit ist der Stand von
+2026-11-16 (nur Loopback) wieder erreicht, ohne Veraenderungen an Unit, Caddy-CA
+oder Tunnel.
+
+**Windows-Seite:** noch nicht am Geraet geprueft (kein Zugriff auf den
+Windows-PC aus dieser Sitzung). Die Befehle dafuer sind dokumentiert:
+`--print-hosts` (hosts-Datei) und `--ca-export` (Root-Import, Fingerprint-Vergleich)
+in `docs/operations.md`, Abschnitt "Windows 11". Abnahme dort nachtragen, sobald
+der PC erreicht werden kann.
+
 ## Lokaler HTTPS-Zugang ueber Namen - gemessener Stand 2026-11-16
 
 * Neuer verwalteter Proxy: Container `llm-proxy` (Caddy, Netz `llm-observability`,

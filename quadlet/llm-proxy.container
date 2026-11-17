@@ -1,22 +1,30 @@
 # GENERIERT von scripts/74-setup-local-proxy.sh - dort ändern, nicht hier.
 [Unit]
-Description=LLM Infrastructure lokaler HTTPS-Proxy (Caddy, nur 127.0.0.1:443)
-After=llm-observability-network.service homepage.service grafana.service
-Wants=llm-observability-network.service
+Description=LLM Infrastructure HTTPS-Proxy (Caddy) fuer Loopback und LAN
+After=llm-observability-network.service llm-inference-network.service homepage.service grafana.service dozzle.service litellm.service
+Wants=llm-observability-network.service llm-inference-network.service
 
 [Container]
 Image=docker.io/library/caddy:2-alpine
 ContainerName=llm-proxy
 Network=llm-observability.network
+Network=llm-inference.network
 PublishPort=127.0.0.1:443:443
+PublishPort=192.168.0.198:443:443
 Volume=%h/.local/share/llm-infra/caddy/data:/data:Z,U
 Volume=%h/.local/share/llm-infra/caddy/config:/config:Z,U
 Volume=@CONFIG_ROOT@/config/proxy/Caddyfile:/etc/caddy/Caddyfile:Z,ro
 Volume=@CONFIG_ROOT@/config/proxy/site:/srv/llm-proxy/site:Z,ro
+EnvironmentFile=%h/.config/llm-infra/proxy/lan-auth.env
 
 [Service]
 Restart=on-failure
 RestartSec=15
+# Schonendes Neuladen ohne Container-Neustart: systemd ruft podman auf dem Host
+# auf, caddy laedt die Konfiguration im Container neu (Admin-API auf Loopback).
+# Ohne diese Zeile haette "systemctl --user reload" keine ExecReload und der
+# Generator wuerde bei jeder Konfigurationsaenderung den Container neu starten.
+ExecReload=/usr/bin/podman exec llm-proxy caddy reload --config /etc/caddy/Caddyfile
 
 [Install]
 WantedBy=default.target
