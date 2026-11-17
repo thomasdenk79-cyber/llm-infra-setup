@@ -1,5 +1,23 @@
 # Todo: LAN-Zugang vom Windows-Notebook (einmal durchlaufen)
 
+## Prompt fuer den Windows-Agenten (kopieren und einfügen)
+
+> Lies in diesem Repo `handover/WIN-LAN-HANDOVER.md` und dieses Dokument, und
+> arbeite beide Punkte exakt in der angegebenen Reihenfolge durch (Schritt 1 bis
+> 5, inklusive 2b Cache und 4b Zugangswerte) - auf diesem Windows-Notebook gegen
+> `192.168.0.198` und die Namen unter `cachyos-x8664`. Fuehre nur die dort
+> stehenden PowerShell-Befehle aus und keine anderen. Aendere nichts an Firewall,
+> Router, hosts-Datei ueber den angegebenen Rahmen hinaus oder am Linux-Rechner.
+> Gib keine Zugangsdaten, API-Schluessel oder Token aus und schreibe sie in keine
+> Datei, kein Protokoll und keinen Commit. Lege das vollstaendige Protokoll als
+> `handover/WIN-LAN-REPORT-<JJJJ-MM-TT>.md` ab (Tabelle Schritt / Befehl /
+> erwartet / erhalten / Bewertung, bei Abweichungen die wortliche Ausgabe, dazu
+> ein Abschnitt "nicht geprueft" mit Grund) und commite und pushe es. Melde am
+> Ende knapp, ob die Abnahme bestanden ist oder was fehlt.
+
+Erwartete Ergebnisse stehen in `handover/WIN-LAN-HANDOVER.md`; ein abweichender
+Wert ist ein Fund, kein Grund, eigenmaechtig an der Konfiguration zu drehen.
+
 Kontext und Grenzen: `handover/WIN-LAN-HANDOVER.md`. Alles unten laeuft in der
 **PowerShell als Administrator** auf dem Notebook. Erwartete Ergebnisse stehen
 jeweils dabei; Abweichung = Punkt 7 (Protokoll) statt weiterraten.
