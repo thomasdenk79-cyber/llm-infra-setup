@@ -516,8 +516,8 @@ if [[ -n "${LAN_BIND_IPS//[[:space:],]/}" ]]; then
       mdns_ant="$(avahi-resolve -n "$(hostname 2>/dev/null || echo llmhost).local" 2>/dev/null | awk 'NF==2 {print $2}' | head -1)"
       lan_soll=" $(printf '%s' "${LAN_BIND_IPS}" | tr ',' ' ') "
       if [[ -n "${mdns_ant}" ]] && [[ "${lan_soll}" != *" ${mdns_ant} "* ]]; then
-        warn "mDNS nennt fuer $(hostname).local ${mdns_ant} - dort lauscht kein Dienst (gebunden:${lan_soll}). Fuer Prufungen immer den vollen Namen homepage.${lan_dom} verwenden." \
-             'docs/troubleshooting.md, Abschnitt "Der benannte HTTPS-Zugang klemmt" (Zeile mDNS)'
+        # Kein Fehler und keine Reparatur: der Betreiber entscheidet ueber Avahi.
+        note "mDNS nennt fuer $(hostname).local ${mdns_ant}, gebunden ist${lan_soll}- dort lauscht kein Dienst. Einteilige Namen sind zum Pruefen unbrauchbar, immer homepage.${lan_dom} verwenden (docs/troubleshooting.md, Zeile mDNS)." 
       elif [[ -n "${mdns_ant}" ]]; then
         good "mDNS und LAN-Bindung nennen dieselbe Adresse (${mdns_ant})"
       fi
