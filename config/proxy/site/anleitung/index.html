@@ -52,8 +52,8 @@
   <h2>Einrichtung</h2>
   <section>
     <div class="schritte">
-      <div class="schritt"><span class="nr">1</span><h3>ZIP laden</h3><p>Im vertrauenswuerdigen LAN herunterladen und entpacken. Vor dem Zertifikat-Import den Bootstrap-Link verwenden.</p></div>
-      <div class="schritt"><span class="nr">2</span><h3>Installieren</h3><p><code>Install-LocalLlm.ps1</code> importiert das gepruefte lokale Caddy-Root und fragt nach deinem persoenlichen LiteLLM-Virtual-Key.</p></div>
+      <div class="schritt"><span class="nr">1</span><h3>ZIP laden</h3><p>Im vertrauenswuerdigen LAN herunterladen, SHA-256 mit dem Wert unten vergleichen und entpacken.</p></div>
+      <div class="schritt"><span class="nr">2</span><h3>Installieren</h3><p><code>Install.cmd</code> bestaetigt die Ausfuehrung und startet den Installer, ohne die verwaltete PowerShell-Richtlinie zu aendern.</p></div>
       <div class="schritt"><span class="nr">3</span><h3>Starten</h3><p>Ein neues Terminal oeffnen und <code>opencode-local</code> oder <code>copilot-local</code> ausfuehren.</p></div>
     </div>
   </section>
@@ -79,6 +79,12 @@
       <li>Das Paket enthaelt das lokale Caddy-Root und prueft vor dem Import den SHA-256-Fingerprint. Zertifikatswarnungen nicht mit <code>-k</code> umgehen.</li>
       <li><code>homepage.localhost</code> zeigt auf den eigenen Rechner; Kolleginnen und Kollegen verwenden <code>homepage.cachyos-x8664</code> und <code>littlem.cachyos-x8664</code>.</li>
     </ul>
+  </section>
+
+  <h2>ZIP-Pruefsumme</h2>
+  <section>
+    <p>SHA-256 von <code>anleitung.zip</code>: <code>A251EB531301310E6CCA77C4D8CBF41A6670212513C15389163BC527E21D120A</code></p>
+    <p class="lead">Die PowerShell-Richtlinie bleibt unveraendert. Der Starter entfernt den Windows-Zonenmarker nur nach ausdruecklicher Bestaetigung. Bei <code>AllSigned</code> oder <code>Restricted</code> muss die IT das Paket signieren oder freigeben.</p>
   </section>
 
   <h2>API mit curl pruefen</h2>

@@ -1,3 +1,3 @@
 @echo off
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Run-OpenCode-Local.ps1" %*
+powershell.exe -NoProfile -File "%~dp0Run-LocalLlm.ps1" -Client opencode %*
 exit /b %errorlevel%

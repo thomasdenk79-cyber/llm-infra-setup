@@ -15,9 +15,9 @@ OUTPUT = ROOT / "config" / "proxy" / "site" / "anleitung" / "anleitung.zip"
 EXPECTED_SHA256 = "6AC744AE120E66FE258AFA5CD268F142E8C390924860BBED77969B5C2D883109"
 FILES = (
     "README.md",
+    "Install.cmd",
     "Install-LocalLlm.ps1",
-    "Run-OpenCode-Local.ps1",
-    "Run-Copilot-Local.ps1",
+    "Run-LocalLlm.ps1",
     "Set-LocalRoutes.ps1",
     "opencode-local.cmd",
     "copilot-local.cmd",

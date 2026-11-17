@@ -1,4 +1,15 @@
 # Aenderungsprotokoll
+## 2026-11-17 (Windows-Launcher fuer verwaltete PowerShell-Richtlinien)
+
+- **Einfacherer Start:** `Install.cmd` fragt nach Bestaetigung, entfernt den
+  Internet-Zonenmarker nur von den mitgelieferten PowerShell-Dateien und startet
+  den Installer. Es aendert keine Execution Policy und funktioniert mit der
+  verwalteten `RemoteSigned`-Richtlinie; `AllSigned`/`Restricted` bleibt Aufgabe
+  der IT.
+- **Weniger Einstiegsskripte:** OpenCode und Copilot nutzen denselben
+  `Run-LocalLlm.ps1`-Wrapper; die zwei `.cmd`-Starter waehlen nur noch den Client.
+  Die Anleitungsseite zeigt die SHA-256-Pruefsumme des ZIPs.
+
 ## 2026-11-17 (Kollegenpaket fuer lokale LLM-Routen und Dozzle ohne Anmeldung)
 
 - **Kollegenpaket:** `make windows-client-package` erstellt

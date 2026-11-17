@@ -17,26 +17,33 @@ und Kollegen verwenden deshalb die LAN-Namen mit `cachyos-x8664`.
    `http://192.168.0.198:8081/anleitung/anleitung.zip`.
    Nach dem Import ist auch
    `https://homepage.cachyos-x8664/anleitung/anleitung.zip` verfuegbar.
-2. ZIP entpacken und in PowerShell im entpackten Ordner ausfuehren:
+2. ZIP entpacken und im entpackten Ordner `Install.cmd` doppelklicken. Vorher
+   den SHA-256-Hash des ZIPs mit dem Wert auf der HTTPS-Anleitungsseite
+   vergleichen:
 
    ```powershell
-   Set-ExecutionPolicy -Scope Process Bypass -Force
-   .\Install-LocalLlm.ps1
+   Get-FileHash ..\anleitung.zip -Algorithm SHA256
    ```
 
-3. Das Skript prueft den SHA-256-Fingerprint des mitgelieferten Caddy-Roots,
+   Der Starter fragt ausdruecklich nach Bestaetigung, entfernt nur dann den
+   Internet-Zonenmarker von den Paket-PS1-Dateien und startet den Installer.
+   Er aendert **keine** Execution Policy. Das ist fuer die verwaltete
+   `RemoteSigned`-Richtlinie vorgesehen. Bei `AllSigned` oder `Restricted` muss
+   die IT das Paket signieren oder freigeben; die Richtlinie nicht umgehen.
+3. Der Installer prueft den SHA-256-Fingerprint des mitgelieferten Caddy-Roots,
    importiert ihn nur fuer den aktuellen Windows-Benutzer, fragt nach dem
    persoenlichen Virtual-Key und prueft damit `GET /v1/models`. Der Key wird
    erst nach erfolgreicher Pruefung DPAPI-verschluesselt im Benutzerprofil
    gespeichert. Er steht weder in der ZIP-Datei noch in der OpenCode-Konfiguration.
-4. Falls `littlem.cachyos-x8664` nicht aufgeloest wird, eine PowerShell **als
+4. Falls der Installer wegen nicht aufgeloestem `littlem.cachyos-x8664` abbricht,
+   eine PowerShell **als
    Administrator** oeffnen und einmal ausfuehren:
 
    ```powershell
    .\Set-LocalRoutes.ps1
    ```
 
-   Danach `Install-LocalLlm.ps1` erneut starten. Wenn das interne DNS den Namen
+   Danach `Install.cmd` erneut starten. Wenn das interne DNS den Namen
    bereits aufloest, ist dieser Admin-Schritt nicht erforderlich.
 5. Ein neues Terminal oeffnen und `opencode-local` oder `copilot-local` starten.
    Copilot kann beim ersten Start zusaetzlich die GitHub-Anmeldung verlangen.

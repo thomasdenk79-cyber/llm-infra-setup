@@ -247,8 +247,7 @@ $json = ConvertTo-Json -InputObject $config -Depth 40
 [IO.File]::WriteAllText($OpenCodeConfigPath, ($json + [Environment]::NewLine), (New-Object Text.UTF8Encoding($false)))
 
 New-Item -ItemType Directory -Force -Path $BinDirectory | Out-Null
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Run-OpenCode-Local.ps1') -Destination $BinDirectory -Force
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Run-Copilot-Local.ps1') -Destination $BinDirectory -Force
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Run-LocalLlm.ps1') -Destination $BinDirectory -Force
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'opencode-local.cmd') -Destination $BinDirectory -Force
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'copilot-local.cmd') -Destination $BinDirectory -Force
 Add-UserPath $BinDirectory
