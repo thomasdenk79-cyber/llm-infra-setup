@@ -168,6 +168,8 @@ journalctl --user -u llm-proxy.service -n 80 --no-pager # Caddy oder podman?
 | `403` oder TLS-Abbruch auf einem Namen | kein `handle` fuer den Namen - die Fallback-Site antwortet | Namen in der Vorlage `config/proxy/Caddyfile.template` ergaenzen, dann `make local-proxy` |
 | `401` trotz richtiger Zugangswerte | Tippfehler im Client | Wert gegenpruefen: `cat ~/.config/llm-infra/proxy/lan-credentials.txt` (Datei 0600, niemals ins Git) |
 | `400` vom Portal unter `homepage.<LAN_DOMAIN>` | Host-Header nicht freigegeben | `HOMEPAGE_ALLOWED_HOSTS` in `config/host.env` ergaenzen, dann `make homepage` |
+| Name loest auf einem Fremdgeraet nicht auf | es gibt kein DNS fuer die LAN-Namen - das Geraet braucht hosts-Eintraege | auf dem Linux-Rechner: `./scripts/74-setup-local-proxy.sh --windows-setup` ausgibt und in der PowerShell (Administrator) einfügt; or `scripts/windows-lan-client-setup.ps1 -LanIp <ip> -Domain <name> -CertPath <root.crt>` |
+| Name bekannt, Verbindung laeuft in Zeit | Paketfilter laesst 443 aus dem Heimnetz nicht durch | `sudo ufw status numbered` (erwartet: `443/tcp ALLOW IN 192.168.0.0/24`); Ankunftszahler: `sudo nft list ruleset | grep 'dport 443'`. Die Regel pflegt `workstation-setup`, nicht dieses Repo |
 | Reload hilft nicht, Konfig aendert nichts | `ExecReload`pruefen, dann erst neu starten | `systemctl --user show llm-proxy.service -p ExecReload --value`; Gegenprobe `podman inspect llm-proxy -f '{{.State.StartedAt}}'` vor und nach `systemctl --user reload llm-proxy.service` |
 
 Nach einem Neustart des Rechners zusaetzlich die Autostart-Kette pruefen

@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-11-17T09:41:27+01:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-11-17T10:11:50+01:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe (2026-11-17)
 
@@ -259,16 +259,19 @@ wie "Nr. 18" gelten weiter).*
 18. **LAN-Zugang am Windows-PC nachmessen (einzig offener Punkt der
     LAN-Aufgabe).** Auf dem Linux-Rechner ist alles gemessen (`--check` rc=0,
     401/200-Paare, echter Chat-Durchlauf ueber `littlem`, 2026-11-17 erneut bestaetigt);
-    der Windows-PC war aus dieser Sitzung nicht erreichbar. Kuerzester Weg am Geraet:
-    `scripts/windows-lan-client-setup.ps1` als Administrator laufen lassen (hosts-Datei,
-    Root-Import, alle Gegenproben in einem Lauf; Aufruf mit `-LanIp 192.168.0.198
-    -Domain cachyos-x8664 -CertPath ...` in `docs/operations.md`, Abschnitt
-    "Windows 11"). Von Hand sind es drei Schritte: hosts-Zeile aus
+    der Windows-PC war aus dieser Sitzung nicht erreichbar. Kuerzester Weg:
+    `./scripts/74-setup-local-proxy.sh --windows-setup` auf dem Linux-Rechner
+    ausgeben und den Block in eine PowerShell als Administrator einfügen (Namen,
+    Routentest, Root-Import mit Fingerabdruck, alle Gegenproben). Ohne dieses
+    Repo auf dem Geraet sind es dieselben Schritte von Hand: hosts-Zeile aus
     `./scripts/74-setup-local-proxy.sh --print-hosts` in
-    `C:\Windows\System32\drivers\etc\hosts`, Root-Import nach
-    `./scripts/74-setup-local-proxy.sh --ca-export` (`certutil -addstore -f ROOT`,
-    Fingerprint vorher gegen `certutil -dump` vergleichen), dann die Gegenproben aus
-    `docs/operations.md`. Danach in `docs/status.md` (Abschnitt LAN) und
+    `C:\Windows\System32\drivers\etc\hosts`, `Test-NetConnection 192.168.0.198
+    -Port 443`, Root per `scp` holen und nach
+    `./scripts/74-setup-local-proxy.sh --ca-export` importieren
+    (`certutil -addstore -f ROOT`, Fingerprint vorher gegen `certutil -dump`
+    vergleichen), dann die Gegenproben aus `docs/operations.md`. Firewall ist
+    nicht die Ursache: `sudo ufw status numbered` zeigt `443/tcp ALLOW IN
+    192.168.0.0/24`. Danach in `docs/status.md` (Abschnitt LAN) und
     `docs/cmdb.yaml` (`next` der Karte `local-proxy`) die Abnahme eintragen.
 19. **Weiterleiter aus dem LAN holen (groesstes offenes Risiko der LAN-Aufgabe).**
     Port 30001 liefert die Modell-API ohne jeden Zugangswert ins Kabel-LAN; die
@@ -565,3 +568,7 @@ Windows-Gegenprobe als Einzelfall vorbereitet: scripts/windows-lan-client-setup.
 ## Notiz 2026-11-17T09:41:27+01:00
 
 Deep-Review-Runde: Proxy-/Prometheus-Reload-Defekte, Grafana-Location, Metrikziel caddy, Weiterleiter ohne WLAN
+
+## Notiz 2026-11-17T10:11:50+01:00
+
+Neuer Modus --windows-setup: PowerShell-Block fuer das Notebook in einem Ausgeben; Doku und HANDOFF Nr. 18 nachgezogen

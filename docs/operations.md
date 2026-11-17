@@ -139,6 +139,9 @@ make local-proxy                     # ausrollen: rendern, caddy validate, Unit 
 ./scripts/74-setup-local-proxy.sh --ca-import # Caddy-CA in den Systemtrust (sudo, nur dieser Rechner)
 ./scripts/74-setup-local-proxy.sh --ca-export # CA-Datei und Windows-Befehle ausgeben
 ./scripts/74-setup-local-proxy.sh --print-hosts  # hosts-Zeile fuer Windows
+./scripts/74-setup-local-proxy.sh --windows-setup  # kompletter PowerShell-Block fuer
+                                               # das Notebook: Namen, Route pruefen,
+                                               # Root mit Fingerabdruck, alle Routen
 ./scripts/74-setup-local-proxy.sh --lan-credentials  # Pfad der Zugangsdaten (ohne Werte)
 ./scripts/74-setup-local-proxy.sh --status    # Unit, Listener, Netze, LAN, CA, Sysctl-Grenze
 ```
@@ -237,6 +240,14 @@ Generator liefert die fertige Zeile:
 
 ```bash
 ./scripts/74-setup-local-proxy.sh --print-hosts
+```
+
+Ein einziger Block fuer das Notebook (Namen, Routentest, Root-Import mit
+Fingerabdruck, alle Gegenproben) - ausgeben und in die PowerShell als
+Administrator einfügen:
+
+```bash
+./scripts/74-setup-local-proxy.sh --windows-setup
 ```
 
 Am einfachsten auf Windows 11: das Begleit-Skript aus dem Repo erledigt hosts-Datei,

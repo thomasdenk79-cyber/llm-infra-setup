@@ -1,4 +1,23 @@
 # Aenderungsprotokoll
+## 2026-11-17 (Runde: Notebook-Abnahme - ein Block statt Handarbeit)
+
+- **Neuer Modus `--windows-setup`:** der Generator gibt den kompletten
+  PowerShell-Block fuer das Windows-Notebook aus - hosts-Zeile, `Test-NetConnection`
+  gegen 443, `scp` der Wurzel, `certutil -dump` mit dem erwarteten SHA-256-
+  Fingerabdruck, `certutil -addstore` und alle sechs Routen gegen ihre erwarteten
+  Codes. Bislang waren dafuer zwei Doku-Abschnitte und Handarbeit noetig; ein
+  vertippter Pfad oder ein nicht vergleichener Fingerabdruck war die haeufigste
+  Ursache fuer "Name wird nicht aufgeloest". Ausgabe enthaelt keine
+  Zugangswerte (Gegengeprueft gegen `lan-credentials.txt`).
+- **Messung zur Abnahme:** Firewall war nie der Grund - `sudo ufw status numbered`
+  zeigt `443/tcp ALLOW IN 192.168.0.0/24` (Regel 5, Gepflegt von
+  `workstation-setup`), und der Zaehler derselben Regel belegt angekommene
+  LAN-Pakete. `--check` rc=0, Listener auf `192.168.0.198:443`, TLS-Kette validiert
+  gegen das exportierte Wurzelzertifikat. Fehlend war ausschliesslich die
+  hosts-Datei des Geraets (fuer diese Namen gibt es kein DNS). Pruefschritte in
+  `docs/troubleshooting.md` ergaenzt ("Name loest auf einem Fremdgeraet nicht
+  auf", "Verbindung laeuft in Zeit").
+
 ## 2026-11-17 (Runde: Deep-Review mit vier Gegenpruefern, drei stille Defekte)
 
 - **Stiller Defekt 1 - Proxy lud die alte Konfiguration:** `write_if_changed`

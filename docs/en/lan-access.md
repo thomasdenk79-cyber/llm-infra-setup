@@ -65,6 +65,14 @@ By hand it is three steps:
 scp ~/.local/share/llm-infra/caddy/ca/caddy-local-authority-root.crt <user>@<windows-pc>:C:/temp/
 ```
 
+One block instead of handwork: the generator prints the whole PowerShell block for
+the notebook (hosts entries, route test, root import with fingerprint check, every
+route against its expected code) - paste it into an elevated PowerShell.
+
+```bash
+./scripts/74-setup-local-proxy.sh --windows-setup
+```
+
 ```powershell
 Add-Content -Encoding ascii C:\Windows\System32\drivers\etc\hosts "192.168.0.198 homepage.cachyos-x8664 grafana.cachyos-x8664 littlem.cachyos-x8664 llm-direct.cachyos-x8664 dozzle.cachyos-x8664 direct-llm.cachyos-x8664"
 ipconfig /flushdns
@@ -106,6 +114,7 @@ make local-proxy                        # roll out: render, caddy validate, star
 ./scripts/74-setup-local-proxy.sh --ca-import        # put the Caddy CA into the system trust (sudo, this host)
 ./scripts/74-setup-local-proxy.sh --ca-export        # CA file, fingerprint and Windows commands
 ./scripts/74-setup-local-proxy.sh --print-hosts      # hosts-file line for Windows
+./scripts/74-setup-local-proxy.sh --windows-setup    # whole PowerShell block for the client
 ./scripts/74-setup-local-proxy.sh --lan-credentials  # credential paths (never prints values)
 ```
 

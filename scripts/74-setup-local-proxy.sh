@@ -9,6 +9,9 @@
 #   ./scripts/74-setup-local-proxy.sh --ca-import    Caddy-CA in den Systemtrust (dieser Rechner)
 #   ./scripts/74-setup-local-proxy.sh --ca-export    CA-Datei fuer Windows ausgeben
 #   ./scripts/74-setup-local-proxy.sh --print-hosts  Eintrag fuer die Windows-hosts-Datei
+#   ./scripts/74-setup-local-proxy.sh --windows-setup  kompletter PowerShell-Block
+#                                                    fuer das Windows-Notebook (Namen,
+#                                                    Root, Gegenproben in einem Lauf)
 #   ./scripts/74-setup-local-proxy.sh --lan-credentials  Pfad der Zugangsdaten (ohne Werte)
 #   ./scripts/74-setup-local-proxy.sh --status       Kurzbild des Ist-Zustands
 #
@@ -708,6 +711,53 @@ print_hosts() {
   printf '%s %s\n' "${ip}" "${namen}"
 }
 
+windows_setup() {
+  # Ein einziger Block zum Einfuegen in die PowerShell des Windows-Notebooks
+  # (als Administrator): Namen eintragen, Route pruefen, Wurzel holen, Fingerabdruck
+  # vergleichen, importieren, alle Routen gegen die erwarteten Codes. Der Weg bis
+  # hier war Handarbeit aus zwei Abschnitten - ein Versehen (Tippfehler, falscher
+  # Pfad, fehlender Fingerabdruck) ist damit ausgeschlossen. Es stehen keine
+  # Zugangswerte in der Ausgabe; die zwei Basic-Auth-Routen pruefen auf 401.
+  (( ${lan_enabled} == 1 )) || die 'LAN ist zu (LAN_BIND_IPS in config/host.env ist leer) - nichts auszugeben.'
+  extract_ca >/dev/null 2>&1 || true
+  local ip namen finger basis rolle pfad erwartet
+  ip="${LAN_IPS[0]}"
+  namen="$(lan_hosts | tr '\n' ' ' | sed 's/ *$//')"
+  basis="$(basename "${CA_FILE}")"
+  finger=''
+  command -v openssl >/dev/null 2>&1 && [[ -f "${CA_FILE}" ]] \
+    && finger="$(openssl x509 -in "${CA_FILE}" -noout -fingerprint -sha256 2>/dev/null | sed 's/^.*=//')"
+  printf '# Windows 11, PowerShell als Administrator einfügen - Rechner %s, Stand %s\n' "$(hostname)" "$(date -Is)"
+  printf '# 1) Namen bekannt machen: fuer diese Namen gibt es kein DNS im Netz\n'
+  printf 'Add-Content -Encoding ascii C:\\Windows\\System32\\drivers\\etc\\hosts "%s %s"\n' "${ip}" "${namen}"
+  printf 'ipconfig /flushdns\n'
+  printf '# 2) Route und Paketfilter pruefen (erwartet: TcpTestSucceeded : True)\n'
+  printf 'Test-NetConnection %s -Port 443\n' "${ip}"
+  printf '# 3) Wurzelzertifikat holen und Fingerabdruck vergleichen, dann importieren\n'
+  printf 'New-Item -ItemType Directory -Force C:\\temp | Out-Null\n'
+  printf 'scp %s@%s:%s C:\\temp\\\n' "$(id -un)" "${ip}" "${CA_FILE}"
+  printf 'certutil -dump C:\\temp\\%s\n' "${basis}"
+  [[ -n "${finger}" ]] && printf '#  muss zeigen: SHA256 %s\n' "${finger}"
+  printf 'certutil -addstore -f ROOT C:\\temp\\%s\n' "${basis}"
+  printf '# 4) Gegenprobe aller Routen (erwartete Codes stehen als Kommentar)\n'
+  for rolle in "${LAN_ROLES[@]}"; do
+    case "${rolle}" in
+      homepage)      pfad='/';            erwartet='200' ;;
+      grafana)       pfad='/grafana/';    erwartet='200 (die Wurzel / leitet mit 301)' ;;
+      dozzle)        pfad='/';            erwartet='401 ohne Zugangswerte' ;;
+      direct-llm)    pfad='/v1/models';   erwartet='401 ohne Zugangswerte' ;;
+      *)             pfad='/v1/models';   erwartet='401 ohne Schluessel' ;;
+    esac
+    printf 'curl.exe -s -o NUL -w "%%{http_code}`n" https://%s.%s%s   # %s\n' \
+      "${rolle}" "${LAN_DOMAIN}" "${pfad}" "${erwartet}"
+  done
+  printf '# Zugangswerte der zwei Basic-Auth-Routen (0600, nie in Git): %s\n' "${CRED_FILE}"
+  printf '# Rueckbau: hosts-Zeile loeschen und certutil -delstore ROOT "Caddy Local Authority"\n'
+  printf '# Mit dem Repo auf dem Notebook erledigt das Skript alles in einem Lauf:\n'
+  printf '#   .\\scripts\\windows-lan-client-setup.ps1 -LanIp %s -Domain %s -CertPath C:\\temp\\%s\n' \
+    "${ip}" "${LAN_DOMAIN}" "${basis}"
+}
+
 lan_credential_path() {
   printf 'Caddy-Zugangsdatei (bcrypt-Hashes): %s\n' "${AUTH_ENV_FILE}"
   printf 'Betreiberdatei (lesbare Zugangsdaten): %s\n' "${CRED_FILE}"
@@ -937,7 +987,8 @@ case "${1:---apply}" in
   --ca-import) ca_import ;;
   --ca-export) ca_export ;;
   --print-hosts) print_hosts ;;
+  --windows-setup) windows_setup ;;
   --lan-credentials) lan_credential_path ;;
   --status)  status_all ;;
-  *) die "Unbekannter Modus: $1 (erlaubt: --plan, --check, --render, --ca-import, --ca-export, --print-hosts, --lan-credentials, --status, kein Argument)" ;;
+  *) die "Unbekannter Modus: $1 (erlaubt: --plan, --check, --render, --ca-import, --ca-export, --print-hosts, --windows-setup, --lan-credentials, --status, kein Argument)" ;;
 esac
