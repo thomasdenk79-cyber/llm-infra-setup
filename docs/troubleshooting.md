@@ -123,7 +123,7 @@ Provider genannten Pfad) innerhalb der Gueltigkeit bestaetigen; das Token
 landet dann von selbst wieder im Volume-Ordner. War der Ordner leer oder
 gehorte das Token einem frueheren fluechtigen Containerpfad
 (`/root/.config/litellm/chatgpt`), hilft nur einmalig ein frischer Login -
-das Volume haelt das Token seit dem Fix auch über Gateway-Neustarts.
+das Volume haelt das Token seit dem Fix auch ueber Gateway-Neustarts.
 
 ## Client meldet "Clean EOF, no finish_reason" beim Stream
 
@@ -146,7 +146,7 @@ im Gateway-Journal pruefen; notfalls mit
 
 ## Der benannte HTTPS-Zugang klemmt (llm-proxy)
 
-Alles, was ueber Namen läuft (`homepage.localhost`, `grafana.localhost` und die
+Alles, was ueber Namen laeuft (`homepage.localhost`, `grafana.localhost` und die
 LAN-Namen auf `LAN_DOMAIN`), haengt an einem Container: `llm-proxy`. Deshalb
 immer in dieser Reihenfolge ansehen - sie ist dieselbe wie im Doctor
 (aussen nach innen):
@@ -168,7 +168,7 @@ journalctl --user -u llm-proxy.service -n 80 --no-pager # Caddy oder podman?
 | `403` oder TLS-Abbruch auf einem Namen | kein `handle` fuer den Namen - die Fallback-Site antwortet | Namen in der Vorlage `config/proxy/Caddyfile.template` ergaenzen, dann `make local-proxy` |
 | `401` trotz richtiger Zugangswerte | Tippfehler im Client | Wert gegenpruefen: `cat ~/.config/llm-infra/proxy/lan-credentials.txt` (Datei 0600, niemals ins Git) |
 | `400` vom Portal unter `homepage.<LAN_DOMAIN>` | Host-Header nicht freigegeben | `HOMEPAGE_ALLOWED_HOSTS` in `config/host.env` ergaenzen, dann `make homepage` |
-| Name loest auf einem Fremdgeraet nicht auf | es gibt kein DNS fuer die LAN-Namen - das Geraet braucht hosts-Eintraege | auf dem Linux-Rechner: `./scripts/74-setup-local-proxy.sh --windows-setup` ausgibt und in der PowerShell (Administrator) einfügt; or `scripts/windows-lan-client-setup.ps1 -LanIp <ip> -Domain <name> -CertPath <root.crt>` |
+| Name loest auf einem Fremdgeraet nicht auf | keine DNS-Zone im Netz aktiv - das Geraet haengt an einem DNS, das den Namen nicht kennt | auf dem Linux-Rechner: `make local-dns`, danach `192.168.0.198` im Router als DNS eintragen; ohne Router-Zugang: `./scripts/74-setup-local-proxy.sh --windows-setup` in der PowerShell (Administrator) ausfuehren oder `scripts/windows-lan-client-setup.ps1 -LanIp <ip> -Domain <name> -CertPath <root.crt>` |
 | Name bekannt, Verbindung laeuft in Zeit | Paketfilter laesst 443 aus dem Heimnetz nicht durch | `sudo ufw status numbered` (erwartet: `443/tcp ALLOW IN 192.168.0.0/24`); Ankunftszahler: `sudo nft list ruleset | grep 'dport 443'`. Die Regel pflegt `workstation-setup`, nicht dieses Repo |
 | Reload hilft nicht, Konfig aendert nichts | `ExecReload`pruefen, dann erst neu starten | `systemctl --user show llm-proxy.service -p ExecReload --value`; Gegenprobe `podman inspect llm-proxy -f '{{.State.StartedAt}}'` vor und nach `systemctl --user reload llm-proxy.service` |
 
@@ -182,7 +182,7 @@ Neustart: ist der Zugang wieder da?".
 Drei Moeglichkeiten, in dieser Reihenfolge:
 
 ```powershell
-# 1) Name bekannt?  (hosts-Datei, kein DNS)
+# 1) Name bekannt?  (DNS-Zone von scripts/75 oder hosts-Datei)
 ping homepage.cachyos-x8664          # muss auf die LAN-Adresse des Rechners zeigen
 # 2) Route da?      (erwartete Codes: 200, 301, 401, 401)
 curl.exe -s -o NUL -w "%{http_code}`n" https://homepage.cachyos-x8664/

@@ -144,7 +144,20 @@ make local-proxy                     # ausrollen: rendern, caddy validate, Unit 
                                                # Root mit Fingerabdruck, alle Routen
 ./scripts/74-setup-local-proxy.sh --lan-credentials  # Pfad der Zugangsdaten (ohne Werte)
 ./scripts/74-setup-local-proxy.sh --status    # Unit, Listener, Netze, LAN, CA, Sysctl-Grenze
+make local-dns                       # Namensaufloesung im Netz ausrollen (scripts/75)
+./scripts/75-setup-local-dns.sh --check        # sechs Namen, kein offener Resolver
+./scripts/75-setup-local-dns.sh --remove       # Zone und Drop-in zuruecknehmen
 ```
+
+Namensaufloesung: die sechs Namen unter `.<LAN_DOMAIN>` gibt es in keinem DNS.
+`make local-dns` schreibt `/etc/llm-infra/dnsmasq/lan-zone.conf` und haengt sie
+dem Paket-Dienst per Drop-in an - ein `address=/`-Eintrag antwortet auf jeden
+Namen unter `.<LAN_DOMAIN>`, `no-resolv` verhindert einen offenen Resolver, und
+gehorcht wird nur auf `LAN_BIND_IPS` (die Host-Aufloesung ueber
+`systemd-resolved` bleibt unangetastet). Traegt der Router diese Adresse als DNS
+ein, braucht kein Geraet eine hosts-Datei. Ist der Router nicht zu aendern,
+bleibt `--windows-setup` mit dem hosts-Eintrag. mDNS unter `.local` ist bewusst
+nicht gebaut: es wuerde jeden Zertifikatsnamen und die Portal-Freigabe aendern.
 
 `--plan` ist der Schritt vor `make local-proxy`: er zeigt die Unterschiede von
 Caddyfile, Quadlet und installierter Unit, ohne etwas anzufassen. Eine Aenderung
@@ -244,7 +257,7 @@ Generator liefert die fertige Zeile:
 
 Ein einziger Block fuer das Notebook (Namen, Routentest, Root-Import mit
 Fingerabdruck, alle Gegenproben) - ausgeben und in die PowerShell als
-Administrator einfügen:
+Administrator einfuegen:
 
 ```bash
 ./scripts/74-setup-local-proxy.sh --windows-setup
@@ -324,7 +337,7 @@ systemctl --user is-enabled llm-proxy.service         # erwartet: generated (Qua
 
 Ist linger nicht gesetzt, startet beim Boot gar nichts im Benutzerbereich - der
 Zugang ist dann weg, bis sich jemand anmeldet. Diesem Rechner hilft aktuell die
-Desktop-Anmeldung auf die Spruenge (gemessen: `user@1000.service` läuft seit
+Desktop-Anmeldung auf die Spruenge (gemessen: `user@1000.service` laeuft seit
 neun Sekunden nach dem Systemstart, `Linger=no`). Verlassen sollte sich niemand
 darauf: `sudo loginctl enable-linger "$(id -un)"` ist die dauerhafte Loesung und
 wirkt erst beim naechsten Boot - geprueft wird sie mit `./scripts/doctor.sh`,

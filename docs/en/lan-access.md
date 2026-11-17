@@ -45,8 +45,15 @@ Published only on `127.0.0.1` and the addresses listed in `LAN_BIND_IPS`
 
 ## Windows 11 client
 
-The hostname `cachyos-x8664` is not in DNS; Windows needs hosts entries and
-must trust Caddy's local root CA.
+Name resolution: `scripts/75-setup-local-dns.sh` (or `make local-dns`) runs a
+dnsmasq zone for `*.cachyos-x8664` on this host and answers on the LAN address
+only - no forwarding, so it is not an open resolver. Publish
+`192.168.0.198` as the DNS server in the router and no device needs hosts
+entries. Without router access, use the hosts line below instead. mDNS under
+`.local` is deliberately not used: it would change every certificate name and
+the portal's allowed hosts.
+
+Windows additionally must trust Caddy's local root CA.
 
 Easiest: copy `scripts/windows-lan-client-setup.ps1` from this repository and
 run it in an elevated PowerShell (idempotent, checks for admin rights, verifies
@@ -62,8 +69,14 @@ By hand it is three steps:
 ```bash
 ./scripts/74-setup-local-proxy.sh --print-hosts   # the ready-made hosts line
 ./scripts/74-setup-local-proxy.sh --ca-export     # CA path, fingerprint, Windows commands
-scp ~/.local/share/llm-infra/caddy/ca/caddy-local-authority-root.crt <user>@<windows-pc>:C:/temp/
+curl -fsS http://192.168.0.198:8081/caddy-local-authority-root.crt -o caddy-local-authority-root.crt
 ```
+
+The certificate download needs no SSH: the proxy serves exactly that one path on
+port 8081 (everything else is 404), and the file is only the public key - the
+fingerprint comparison below is what proves it is the right one. `scp
+~/.local/share/llm-infra/caddy/ca/caddy-local-authority-root.crt
+<user>@<windows-pc>:C:/temp/` still works as a fallback.
 
 One block instead of handwork: the generator prints the whole PowerShell block for
 the notebook (hosts entries, route test, root import with fingerprint check, every
@@ -116,6 +129,10 @@ make local-proxy                        # roll out: render, caddy validate, star
 ./scripts/74-setup-local-proxy.sh --print-hosts      # hosts-file line for Windows
 ./scripts/74-setup-local-proxy.sh --windows-setup    # whole PowerShell block for the client
 ./scripts/74-setup-local-proxy.sh --lan-credentials  # credential paths (never prints values)
+make local-dns                                      # roll out the LAN DNS zone (sudo)
+./scripts/75-setup-local-dns.sh --plan              # show zone and systemd drop-in
+./scripts/75-setup-local-dns.sh --check             # six names answered, no open resolver
+./scripts/75-setup-local-dns.sh --remove            # take zone and drop-in back
 ```
 
 A port, network or environment change restarts the container; a pure Caddyfile

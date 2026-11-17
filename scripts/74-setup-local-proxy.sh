@@ -245,6 +245,25 @@ direct-llm.${LAN_DOMAIN} {
 	reverse_proxy ${DIRECT_LLM_UPSTREAM}
 }
 
+# Wurzelzertifikat ausliefern: ein Client, der die Namen noch nicht kennt, muss
+# dafuer weder scp noch ssh benutzen. Ueber die reine Adresse geht kein TLS - eine
+# IP sendet kein SNI, also scheitert der Handshake an der Zertifikatswahl. Deshalb
+# klarer HTTP auf Port 80, und zwar genau ein Pfad: die oeffentliche Wurzel ist ein
+# oeffentlicher Schluessel, kein Geheimnis; die Pruefung laeuft ueber den
+# Fingerabdruck, bevor importiert wird. Alles andere antwortet 404.
+:80 {
+	@wurzel {
+		path /caddy-local-authority-root.crt
+	}
+	handle @wurzel {
+		root * /srv/llm-proxy/ca
+		file_server
+	}
+	handle {
+		respond "Nur das Wurzelzertifikat: /caddy-local-authority-root.crt" 404
+	}
+}
+
 # Unbekannte Hostnamen: keine Site, keine Weiterleitung an einen Backend-Port.
 :443 {
 	tls internal
@@ -284,8 +303,14 @@ render_quadlet() {
     netz_after+=('llm-inference-network.service')
   fi
   veroeffentlichungen+=('PublishPort=127.0.0.1:443:443')
+  # Download der oeffentlichen Wurzel fuer Clients ohne Namen und ohne ssh/scp.
+  # Der Host-Port ist 8081, nicht 80: die Kernelgrenze liegt auf 443, und sie
+  # weiter abzusenken (jede unprivilegierte Probe koennte dann 80..443 belegen)
+  # ist es nicht wert, nur ein oeffentliches Zertifikat auszuhändigen.
+  veroeffentlichungen+=('PublishPort=127.0.0.1:8081:80')
   for ip in "${LAN_IPS[@]}"; do
     veroeffentlichungen+=("PublishPort=${ip}:443:443")
+    veroeffentlichungen+=("PublishPort=${ip}:8081:80")
   done
 
   cat <<UNIT
@@ -304,6 +329,10 @@ Volume=%h/.local/share/llm-infra/caddy/data:/data:Z,U
 Volume=%h/.local/share/llm-infra/caddy/config:/config:Z,U
 Volume=@CONFIG_ROOT@/config/proxy/Caddyfile:/etc/caddy/Caddyfile:Z,ro
 Volume=@CONFIG_ROOT@/config/proxy/site:/srv/llm-proxy/site:Z,ro
+# Nur die oeffentliche Wurzel (kein Schluessel) fuer https://<LAN-IP>/, damit ein
+# Windows-Client sie ohne scp holen kann. Verzeichnis, nicht Einzeldatei: eine
+# Einzel-Datei-Bindung folgt keinem Inode-Wechsel (siehe write_if_changed).
+Volume=%h/.local/share/llm-infra/caddy/ca:/srv/llm-proxy/ca:Z,ro
 UNIT
   if (( ${lan_enabled} == 1 )); then
     printf 'EnvironmentFile=%%h/.config/llm-infra/proxy/lan-auth.env\n'
@@ -735,7 +764,8 @@ windows_setup() {
   printf 'Test-NetConnection %s -Port 443\n' "${ip}"
   printf '# 3) Wurzelzertifikat holen und Fingerabdruck vergleichen, dann importieren\n'
   printf 'New-Item -ItemType Directory -Force C:\\temp | Out-Null\n'
-  printf 'scp %s@%s:%s C:\\temp\\\n' "$(id -un)" "${ip}" "${CA_FILE}"
+  printf 'curl.exe -s -o C:\\temp\\%s http://%s:8081/%s\n' "${basis}" "${ip}" "${basis}"
+  printf '#  (Port 8081, nur dieser eine Pfad; ueber die reine Adresse geht kein TLS,\n#   eine IP sendet kein SNI. Sollte es nicht gehen: scp %s@%s:%s C:\\temp\\\n)' "$(id -un)" "${ip}" "${CA_FILE}"
   printf 'certutil -dump C:\\temp\\%s\n' "${basis}"
   [[ -n "${finger}" ]] && printf '#  muss zeigen: SHA256 %s\n' "${finger}"
   printf 'certutil -addstore -f ROOT C:\\temp\\%s\n' "${basis}"

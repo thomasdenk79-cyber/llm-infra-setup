@@ -149,7 +149,7 @@ Das Repository ist das Backup.
   enable-linger` gesetzt (der Benutzermanager startet damit ohne
   Desktop-Anmeldung), Doku-Deckung `docs/en/` neu, HANDOFF-Punkte 5-8
   entstaubt. Offen: Nr. 18 (Windows-Abnahme), Nr. 19 (Weiterleiter aus dem LAN),
-  Nr. 20 (DHCP-Festlegung).
+  Nr. 20 (DHCP-Festlegung), Nr. 21 (Router-DNS).
 * Verifizierter Einzelzustand mit den Beweis-Befehlen: `docs/status.md`.
 
 ## 2. Was ist offen
@@ -296,6 +296,15 @@ wie "Nr. 18" gelten weiter).*
     jedem Adresswechsel `LAN_BIND_IPS` in `config/host.env` nachziehen und
     `./scripts/74-setup-local-proxy.sh` laufen lassen. Zu pruefen nach einem
     Neustart: `./scripts/doctor.sh` (Pruefpunkt "Lokaler Zugang ueber Namen").
+21. **Router-DNS eintragen (ein Handgriff ausserhalb dieses Repos).** Die Zone
+    dafuer ist gebaut und ausgerollt: `scripts/75-setup-local-dns.sh` schreibt
+    `/etc/llm-infra/dnsmasq/lan-zone.conf` und haengt sie dem Paket-Dienst per
+    Drop-in an. Gemessen: sechs Namen zeigen auf `192.168.0.198`, fremde Anfragen
+    bleiben leer (kein offener Resolver), gehorcht wird nur auf
+    `192.168.0.198:53`, `--check` rc=0. Traegt der Router `192.168.0.198` als DNS
+    ein, entfaellt auf jedem Geraet der hosts-Eintrag aus Nr. 18. Pruefen vom
+    Geraet: `Resolve-DnsName homepage.cachyos-x8664`. Zuruecknehmen:
+    `./scripts/75-setup-local-dns.sh --remove`.
 
 ## 3. Welche Befehle braucht der naechste Leser
 

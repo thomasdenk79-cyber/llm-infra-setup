@@ -494,6 +494,18 @@ if [[ -n "${LAN_BIND_IPS//[[:space:],]/}" ]]; then
     else
       bad "LAN-Log-Route antwortet mit ${code} statt 401 - Zugangswerte pruefen" './scripts/74-setup-local-proxy.sh --check'
     fi
+    # Namensaufloesung: ohne Zone braucht jedes Geraet hosts-Eintraege, und
+    # "Name laedt auf dem Notebook nicht auf" ist der haufigste Betreiberfall.
+    if [[ -f '/etc/llm-infra/dnsmasq/lan-zone.conf' ]] && systemctl is-active --quiet dnsmasq.service; then
+      if command -v dig >/dev/null 2>&1 \
+         && [[ "$(dig +short "@${lan_ip}" "homepage.${lan_dom}" A 2>/dev/null | head -1)" == "${lan_ip}" ]]; then
+        good "Namensaufloesung im Netz: homepage.${lan_dom} -> ${lan_ip}"
+      else
+        warn "dnsmasq laeuft, antwortet aber nicht auf homepage.${lan_dom}" './scripts/75-setup-local-dns.sh --check'
+      fi
+    else
+      note "kein DNS fuer ${lan_dom} - Geraete brauchen hosts-Eintraege (74 --print-hosts) oder Zone ausrollen: ./scripts/75-setup-local-dns.sh"
+    fi
   fi
   # Zugangswerte: der haufigste Betreiberfall ist "Wert vergessen". Der Arztlauf
   # nennt Pfade und Benutzernamen, nie Werte.

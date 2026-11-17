@@ -1,4 +1,32 @@
 # Aenderungsprotokoll
+## 2026-11-17 (Runde: Namensaufloesung im Netz - ein Handgriff, nicht sechs)
+
+- **Neu: `scripts/75-setup-local-dns.sh`** (und `make local-dns`). Die sechs
+  LAN-Namen gab es in keinem DNS, deshalb hing jedes Geraet an einer
+  hosts-Datei. Der Generator schreibt `/etc/llm-infra/dnsmasq/lan-zone.conf`
+  und haengt sie dem Paket-Dienst per Drop-in
+  `/etc/systemd/system/dnsmasq.service.d/99-llm-infra.conf` an - das Arch-Paket
+  liefert kein `/etc/dnsmasq.d` und seine `conf-dir`-Zeile ist auskommentiert,
+  deshalb `--conf-file` statt einer Datei im Paketordner, und `--enable-dbus`
+  bleibt stehen, weil die Einheit `Type=dbus` ist. Ein `address=/`-Eintrag
+  antwortet auf jeden Namen unter `.<LAN_DOMAIN>`; `no-resolv` und
+  `bind-interfaces` mit `listen-address` nur auf `LAN_BIND_IPS` halten den Dienst
+  klein (Gegengeprueft: `example.com` bleibt leer, `ss -lun` kennt nur
+  `192.168.0.198:53`, die Host-Aufloesung ueber `systemd-resolved` unveraendert).
+  Bewusst kein mDNS: `.local` wuerde alle Zertifikatsnamen und
+  `HOMEPAGE_ALLOWED_HOSTS` aendern.
+- **Wurzelzertifikat ohne SSH holen:** der Proxy bedient auf Hafen **8081**
+  genau einen Pfad `GET /caddy-local-authority-root.crt` (plain HTTP, alles
+  andere 404). Damit entfaellt `scp` samt Passwort auf dem Windows-Geraet; die
+  Datei ist nur der oeffentliche Schluessel, die Echtheit prueft der
+  Fingerprint aus `--ca-export`. Bewusst 8081 und nicht 80: die Kernelgrenze
+  `net.ipv4.ip_unprivileged_port_start=443` laesst rootless kein 80 (Gemessen:
+  `rootlessport cannot expose privileged port 80`, die Unit fiel aus), und 8080
+  ist als Loopback-only-Hafen reserviert. `--windows-setup` nutzt den neuen Weg.
+- **Abnahme:** `--check` rc=0 fuer beide Generatoren, Arztlauf ohne Fehler,
+  HTTPS-Routen unveraendert (Portal 200). Das Windows-Notebook bleibt offen
+  (HANDOFF Nr. 18), weil von diesem Rechner aus nicht pruefbar.
+
 ## 2026-11-17 (Runde: Notebook-Abnahme - ein Block statt Handarbeit)
 
 - **Neuer Modus `--windows-setup`:** der Generator gibt den kompletten

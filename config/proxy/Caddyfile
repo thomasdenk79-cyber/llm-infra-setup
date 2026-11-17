@@ -152,6 +152,25 @@ direct-llm.cachyos-x8664 {
 	reverse_proxy host.containers.internal:30001
 }
 
+# Wurzelzertifikat ausliefern: ein Client, der die Namen noch nicht kennt, muss
+# dafuer weder scp noch ssh benutzen. Ueber die reine Adresse geht kein TLS - eine
+# IP sendet kein SNI, also scheitert der Handshake an der Zertifikatswahl. Deshalb
+# klarer HTTP auf Port 80, und zwar genau ein Pfad: die oeffentliche Wurzel ist ein
+# oeffentlicher Schluessel, kein Geheimnis; die Pruefung laeuft ueber den
+# Fingerabdruck, bevor importiert wird. Alles andere antwortet 404.
+:80 {
+	@wurzel {
+		path /caddy-local-authority-root.crt
+	}
+	handle @wurzel {
+		root * /srv/llm-proxy/ca
+		file_server
+	}
+	handle {
+		respond "Nur das Wurzelzertifikat: /caddy-local-authority-root.crt" 404
+	}
+}
+
 # Unbekannte Hostnamen: keine Site, keine Weiterleitung an einen Backend-Port.
 :443 {
 	tls internal

@@ -10,11 +10,17 @@ ContainerName=llm-proxy
 Network=llm-observability.network
 Network=llm-inference.network
 PublishPort=127.0.0.1:443:443
+PublishPort=127.0.0.1:8081:80
 PublishPort=192.168.0.198:443:443
+PublishPort=192.168.0.198:8081:80
 Volume=%h/.local/share/llm-infra/caddy/data:/data:Z,U
 Volume=%h/.local/share/llm-infra/caddy/config:/config:Z,U
 Volume=@CONFIG_ROOT@/config/proxy/Caddyfile:/etc/caddy/Caddyfile:Z,ro
 Volume=@CONFIG_ROOT@/config/proxy/site:/srv/llm-proxy/site:Z,ro
+# Nur die oeffentliche Wurzel (kein Schluessel) fuer https://<LAN-IP>/, damit ein
+# Windows-Client sie ohne scp holen kann. Verzeichnis, nicht Einzeldatei: eine
+# Einzel-Datei-Bindung folgt keinem Inode-Wechsel (siehe write_if_changed).
+Volume=%h/.local/share/llm-infra/caddy/ca:/srv/llm-proxy/ca:Z,ro
 EnvironmentFile=%h/.config/llm-infra/proxy/lan-auth.env
 
 [Service]
