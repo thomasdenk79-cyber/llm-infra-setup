@@ -56,6 +56,24 @@ Add-Content -Path $env:WINDIR\System32\drivers\etc\hosts -Value "192.168.0.198 h
 ipconfig /flushdns
 ```
 
+## 2b. Cache zuruecksetzen (wenn EIN Name nicht will, die anderen aber schon)
+
+Windows und der Browser cachen eine **abgelehnte** Anfrage pro Name. Ein Name,
+der vor der DNS-Zone schon einmal angefragt wurde, bleibt deshalb eine Zeit lang
+nicht auffindbar, obwohl die Zone laengst antwortet - genau das Verhalten "mein
+Nachbarname geht, meiner nicht".
+
+```powershell
+nslookup homepage.cachyos-x8664 192.168.0.198   # liefert die Zone direkt?
+ipconfig /flushdns                               # Windows-Cache
+# Browser-Host-Cache leeren: edge://net-internals/#dns  bzw.  chrome://net-internals/#dns
+# danach ein InPrivate-Fenster oeffnen und erneut versuchen
+```
+
+Liefert die erste Zeile die Adresse, der Browser aber weiterhin
+`ERR_NAME_NOT_RESOLVED`, ist es der Cache des Browsers - nicht die Zone und nicht
+die Firewall. Erst nach diesem Schritt weiter pruefen.
+
 ## 3. Stammzertifikat holen und pruefen
 
 ```powershell

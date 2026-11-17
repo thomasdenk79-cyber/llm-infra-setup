@@ -446,6 +446,7 @@ fi
 # ./scripts/74-setup-local-proxy.sh --check.
 if [[ -n "${LAN_BIND_IPS//[[:space:],]/}" ]]; then
   lan_dom="${LAN_DOMAIN:-$(hostname 2>/dev/null || echo llmhost)}"
+  ROLLEN_TXT="homepage grafana littlem llm-direct dozzle direct-llm"
   lan_ip="$(printf '%s' "${LAN_BIND_IPS}" | tr ',' ' ' | awk '{print $1}')"
   # Erste Frage vor jedem Listener: gehoert die Adresse ueberhaupt zu diesem
   # Rechner? Wechselt DHCP die Adresse, verweigert podman die Veroeffentlichung
@@ -512,6 +513,21 @@ if [[ -n "${LAN_BIND_IPS//[[:space:],]/}" ]]; then
     # alle Dienste nur auf LAN_BIND_IPS gebunden sind). Geraete, die
     # "ping cachyos-x8664" testen und dann http://cachyos-x8664:3000 probieren,
     # laufen damit an der LAN-Bindung vorbei.
+    # /etc/hosts ist ein zweiter Schreiber fuer genau diese Namen (stand hier
+    # schon vor der Zone drin). Zwei Quellen fuer eine Tatsache sind der klassische
+    # stale-IP-Fehler: DHCP aendert die Adresse, die Zone zieht mit, hosts nicht.
+    hosts_zeile="$(grep -hE "[[:space:]]${ROLLEN_TXT// /|}" /etc/hosts 2>/dev/null | head -1)"
+    if [[ -n "${hosts_zeile}" ]]; then
+      hosts_ip="${hosts_zeile%%[[:space:]]*}"
+      if [[ "${hosts_ip}" == "${lan_ip}" ]]; then
+        good "/etc/hosts und DNS-Zone nennen dieselbe Adresse (${hosts_ip})"
+      else
+        bad "/etc/hosts nennt ${hosts_ip} fuer die LAN-Namen, die Zone aber ${lan_ip} - zwei Quellen, zwei Antworten." \
+            "/etc/hosts berichtigen (Eintrag am Zeilenanfang mit ${lan_ip}) oder die hosts-Zeile loeschen und allein der Zone vertrauen, danach: ./scripts/75-setup-local-dns.sh --check"
+      fi
+    else
+      note "kein /etc/hosts-Eintrag fuer die LAN-Namen - die Zone ist die einzige Quelle (gut so)"
+    fi
     if command -v avahi-resolve >/dev/null 2>&1; then
       mdns_ant="$(avahi-resolve -n "$(hostname 2>/dev/null || echo llmhost).local" 2>/dev/null | awk 'NF==2 {print $2}' | head -1)"
       lan_soll=" $(printf '%s' "${LAN_BIND_IPS}" | tr ',' ' ') "
