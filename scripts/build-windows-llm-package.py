@@ -46,6 +46,7 @@ def main() -> None:
         for name in FILES:
             info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
             info.compress_type = zipfile.ZIP_STORED
+            info.create_system = 0
             info.external_attr = 0o100644 << 16
             content = (SOURCE / name).read_bytes()
             content = content.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
