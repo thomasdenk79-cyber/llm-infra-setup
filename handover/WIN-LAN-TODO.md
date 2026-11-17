@@ -16,15 +16,29 @@ sondern direkt Punkt 7 melden.
 
 ## 2. Name aufgeloest? (DNS-Zone, keine hosts-Datei)
 
+Zwei Wege nicht verwechseln: `ping cachyos-x8664` (einteilig) laeuft ueber mDNS
+und loest auf eine Adresse auf, an der **kein** Dienst lauscht (gemessen:
+WLAN `192.168.0.47`). Fuer alles hier zaehlt nur der **zweiteilige** Name.
+
 ```powershell
+Get-DnsClientServerAddress | Select-Object InterfaceAlias,ServerAddresses
+# erwartet: 192.168.0.198 steht vorn; wenn nicht:
+Set-DnsClientServerAddress -InterfaceAlias WLAN -ServerAddresses 192.168.0.198,192.168.0.1
+ipconfig /flushdns
+
 Resolve-DnsName homepage.cachyos-x8664          # erwartet: 192.168.0.198
 Resolve-DnsName grafana.cachyos-x8664           # erwartet: 192.168.0.198
 nslookup -type=A example.com 192.168.0.198      # erwartet: Fehler/leer (kein offener Resolver)
 ```
 
-Liefert der erste Befehl **nichts**: der Router verteilt `192.168.0.198` noch
-nicht als DNS (HANDOFF Nr. 21). Dann uebergangsweise hosts-Eintrag und
-im Protokoll vermerken, dass DNS weiterhin fehlt:
+`Get-NetAdapter | Select-Object Name` nennt den richtigen InterfaceAlias
+(`WLAN` oder `Wi-Fi`). Die DNS-Einstellung betrifft nur dieses Geraet;
+dauerhaft gehoert `192.168.0.198` als DNS im Router eingetragen.
+
+Liefert `Resolve-DnsName homepage.cachyos-x8664` **nichts**, obwohl der
+Linux-Rechner die Zone beantwortet (`nslookup ... 192.168.0.198` oben klappt):
+der Adapter nutzt die Zone nicht. Dann uebergangsweise hosts-Eintrag - und im
+Protokoll vermerken, dass die DNS-Zone am Geraet weiter fehlt:
 
 ```powershell
 Add-Content -Path $env:WINDIR\System32\drivers\etc\hosts -Value "192.168.0.198 homepage.cachyos-x8664 grafana.cachyos-x8664 littlem.cachyos-x8664 llm-direct.cachyos-x8664 dozzle.cachyos-x8664 direct-llm.cachyos-x8664"

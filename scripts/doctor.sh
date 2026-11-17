@@ -506,6 +506,22 @@ if [[ -n "${LAN_BIND_IPS//[[:space:],]/}" ]]; then
     else
       note "kein DNS fuer ${lan_dom} - Geraete brauchen hosts-Eintraege (74 --print-hosts) oder Zone ausrollen: ./scripts/75-setup-local-dns.sh"
     fi
+    # mDNS ist der Pfad fuer EINTEILIGE Namen: der Rechnername alone loest oft
+    # ueber Avahi auf, und zwar auf eine Adresse, an der gar kein Dienst lauscht
+    # (gemessen: cachyos-x8664.local -> 192.168.0.47, die WLAN-Adresse, waehrend
+    # alle Dienste nur auf LAN_BIND_IPS gebunden sind). Geraete, die
+    # "ping cachyos-x8664" testen und dann http://cachyos-x8664:3000 probieren,
+    # laufen damit an der LAN-Bindung vorbei.
+    if command -v avahi-resolve >/dev/null 2>&1; then
+      mdns_ant="$(avahi-resolve -n "$(hostname 2>/dev/null || echo llmhost).local" 2>/dev/null | awk 'NF==2 {print $2}' | head -1)"
+      lan_soll=" $(printf '%s' "${LAN_BIND_IPS}" | tr ',' ' ') "
+      if [[ -n "${mdns_ant}" ]] && [[ "${lan_soll}" != *" ${mdns_ant} "* ]]; then
+        warn "mDNS nennt fuer $(hostname).local ${mdns_ant} - dort lauscht kein Dienst (gebunden:${lan_soll}). Fuer Prufungen immer den vollen Namen homepage.${lan_dom} verwenden." \
+             'docs/troubleshooting.md, Abschnitt "Der benannte HTTPS-Zugang klemmt" (Zeile mDNS)'
+      elif [[ -n "${mdns_ant}" ]]; then
+        good "mDNS und LAN-Bindung nennen dieselbe Adresse (${mdns_ant})"
+      fi
+    fi
   fi
   # Zugangswerte: der haufigste Betreiberfall ist "Wert vergessen". Der Arztlauf
   # nennt Pfade und Benutzernamen, nie Werte.
