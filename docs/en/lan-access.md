@@ -51,7 +51,11 @@ only - no forwarding, so it is not an open resolver. Publish
 `192.168.0.198` as the DNS server in the router and no device needs hosts
 entries. Without router access, use the hosts line below instead. mDNS under
 `.local` is deliberately not used: it would change every certificate name and
-the portal's allowed hosts.
+the portal's allowed hosts. Windows also appends the router's search suffix to
+multi-label names, so `homepage.cachyos-x8664.lan` leaves the zone and goes to
+the router instead. Use `nslookup -debug` at the device to see what actually
+arrives, then add that suffix to `LAN_DNS_SUFFIXES` in `config/host.env` (for
+example `lan fritz.box`) and re-run `make local-dns`.
 
 Windows additionally must trust Caddy's local root CA.
 

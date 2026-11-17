@@ -23,6 +23,13 @@
   `net.ipv4.ip_unprivileged_port_start=443` laesst rootless kein 80 (Gemessen:
   `rootlessport cannot expose privileged port 80`, die Unit fiel aus), und 8080
   ist als Loopback-only-Hafen reserviert. `--windows-setup` nutzt den neuen Weg.
+- **Suchendungen konfigurierbar (`LAN_DNS_SUFFIXES`):** Windows haengt an
+  zweiteilige Namen die vom Router verteilte Domain an, `homepage.<LAN_DOMAIN>.lan`
+  liegt damit ausserhalb der Zone und wandert zum Router. Der Generator kann
+  weitere `address=`-Zeilen erzeugen; `--check` prueft jede genannte Endung
+  mit. Leer laesst die Zone exakt wie zuvor (Standard). Am Geraet zeigt
+  `nslookup -debug`, welche Namen wirklich geschickt werden - deshalb steht der
+  Befehl jetzt auch in `handover/WIN-LAN-TODO.md`.
 - **Abnahme:** `--check` rc=0 fuer beide Generatoren, Arztlauf ohne Fehler,
   HTTPS-Routen unveraendert (Portal 200). Das Windows-Notebook bleibt offen
   (HANDOFF Nr. 18), weil von diesem Rechner aus nicht pruefbar.

@@ -31,6 +31,17 @@ Resolve-DnsName grafana.cachyos-x8664           # erwartet: 192.168.0.198
 nslookup -type=A example.com 192.168.0.198      # erwartet: Fehler/leer (kein offener Resolver)
 ```
 
+Haengt Windows eine Suchendung an (der Router verteilt eine Domain), lautet die
+Frage nicht "funktioniert die Zone?" sondern "welcher Name laeuft durch?". Das
+zeigt die Detailausgabe - die letzte Zeile mit der eigentlichen Anfrage:
+
+```powershell
+nslookup -debug homepage.cachyos-x8664
+# erschienen dort Namen wie homepage.cachyos-x8664.lan oder ...fritz.box, ist das
+# die Suchendung. Die meldet man dem Linux-Betreiber; sie kommt in
+# LAN_DNS_SUFFIXES in config/host.env, danach make local-dns.
+```
+
 `Get-NetAdapter | Select-Object Name` nennt den richtigen InterfaceAlias
 (`WLAN` oder `Wi-Fi`). Die DNS-Einstellung betrifft nur dieses Geraet;
 dauerhaft gehoert `192.168.0.198` als DNS im Router eingetragen.

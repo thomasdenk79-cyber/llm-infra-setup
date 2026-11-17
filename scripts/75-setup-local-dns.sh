@@ -42,6 +42,11 @@ DROPIN="${DROPIN_DIR}/99-llm-infra.conf"
 DIENST='dnsmasq.service'
 LAN_DOMAIN="${LAN_DOMAIN:-$(hostname)}"
 LAN_IPS=(${LAN_BIND_IPS:-})
+# Zusaetzliche Endungen, unter denen die Zone ebenfalls antwortet. Windows
+# haengt an zweiteilige Namen Suchendungen an (die vom Router verteilte
+# Domain), und ein Name wie homepage.<LAN_DOMAIN>.lan geht dann an den
+# Router statt an uns. Leer laesst die Zone exakt so, wie sie ist.
+LAN_DNS_SUFFIXES=(${LAN_DNS_SUFFIXES:-})
 ROLLEN=(homepage grafana littlem llm-direct dozzle direct-llm)
 
 ist_ipv4() {
@@ -85,6 +90,10 @@ ZONE
   for ip in "${LAN_IPS[@]}"; do printf 'listen-address=%s\n' "${ip}"; done
   printf 'local=/%s/\n' "${LAN_DOMAIN}"
   for ip in "${LAN_IPS[@]}"; do printf 'address=/%s/%s\n' "${LAN_DOMAIN}" "${ip}"; done
+  local ende
+  for ende in "${LAN_DNS_SUFFIXES[@]}"; do
+    for ip in "${LAN_IPS[@]}"; do printf 'address=/%s.%s/%s\n' "${LAN_DOMAIN}" "${ende}" "${ip}"; done
+  done
 }
 
 render_dropin() {
@@ -187,6 +196,14 @@ check_all() {
       [[ "${antwort}" == "${ip}" ]] \
         || { printf 'FEHLT: %s.%s liefert an %s nicht %s (Antwort: %s)\n' "${rolle}" "${LAN_DOMAIN}" "${ip}" "${ip}" "${antwort:-leer}"; rc=1; }
     done
+  done
+  local ende
+  for ende in "${LAN_DNS_SUFFIXES[@]}"; do
+    [[ -n "${ende}" ]] || continue
+    antwort="$(dig +short "@${LAN_IPS[0]}" "homepage.${LAN_DOMAIN}.${ende}" A 2>/dev/null | head -1)"
+    [[ "${antwort}" == "${LAN_IPS[0]}" ]] \
+      || { printf 'FEHLT: homepage.%s.%s liefert %s statt %s (Suchendung vom Router?)\n' \
+             "${LAN_DOMAIN}" "${ende}" "${antwort:-leer}" "${LAN_IPS[0]}"; rc=1; }
   done
   fremd="$(dig +short "@${LAN_IPS[0]}" example.com A 2>/dev/null | head -1)"
   [[ -z "${fremd}" ]] \

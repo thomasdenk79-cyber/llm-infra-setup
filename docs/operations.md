@@ -158,6 +158,11 @@ gehorcht wird nur auf `LAN_BIND_IPS` (die Host-Aufloesung ueber
 ein, braucht kein Geraet eine hosts-Datei. Ist der Router nicht zu aendern,
 bleibt `--windows-setup` mit dem hosts-Eintrag. mDNS unter `.local` ist bewusst
 nicht gebaut: es wuerde jeden Zertifikatsnamen und die Portal-Freigabe aendern.
+Windows haengt an zweiteilige Namen ausserdem die Suchendung des Routers an -
+`homepage.cachyos-x8664.lan` liegt ausserhalb der Zone und wandert zum Router.
+Was am Geraet ankommt, zeigt `nslookup -debug`; die Endung kommt nach
+`LAN_DNS_SUFFIXES` in `config/host.env` (zum Beispiel `lan fritz.box`), danach
+`make local-dns` und `./scripts/75-setup-local-dns.sh --check`.
 
 `--plan` ist der Schritt vor `make local-proxy`: er zeigt die Unterschiede von
 Caddyfile, Quadlet und installierter Unit, ohne etwas anzufassen. Eine Aenderung
