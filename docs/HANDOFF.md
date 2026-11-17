@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-11-17T10:17:15+01:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-11-17T10:20:01+01:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe (2026-11-17)
 
@@ -585,3 +585,7 @@ Neuer Modus --windows-setup: PowerShell-Block fuer das Notebook in einem Ausgebe
 ## Notiz 2026-11-17T10:17:15+01:00
 
 LAN-DNS-Zone ausgerollt, Root-Download auf 8081, Uebergabe fuer Windows-Agent
+
+## Notiz 2026-11-17T10:20:01+01:00
+
+mDNS-Hinweis im Arztlauf, Uebergabe-Checkliste mit DNS-Adapter-Einstellung
