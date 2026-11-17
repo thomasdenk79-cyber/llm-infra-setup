@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-11-17T10:24:42+01:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-11-17T10:27:33+01:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe (2026-11-17)
 
@@ -593,3 +593,7 @@ mDNS-Hinweis im Arztlauf, Uebergabe-Checkliste mit DNS-Adapter-Einstellung
 ## Notiz 2026-11-17T10:24:42+01:00
 
 LAN_DNS_SUFFIXES in scripts/75, Gegentest geprueft
+
+## Notiz 2026-11-17T10:27:33+01:00
+
+401-Unterscheidung Gateway-Schluessel versus Basic-Auth, Pruefschritt 4b
