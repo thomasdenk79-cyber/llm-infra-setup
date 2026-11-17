@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-11-17T10:30:57+01:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-11-17T10:34:14+01:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe (2026-11-17)
 
@@ -605,3 +605,7 @@ Arztlauf vergleicht /etc/hosts mit der Zone, Cache-Schritt in der Uebergabe
 ## Notiz 2026-11-17T10:30:57+01:00
 
 Cache-Gegenprobe auch in der englischen LAN-Deckung
+
+## Notiz 2026-11-17T10:34:14+01:00
+
+Ein-Zeilen-Prompt fuer den Windows-Agenten in der Checkliste
