@@ -290,6 +290,17 @@ Hashes in Ruhe (`ensure_auth_file` ist idempotent).
 (`/etc/sysctl.d/99-llm-infra-local-proxy.conf`) bleibt, weil rootless Podman
 sonst gar kein 443 binden kann; er oeffnet nichts von allein.
 
+**Namensaufloesung und Wurzel-Download (gemessen 2026-11-17):** die dnsmasq-Zone
+aus `scripts/75-setup-local-dns.sh` beantwortet alle sechs Namen auf
+`192.168.0.198`; `dig +short @192.168.0.198 homepage.cachyos-x8664 A` liefert die
+Adresse, `dig +short @192.168.0.198 example.com A` bleibt leer (kein offener
+Resolver), `ss -lun` kennt nur `192.168.0.198:53`. Der Root-Download
+`http://192.168.0.198:8081/caddy-local-authority-root.crt` liefert 200 und ist
+bytegleich mit der exportierten Wurzel; andere Pfade geben 404. Bewusst 8081 und
+nicht 80: die Kerneltrenner laesst rootless kein 80, und 8080 ist
+Loopback-only. Bewusst keine mDNS-Zone: `.local` wuerde jeden Zertifikatsnamen
+und `HOMEPAGE_ALLOWED_HOSTS` aendern.
+
 **Rueckweg:** `LAN_BIND_IPS=` in `config/host.env` leer setzen und
 `./scripts/74-setup-local-proxy.sh` laufen lassen - damit ist der Stand von
 2026-11-16 (nur Loopback) wieder erreicht, ohne Veraenderungen an Unit, Caddy-CA
