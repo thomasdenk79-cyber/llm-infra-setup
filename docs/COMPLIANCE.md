@@ -45,7 +45,7 @@ dokumentierter Luecke, **zurueckgestellt** = bewusst spaeter.
 | 32 | Alarme | erfuellt | 22 Regeln in `config/monitoring/alerts.yml`; kein Alarm fuer kurze Einzelspitzen (alles mit `for`-Zeit) |
 | 33 | README | erfuellt | Schnellstart, Tabellen, Grundregel |
 | 34 | Versionspinnen | teilweise | alle Images mit fester Version, Runtime zusaetzlich mit Digest; kein signaturpruefender Download (cosign) |
-| 35 | Sicherheit | teilweise | localhost-Bindung, rootless, Zufallspasswoerter, Secret-Guard; LAN-HTTPS ist umgesetzt und gemessen (Caddy `llm-proxy`, Basic-Auth fuer Dozzle, 403-Fallback, Loopback-Pruefung der Backend-Ports - Belege in `docs/security.md`, Abschnitt LAN-Zugang); direct-llm und Weiterleiter 30001 sind absichtlich ohne Anmeldung auf das vertrauenswuerdige Kabel-LAN begrenzt; offene Punkte: eigenes Seccomp-Profil, Loopback-Pruefliste um 3003/9100/12345 erweitern |
+| 35 | Sicherheit | teilweise | localhost-Bindung, rootless, Secret-Guard; LAN-HTTPS ist umgesetzt und gemessen (Caddy `llm-proxy`, 403-Fallback, Loopback-Pruefung der Backend-Ports - Belege in `docs/security.md`, Abschnitt LAN-Zugang); Dozzle und direct-llm sind ohne Anmeldung auf das vertrauenswuerdige Kabel-LAN begrenzt; offene Punkte: eigenes Seccomp-Profil |
 | 36 | Backup / Wiederherstellung | erfuellt | `scripts/backup.sh`, `scripts/restore.sh` mit Pruefsummen, pg_dump und ZFS-Snapshot |
 | 37 | Spaetere Erweiterungen | zurueckgestellt | zweites Modell, Azure-Fallback, OpenTelemetry, Router: Architekturstelle vorbereitet, nichts installiert |
 | 38 | Betriebsphilosophie | erfuellt | `AGENTS.md`, gefuehrter Betrieb ueber `doctor.sh` |

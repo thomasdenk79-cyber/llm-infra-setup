@@ -21,10 +21,10 @@ passiert", kann nur hier gemessen werden. Genau dafuer ist dieses Dokument da.
 | Root-Download | `http://192.168.0.198:8081/caddy-local-authority-root.crt` (nur dieser Pfad, sonst 404) |
 | Root-Fingerprint (SHA-256) | `6A:C7:44:AE:12:0E:66:FE:25:8A:FA:5C:D2:68:F1:42:E8:C3:90:92:48:60:BB:ED:77:96:9B:5C:2D:88:31:09` |
 | Firewall | ufw aktiv, `443/tcp` und `Anywhere` aus `192.168.0.0/24` erlaubt (Ankunftszahler belegen LAN-Pakete) |
-| Erwartete Antworten (Wurzel `/`) | `homepage` 200, `littlem` 200, `llm-direct` 200, `grafana` 301 auf `https://grafana.cachyos-x8664/grafana/` und dort 200, `dozzle` 401; die vLLM-Wurzel ist kein Gesundheitscheck |
+| Erwartete Antworten (Wurzel `/`) | `homepage` 200, `littlem` 200, `llm-direct` 200, `grafana` 301 auf `https://grafana.cachyos-x8664/grafana/` und dort 200, `dozzle` 200 ohne Login; die vLLM-Wurzel ist kein Gesundheitscheck |
 | Erwartete Antworten (`/v1/models`) | `littlem` und `llm-direct`: 401 ohne Schluessel (Gateway verlangt `Authorization: Bearer`), mit Schluessel 200 und Modelliste; `direct-llm`: 200 ohne API-Schluessel oder Proxy-Anmeldung (direkt zur vLLM-API) |
 
-Drei Dinge sind Absicht und kein Fehler: **401** auf `dozzle` ohne Basic-Auth,
+Zwei Dinge sind Absicht und kein Fehler:
 **401 mit `No api key passed in.`** auf `littlem` und `llm-direct` ohne
 Gateway-Schluessel (das ist ein Zugangs-, kein Verbindungsfehler), sowie der
 **TLS-Abbruch bei nackter IP** - `https://192.168.0.198/` bricht ab, weil Caddy
@@ -38,8 +38,8 @@ das Zertifikat nach dem Namen auswaehlt und eine nackte IP kein SNI mitschickt.
    Firewallregeln, keine Router-Einstellungen aendern.
 2. **Keine Linux-Seite aendern.** Der Linux-Rechner bleibt der Pruef-Anker;
    Aenderungen dort macht nur der Betreiber.
-3. **Keine Zugangswerte** in Dateien, Commits oder Protokolle schreiben. Fuer
-   `dozzle` ist 401 ohne Werte erwartet; `direct-llm` muss ohne Key 200 auf
+3. **Keine Zugangswerte** in Dateien, Commits oder Protokolle schreiben.
+   `dozzle` muss ohne Login 200 liefern; `direct-llm` muss ohne Key 200 auf
    `/v1/models` liefern.
 4. Root-Zertifikat nur nach **Fingerprint-Vergleich** importieren. Bei
    Abweichung: abbrechen, Fingerprint im Protokoll melden, nicht importieren.

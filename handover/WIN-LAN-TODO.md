@@ -114,7 +114,7 @@ certutil -addstore -f Root "$env:USERPROFILE\caddy-root.crt"
 ## 4. Routen gegen ihre erwarteten Codes
 
 ```powershell
-foreach ($r in 'homepage=200','littlem=200','llm-direct=200','grafana=301','dozzle=401') {
+foreach ($r in 'homepage=200','littlem=200','llm-direct=200','grafana=301','dozzle=200') {
   $n, $c = $r -split '='
   $got = curl.exe -s -o NUL -w '%{http_code}' "https://$n.cachyos-x8664/"
   "{0,-11} erwartet {1}  erhalten {2}  {3}" -f $n, $c, $got, $(if ($got -eq $c) { 'OK' } else { 'ABWEICHUNG' })

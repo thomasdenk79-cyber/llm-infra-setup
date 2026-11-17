@@ -54,10 +54,10 @@ command list: [LAN HTTPS access](lan-access.md).
 
 ## Credentials
 
-Generated credentials live outside the repository under `~/.config/llm-infra/`
-with mode 0600 (LAN Basic-Auth hashes: `proxy/lan-auth.env`, readable values:
-`proxy/lan-credentials.txt`); `./scripts/show-credentials.sh` prints them.
-Never commit them.
+Gateway credentials live outside the repository under `~/.config/llm-infra/`;
+`./scripts/show-credentials.sh` prints the operator-managed values. Never
+commit them. The local Dozzle route is intentionally unauthenticated and must
+remain restricted to the trusted private LAN.
 
 ## Further reading
 

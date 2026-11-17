@@ -125,9 +125,10 @@ Das Repository ist das Backup.
   auf `192.168.0.198:443` und bleibt auf `127.0.0.1:443`; unbekannte Namen laufen
   in eine Fallback-Site (403). Backend-Ports bleiben geschlossen mit Ausnahme
   des bewusst im privaten Kabel-LAN erreichbaren vLLM-Weiterleiters auf 30001.
-  Konfiguration steht in `config/host.env` (`LAN_BIND_IPS`, `LAN_DOMAIN`,
-  `LAN_DOZZLE_USER`); Basic-Auth nutzt nur Dozzle. `direct-llm` ist ohne
-  API-Schluessel und Proxy-Anmeldung direkt mit vLLM verbunden.
+  Konfiguration steht in `config/host.env` (`LAN_BIND_IPS`, `LAN_DOMAIN`);
+  Dozzle und `direct-llm` sind ohne Anmeldung nur im vertrauenswuerdigen
+  privaten LAN erreichbar. LiteLLM-Schluessel gelten weiterhin fuer
+  `littlem` und `llm-direct`.
   Gemessen: alle Adressen wie erwartet, `direct-llm` liefert die Modelliste,
   ueber `littlem` ein echter `chat/completions`-Durchlauf mit
   `qwen3.8-flash-next`, Loopback unveraendert, `--check` rc=0. Doku:

@@ -440,8 +440,8 @@ if (( ${proxy_chain} == 1 )); then
 fi
 
 # LAN-Anteil: nur wenn config/host.env Adressen nennt. Der Arztlauf bleibt knapp
-# (Adresse, Listener, Portal, eine Basic-Auth-Route, Zugangswerte, Weiterleiter);
-# die vollstaendige Pruefung - alle Namen, 401/200-Paare, Loopback-
+# (Adresse, Listener, Portal, LAN-Zugriffe, Weiterleiter);
+# die vollstaendige Pruefung - alle Namen, erwartete HTTP-Codes, Loopback-
 # Ausschliesslichkeit der Backend-Ports - macht der Generator selbst mit
 # ./scripts/74-setup-local-proxy.sh --check.
 if [[ -n "${LAN_BIND_IPS//[[:space:],]/}" ]]; then
@@ -538,30 +538,6 @@ if [[ -n "${LAN_BIND_IPS//[[:space:],]/}" ]]; then
         good "mDNS und LAN-Bindung nennen dieselbe Adresse (${mdns_ant})"
       fi
     fi
-  fi
-  # Zugangswerte: der haufigste Betreiberfall ist "Wert vergessen". Der Arztlauf
-  # nennt Pfade und Benutzernamen, nie Werte.
-  lan_auth_file="${SECRETS_DIR}/proxy/lan-auth.env"
-  lan_cred_file="${SECRETS_DIR}/proxy/lan-credentials.txt"
-  fehlend=''
-  for var in LLM_LAN_DOZZLE_USER LLM_LAN_DOZZLE_HASH; do
-    grep -q "^${var}=.\+" "${lan_auth_file}" 2>/dev/null || fehlend="${fehlend} ${var}"
-  done
-  if [[ -z "${fehlend}" ]]; then
-    good "Dozzle-Basic-Auth-Hash vorhanden (${lan_auth_file})"
-  else
-    bad "In ${lan_auth_file} fehlt oder ist leer:${fehlend}" \
-        './scripts/74-setup-local-proxy.sh   (ergaenzt fehlende Hashes; vorhandene bleiben erhalten)'
-  fi
-  if [[ -f "${lan_cred_file}" ]]; then
-    good "Zugangsdatei des Betreibers: ${lan_cred_file}"
-    note "Benutzer: ${LAN_DOZZLE_USER:-operator} (Logs). Wert vergessen: cat ${lan_cred_file}"
-    if [[ "$(stat -c %a "${lan_cred_file}" 2>/dev/null || echo 000)" != '600' ]]; then
-      warn "Zugangsdatei ist nicht 0600 geschuetzt ($(stat -c %a "${lan_cred_file}" 2>/dev/null))." "chmod 600 ${lan_cred_file}"
-    fi
-  else
-    warn "Zugangsdatei ${lan_cred_file} fehlt - der Dozzle-Basic-Auth-Wert ist nicht verfuegbar." \
-         './scripts/74-setup-local-proxy.sh --lan-credentials   (Pfade zeigen; ausrollen bei Bedarf: ./scripts/74-setup-local-proxy.sh)'
   fi
   # Die Route https://direct-llm.<dom>/ haengt am Weiterleiter des Rechners
   # (scripts/73). Die API ist ohne Schluessel oder Proxy-Anmeldung erreichbar;

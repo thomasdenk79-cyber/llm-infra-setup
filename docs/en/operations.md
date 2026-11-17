@@ -22,7 +22,7 @@ Browser log viewer: Dozzle at http://127.0.0.1:8080 (also via HTTPS, see
 ## HTTPS proxy
 
 `make local-proxy` rolls out the proxy; `--plan`, `--check`, `--status`,
-`--ca-import`, `--ca-export`, `--print-hosts` and `--lan-credentials` are
+`--ca-import`, `--ca-export` and `--print-hosts` are
 modes of `./scripts/74-setup-local-proxy.sh`. The command list, the protection
 model and the Windows client setup are on the [LAN HTTPS access](lan-access.md)
 page; teardown is described there too.

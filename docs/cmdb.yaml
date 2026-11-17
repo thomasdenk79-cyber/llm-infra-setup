@@ -31,13 +31,12 @@ services:
       von scripts/74-setup-local-proxy.sh aus config/proxy/Caddyfile.template"
     api: "Loopback: https://homepage.localhost/ , https://grafana.localhost/grafana/
       (Port 443). LAN (nur mit LAN_BIND_IPS in config/host.env):
-      homepage|grafana|littlem|llm-direct|dozzle|direct-llm.<LAN_DOMAIN>,
-      Basic-Auth nur fuer dozzle; direct-llm ohne Schluessel/Anmeldung"
-    secrets: "~/.config/llm-infra/proxy/lan-auth.env (Dozzle bcrypt, 0600, haengt als
-      EnvironmentFile an der Unit) und lan-credentials.txt (lesbar, 0600);
-      nie in Git - im Caddyfile stehen nur {env.*}-Platzhalter"
+      homepage|grafana|littlem|llm-direct|dozzle|direct-llm.<LAN_DOMAIN>;
+      dozzle und direct-llm ohne Anmeldung, nur vertrauenswuerdiges privates LAN"
+    secrets: "Keine Proxy-Zugangsdaten; Gateway-Schluessel bleiben in
+      ~/.config/llm-infra/gateway.env, nie in Git"
     health: "./scripts/74-setup-local-proxy.sh --check (End-zu-End-Requests auf
-      allen Namen, 401/200 von Dozzle, 200 auf der direkten vLLM-API,
+      allen Namen, 200 von Dozzle ohne Anmeldung, 200 auf der direkten vLLM-API,
       Loopback-Ausschliesslichkeit
       der Backend-Ports); --status fuer Unit, Listener, Netze"
     docs: "docs/operations.md (Abschnitte HTTPS-Zugang, LAN, Windows 11, Rueckbau);

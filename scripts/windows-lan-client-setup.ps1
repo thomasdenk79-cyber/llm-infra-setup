@@ -181,7 +181,7 @@ $Erwartet = @{
     'grafana'             = @{ Pfad = '/grafana/';        Erwartet = 200 }
     'littlem'             = @{ Pfad = '/v1/models';       Erwartet = 401 }
     'llm-direct'          = @{ Pfad = '/v1/models';       Erwartet = 401 }
-    'dozzle'              = @{ Pfad = '/';                Erwartet = 401 }
+    'dozzle'              = @{ Pfad = '/';                Erwartet = 200 }
     'direct-llm'          = @{ Pfad = '/v1/models';       Erwartet = 200 }
 }
 foreach ($Name in $Namen) {
@@ -216,4 +216,3 @@ try {
 
 Write-Host ''
 Write-Host 'Weiter auf dem Linux-Rechner: ./scripts/74-setup-local-proxy.sh --check' -ForegroundColor Cyan
-Write-Host 'Dozzle-Zugangsdaten (einzige Basic-Auth-Route): cat ~/.config/llm-infra/proxy/lan-credentials.txt' -ForegroundColor Cyan

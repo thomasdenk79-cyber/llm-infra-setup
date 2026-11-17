@@ -1,4 +1,21 @@
 # Aenderungsprotokoll
+## 2026-11-17 (Kollegenpaket fuer lokale LLM-Routen und Dozzle ohne Anmeldung)
+
+- **Kollegenpaket:** `make windows-client-package` erstellt
+  `config/proxy/site/anleitung/anleitung.zip` reproduzierbar. Das Paket richtet
+  ausschliesslich `local-*`-Modelle ueber `https://littlem.cachyos-x8664/v1`
+  ein; weder Azure/oeffentlicher Tunnel noch `standard-*`-Modelle oder
+  Zugangsschluessel liegen darin. Der Installer verifiziert den Fingerabdruck
+  des lokalen Caddy-Roots, fragt einen persoenlichen LiteLLM-Virtual-Key ab,
+  speichert ihn mit DPAPI und konfiguriert OpenCode sowie Copilot CLI.
+- **Dozzle:** lokale Proxy-Anmeldung entfernt; Route bleibt auf das
+  vertrauenswuerdige private LAN beschraenkt und wird ohne Zugangsdaten mit
+  HTTP 200 geprueft. Alte, genau benannte Dozzle-Credential-Dateien werden beim
+  Ausrollen entfernt.
+- **Dokumentation und Bootstrap:** die Anleitung ist unter `/anleitung/`
+  erreichbar; der HTTP-Bootstrap liefert nur das oeffentliche Caddy-Root und
+  `anleitung.zip`, alle anderen Pfade bleiben 404.
+
 ## 2026-11-17 (Betreiberentscheidung: direct-llm ohne Zugangsdaten)
 
 - `direct-llm` leitet `/v1/*` direkt an den vLLM-Weiterleiter und verlangt

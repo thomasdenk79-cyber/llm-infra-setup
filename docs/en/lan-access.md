@@ -22,7 +22,7 @@ Published only on `127.0.0.1` and the addresses listed in `LAN_BIND_IPS`
 | `https://grafana.<LAN_DOMAIN>/grafana/` | Grafana | 200, anonymous **read** role |
 | `https://littlem.<LAN_DOMAIN>/v1` | LiteLLM gateway | 401 without a gateway key |
 | `https://llm-direct.<LAN_DOMAIN>/v1` | alias of `littlem` | 401 without a key |
-| `https://dozzle.<LAN_DOMAIN>/` | container logs | 401 without / 200 with Basic-Auth |
+| `https://dozzle.<LAN_DOMAIN>/` | container logs | 200, no login; trusted LAN only |
 | `https://direct-llm.<LAN_DOMAIN>/v1/models` | vLLM via the metrics forwarder | 200 without an API key or proxy login |
 | any other name | fallback site | 403 or TLS abort, never proxied |
 
@@ -30,9 +30,9 @@ Published only on `127.0.0.1` and the addresses listed in `LAN_BIND_IPS`
 
 - LiteLLM (`littlem`, `llm-direct`) guards itself with its Virtual-Keys -
   a second password in front would be double work and would bypass key accounting.
-- Dozzle has no upstream login, so the proxy adds Basic-Auth (bcrypt). Its hash
-  lives in `~/.config/llm-infra/proxy/lan-auth.env` and its readable value in
-  `~/.config/llm-infra/proxy/lan-credentials.txt`, both 0600 and outside Git.
+- Dozzle has no upstream login and is intentionally served without proxy
+  authentication on the trusted private LAN. Its logs can contain secrets from
+  other containers; do not extend `LAN_BIND_IPS` to an untrusted network.
 - The direct vLLM route intentionally has no API key or proxy login. Its trust
   boundary is the private network addressed by `LAN_BIND_IPS`; the host forwarder
   on port 30001 is also unauthenticated (`docs/runtime.md`).
@@ -116,7 +116,8 @@ is `LITELLM_MASTER_KEY` in `~/.config/llm-infra/gateway.env` (print it with
 curl.exe -s https://llm-direct.cachyos-x8664/v1/models -H "Authorization: Bearer <master-key>"
 ```
 
-Expected: 200 with the model list. Only `dozzle` uses Basic-Auth; `direct-llm`
+Expected: 200 with the model list. `dozzle` is also unauthenticated;
+`direct-llm`
 is intentionally unauthenticated on the trusted LAN, while `llm-direct` uses
 the gateway key.
 
@@ -152,21 +153,21 @@ Acceptance at the device is the one open point (tracked as open item 18 in
 ```
 
 The machine is then reachable exactly as before the LAN rollout (loopback
-only). The Dozzle Basic-Auth files and the sysctl limit may stay; neither
-publishes anything on its own. The public Azure tunnel is independent of this.
+only). Old Dozzle credential files are removed by the generator. The sysctl
+limit may stay; neither publishes anything on its own. The public Azure tunnel
+is independent of this.
 
 ## Command list
 
 ```bash
 make local-proxy                        # roll out: render, caddy validate, start/reload
 ./scripts/74-setup-local-proxy.sh --plan             # show pending changes, change nothing
-./scripts/74-setup-local-proxy.sh --check            # end-to-end checks incl. LAN and Dozzle Basic-Auth
+./scripts/74-setup-local-proxy.sh --check            # end-to-end checks incl. LAN routes
 ./scripts/74-setup-local-proxy.sh --status           # unit, listeners, networks, LAN, CA, sysctl
 ./scripts/74-setup-local-proxy.sh --ca-import        # put the Caddy CA into the system trust (sudo, this host)
 ./scripts/74-setup-local-proxy.sh --ca-export        # CA file, fingerprint and Windows commands
 ./scripts/74-setup-local-proxy.sh --print-hosts      # hosts-file line for Windows
 ./scripts/74-setup-local-proxy.sh --windows-setup    # whole PowerShell block for the client
-./scripts/74-setup-local-proxy.sh --lan-credentials  # credential paths (never prints values)
 make local-dns                                      # roll out the LAN DNS zone (sudo)
 ./scripts/75-setup-local-dns.sh --plan              # show zone and systemd drop-in
 ./scripts/75-setup-local-dns.sh --check             # six names answered, no open resolver

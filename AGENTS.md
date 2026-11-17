@@ -99,7 +99,7 @@ Das Repository ist das einzige Backup dieser Arbeit. Deshalb gilt fuer jeden Sch
 | `scripts/70-setup-gateway-proxy.sh` | oeffentlicher Zugang: Reverse-Tunnel zur Azure-Gateway-VM, Caddy mit TLS an 443 |
 | `scripts/71-gateway-keys.sh` | persoenliche Virtual-Keys ausgeben und widerrufen |
 | `scripts/73-setup-vllm-forwarder.sh` | Weiterleiter der vLLM-Runtime ins Inferenz-Netz (Gateway versteht vLLM nicht direkt) |
-| `scripts/74-setup-local-proxy.sh` | lokales HTTPS unter Namen (Loopback: `homepage.localhost`, `grafana.localhost`; LAN ueber `LAN_BIND_IPS`: sechs Namen unter `.<LAN_DOMAIN>`), `--plan\|--check\|--status\|--ca-import\|--ca-export\|--print-hosts\|--windows-setup\|--lan-credentials` |
+| `scripts/74-setup-local-proxy.sh` | lokales HTTPS unter Namen (Loopback: `homepage.localhost`, `grafana.localhost`; LAN ueber `LAN_BIND_IPS`: sechs Namen unter `.<LAN_DOMAIN>`), `--plan\|--check\|--status\|--ca-import\|--ca-export\|--print-hosts\|--windows-setup` |
 | `scripts/75-setup-local-dns.sh` | Namensaufloesung fuer die LAN-Namen im Netz (dnsmasq-Zone `*.<LAN_DOMAIN>`, keine Weiterleitung, nur auf `LAN_BIND_IPS`), `--plan\|--render\|--check\|--remove`; Clients brauchen damit keine hosts-Datei |
 | `scripts/76-setup-runtime-unit.sh` | Laufzeit-Unit aus dem laufenden Container aufnehmen (`--import-from-container`) und bauen, `--check` |
 | `scripts/collect-host-facts.sh` | Host-Kennzahlen als Textdatei fuer den node_exporter |

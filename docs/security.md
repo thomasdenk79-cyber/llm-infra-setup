@@ -66,7 +66,7 @@ Was tatsächlich im Netz hoert (`ss -tlnH`, Gegenprobe `--check`):
 | `127.0.0.1:443` und `LAN_BIND_IPS:443` (Caddy `llm-proxy`) | LAN und Loopback | TLS; pro Route wie folgt |
 | Portal, Grafana, Anleitung | ueber 443 | Portal prueft Host-Header (`HOMEPAGE_ALLOWED_HOSTS`); Grafana anonym **lesend** (`GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer`, gemessen) |
 | Gateway-Routen `littlem`, `llm-direct` | ueber 443 | LiteLLM-Schluessel, 401 ohne |
-| `dozzle` | ueber 443 | Basic-Auth im Proxy (bcrypt, siehe unten) |
+| `dozzle` | ueber 443 | keine Anmeldung; nur im vertrauenswuerdigen privaten LAN |
 | `direct-llm` | ueber 443 | ohne API-Schluessel/Proxy-Login, nur an `LAN_BIND_IPS` |
 | unbekannter Hostname | Fallback-Site | gemessen: TLS-Abbruch ohne passendes Zertifikat, sonst `403 "Unbekannter Name"`; reicht an kein Backend weiter |
 | `30001` (vLLM-Weiterleiter) | **Adresse der bevorzugten Standard-Route, also Kabel-LAN** (WLAN seit 2026-11-17 zu) | keine Anmeldung; bewusste Grenze ist das private LAN |
@@ -77,36 +77,17 @@ werden nur in Containernetzen gebunden. Ausgenommen ist 30001, der bewusst auf
 der bevorzugten LAN-Adresse lauscht; 8001 gehoert zur nicht laufenden
 Referenz-Unit.
 
-**Basic-Auth-Qualitaet (gemessen).** Caddy v2.11.9; der Dozzle-Hash `$2a$14$...`
-(bcrypt, Kostenfaktor 14 - Caddy-Standard, gegen die Hashwerte selbst geprueft,
-nicht gegen das Bild). Realm `restricted`. Falscher Benutzer und falsches
-Passwort liefern dieselbe 401-Antwort - keine Aufzaehlung. Kein Sperrverhalten
-nach Fehlversuchen: Der Schutz steht und faellt mit der Passwortlaenge
-(24 Zeichen aus `/dev/urandom`, erzeugt in `new_password()`).
-
-**Klartext fluechtig im Prozessverzeichnis.** Beim Erzeugen der Hashes uebergibt
-`caddy_hash()` das Passwort als Argument (`podman run ... hash-password
---plaintext <wert>`); es steht damit kurz im `/proc/<pid>/cmdline` eines jeden
-lokalen Prozesses (gemessen mit einem Dummywert). Ebenso zeigt `--check` die
-Zugangsdaten als `curl -u`-Argument. Bewertung: gering - nur waehrend der
-Erzeugung bzw. des Prueflaufs, nur fuer lokale Prozesse, ein Benutzer auf dieser
-Maschine. Behoben werden kann es durch Uebergabe per stdin
-(`printf '%s' "$pw" | podman run -i ... caddy hash-password`, funktioniert,
-gemessen) bzw. `curl --config -`.
-
-**Kopfzeilen stromaufwaerts.** Caddy entfernt den `Authorization`-Kopf nach
-erfolgreicher Dozzle-Basic-Auth nicht; Dozzle nimmt heute keine Credentials ab.
-`direct-llm` hat absichtlich keine vorgeschaltete Anmeldung. Sobald Dozzle
-stromaufwaerts eine eigene Anmeldung eingefuehrt wird, kann der weitergereichte
-Kopf dort Konflikte oder Protokolleintraege erzeugen - vorgesehenes Gegenmittel:
-`header_up -Authorization` in der Dozzle-Route. `X-Forwarded-*` setzt Caddy;
-kein Backend entscheidet damit ueber Zugang.
+**Dozzle ist bewusst ohne Anmeldung erreichbar.** Die Route ist nur an
+`LAN_BIND_IPS` freigegeben und setzt ein vertrauenswuerdiges privates LAN voraus.
+Dozzle kann Logs anderer Container anzeigen, die Zugangswerte enthalten koennen;
+wer im LAN erreichbar ist, kann diese Logs lesen. Erweiterungen des Netzes
+erfordern deshalb eine neue Betreiberentscheidung.
 
 **Host-Header und Fallback (Gegenproben gemessen).** `Host: evil` an der
 LAN-Adresse liefert 403 (Fallback), `Host: dozzle.*` an der IP scheitert am
 TLS (kein Zertifikat fuer unbekannte Namen), SNI/Host-Mismatch wird nach dem
-Host-Header geroutet - die Dozzle-Basic-Auth greift, wenn deren Hostname
-getroffen wird. Ein Weg durch die Fallback-Site an ein Backend existiert nicht.
+Host-Header geroutet - Dozzle ist erreichbar, wenn deren Hostname getroffen
+wird. Ein Weg durch die Fallback-Site an ein Backend existiert nicht.
 Beachte: die `.localhost`-Namen beantwortet der
 Proxy auch an der LAN-Adresse (Caddy bindet nach Port, nicht nach Interface);
 die Inhalte sind deckungsgleich mit den LAN-Namen; eine Zusatzexposition ist
@@ -122,9 +103,9 @@ in der `.gitignore` - vor jedem `git add -A` loeschen oder `.gitignore`
 erweitern (Vorschlag in `.omo-work/review-codex.md`).
 
 **Was in Protokolle landet:** Caddy zeichnet Standardzugriffe im Container-Log
-auf (URL-Pfad, Status, Client-IP); Zugangswerte erscheinen darin nicht, auch
-nicht bei 401. Dozzle-Logs koennen Zugangswerte *anderer* Container enthalten -
-deshalb steht die Log-Route hinter Basic-Auth.
+auf (URL-Pfad, Status, Client-IP); API-Schluessel sollten nicht in URL-Pfaden
+uebertragen werden. Dozzle ist im privaten LAN nicht authentifiziert; seine
+Logs koennen Zugangswerte *anderer* Container enthalten.
 
 **TLS der internen CA (gemessen).** Root `Caddy Local Authority - 2026 ECC Root`
 gilt 10 Jahre; die Zwischenstufe laeuft nach 7 Tagen aus und wird
@@ -152,13 +133,6 @@ Import auf Windows laesst sich der SHA-256-Fingerprint erzwingen:
   erweitern~~ - erledigt 2026-11-17 (3003, 9100, 12345, 8120 in
   `LOOPBACK_ONLY_PORTS`; 8001 bleibt aus, weil die Pennyroyal-Runtime bewusst
   ad hoc laeuft).
-* `Authorization`-Kopf in der Dozzle-Basic-Auth-Route stromaufwaerts entfernen
-  (`header_up -Authorization`), bevor dort eine eigene Anmeldung einzieht.
-  Bewusst noch nicht getan: die Gateway-Routen brauchen den Kopf fuer die
-  API-Schluessel, ein pauschales Entfernen wuerde LiteLLM brechen.
-* ~~Gegenprobe "falsches Passwort liefert 401" in `--check` ergaenzen~~ -
-  erledigt 2026-11-17 (die Dozzle-Basic-Auth-Route prueft Zugang, fehlenden
-  Zugang und ein bewusst falsches Passwort).
 * Pruefung, dass `PENNYROYAL_PROTECT` vor Aenderungen an der GPU gesetzt ist
 * regelmaessiger Test, ob die Wiederherstellung wirklich klappt
   (siehe letzter Abschnitt in `docs/backup-restore.md`)

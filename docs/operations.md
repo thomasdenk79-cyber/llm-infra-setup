@@ -135,14 +135,13 @@ Befehle (alles idempotent, Vorlage `config/proxy/Caddyfile.template`):
 ```bash
 make local-proxy                     # ausrollen: rendern, caddy validate, Unit starten/neu laden
 ./scripts/74-setup-local-proxy.sh --plan      # zeigen, was sich aendert (aendert nichts)
-./scripts/74-setup-local-proxy.sh --check     # pruefen ohne zu aendern (inkl. LAN und Basic-Auth)
+./scripts/74-setup-local-proxy.sh --check     # pruefen ohne zu aendern (inkl. LAN-Routen)
 ./scripts/74-setup-local-proxy.sh --ca-import # Caddy-CA in den Systemtrust (sudo, nur dieser Rechner)
 ./scripts/74-setup-local-proxy.sh --ca-export # CA-Datei und Windows-Befehle ausgeben
 ./scripts/74-setup-local-proxy.sh --print-hosts  # hosts-Zeile fuer Windows
 ./scripts/74-setup-local-proxy.sh --windows-setup  # kompletter PowerShell-Block fuer
                                                # das Notebook: Namen, Route pruefen,
                                                # Root mit Fingerabdruck, alle Routen
-./scripts/74-setup-local-proxy.sh --lan-credentials  # Pfad der Zugangsdaten (ohne Werte)
 ./scripts/74-setup-local-proxy.sh --status    # Unit, Listener, Netze, LAN, CA, Sysctl-Grenze
 make local-dns                       # Namensaufloesung im Netz ausrollen (scripts/75)
 ./scripts/75-setup-local-dns.sh --check        # sechs Namen, kein offener Resolver
@@ -213,14 +212,13 @@ curl -s -I -b /dev/null -c /dev/null 'http://127.0.0.1:3000/grafana/d-solo/llm-i
 
 ### LAN-Zugang fuer den Windows-Arbeitsplatz
 
-Der LAN-Teil wird aus `config/host.env` gerendert - dort stehen alle vier
+Der LAN-Teil wird aus `config/host.env` gerendert - dort stehen alle drei
 Entscheidungen, nichts davon liegt in Git:
 
 | Variable | Wirkung auf diesem Rechner |
 |---|---|
 | `LAN_BIND_IPS` | Adressen, auf denen 443 veroeffentlicht wird (`192.168.0.198`); leer = kein LAN |
 | `LAN_DOMAIN` | Namensraum der Adressen (`cachyos-x8664`,Standard: Rechnername) |
-| `LAN_DOZZLE_USER` | Benutzer der Dozzle-Basic-Auth-Route (`logs`) |
 | `HOMEPAGE_ALLOWED_HOSTS` | muss zusaetzlich `homepage.<LAN_DOMAIN>` enthalten, sonst antwortet das Portal mit 400 |
 
 | Adresse | Ziel | Schutz |
@@ -229,29 +227,18 @@ Entscheidungen, nichts davon liegt in Git:
 | https://grafana.cachyos-x8664/grafana/ | Grafana (`grafana:3000`) | bewusst ohne Anmeldung: anonyme **Lese**-Rolle |
 | https://littlem.cachyos-x8664/v1/models | Gateway LiteLLM (`litellm:4000`) | Gateway-Schluessel, 401 ohne |
 | https://llm-direct.cachyos-x8664/v1/models | Alias von `littlem` (Name von 2026-11-17) | Gateway-Schluessel, 401 ohne |
-| https://dozzle.cachyos-x8664/ | Container-Logs (`dozzle:8080`) | Basic-Auth, 401 ohne |
+| https://dozzle.cachyos-x8664/ | Container-Logs (`dozzle:8080`) | ohne Anmeldung, nur vertrauenswuerdiges LAN |
 | https://direct-llm.cachyos-x8664/v1/models | vLLM direkt ueber den Weiterleiter (`host.containers.internal:30001`) | ohne API-Schluessel oder Anmeldung; nur ueber `LAN_BIND_IPS` erreichbar |
 | jeder andere Name | Fallback-Site | 403, kein Weiterreichen an ein Backend |
 
-Dozzle braucht ein zusaetzliches Passwort, weil es stromaufwaerts keine
-Anmeldung hat. `direct-llm` ist absichtlich ohne API-Schluessel und Proxy-Login:
+Dozzle und `direct-llm` sind absichtlich ohne Proxy-Anmeldung; sie sind nur im
+vertrauenswuerdigen privaten LAN erreichbar. Dozzle-Logs koennen Zugangswerte
+anderer Container enthalten. `direct-llm` ist absichtlich ohne API-Schluessel:
 die Grenze ist das private, vertrauenswuerdige Netz in `LAN_BIND_IPS`. Der
 Weiterleiter-Port 30001 ist bereits innerhalb dieses Netzes ebenfalls ohne
 Anmeldung erreichbar (`docs/runtime.md`). LiteLLM prueft seine Virtual-Keys
 selbst - ein zweites Passwort davor waere Doppelarbeit und wuerde die
 Schluesselabrechnung aushebeln.
-
-Die Zugangswerte erzeugt der Generator beim ersten Ausrollen und legt sie ausserhalb
-von Git ab (0600): `~/.config/llm-infra/proxy/lan-auth.env` (bcrypt-Hashes,
-haengt als `EnvironmentFile=` an der Unit) und
-`~/.config/llm-infra/proxy/lan-credentials.txt` (lesbar fuer den Betreiber).
-Der Generator ueberschreibt vorhandene Hashes nicht; ein geaenderter Benutzername
-in `config/host.env` erzeugt dagegen gezielt einen neuen Zugang.
-
-```bash
-./scripts/74-setup-local-proxy.sh --lan-credentials   # Pfade zeigen (ohne Werte)
-cat ~/.config/llm-infra/proxy/lan-credentials.txt     # Betreiber liest die Werte
-```
 
 ### Windows 11: Namen aufloesen und dem Zertifikat vertrauen
 
@@ -282,7 +269,7 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 ```
 
 Es prueft jede Route gegen den erwarteten Code (Portal und Grafana 200, Gateway
-401 ohne Schluessel, Dozzle 401 ohne Zugangswerte und direct-llm `/v1/models`
+401 ohne Schluessel, Dozzle 200 ohne Anmeldung und direct-llm `/v1/models`
 200 ohne Zugangswerte) und nennt den Titel der
 Startseite - damit ist in einem Durchlauf sichtbar, ob der Weg durch ist.
 Von Hand sind es zwei Befehle:
@@ -316,7 +303,7 @@ Danach auf Windows pruefen (gleiche Pruefungen wie `--check`, aber ohne
 `--resolve`, weil die hosts-Datei ja jetzt greift):
 
 ```powershell
-# Erwartete Codes: homepage 200, grafana 301, dozzle 401.
+# Erwartete Codes: homepage 200, grafana 301, dozzle 200.
 foreach ($h in "homepage","grafana","dozzle") { curl.exe -s -o NUL -w "$h %{http_code}`n" "https://$h.cachyos-x8664/" }
 curl.exe -s -o NUL -w "grafana/anon %{http_code}`n" https://grafana.cachyos-x8664/grafana/    # 200
 curl.exe -s -o NUL -w "littlem      %{http_code}`n" https://littlem.cachyos-x8664/v1/models   # 401 ohne Schluessel
@@ -428,12 +415,8 @@ sysctl -n net.ipv4.ip_unprivileged_port_start             # erwartet: 1024
 ```
 
 Damit ist der Rechner wieder genau so erreichbar wie vor dem LAN-Ausbau: nur
-Loopback, nur ueber die Namen. Zwei Dinge duerfen bleiben:
-
-- Die Basic-Auth-Dateien unter `~/.config/llm-infra/proxy/` (`lan-auth.env`,
-  `lan-credentials.txt`, beide 0600). Sie hoeren zu keiner Veroeffentlichung
-  mehr; loeschen ist optional: `rm -f ~/.config/llm-infra/proxy/lan-*.env ~/.config/llm-infra/proxy/lan-credentials.txt`.
-- Die Kernelgrenze, falls sie fuer andere rootless-Dienste weiter benoetigt
+Loopback, nur ueber die Namen. Die Kernelgrenze darf bleiben, falls sie fuer
+andere rootless-Dienste weiter benoetigt
   wird. Sie allein oeffnet nichts - ohne Veroeffentlichung in der Unit hoert
   niemand im Netz.
 
@@ -448,10 +431,6 @@ Tunnel zur Gateway-VM (Autossh) wird ebenfalls nicht beruehrt.
 - `400` vom Portal unter `homepage.cachyos-x8664`: `HOMEPAGE_ALLOWED_HOSTS` in
   `config/host.env` um `homepage.<LAN_DOMAIN>` ergaenzen, dann
   `make homepage && systemctl --user restart homepage.service`.
-- `401` trotz richtiger Zugangswerte: in den Client-Dialog hat sich ein
-  Tippfehler eingeschlichen - Wert mit `cat
-  ~/.config/llm-infra/proxy/lan-credentials.txt` gegenpruefen. `journalctl
-  --user -u llm-proxy.service -n 40` zeigt, ob Caddy oder das Ziel antwortet.
 - `502` auf `direct-llm`: der Weiterleiter laeuft nicht - `systemctl --user
   status llm-vllm-forwarder.service`, Gegencheck `curl
   http://127.0.0.1:30001/v1/models`.
@@ -514,7 +493,7 @@ Doctor. Der Doctor-Fall ist Pruefpunkt *Lokaler Zugang ueber Namen* und
 |---|---|---|
 | Logs in Loki | in Betrieb (Container `llm-proxy` haelt `stack="llm-infra"`, `job="containerlogs"`) | `curl -sG 'http://127.0.0.1:3100/loki/api/v1/label/container/values' \| tr ',' '\n' \| grep proxy` |
 | Journal auf dem Rechner | in Betrieb | `journalctl --user -u llm-proxy.service -n 60 --no-pager` |
-| Dozzle im LAN | in Betrieb, hinter Basic-Auth | `https://dozzle.<LAN_DOMAIN>/` |
+| Dozzle im LAN | in Betrieb, ohne Anmeldung auf dem privaten LAN | `https://dozzle.<LAN_DOMAIN>/` |
 | Prometheus-Job | **fehlt** | `curl -s 'http://127.0.0.1:9090/api/v1/label/job/values' \| tr ',' '\n' \| grep -iE 'proxy\|caddy'` (leer) |
 | Dashboard-Panel | fehlt (kein Job, keine Messgroessen) | Dashboards unter `config/monitoring/grafana/provisioning/dashboards/` |
 

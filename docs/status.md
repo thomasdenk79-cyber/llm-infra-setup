@@ -265,7 +265,7 @@ Caddy-CA, `--check` endet mit rc=0):
 | https://grafana.cachyos-x8664/grafana/ | 200 ohne Anmeldung (anonyme Lese-Rolle) |
 | https://littlem.cachyos-x8664/v1/models | 401 ohne Schluessel; mit Schluessel echte Antwort `qwen3.8-flash-next` ueber `/v1/chat/completions` (HTTP 200, Modelltext erhalten) |
 | https://llm-direct.cachyos-x8664/v1/models | 401 (Alias von `littlem`, gleiches Verhalten) |
-| https://dozzle.cachyos-x8664/ | 401 ohne / 200 mit Basic-Auth (`logs`) |
+| https://dozzle.cachyos-x8664/ | 200 ohne Anmeldung; nur im vertrauenswuerdigen privaten LAN |
 | https://direct-llm.cachyos-x8664/v1/models | Alter Stand: 401 ohne / 401 mit falschem / 200 mit richtigem Zugang; seither durch die gewaehlte Route ohne Auth ersetzt |
 | beliebiger anderer Name | TLS-Abbruch bzw. 403 - die Fallback-Site reicht an kein Backend weiter |
 | https://homepage.localhost/ , https://grafana.localhost/grafana/ | unveraendert 200 (Loopback-Fallback bleibt) |
@@ -278,16 +278,19 @@ Host also gar nicht). Absichtlich ausgenommen ist 30001, der Weiterleiter: er
  muss die geroutete Adresse des Hosts bedienen, damit Container im Inferenz-Netz
 die Runtime erreichen (`docs/runtime.md`).
 
-**Zugangsdaten:** Basic-Auth nur fuer Dozzle (ohne eigene Anmeldung
-stromaufwaerts). Hashes in
-`~/.config/llm-infra/proxy/lan-auth.env`, lesbare Werte in
-`~/.config/llm-infra/proxy/lan-credentials.txt`, beide 0600 und ausserhalb von
-Git; das Caddyfile enthaelt nur `{env.*}`-Platzhalter. Erzeugt mit
-`caddy hash-password` aus dem gepinnten Bild. Ein zweiter Lauf laesst vorhandene
-Hashes in Ruhe (`ensure_auth_file` ist idempotent).
+**Dozzle:** ohne Proxy-Anmeldung, wie vom Betreiber gewuenscht. Dozzle-Logs
+koennen Zugangswerte anderer Container enthalten; deshalb bleibt die Route auf
+`LAN_BIND_IPS` im vertrauenswuerdigen privaten LAN beschraenkt.
+
+**Windows-Kollegenpaket:** `make windows-client-package` baut
+`config/proxy/site/anleitung/anleitung.zip` reproduzierbar. Es richtet nur
+`local-*`-Modelle ueber `littlem` ein; die Azure-URL und `standard-*`-Modelle
+sind absichtlich nicht enthalten. Die lokale Anleitung liegt unter
+`https://homepage.cachyos-x8664/anleitung/`.
 
 **Betreiberentscheidung (2026-11-17):** `direct-llm` soll ohne API-Schluessel
-und Proxy-Anmeldung direkt zur vLLM-API fuehren. Der private Kabel-LAN-Bereich
+und Proxy-Anmeldung direkt zur vLLM-API fuehren. Auch Dozzle ist im privaten
+LAN ohne Proxy-Anmeldung erreichbar. Der private Kabel-LAN-Bereich
 ist die vorgesehene Zugangsgrenze; `littlem` und `llm-direct` behalten die
 LiteLLM-Bearer-Authentifizierung. Der Generator und die zugehoerigen Pruefungen
 sind im Commit `2092e7d` angepasst und auf CachyOS ausgerollt. `--check` endet
