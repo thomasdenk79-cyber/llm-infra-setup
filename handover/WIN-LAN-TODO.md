@@ -90,6 +90,29 @@ Erwartet: sechs Zeilen mit `OK`, letzte Zeile `grafana gefolgt: 200
 https://grafana.cachyos-x8664/grafana/`. **401** bei `dozzle` und `direct-llm`
 ist richtig - ohne Zugangswerte, und Zugangswerte gehoeren nirgends hin.
 
+## 4b. Mit Zugangswerten (beweist die Endpunkte, nicht nur die Route)
+
+Der Gateway-Schluessel liegt auf dem Linux-Rechner in
+`~/.config/llm-infra/gateway.env` als `LITELLM_MASTER_KEY` (ausgeben lassen:
+`make show-credentials`). Er **gehoert nicht** in diese Datei, ins Protokoll oder
+in einen Commit - hier nur als Platzhalter.
+
+```powershell
+$k = Read-Host 'Gateway-Schluessel (LITELLM_MASTER_KEY)'   # nicht abtippen, einfuegen
+curl.exe -s https://llm-direct.cachyos-x8664/v1/models -H "Authorization: Bearer $k"
+# erwartet: 200 mit Modelliste (qwen3.8-flash-next, standard-balanced, ...)
+curl.exe -s https://littlem.cachyos-x8664/v1/models -H "Authorization: Bearer $k"
+# erwartet: dasselbe - littlem und llm-direct sind beide der Gateway
+$basic = Read-Host 'direct-llm Zugang (Benutzer:Kennwort)'  # Benutzer steht in config/host.env
+curl.exe -s -u $basic https://direct-llm.cachyos-x8664/v1/models
+# erwartet: 200 mit den vLLM-Modellen
+$k = $null; $basic = $null; Clear-Host
+```
+
+Ohne Werte ist **401** auf allen dreien das erwartete Ergebnis. Ein 401 mit
+`"No api key passed in."` zeigt: Route und TLS sind in Ordnung, es fehlt nur der
+Schluessel - also kein Netzfehler und kein Grund, an der Firewall zu drehen.
+
 ## 5. Browser
 
 `https://homepage.cachyos-x8664/` ohne Zertifikatswarnung oeffnen. Warnung =
@@ -116,6 +139,8 @@ Datei `handover/WIN-LAN-REPORT-<JJJJ-MM-TT>.md` im Repo anlegen, Inhalt:
 | 2 | Resolve-DnsName homepage | 192.168.0.198 |  |  |
 | 3 | Fingerprint | 6A:C7:...:31:09 |  |  |
 | 4 | sechs Routen | 200/200/200/301/401/401 |  |  |
+| 4b | llm-direct `/v1/models` mit Schluessel | 200 mit Modelliste |  |  |
+| 4b | direct-llm `/v1/models` mit Basic-Auth | 200 |  |  |
 | 5 | Browser homepage | 200 ohne Warnung |  |  |
 
 ## Abweichungen

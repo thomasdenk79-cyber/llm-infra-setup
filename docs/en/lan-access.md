@@ -106,6 +106,18 @@ foreach ($h in "homepage","grafana","dozzle","direct-llm") { curl.exe -s -o NUL 
 curl.exe -s -u "inference:<see lan-credentials.txt>" https://direct-llm.cachyos-x8664/v1/models
 ```
 
+`llm-direct` is the LiteLLM gateway and answers 401 `No api key passed in.`
+without a key - that is an authentication answer, not a network failure. The key
+is `LITELLM_MASTER_KEY` in `~/.config/llm-infra/gateway.env` (print it with
+`make show-credentials` on the Linux host):
+
+```powershell
+curl.exe -s https://llm-direct.cachyos-x8664/v1/models -H "Authorization: Bearer <master-key>"
+```
+
+Expected: 200 with the model list. `dozzle` and `direct-llm` are the Basic-Auth
+routes; `llm-direct` deliberately uses the gateway key instead.
+
 Acceptance at the device is the one open point (tracked as open item 18 in
 `docs/HANDOFF.md`); record it in `docs/status.md` once done.
 
