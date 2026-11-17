@@ -5,7 +5,7 @@
   Internet-Zonenmarker nur von den mitgelieferten PowerShell-Dateien und startet
   den Installer. Es aendert keine Execution Policy und funktioniert mit der
   verwalteten `RemoteSigned`-Richtlinie; `AllSigned`/`Restricted` bleibt Aufgabe
-  der IT.
+  der IT. Die Key-Eingabe erklaert jetzt ausdruecklich, dass sie unsichtbar bleibt.
 - **Weniger Einstiegsskripte:** OpenCode und Copilot nutzen denselben
   `Run-LocalLlm.ps1`-Wrapper; die zwei `.cmd`-Starter waehlen nur noch den Client.
   Die Anleitungsseite zeigt die SHA-256-Pruefsumme des ZIPs.

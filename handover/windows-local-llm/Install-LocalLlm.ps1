@@ -138,7 +138,8 @@ try {
 }
 
 New-Item -ItemType Directory -Force -Path $KeyDirectory | Out-Null
-$secureKey = Read-Host 'Persoenlichen LiteLLM-Virtual-Key eingeben' -AsSecureString
+Write-Host 'Die Key-Eingabe bleibt unsichtbar. Persoenlichen LiteLLM-Virtual-Key eintippen und Enter druecken.' -ForegroundColor Yellow
+$secureKey = Read-Host 'LiteLLM-Key' -AsSecureString
 if ($secureKey.Length -eq 0) {
     throw 'Der LiteLLM-Virtual-Key darf nicht leer sein.'
 }

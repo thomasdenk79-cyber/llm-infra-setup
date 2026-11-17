@@ -34,7 +34,9 @@ und Kollegen verwenden deshalb die LAN-Namen mit `cachyos-x8664`.
    importiert ihn nur fuer den aktuellen Windows-Benutzer, fragt nach dem
    persoenlichen Virtual-Key und prueft damit `GET /v1/models`. Der Key wird
    erst nach erfolgreicher Pruefung DPAPI-verschluesselt im Benutzerprofil
-   gespeichert. Er steht weder in der ZIP-Datei noch in der OpenCode-Konfiguration.
+   gespeichert. Bei der Key-Eingabe werden keine Zeichen angezeigt; Key
+   eintippen und mit Enter bestaetigen. Er steht weder in der ZIP-Datei noch in
+   der OpenCode-Konfiguration.
 4. Falls der Installer wegen nicht aufgeloestem `littlem.cachyos-x8664` abbricht,
    eine PowerShell **als
    Administrator** oeffnen und einmal ausfuehren:
