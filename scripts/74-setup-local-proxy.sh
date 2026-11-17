@@ -80,6 +80,19 @@ LITELLM_UPSTREAM='litellm:4000'
 : "${VLLM_FORWARD_PORT:=30001}"
 DIRECT_LLM_UPSTREAM="host.containers.internal:${VLLM_FORWARD_PORT}"
 
+ist_ipv4() {
+  # ist_ipv4 <text> -> 0 bei gueltiger IPv4 in Punktnotation. Die Zahlenbereiche
+  # werden mitgeprueft: "192.168.0.999" ist keine Adresse, auch wenn sie vier
+  # Zifferngruppen hat, und podman wuerde die Veroeffentlichung still ignorieren.
+  local ip="$1" teil
+  [[ "${ip}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]] || return 1
+  IFS='.' read -r -a teile <<< "${ip}"
+  for teil in "${teile[@]}"; do
+    (( 10#${teil} <= 255 )) || return 1
+  done
+  return 0
+}
+
 # --- LAN-Konfiguration (Werte in config/host.env) -----------------------------
 : "${LAN_DOMAIN:=$(hostname 2>/dev/null || echo llmhost)}"
 : "${LAN_BIND_IPS:=}"
@@ -94,7 +107,7 @@ lan_enabled=0
 if (( ${#LAN_IPS[@]} > 0 )); then
   lan_enabled=1
   for lan_ip in "${LAN_IPS[@]}"; do
-    [[ "${lan_ip}" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] || die \
+    ist_ipv4 "${lan_ip}" || die \
       "LAN_BIND_IPS enthaelt keine gueltige IPv4: '${lan_ip}'. Setzen in ${root}/config/host.env (zum Beispiel LAN_BIND_IPS=192.168.0.198), dann: ./scripts/74-setup-local-proxy.sh"
   done
   [[ "${LAN_DOMAIN}" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,62}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,62}[A-Za-z0-9])?)*$ ]] || die \
@@ -646,6 +659,13 @@ check_lan() {
   # auf der LAN-Adresse. --resolve erspart hier die hosts-Datei auf diesem Rechner.
   local ip var host pfad code erwartet creds lan_rc=0
   for ip in "${LAN_IPS[@]}"; do
+    # Erste Frage vor dem Listener: gehoert die Adresse ueberhaupt zu diesem
+    # Rechner? Ein Tippfehler in LAN_BIND_IPS aeussert sich sonst nur als
+    # "lauscht nicht", was nach einem Unit-Fehler aussieht.
+    if ! ip -4 -o addr show scope global 2>/dev/null | grep -qE "[[:space:]]${ip}/"; then
+      printf 'FEHLT: %s ist auf diesem Rechner nicht konfiguriert - LAN_BIND_IPS in config/host.env pruefen (ip -4 addr zeigen)\n' "${ip}"
+      rc=1; lan_rc=1; continue
+    fi
     ss -tlnH 2>/dev/null | grep -q "${ip}:443 " || { printf 'FEHLT: kein Listener auf %s:443 (llm-proxy.service neu starten)\n' "${ip}"; rc=1; lan_rc=1; }
   done
   for var in LLM_LAN_DOZZLE_USER LLM_LAN_DOZZLE_HASH LLM_LAN_DIRECT_LLM_USER LLM_LAN_DIRECT_LLM_HASH; do
@@ -681,7 +701,7 @@ check_lan() {
       code="$(lan_curl "${host}" "${pfad}" "${creds}")"
       [[ "${code}" == "200" ]] || { printf 'FEHLT: https://%s.%s%s mit Zugangswerten liefert %s statt 200\n' "${host}" "${LAN_DOMAIN}" "${pfad}" "${code}"; rc=1; lan_rc=1; }
     else
-      printf 'FEHLT: keine zugänglichen Zugangswerte fuer %s in %s\n' "${host}" "${CRED_FILE}"; rc=1
+      printf 'FEHLT: keine Zugangswerte fuer %s in %s\n' "${host}" "${CRED_FILE}"; rc=1; lan_rc=1
     fi
   done
   # Unbekannter Name: der Fallback antwortet, aber kein Backend.

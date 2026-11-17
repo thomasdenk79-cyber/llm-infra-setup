@@ -368,6 +368,36 @@ for url in 'https://homepage.localhost/' 'https://grafana.localhost/grafana/'; d
   fi
 done
 
+# LAN-Anteil: nur wenn config/host.env Adressen nennt. Der Arztlauf bleibt knapp
+# (Listener, Portal, eine Basic-Auth-Route); die vollstaendige Pruefung - alle
+# Namen, 401/200-Paare, Loopback-Ausschliesslichkeit der Backend-Ports - macht
+# der Generator selbst mit ./scripts/74-setup-local-proxy.sh --check.
+if [[ -n "${LAN_BIND_IPS//[[:space:],]/}" ]]; then
+  lan_dom="${LAN_DOMAIN:-$(hostname 2>/dev/null || echo llmhost)}"
+  lan_ip="$(printf '%s' "${LAN_BIND_IPS}" | tr ',' ' ' | awk '{print $1}')"
+  if ss -tlnH 2>/dev/null | grep -q "${lan_ip}:443 "; then
+    good "LAN-Listener auf ${lan_ip}:443"
+  else
+    bad "Kein LAN-Listener auf ${lan_ip}:443" './scripts/74-setup-local-proxy.sh'
+  fi
+  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 8 --resolve "homepage.${lan_dom}:443:${lan_ip}" "https://homepage.${lan_dom}/" 2>/dev/null || printf '000')"
+  if [[ "${code}" == '200' ]]; then
+    good "LAN-Zugang antwortet: https://homepage.${lan_dom}/"
+  else
+    bad "LAN-Zugang antwortet nicht (${code}): https://homepage.${lan_dom}/" './scripts/74-setup-local-proxy.sh --check'
+  fi
+  # Die Log-Route muss ohne Zugangswerte abweisen, sonst haengt jemand im Netz
+  # in den Container-Protokollen.
+  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 8 -k --resolve "dozzle.${lan_dom}:443:${lan_ip}" "https://dozzle.${lan_dom}/" 2>/dev/null || printf '000')"
+  if [[ "${code}" == '401' ]]; then
+    good "LAN-Log-Route weist ohne Zugangswerte ab (401)"
+  else
+    bad "LAN-Log-Route antwortet mit ${code} statt 401 - Zugangswerte pruefen" './scripts/74-setup-local-proxy.sh --check'
+  fi
+else
+  note 'LAN ist zu (LAN_BIND_IPS in config/host.env leer) - Zugang nur auf diesem Rechner.'
+fi
+
 # 15 Chat-Dienst ---------------------------------------------------------------
 title 'Chat-Dienst'
 # Der Chat ist die einzige Flaeche, die Anwenderinnen und Anwender direkt
