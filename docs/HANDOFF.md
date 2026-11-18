@@ -173,15 +173,32 @@ Das Repository ist das Backup.
 
 ## 2. Was ist offen
 
-- **Laufzeit ohne Unit (wichtigster offener Punkt):** der Inferenz-Container
-  `flash-next-v3` (Bild `localhost/qwen38-fp4-tp1:v3`, 11 h Laufzeit) wird von keiner
-  Unit und keiner Quadlet-Datei verwaltet - weder auf Benutzer- noch auf Systemebene,
-  auch nicht ueber einen Pod. Nach einem Neustart des Rechners kommt das Modell nicht
-  zurueck, und `make drift` laeuft an `quadlet/pennyroyal.container` ins Leere, weil
-  dort eine andere Laufzeit beschrieben steht (Fork `localhost/flash-next-sm120:serving`).
-  Entscheidung des Betreibers erforderlich: Unit einrichten (erzwingt einen
-  Laufzeit-Neustart von rund 15 Minuten, abbruch bei laufenden Anfragen) oder bewusst
-  manuell lassen. Nichts davon ist ohne diese Antwort geschehen.
+- **Laufzeit ohne Unit (wichtigster offener Punkt, Stand 2026-11-18 aktualisiert):**
+  der Inferenz-Container `qwen38-rc2` (Bild
+  `docker.io/lmsysorg/sglang:nightly-dev-cu13-20261117-25c1c439`, per `podman run
+  --net=host` gestartet) wird von keiner Unit verwaltet; `versions.lock` und
+  `config/host.env` beschreiben jetzt genau diesen Bestand (zuvor: veraltete
+  vLLM-Angaben). Zwei offene Entscheidungen des Betreibers:
+  1. Unit-Stellung: `./scripts/76-setup-runtime-unit.sh --import-from-container`
+     (danach `apply-runtime-unit.sh`, bricht bei laufenden Anfragen ab) - sonst
+     fehlt das Modell nach jedem Neustart, weil nur `--restart unless-stopped` hilft.
+  2. Bindung: sglang lauscht mit `--host 0.0.0.0` auf allen Interfaces an Port
+     30000, nicht nur an der Loopback wie dokumentiert; der einzige Schutz ist der
+     bewusst freie Schluessel. Empfehlung: beim naechsten planbaren Neustart auf
+     `--host 127.0.0.1` stellen und nur den Weiterleiter (30001) ins Netz lassen.
+  Die Referenz-Unit `flash-next.service` steht seit 2026-11-17 auf failed; sie ist
+  nur Rueckfall, kein Betriebszustand.
+- **Review-Welle 2026-11-18 (zwei Agenten je Pod) - Restrisiken nach Abschluss:**
+  unveraendert bewusst: Dozzle-LAN ohne Anmeldung, Alertmanager ohne Empfaenger,
+  Incident-Endpunkte `/webhook` und `/replay` ohne Token (nur in den beiden
+  Stack-Netzen erreichbar), uvicorn `--forwarded-allow-ips '*'` (Loopback-Publish),
+  cAdvisor `--pid=host` (Secret-Lesen durch yama ptrace_scope=1 abgeschwaecht),
+  veraltete Docker-Discovery-Ziele in Alloy (Journal-Schiene ist der Lehrpfad).
+  Betreiberentscheidung offen: PostgreSQL 16.4 -> aktuelles 16.x (Neustartfenster),
+  Open WebUI v0.11.4 -> v0.13.x, GPU-Kuehlung (86 Grad unter Last bei 88-Grad-Schwelle).
+  Kleine Reste: Prometheus-Token im Beobachtungsstapel ist der Master-Key (statt
+  read-only Virtual-Key), Phasenliste des Incident-Agenten nennt zwei nie vergebene
+  Zustande, LAN-Name `littlem` bleibt als Alias neben `llm-direct` Bestandsschutz.
 - **Anleitung wieder bedient (2026-11-16, gemessen):** die TOOLS-Kachel zeigte auf
   `https://homepage.localhost/anleitung/`, ohne dass jemand die Seite auslieferte.
   Sie liegt jetzt als `config/proxy/site/anleitung/index.html` im Repo, haelt den
