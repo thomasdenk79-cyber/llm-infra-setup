@@ -131,3 +131,11 @@ Pruefpunkte: Einheiten stimmen, Legendentext lesbar, keine Panel-Fehler,
 Gesamtzustand und Vorfallsbanner oberhalb der Falzkante, keine Ueberlaeufe
 ueber 24 Spalten. Die Bilder sind Beweismittel; der Bericht ist die
 maschinenlesbare Abnahme.
+
+Bisherige Abnahme (2026-11-18): alle elf Dashboards rendern ohne Panel-Fehler;
+Bilder unter `docs/screenshots/` (Normalzustand, dazu Stoerungs- und
+Wartungszustand der vier Statusseiten). Zwei Befunde wurden dabei behoben:
+Ein Overlay-Matcher mit `id: "name"` statt `byName` reisst in Grafana 12 die
+ganze Seite um (Konsolenfang noetig, das Panel zeigt nur "Page error"); und
+`vllm:request_success_created` existiert auf der SGLang-Laufzeit nicht
+(Betriebszeit nutzt `process_start_time_seconds`).
