@@ -360,8 +360,12 @@ if systemctl --user is-active --quiet wiki.service 2>/dev/null || podman ps --fo
   if [[ -d "${WIKI_DIR}" && "${stamp_w}" != "${head_w}" ]]; then
     warn 'Wiki-Baustempel hinter Git-HEAD' './scripts/wiki-rebuild.sh --force'
   fi
-  res_t="$(systemctl --user show wiki-rebuild.service -p ExecMainCode --value 2>/dev/null || echo -)"
-  [[ "${res_t}" != "exited" && "${res_t}" != "-" ]] && warn "Letzter Rebuild endete nicht sauber (${res_t})" 'journalctl --user -u wiki-rebuild.service -n 40'
+  # Result ist das zuverlaessige Feld; ExecMainCode zaehlt nur den Exit-Typ.
+  res_t="$(systemctl --user show wiki-rebuild.service -p Result --value 2>/dev/null || echo -)"
+  st_t="$(systemctl --user show wiki-rebuild.service -p ExecMainStatus --value 2>/dev/null || echo -)"
+  if [[ -n "${res_t}" && "${res_t}" != "success" && "${res_t}" != "-" ]]; then
+    warn "Letzter Rebuild endete nicht sauber (${res_t}/Status ${st_t})" 'journalctl --user -u wiki-rebuild.service -n 40'
+  fi
 fi
 if systemctl --user is-active --quiet alloy.service; then
   good 'Alloy laeuft'
@@ -487,6 +491,24 @@ if (( ${proxy_chain} == 1 )); then
     fi
   done
 fi
+
+# Loopback-Namen: alle bedienten Seiten unter https://NAME.localhost (Review
+# 2026-11-18: Zugang ohne IP-Adressen). Pfade sind die, die ohne Weiterleitung
+# 200 liefern.
+for eintrag in \
+    "homepage:/" "grafana:/grafana/" "dozzle:/" "wiki:/" \
+    "prometheus:/graph/" "alertmanager:/" "litellm:/" "loki:/" \
+    "cadvisor:/containers/" "local-llm:/health"; do
+  nm="${eintrag%%:*}"; pf="${eintrag#*:}"
+  code=$(curl -skL -o /dev/null -w '%{http_code}' --max-time 8 \
+    --resolve "${nm}.localhost:443:127.0.0.1" "https://${nm}.localhost${pf}" 2>/dev/null || echo 000)
+  if [[ "${code}" == 200 ]]; then
+    good "Namenszugang https://${nm}.localhost${pf} antwortet mit 200"
+  else
+    bad "https://${nm}.localhost${pf} liefert ${code}" \
+        "./scripts/74-setup-local-proxy.sh --check   (und: systemctl --user status ${proxy_unit})"
+  fi
+done
 
 # LAN-Anteil: nur wenn config/host.env Adressen nennt. Der Arztlauf bleibt knapp
 # (Adresse, Listener, Portal, LAN-Zugriffe, Weiterleiter);

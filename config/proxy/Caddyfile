@@ -154,6 +154,44 @@ litellm.localhost {
 	reverse_proxy litellm:4000
 }
 
+
+loki.localhost {
+	# Loki 3.5.2 bringt keine eigene Oberflaeche mit (web.ui_path ist in dieser
+	# Fassung kein Feld, gemessen 2026-11-18). Der Log-Pruefstand ist Grafana
+	# Explore; hier gibt es die API und eine Wegweisung.
+	tls internal
+	encode zstd gzip
+	header {
+		defer
+		delete X-Powered-By
+	}
+	reverse_proxy /loki/* /ready loki:3100
+	respond "Log-Pruefstand: https://grafana.localhost/grafana/explore - Loki-API liegt unter /loki/api/v1/*" 200
+}
+
+cadvisor.localhost {
+	# cAdvisor-Grundsicht je Container (read-only, ohne Anmeldung im Loopback).
+	tls internal
+	encode zstd gzip
+	header {
+		defer
+		delete X-Powered-By
+	}
+	reverse_proxy llm-cadvisor:8080
+}
+
+local-llm.localhost {
+	# Direktroute zur Modell-Laufzeit ohne Gateway-Schluessel: nur Loopback;
+	# rootless pasta reicht Host-Loopback nicht durch, deshalb der Gateway-Name.
+	tls internal
+	encode zstd gzip
+	header {
+		defer
+		delete X-Powered-By
+	}
+	reverse_proxy host.containers.internal:30000
+}
+
 # --- LAN-Zugang ---------------------------------------------------------------
 # Gerendert aus config/proxy/Caddyfile.template durch scripts/74-setup-local-proxy.sh.
 # Alle Namen enden auf den Rechnernamen (cachyos-x8664); Windows-Clients tragen sie in

@@ -26,6 +26,14 @@
 * Ganzer Stapel unter Namen: dozzle, wiki, prometheus, alertmanager
   und litellm.localhost bedient der Proxy jetzt ebenfalls (HTTPS, HSTS).
 
+### 2026-11-18 - Ganzer Stapel unter Namen, Direktroute zur Laufzeit
+
+* Zusaetzlich zu Portal und Grafana jetzt auch Dozzle, Wiki, Prometheus,
+  Alertmanager, LiteLLM-Konsole, Loki-API, cAdvisor und `local-llm.localhost`
+  (Direktroute zur Laufzeit auf 30000) unter `https://NAME.localhost`.
+* Der Arztlauf prueft alle Namenszugaenge selbst; die Timer-Pruefung des
+  Wiki-Rebuilds liest jetzt das zuverlaessige Ergebnisfeld.
+
 ## 2026-11-18 (Status-Seiten, KI-Vorfallsanalyse und sgtop-Spiegel in Grafana)
 
 - **Status-Seiten:** drei neue Grafana-Dashboards - `llm-stack-status`

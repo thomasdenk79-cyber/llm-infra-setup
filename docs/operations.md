@@ -125,6 +125,14 @@ Loopback-Zugang:
 |---|---|---|
 | https://homepage.localhost/ | Portal (`llm-homepage:3000`) | `curl -s -o /dev/null -w '%{http_code}' https://homepage.localhost/` -> 200 |
 | https://grafana.localhost/grafana/ | Grafana (`grafana:3000`, Unterpfad bleibt) | `curl -s -o /dev/null -w '%{http_code}' https://grafana.localhost/grafana/` -> 200 ohne Login |
+| https://dozzle.localhost/ | Protokolle (`dozzle:8080`) | Gegencheck -> 200 |
+| https://wiki.localhost/ | Wiki-Portal (`llm-wiki:8000`) | Gegencheck -> 200 |
+| https://prometheus.localhost/graph | Prometheus (`prometheus:9090`) | Gegencheck -> 200 |
+| https://alertmanager.localhost/ | Alertmanager (`alertmanager:9093`) | Gegencheck -> 200 |
+| https://litellm.localhost/ | Gateway-Konsole (`litellm:4000`, Schluessel noetig) | Gegencheck -> 200 |
+| https://loki.localhost/ | Loki-API und Wegweisung zu Grafana Explore (`loki:3100`) | Loki 3.5.2 hat keine eigene Oberflaeche |
+| https://cadvisor.localhost/containers/ | cAdvisor (`llm-cadvisor:8080`) | Gegencheck -> 200 |
+| https://local-llm.localhost/v1 | Direktroute zur Runtime auf 30000 (ohne Schluessel, nur Loopback) | Gegencheck `/health` -> 200 |
 
 Warum Container-Namen statt 127.0.0.1: rootless pasta reicht die Host-Loopback
 nicht an Container durch - der Proxy muss im Netz wohnen und gegen
