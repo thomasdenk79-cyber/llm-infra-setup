@@ -1,4 +1,33 @@
 # Aenderungsprotokoll
+## 2026-11-18 (Status-Seiten, KI-Vorfallsanalyse und sgtop-Spiegel in Grafana)
+
+- **Status-Seiten:** drei neue Grafana-Dashboards - `llm-stack-status`
+  (Up/Down aller Dienste, Zeitachse, Grund, ETA, Alarmgeschichte),
+  `llm-incident-analyse` (Vorfall, Phasen, KI-Befunde aus Loki) und
+  `llm-kunden-status` (Kundenmeldung mit Status und Schaetzung, 24-h-Verlauf).
+  Neuartige Kennzahlen liefert `scripts/collect-stack-status.sh` (Timer
+  `llm-stack-status.timer`, Textfile des node_exporters): `llm_service_*`,
+  `llm_customer_status_info`, `llm_incident_open`.
+- **KI-Vorfallsanalyse (Demo, intern):** `scripts/80-setup-incident-agent.sh`
+  rollt einen Agenten-Container aus (`scripts/incident-agent/server.py`, nur
+  Standardbibliothek, kein Host-Port). Weg: Alarm `DienstNichtErreichbar` ->
+  Alertmanager-Webhook -> Ticket in SQLite -> Beweise aus Loki, Prometheus,
+  Ticket-Historie und Git -> Analyse ueber das eigene Gateway -> Befund nach
+  Loki (`job="incident"`) und in die Kunden-Statusdatei. Externe Quellen
+  (Splunk, Oracle, OpenShift, Ticketsystem per MCP, Nagios-CHECK) sind
+  dokumentierte Adapter in `config/monitoring/incident-agent-adapters.json`
+  und standardmaessig aus. Demo: `make incident-agent-demo`.
+- **sgtop-Spiegel:** neues Dashboard `llm-sglang-live`
+  (`06-sglang-betriebsdaten.json`) mit allen nativen SGLang-Betriebsgroessen
+  (Scheduler, Anfragen, Token/Cache, Latenzpercentile, Speicher, spekulative
+  Ausfuehrung). Dashboard 01 bekam eine instance-Variable, Drilldown-Links
+  und die Protokollreihe in 05 einen Loki-Logpanel mit Explore-Link.
+- **KV-Cache-Anzeige klaert:** Pool-Anzeige bei ~90 % ist der Radix-Cache
+  (loeschbare Token zaehlen mit), effektiv ist `sglang:token_usage` (~40 %).
+  Neu als Recording-Regel `sglang:kv_pool_usage`; die drei Panels der Reihe
+  'Speicher und Cache' zeigen beide Seiten. Erklaerung in
+  `docs/monitoring.md#kv-cache-warum-die-anzeige-oft-90--sagt-und-sgtop-40-`.
+
 ## 2026-11-17 (Windows-Launcher fuer verwaltete PowerShell-Richtlinien)
 
 - **Einfacherer Start:** `Install.cmd` fragt nach Bestaetigung, entfernt den

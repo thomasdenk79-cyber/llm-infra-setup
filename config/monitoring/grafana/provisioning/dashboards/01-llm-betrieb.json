@@ -1,1 +1,2144 @@
-{"annotations": {"list": [{"builtIn": 1, "datasource": {"type": "grafana"}, "enable": true, "hide": true, "iconSize": 0, "name": "", "show": true, "type": "dashboard"}]}, "editable": true, "graphTooltip": 1, "id": null, "uid": "llm-infra-runtime", "title": "LLM-Betrieb", "tags": ["llm", "qwen3.8", "pennyroyal"], "time": {"from": "now-6h", "to": "now"}, "refresh": "30s", "schemaVersion": 39, "version": 2, "templating": {"list": []}, "panels": [{"type": "row", "title": "Uebersicht", "id": 900, "collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0}, "panels": []}, {"type": "stat", "title": "API-Status", "description": "1 = Runtime antwortet auf /metrics", "id": 1030, "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "gridPos": {"h": 4, "w": 4, "x": 0, "y": 1}, "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "area", "textMode": "auto"}, "targets": [{"refId": "A", "expr": "up{job=\"vllm\"}"}]}, {"type": "stat", "title": "Modell", "description": "Kontextlaenge des geladenen Modells (Token)", "id": 1034, "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "gridPos": {"h": 4, "w": 4, "x": 4, "y": 1}, "fieldConfig": {"defaults": {"unit": "short", "decimals": 1, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "area", "textMode": "auto"}, "targets": [{"refId": "A", "expr": "rate(vllm:request_prompt_tokens_sum[15m]) / clamp_min(rate(vllm:request_prompt_tokens_count[15m]), 1)"}]}, {"type": "stat", "title": "Betriebszeit", "description": "seit dem letzten Start der Runtime-Einheit", "id": 1038, "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "gridPos": {"h": 4, "w": 4, "x": 8, "y": 1}, "fieldConfig": {"defaults": {"unit": "s", "decimals": 1, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "area", "textMode": "auto"}, "targets": [{"refId": "A", "expr": "time() - min(vllm:request_success_created)"}]}, {"type": "stat", "title": "Anfragen pro Sekunde", "description": "Anzahl Chat-Anfragen in der letzten Minute", "id": 1042, "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "gridPos": {"h": 4, "w": 4, "x": 12, "y": 1}, "fieldConfig": {"defaults": {"unit": "reqps", "decimals": 1, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "area", "textMode": "auto"}, "targets": [{"refId": "A", "expr": "sum(rate(vllm:request_success_total[5m]))"}]}, {"type": "stat", "title": "Laufende Anfragen", "description": "gerade in Bearbeitung", "id": 1046, "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "gridPos": {"h": 4, "w": 4, "x": 16, "y": 1}, "fieldConfig": {"defaults": {"unit": "short", "decimals": 1, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "area", "textMode": "auto"}, "targets": [{"refId": "A", "expr": "vllm:num_requests_running"}]}, {"type": "stat", "title": "Wartend", "description": "in der Warteschlange", "id": 1050, "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "gridPos": {"h": 4, "w": 4, "x": 20, "y": 1}, "fieldConfig": {"defaults": {"unit": "short", "decimals": 1, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 1}]}}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "area", "textMode": "auto"}, "targets": [{"refId": "A", "expr": "vllm:num_requests_waiting"}]}, {"type": "timeseries", "title": "Token pro Sekunde (Vorlesen, Schreiben, zusammen)", "description": "Vorlese- und Schreibrate sind verschiedene Vorgaenge; die Summe ist der Gesamtdurchsatz.", "id": 2150, "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "gridPos": {"h": 8, "w": 12, "x": 0, "y": 5}, "fieldConfig": {"defaults": {"unit": "short", "min": null, "max": null, "custom": {"fillOpacity": 8, "showPoints": "never", "lineWidth": 1.5}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []}, "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}}, "targets": [{"refId": "A", "expr": "sum(rate(vllm:prompt_tokens_total[1m]))", "legendFormat": "Vorlesen (Prefill)", "instant": false}, {"refId": "B", "expr": "sum(rate(vllm:generation_tokens_total[1m]))", "legendFormat": "Schreiben", "instant": false}, {"refId": "C", "expr": "sum(rate(vllm:prompt_tokens_total[1m])) + sum(rate(vllm:generation_tokens_total[1m]))", "legendFormat": "zusammen", "instant": false}]}, {"type": "timeseries", "title": "Auslastung des Vorhersagepuffers", "description": "Direkt aus der Runtime; 0 wenn gerade niemand anfragt.", "id": 2162, "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "gridPos": {"h": 8, "w": 12, "x": 12, "y": 5}, "fieldConfig": {"defaults": {"unit": "short", "min": null, "max": null, "custom": {"fillOpacity": 8, "showPoints": "never", "lineWidth": 1.5}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []}, "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}}, "targets": [{"refId": "A", "expr": "sum(rate(vllm:generation_tokens_total[1m]))", "legendFormat": "Token/s gerade", "instant": false}]}, {"type": "row", "title": "Latenz", "id": 913, "collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 13}, "panels": []}, {"type": "timeseries", "title": "Vorlaufzeit bis zum ersten Token (TTFT)", "description": "Zeit vom Absenden bis zum ersten Zeichen. Zaehlt NICHT in die Schreibrate.", "id": 2420, "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "gridPos": {"h": 8, "w": 12, "x": 0, "y": 14}, "fieldConfig": {"defaults": {"unit": "s", "min": null, "max": null, "custom": {"fillOpacity": 8, "showPoints": "never", "lineWidth": 1.5}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []}, "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}}, "targets": [{"refId": "A", "expr": "histogram_quantile(0.50, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket[10m])))", "legendFormat": "P50", "instant": false}, {"refId": "B", "expr": "histogram_quantile(0.95, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket[10m])))", "legendFormat": "P95", "instant": false}, {"refId": "C", "expr": "histogram_quantile(0.99, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket[10m])))", "legendFormat": "P99", "instant": false}]}, {"type": "timeseries", "title": "Zeit zwischen zwei Token (TPOT)", "description": "Das ist das Schreibtempo, das man beim Antworten sieht.", "id": 2432, "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "gridPos": {"h": 8, "w": 12, "x": 12, "y": 14}, "fieldConfig": {"defaults": {"unit": "ms", "min": null, "max": null, "custom": {"fillOpacity": 8, "showPoints": "never", "lineWidth": 1.5}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []}, "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}}, "targets": [{"refId": "A", "expr": "histogram_quantile(0.50, sum by (le) (rate(vllm:inter_token_latency_seconds_bucket[10m]))) * 1000", "legendFormat": "P50", "instant": false}, {"refId": "B", "expr": "histogram_quantile(0.95, sum by (le) (rate(vllm:inter_token_latency_seconds_bucket[10m]))) * 1000", "legendFormat": "P95", "instant": false}, {"refId": "C", "expr": "histogram_quantile(0.99, sum by (le) (rate(vllm:inter_token_latency_seconds_bucket[10m]))) * 1000", "legendFormat": "P99", "instant": false}]}, {"type": "timeseries", "title": "Gesamtdauer einer Anfrage", "description": "Vorlauf plus Schreiben.", "id": 2660, "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "gridPos": {"h": 8, "w": 12, "x": 0, "y": 22}, "fieldConfig": {"defaults": {"unit": "s", "min": null, "max": null, "custom": {"fillOpacity": 8, "showPoints": "never", "lineWidth": 1.5}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []}, "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}}, "targets": [{"refId": "A", "expr": "histogram_quantile(0.50, sum by (le) (rate(vllm:e2e_request_latency_seconds_bucket[10m])))", "legendFormat": "P50", "instant": false}, {"refId": "B", "expr": "histogram_quantile(0.95, sum by (le) (rate(vllm:e2e_request_latency_seconds_bucket[10m])))", "legendFormat": "P95", "instant": false}]}, {"type": "timeseries", "title": "Vorhersage (spekulative Ausfuehrung)", "description": "Je hoeher, desto mehr geschriebene Token pro GPU-Schritt. Sinkende Werte erklaeren langsame Messungen.", "id": 2672, "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "gridPos": {"h": 8, "w": 12, "x": 12, "y": 22}, "fieldConfig": {"defaults": {"unit": "short", "min": null, "max": null, "custom": {"fillOpacity": 8, "showPoints": "never", "lineWidth": 1.5}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []}, "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}}, "targets": [{"refId": "A", "expr": "sum(rate(vllm:spec_decode_num_accepted_tokens_total[15m])) / clamp_min(sum(rate(vllm:spec_decode_num_drafts_total[15m])), 0.001)", "legendFormat": "akzeptierte Token pro Rechenschritt", "instant": false}, {"refId": "B", "expr": "sum(rate(vllm:spec_decode_num_accepted_tokens_total[15m])) / clamp_min(sum(rate(vllm:spec_decode_num_draft_tokens_total[15m])), 0.001)", "legendFormat": "Akzeptanzrate", "instant": false}]}, {"type": "row", "title": "Token und Anfragen", "id": 930, "collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 30}, "panels": []}, {"type": "timeseries", "title": "Token gesamt (seit Start)", "description": "", "id": 2930, "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "gridPos": {"h": 8, "w": 12, "x": 0, "y": 31}, "fieldConfig": {"defaults": {"unit": "short", "min": null, "max": null, "custom": {"fillOpacity": 8, "showPoints": "never", "lineWidth": 1.5}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []}, "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}}, "targets": [{"refId": "A", "expr": "sum(vllm:prompt_tokens_total)", "legendFormat": "vorgelesen", "instant": false}, {"refId": "B", "expr": "sum(vllm:generation_tokens_total)", "legendFormat": "geschrieben", "instant": false}, {"refId": "C", "expr": "sum(vllm:generation_tokens_total) + sum(vllm:prompt_tokens_total)", "legendFormat": "zusammen", "instant": false}]}, {"type": "timeseries", "title": "Vergleich der letzten Stunden", "description": "", "id": 2942, "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "gridPos": {"h": 8, "w": 12, "x": 12, "y": 31}, "fieldConfig": {"defaults": {"unit": "short", "min": null, "max": null, "custom": {"fillOpacity": 8, "showPoints": "never", "lineWidth": 1.5}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []}, "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}}, "targets": [{"refId": "A", "expr": "sum(increase(vllm:prompt_tokens_total[1h]))", "legendFormat": "vorgelesen je Stunde", "instant": false}, {"refId": "B", "expr": "sum(increase(vllm:generation_tokens_total[1h]))", "legendFormat": "geschrieben je Stunde", "instant": false}, {"refId": "C", "expr": "sum(increase(vllm:request_success_total[1h]))", "legendFormat": "Anfragen je Stunde", "instant": false}]}, {"type": "row", "title": "Speicher und Cache", "id": 939, "collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 39}, "panels": []}, {"type": "timeseries", "title": "Nutzung", "description": "Nahe 100 %: neue Anfragen warten oder es wird ausgelagert.", "id": 3200, "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "gridPos": {"h": 8, "w": 12, "x": 0, "y": 40}, "fieldConfig": {"defaults": {"unit": "percent", "min": null, "max": null, "custom": {"fillOpacity": 8, "showPoints": "never", "lineWidth": 1.5}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []}, "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}}, "targets": [{"refId": "A", "expr": "100 * vllm:kv_cache_usage_perc", "legendFormat": "Zeichenspeicher %", "instant": false}, {"refId": "B", "expr": "100 * sum(rate(vllm:prefix_cache_hits_total[10m])) / clamp_min(sum(rate(vllm:prefix_cache_queries_total[10m])), 1)", "legendFormat": "KV-Speicher %", "instant": false}, {"refId": "C", "expr": "100 * sum(vllm:num_requests_waiting) / clamp_min(sum(vllm:num_requests_running) + sum(vllm:num_requests_waiting), 1)", "legendFormat": "Mamba-Zustaende %", "instant": false}]}, {"type": "timeseries", "title": "Vorhandener Cache", "description": "Hohe Trefferquote erklaert, warum eine Folgefrage schnell beantwortet wird.", "id": 3212, "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "gridPos": {"h": 8, "w": 12, "x": 12, "y": 40}, "fieldConfig": {"defaults": {"unit": "short", "min": null, "max": null, "custom": {"fillOpacity": 8, "showPoints": "never", "lineWidth": 1.5}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []}, "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}, "tooltip": {"mode": "multi", "sort": "desc"}}, "targets": [{"refId": "A", "expr": "100 * sum(rate(vllm:prefix_cache_hits_total[10m])) / clamp_min(sum(rate(vllm:prefix_cache_queries_total[10m])), 1)", "legendFormat": "Trefferquote %", "instant": false}, {"refId": "B", "expr": "sum(rate(vllm:prompt_tokens_cached_total[5m]))", "legendFormat": "wiederverwendete Token/s", "instant": false}, {"refId": "C", "expr": "sum(rate(vllm:external_prefix_cache_hits_total[10m]))", "legendFormat": "neue Token je Zeichen", "instant": false}]}, {"type": "logs", "title": "Protokoll der Runtime", "id": 4440, "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"}, "gridPos": {"h": 10, "w": 24, "x": 0, "y": 48}, "options": {"showTime": true, "wrapLogMessage": true, "dedupEnabled": true, "enableLogDetails": true, "sortLabels": [], "prettifyLogMessage": false}, "targets": [{"refId": "A", "expr": "{container=\"flash-next-v3\"}", "queryType": "range", "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"}}]}]}
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "iconSize": 0,
+        "name": "",
+        "show": true,
+        "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "PBFA97CFB590B2093"
+        },
+        "enable": true,
+        "hide": false,
+        "iconSize": 0,
+        "name": "Alarme (Prometheus)",
+        "show": true,
+        "type": "events"
+      }
+    ]
+  },
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "uid": "llm-infra-runtime",
+  "title": "LLM-Betrieb",
+  "description": "Betriebsuebersicht der LLM-Inferenz: Anfragen, Latenz, KV-Cache, Gateway und Chat.",
+  "tags": [
+    "llm-infra",
+    "llm",
+    "qwen3.8",
+    "runtime"
+  ],
+  "timezone": "Europe/Berlin",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "version": 3,
+  "liveNow": false,
+  "fiscalYearStartMonth": 0,
+  "links": [
+    {
+      "title": "SGLang-Betriebsdaten",
+      "type": "dashboard",
+      "uid": "llm-sglang-live",
+      "url": "",
+      "tags": [
+        "sglang"
+      ],
+      "icon": "external link",
+      "asDropdown": false,
+      "includeVars": false,
+      "keepTime": false,
+      "targetBlank": false
+    },
+    {
+      "title": "GPU",
+      "type": "dashboard",
+      "uid": "llm-infra-gpu",
+      "url": "",
+      "tags": [],
+      "icon": "external link",
+      "asDropdown": false,
+      "includeVars": false,
+      "keepTime": false,
+      "targetBlank": false
+    },
+    {
+      "title": "Host",
+      "type": "dashboard",
+      "uid": "llm-infra-host",
+      "url": "",
+      "tags": [],
+      "icon": "external link",
+      "asDropdown": false,
+      "includeVars": false,
+      "keepTime": false,
+      "targetBlank": false
+    },
+    {
+      "title": "Speicher",
+      "type": "dashboard",
+      "uid": "llm-infra-storage",
+      "url": "",
+      "tags": [],
+      "icon": "external link",
+      "asDropdown": false,
+      "includeVars": false,
+      "keepTime": false,
+      "targetBlank": false
+    },
+    {
+      "title": "Agenten-Observatorium",
+      "type": "dashboard",
+      "uid": "llm-infra-agent-observatorium",
+      "url": "",
+      "tags": [],
+      "icon": "external link",
+      "asDropdown": false,
+      "includeVars": false,
+      "keepTime": false,
+      "targetBlank": false
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "instance",
+        "label": "Instanz",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "PBFA97CFB590B2093"
+        },
+        "query": {
+          "query": "label_values(vllm:num_requests_running, instance)",
+          "refId": "instance-variable-uid"
+        },
+        "definition": "label_values(vllm:num_requests_running, instance)",
+        "regexp": "",
+        "sort": 1,
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {
+          "selected": false,
+          "text": [
+            "Alle"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": [],
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "row",
+      "title": "Uebersicht",
+      "id": 900,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "panels": []
+    },
+    {
+      "type": "stat",
+      "title": "Laufende Anfragen",
+      "description": "Gerade in Bearbeitung (aggregiert ueber alle gewaehlten Instanzen).",
+      "id": 1001,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "min": null,
+          "max": null,
+          "noValue": "keine Daten",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(vllm:num_requests_running{job=\"vllm\",instance=~\"$instance\"})"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Warteschlange",
+      "description": "Anfragen, die noch keinen KV-Platz gefunden haben.",
+      "id": 1002,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "min": null,
+          "max": null,
+          "noValue": "keine Daten",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(vllm:num_requests_waiting{job=\"vllm\",instance=~\"$instance\"})"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Token pro Sekunde",
+      "description": "Geschriebene Token je Sekunde (Schreibrate der letzten Minute).",
+      "id": 1003,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "decimals": 0,
+          "min": null,
+          "max": null,
+          "noValue": "keine Daten",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 5
+              },
+              {
+                "color": "green",
+                "value": 20
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(vllm:generation_tokens_total{job=\"vllm\",instance=~\"$instance\"}[1m]))"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Vorlaufzeit P50",
+      "description": "Median der Zeit bis zum ersten Token. Zaehlt nicht in die Schreibrate.",
+      "id": 1004,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 2,
+          "min": null,
+          "max": null,
+          "noValue": "keine Daten",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 2
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m])))"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "KV-Auslastung (effektiv)",
+      "description": "Effektive Nutzung wie sgtop: real belegte KV-Token. Fallback auf vllm:kv_cache_usage_perc, falls die sglang-Serie fehlt. Der scheinbar hohe Pool-Wert ist etwas anderes — siehe Speicher-und-Cache.",
+      "id": 1005,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 2,
+          "min": 0,
+          "max": 1,
+          "noValue": "keine Daten",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.75
+              },
+              {
+                "color": "red",
+                "value": 0.9
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(sglang:token_usage{job=\"vllm\",instance=~\"$instance\"} or vllm:kv_cache_usage_perc{job=\"vllm\",instance=~\"$instance\"})"
+        }
+      ],
+      "links": [
+        {
+          "title": "SGLang-Betriebsdaten",
+          "type": "dashboard",
+          "uid": "llm-sglang-live",
+          "url": "",
+          "includeVars": true,
+          "keepTime": true,
+          "asDropdown": false,
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Dienste up",
+      "description": "Anzahl gemeldeter Dienste laut llm_service_up (Textfile-Collector, Vertrag: 17 Dienste).",
+      "id": 1006,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "min": null,
+          "max": null,
+          "noValue": "keine Daten",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 12
+              },
+              {
+                "color": "green",
+                "value": 17
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(llm_service_up)"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "API-Status",
+      "description": "1 = Runtime antwortet auf /metrics; 0 = nicht erreichbar.",
+      "id": 1030,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "min": null,
+          "max": null,
+          "noValue": "keine Daten",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "up{job=\"vllm\",instance=~\"$instance\"}"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Ø Prompt-Laenge",
+      "description": "Mittlere Prompt-Laenge des geladenen Modells (Token), gleitend ueber 15 Minuten.",
+      "id": 1034,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "min": null,
+          "max": null,
+          "noValue": "keine Daten",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(sum(rate(vllm:request_prompt_tokens_sum{job=\"vllm\",instance=~\"$instance\"}[15m])) / clamp_min(sum(rate(vllm:request_prompt_tokens_count{job=\"vllm\",instance=~\"$instance\"}[15m])), 1))"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Betriebszeit",
+      "description": "Zeit seit dem letzten Start der Runtime (Series vllm:request_success_created; bei SGLang-Runtime ohne native vLLM-Zaehler 'keine Daten').",
+      "id": 1038,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 0,
+          "min": null,
+          "max": null,
+          "noValue": "keine Daten",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "time() - min(vllm:request_success_created{instance=~\"$instance\"})"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Anfragen pro Sekunde",
+      "description": "Abgeschlossene Chat-Anfragen je Sekunde (5-Minuten-Mittel).",
+      "id": 1042,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "decimals": 2,
+          "min": null,
+          "max": null,
+          "noValue": "keine Daten",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(vllm:request_success_total{job=\"vllm\",instance=~\"$instance\"}[5m]))"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Anfragen",
+      "id": 930,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Token pro Sekunde (Vorlesen, Schreiben, zusammen)",
+      "description": "Vorlese- und Schreibrate sind verschiedene Vorgaenge; die Summe ist der Gesamtdurchsatz.",
+      "id": 2150,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(vllm:prompt_tokens_total{job=\"vllm\",instance=~\"$instance\"}[1m]))",
+          "legendFormat": "Vorlesen (Prefill)",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(vllm:generation_tokens_total{job=\"vllm\",instance=~\"$instance\"}[1m]))",
+          "legendFormat": "Schreiben",
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "sum(rate(vllm:prompt_tokens_total{job=\"vllm\",instance=~\"$instance\"}[1m])) + sum(rate(vllm:generation_tokens_total{job=\"vllm\",instance=~\"$instance\"}[1m]))",
+          "legendFormat": "zusammen",
+          "instant": false
+        }
+      ],
+      "links": [
+        {
+          "title": "SGLang-Betriebsdaten",
+          "type": "dashboard",
+          "uid": "llm-sglang-live",
+          "url": "",
+          "includeVars": true,
+          "keepTime": true,
+          "asDropdown": false,
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Schreibrate (Token/s)",
+      "description": "Aktuelle Generierrate der Engine; Einbrueche erklaeren langsame Messungen (Batch-Umbau, KV-Druck).",
+      "id": 2162,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(vllm:generation_tokens_total{job=\"vllm\",instance=~\"$instance\"}[1m]))",
+          "legendFormat": "Token/s gerade",
+          "instant": false
+        }
+      ],
+      "links": [
+        {
+          "title": "SGLang-Betriebsdaten",
+          "type": "dashboard",
+          "uid": "llm-sglang-live",
+          "url": "",
+          "includeVars": true,
+          "keepTime": true,
+          "asDropdown": false,
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Token gesamt (seit Start)",
+      "description": "Rohzaehler vorgelesener und geschriebener Token seit dem Runtime-Start.",
+      "id": 2930,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(vllm:prompt_tokens_total{job=\"vllm\",instance=~\"$instance\"})",
+          "legendFormat": "vorgelesen",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "sum(vllm:generation_tokens_total{job=\"vllm\",instance=~\"$instance\"})",
+          "legendFormat": "geschrieben",
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "sum(vllm:generation_tokens_total{job=\"vllm\",instance=~\"$instance\"}) + sum(vllm:prompt_tokens_total{job=\"vllm\",instance=~\"$instance\"})",
+          "legendFormat": "zusammen",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Vergleich der letzten Stunden",
+      "description": "Vorgelesene und geschriebene Token sowie abgeschlossene Anfragen je Stunde (Gleitfenster 1 h).",
+      "id": 2942,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(vllm:prompt_tokens_total{job=\"vllm\",instance=~\"$instance\"}[1h]))",
+          "legendFormat": "vorgelesen je Stunde",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "sum(increase(vllm:generation_tokens_total{job=\"vllm\",instance=~\"$instance\"}[1h]))",
+          "legendFormat": "geschrieben je Stunde",
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "sum(increase(vllm:request_success_total{job=\"vllm\",instance=~\"$instance\"}[1h]))",
+          "legendFormat": "Anfragen je Stunde",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Latenz",
+      "id": 913,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Vorlaufzeit bis zum ersten Token (TTFT)",
+      "description": "Zeit vom Absenden bis zum ersten Zeichen. Getrennt von der Schreibrate betrachten.",
+      "id": 2420,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 27
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 2
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m])))",
+          "legendFormat": "P50",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m])))",
+          "legendFormat": "P95",
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m])))",
+          "legendFormat": "P99",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Zeit zwischen zwei Token (TPOT)",
+      "description": "Das ist das Schreibtempo, das man beim Antworten sieht (Median unter 50 ms ist fluessig). Die vLLM-Histogramme haben keinen SGLang-Kompat-Mitschnitt; Fallback auf die native sglang:inter_token_latency_seconds_bucket.",
+      "id": 2432,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 27
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.05
+              },
+              {
+                "color": "red",
+                "value": 0.1
+              }
+            ]
+          },
+          "decimals": 3
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(vllm:inter_token_latency_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m]))) or histogram_quantile(0.50, sum by (le) (rate(sglang:inter_token_latency_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m])))",
+          "legendFormat": "P50",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(vllm:inter_token_latency_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m]))) or histogram_quantile(0.95, sum by (le) (rate(sglang:inter_token_latency_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m])))",
+          "legendFormat": "P95",
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(vllm:inter_token_latency_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m]))) or histogram_quantile(0.99, sum by (le) (rate(sglang:inter_token_latency_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m])))",
+          "legendFormat": "P99",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Gesamtdauer einer Anfrage",
+      "description": "Vorlauf plus Schreiben; P50/P95/P99 ueber alle abgeschlossenen Anfragen.",
+      "id": 2660,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 35
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(vllm:e2e_request_latency_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m])))",
+          "legendFormat": "P50",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(vllm:e2e_request_latency_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m])))",
+          "legendFormat": "P95",
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(vllm:e2e_request_latency_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m])))",
+          "legendFormat": "P99",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Vorhersage (spekulative Ausfuehrung)",
+      "description": "Je hoeher, desto mehr geschriebene Token pro GPU-Schritt. Sinkende Werte erklaeren langsame Messungen. (vLLM-Zaehler; bei SGLang-Runtime bewusst leer.)",
+      "id": 2672,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 35
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(vllm:spec_decode_num_accepted_tokens_total{job=\"vllm\",instance=~\"$instance\"}[15m])) / clamp_min(sum(rate(vllm:spec_decode_num_drafts_total{job=\"vllm\",instance=~\"$instance\"}[15m])), 0.001)",
+          "legendFormat": "akzeptierte Token pro Rechenschritt",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(vllm:spec_decode_num_accepted_tokens_total{job=\"vllm\",instance=~\"$instance\"}[15m])) / clamp_min(sum(rate(vllm:spec_decode_num_draft_tokens_total{job=\"vllm\",instance=~\"$instance\"}[15m])), 0.001)",
+          "legendFormat": "Akzeptanzrate",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Speicher und Cache",
+      "id": 939,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 43
+      },
+      "panels": []
+    },
+    {
+      "type": "text",
+      "title": "KV-Cache: drei verschiedene Sichten",
+      "id": 3100,
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 44
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "> **Warum der Pool fast voll aussieht:** Der KV-Pool wirkt permanent ~90 % gefuellt, weil der Praefix-Cache loeschbare (evictable) Token festhaelt, die bei Bedarf sofort freigegeben werden. Die sgtop-entsprechende Zahl ist die **effektive Nutzung** — sie zaehlt nur real belegte Token. **Verfuegbare Token** zeigen, was ohne Veraengung sofort nutzbar waere."
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Effektive Token-Nutzung (sgtop)",
+      "description": "Effektive KV-Nutzung wie sgtop: nur real belegte Token. Fallback OR auf vllm:kv_cache_usage_perc, falls sglang:token_usage fehlt. Nahe 100 %: neue Anfragen warten oder es wird verdraengt.",
+      "id": 3201,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 46
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.75
+              },
+              {
+                "color": "red",
+                "value": 0.9
+              }
+            ]
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sglang:token_usage{job=\"vllm\",instance=~\"$instance\"} or vllm:kv_cache_usage_perc{job=\"vllm\",instance=~\"$instance\"}",
+          "legendFormat": "effektive Nutzung",
+          "instant": false
+        }
+      ],
+      "links": [
+        {
+          "title": "SGLang-Betriebsdaten",
+          "type": "dashboard",
+          "uid": "llm-sglang-live",
+          "url": "",
+          "includeVars": true,
+          "keepTime": true,
+          "asDropdown": false,
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "KV-Pool inkl. veraenderbarer Cache-Reserve",
+      "description": "Recording Rule sglang:kv_pool_usage = (genutzte + veraenderbare Token) / Poolgroesse. Der Wert bleibt wegen des Praefix-Caches hoch (~90 %) — das ist kein Alarmzustand, sondern reservierter, loeschbarer Speicher.",
+      "id": 3202,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 46
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.85
+              },
+              {
+                "color": "red",
+                "value": 0.97
+              }
+            ]
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sglang:kv_pool_usage{job=\"vllm\",instance=~\"$instance\"}",
+          "legendFormat": "Pool-Fuellstand",
+          "instant": false
+        }
+      ],
+      "links": [
+        {
+          "title": "SGLang-Betriebsdaten",
+          "type": "dashboard",
+          "uid": "llm-sglang-live",
+          "url": "",
+          "includeVars": true,
+          "keepTime": true,
+          "asDropdown": false,
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Verfuegbare KV-Tokens",
+      "description": "Kurzfristig echt freie KV-Token. Faellt der Wert nahe 0, entscheidet der Scheduler ueber Verdraengung (Retraction) statt neuer Anfragen.",
+      "id": 3203,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 46
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 2000
+              },
+              {
+                "color": "red",
+                "value": 200
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sglang:kv_available_tokens{job=\"vllm\",instance=~\"$instance\"}",
+          "legendFormat": "freie Token",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Praefix-Cache Trefferquote",
+      "description": "Hohe Trefferquote erklaert, warum eine Folgefrage schnell beantwortet wird. Anteil wartender Anfragen als Druckanzeiger daneben.",
+      "id": 3212,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 54
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(vllm:prefix_cache_hits_total{job=\"vllm\",instance=~\"$instance\"}[10m])) / clamp_min(sum(rate(vllm:prefix_cache_queries_total{job=\"vllm\",instance=~\"$instance\"}[10m])), 1)",
+          "legendFormat": "Trefferquote",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(vllm:prefix_cache_hits_total{job=\"vllm\",instance=~\"$instance\"}[1h])) / clamp_min(sum(rate(vllm:prefix_cache_queries_total{job=\"vllm\",instance=~\"$instance\"}[1h])), 1)",
+          "legendFormat": "Trefferquote 1 h",
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "sum(vllm:num_requests_waiting{job=\"vllm\",instance=~\"$instance\"}) / clamp_min(sum(vllm:num_requests_running{job=\"vllm\",instance=~\"$instance\"}) + sum(vllm:num_requests_waiting{job=\"vllm\",instance=~\"$instance\"}), 1)",
+          "legendFormat": "Anteil wartender Anfragen",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Cache-Aktivitaet (wiederverwendete Token/s)",
+      "description": "Wiederverwendete Token pro Sekunde und externe Praefix-Treffer; zusammen mit der Trefferquote links lesen.",
+      "id": 3213,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 54
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(vllm:prompt_tokens_cached_total{job=\"vllm\",instance=~\"$instance\"}[5m]))",
+          "legendFormat": "wiederverwendete Token/s",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(vllm:external_prefix_cache_hits_total{job=\"vllm\",instance=~\"$instance\"}[10m]))",
+          "legendFormat": "externe Treffer/s (vLLM-Zeiten)",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Gateway",
+      "id": 950,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 62
+      },
+      "panels": []
+    },
+    {
+      "type": "stat",
+      "title": "Gateway-Fehler (15 min)",
+      "description": "ERROR-/Exception-Zeilen im LiteLLM-Log (Loki).",
+      "id": 4101,
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 0,
+        "y": 63
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "min": null,
+          "max": null,
+          "noValue": "keine Daten",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 20
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({container=\"litellm\"} |~ \"LiteLLM:ERROR|Exception\" [15m])) or vector(0)"
+        }
+      ],
+      "links": [
+        {
+          "title": "Agenten-Observatorium",
+          "type": "dashboard",
+          "uid": "llm-infra-agent-observatorium",
+          "url": "",
+          "includeVars": false,
+          "keepTime": true,
+          "asDropdown": false,
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Fallback/Retry (5 min)",
+      "description": "LiteLLM-Logzeilen mit Retry oder Fallback in der letzten Minute + 5-Minuten-Fenster.",
+      "id": 4102,
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 4,
+        "y": 63
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "min": null,
+          "max": null,
+          "noValue": "keine Daten",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({container=\"litellm\"} |~ \"Retried|Falling back|fallback\" [5m])) or vector(0)"
+        }
+      ],
+      "links": [
+        {
+          "title": "Agenten-Observatorium",
+          "type": "dashboard",
+          "uid": "llm-infra-agent-observatorium",
+          "url": "",
+          "includeVars": false,
+          "keepTime": true,
+          "asDropdown": false,
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Gateway-Aktivitaet je 5 Minuten",
+      "description": "Fallback-/Retry- und Fehlerzeilen pro Fenster aus den Container-Logs (Loki-Metrikabfrage).",
+      "id": 4103,
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 16,
+        "x": 8,
+        "y": 63
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({container=\"litellm\"} |~ \"Retried|Falling back|fallback\" [5m])) or vector(0)",
+          "legendFormat": "Fallback/Retry",
+          "instant": false,
+          "queryType": "range",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          }
+        },
+        {
+          "refId": "B",
+          "expr": "sum(count_over_time({container=\"litellm\"} |~ \"LiteLLM:ERROR|Exception\" [5m])) or vector(0)",
+          "legendFormat": "Fehler",
+          "instant": false,
+          "queryType": "range",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          }
+        }
+      ],
+      "links": [
+        {
+          "title": "Agenten-Observatorium",
+          "type": "dashboard",
+          "uid": "llm-infra-agent-observatorium",
+          "url": "",
+          "includeVars": false,
+          "keepTime": true,
+          "asDropdown": false,
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "type": "logs",
+      "title": "Gateway-Protokoll (LiteLLM)",
+      "description": "Rohprotokoll des Gateway-Containers; Filter oben ueber die Variablen des Agenten-Observatoriums verfeinerbar.",
+      "id": 4110,
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 68
+      },
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "dedupEnabled": true,
+        "enableLogDetails": true,
+        "sortLabels": [],
+        "prettifyLogMessage": false,
+        "maxLines": 100
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{job=\"containerlogs\", container=\"litellm\"}",
+          "queryType": "range",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          }
+        }
+      ],
+      "links": [
+        {
+          "title": "Agenten-Observatorium",
+          "type": "dashboard",
+          "uid": "llm-infra-agent-observatorium",
+          "url": "",
+          "includeVars": false,
+          "keepTime": true,
+          "asDropdown": false,
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Chat",
+      "id": 960,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 76
+      },
+      "panels": []
+    },
+    {
+      "type": "logs",
+      "title": "Runtime-Protokoll",
+      "description": "Protokoll der Inferenz-Runtime (Container-Namen mit qwen38/flash-next/pennyroyal — laeuft gerade SGLang unter neuem Namen).",
+      "id": 4440,
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 77
+      },
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "dedupEnabled": true,
+        "enableLogDetails": true,
+        "sortLabels": [],
+        "prettifyLogMessage": false,
+        "maxLines": 100
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{job=\"containerlogs\", container=~\"(qwen38.*|flash-next.*|pennyroyal.*|sglang.*)\"}",
+          "queryType": "range",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          }
+        }
+      ],
+      "links": [
+        {
+          "title": "Agenten-Observatorium",
+          "type": "dashboard",
+          "uid": "llm-infra-agent-observatorium",
+          "url": "",
+          "includeVars": false,
+          "keepTime": true,
+          "asDropdown": false,
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "type": "logs",
+      "title": "Chat-Protokoll (Open WebUI)",
+      "description": "Rohprotokoll des Chat-Portals. Ohne aktive Sitzung weniger Zeilen; noValue zeigt 'keine Daten'.",
+      "id": 4450,
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 77
+      },
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "dedupEnabled": true,
+        "enableLogDetails": true,
+        "sortLabels": [],
+        "prettifyLogMessage": false,
+        "maxLines": 100
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{job=\"containerlogs\", container=\"open-webui\"}",
+          "queryType": "range",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          }
+        }
+      ]
+    }
+  ]
+}

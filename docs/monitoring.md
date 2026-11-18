@@ -196,6 +196,57 @@ Pruefen:
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3000/grafana/api/health   # 200
 ```
 
+## Status-Seiten und Vorfallsanalyse (neu 2026-11-18)
+
+Drei Grafana-Seiten im Ordner `LLM Infrastructure`, Demo am eigenen Stack und
+ohne Umbau auf andere Umgebungen uebertragbar:
+
+| Seite | uid | Zeigt |
+|---|---|---|
+| Stack-Status: Up/Down | `llm-stack-status` | Ampel je Dienst, Zeitachse wer-wann-down, Grund, ETA, Verfuegbarkeit 24 h, Alarmgeschichte |
+| Incident-Analyse (KI-Agent) | `llm-incident-analyse` | offener Vorfall, Phasenverlauf und KI-Befunde (Loki `job="incident"`), Kundenstatus, Ticket-Hinweis |
+| Service-Status (Kundenansicht) | `llm-kunden-status` | grosse Statusmeldung ('Stoerung erkannt und in Bearbeitung', 'OFTP-Ausgang: Ausfall, ca. 30 min'), Ampeln, 24-h-Verlauf |
+
+Datenpfad: `scripts/collect-stack-status.sh` (Timer alle 30 s,
+`llm-stack-status.timer`) schreibt `stack-status.prom` in den
+Textfile-Ordner des node_exporters. Kennzahlen: `llm_service_up`,
+`llm_service_info` (Grund), `llm_service_start_time_seconds`,
+`llm_service_downtime_estimate_seconds`, `llm_customer_status_info`,
+`llm_incident_open`.
+
+Vorfallspipeline (Demo, intern - der externe Versand bleibt bewusst leer,
+siehe Abschnitt Alarmkanal): Alarm `DienstNichtErreichbar` -> Alertmanager
+Empfaenger `incident-agent` -> Webhook an den Agenten-Container
+(`scripts/incident-agent/server.py`, nur im Beobachtungsnetz, kein
+Host-Port) -> Ticket in SQLite (`~/.local/share/llm-infra/incident/tickets.db`,
+Zugriff per SQL = das "Problemtool" dieser Demo) -> Beweise aus Loki-Logs,
+Prometheus-Metriken, Ticket-Historie und Git-Verlauf -> KI-Analyse ueber das
+eigene Gateway (Modell `AGENT_MODEL` in
+`~/.config/llm-infra/incident-agent.env`) -> Befund zurueck nach Loki
+(`job="incident"`) und in die Kunden-Statusdatei. Externe Quellen (Splunk,
+Oracle, PostgreSQL-Instanzen, OpenShift, Ticketsystem per MCP) sind Adapter
+in `config/monitoring/incident-agent-adapters.json` und standardmaessig
+abgeschaltet; fuer Nagios/CHECK-Kommandos antwortet der Agent auf
+`GET /health` und liefert ueber `/tickets` die Befunde.
+
+Einrichten: `make incident-agent` (oder `./scripts/80-setup-incident-agent.sh`,
+braucht ein laufendes Gateway fuer die Schluesselvergabe). Pruefen:
+`./scripts/80-setup-incident-agent.sh --check`. Demo-Alarm durchjagen:
+`make incident-agent-demo`. Der Agent liest und schreibt nichts ausserhalb
+von `~/.local/share/llm-infra/incident`.
+
+### KV-Cache: warum die Anzeige oft ~90 % sagt und sgtop ~40 %
+
+Beides ist richtig, es sind zwei Messgroessen (gemessen 2026-11-18:
+Pool 0.91, effektiv 0.43): `sglang:token_usage` zaehlt nur tatsaechlich
+belegte KV-Token (sgtop-Wert, Panel 'Effektive Token-Nutzung'). Der
+KV-Pool wirkt dauerhaft fast voll, weil der Radix-Prefix-Cache
+loeschbare Token (`sglang:kv_evictable_tokens`) zurueckhaelt, bis neue
+Anfragen Platz brauchen - das ist die Recording-Regel `sglang:kv_pool_usage
+= (num_used + evictable) / max_total`. Die drei Panels der Reihe
+'Speicher und Cache' zeigen beide Seiten plus freie Token; der Alarm
+`KVSpeicherVolllaeuft` haengt an der effektiven Serie (`vllm:kv_cache_usage_perc`).
+
 ## Bekannte Datengrenzen (bewusst, kein Bug)
 | Signal | Wo verfuegbar | Warum |
 |---|---|---|

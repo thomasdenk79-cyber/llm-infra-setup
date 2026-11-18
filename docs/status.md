@@ -1,7 +1,9 @@
 # Projektstatus
 
 Stand: 2026-11-16, geprueft am selben Tag; Beweis-Befehle am 2026-11-17 erneut
-bestaetigt (LAN-Abschnitt, Dashboard-Zaehlbild, Einheiten-Messgroesse). Fruehere Stiche (WSL-Zeit,
+bestaetigt (LAN-Abschnitt, Dashboard-Zaehlbild, Einheiten-Messgroesse). Am
+2026-11-18 erweitert um Statusseiten, sgtop-Spiegel und die
+Vorfallsanalyse-Pipeline (`docs/monitoring.md`). Fruehere Stiche (WSL-Zeit,
 Pennyroyal-Kaltstarts, Tuning-Runden) stehen im `CHANGELOG.md` und im
 Git-Verlauf: `git show HEAD:docs/status.md`. Fortsetzungsanker ist
 `docs/HANDOFF.md`.
@@ -204,22 +206,26 @@ loki, node, prometheus, vllm`. Der Job `grafana` braucht `metrics_path:
 
 ### Dashboards
 
-Fuenf provisionierte Dashboards, zusammen 120 Panel-Abfragen (Nachzaehlung
-2026-11-17; nach dem Umbau in `5fa6ab0` waren es kurz 121, eine Abfrage fiel seither
-weg). Die
-Browser-Pruefung am 2026-11-16 (Playwright, Chromium headless, 1680x1000,
-eingeloggt als admin): 89 Panelfelder, davon 8 ohne Daten - ausschliesslich
-ZFS/ARC-Panels aus `04-speicher.json` (dieser Rechner hat kein ZFS), alle
-anderen gefuellen. Kein `sglang`-
-Verweis mehr in Regeln und Dashboards, Loki-Panels haengen an der
-provisionierten Loki-Datenquelle.
+Neun provisionierte Dashboards, zusammen 209 Panel-Abfragen (Nachzaehlung
+2026-11-18 nach dem Ausbau: sgtop-Spiegel `06-sglang-betriebsdaten.json`,
+Statusseiten `10`/`11`/`12`, Protokollreihe in 05; die frueheren fuenf
+Dashboards blieben inhaltlich erhalten). Die fruehere Regel "kein
+`sglang`-Verweis in Dashboards" ist ueberholt: die aktiven Laufzeitmetriken
+werden jetzt bewusst nativ (`sglang:*`, job `vllm`) und ueber die
+Kompatibilitaetsregeln angezeigt; der KV-Pool (~90 %, Radix-Cache inklusive)
+und die effektive Nutzung (~40 %, sgtop-Wert) stehen als eigene Panels
+da - Erklaerung in `docs/monitoring.md`.
 
 ```bash
-grep -o '"expr"' config/monitoring/grafana/provisioning/dashboards/0*.json | wc -l   # 120
-grep -c sglang config/monitoring/grafana/provisioning/dashboards/0*.json             # alles 0
-podman exec systemd-prometheus promtool check rules /etc/prometheus/conf/alerts.yml   # SUCCESS: 24 rules
+ls config/monitoring/grafana/provisioning/dashboards/*.json | wc -l    # 9
+curl -s 'http://127.0.0.1:3000/grafana/api/search?type=dash-db' | grep -c title   # 9
+./scripts/80-setup-incident-agent.sh --check                                     # rc=0
 ./scripts/validate.sh                                                            # rc=0
 ```
+
+Die Browser-Pruefung von 2026-11-16 (Playwright, 89 Panelfelder, davon 8
+datenlos - ausschliesslich ZFS/ARC in `04-speicher.json`, dieser Rechner hat
+kein ZFS) betrifft den alten Stand.
 
 Ehemaliger Befund, inzwischen behoben: die drei Panels ohne Anfrage in
 `05-agent-observatorium.json` ("Auslastung je Geraet", "VRAM-Bedarf je Geraet",

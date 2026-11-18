@@ -1404,6 +1404,130 @@
           }
         }
       ]
+    },
+    {
+      "type": "row",
+      "title": "Container-Protokolle",
+      "id": 905,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 51
+      },
+      "panels": []
+    },
+    {
+      "type": "logs",
+      "title": "Container-Protokolle (Rohansicht)",
+      "description": "Rohprotokolle aller Container des Jobs containerlogs; die Variable 'container' (oben rechts) waehlt einen oder mehrere Container aus, Limit 100 Zeilen. Fuer Tiefersuche den Explore-Link unten benutzen.",
+      "id": 1040,
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 52
+      },
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "dedupEnabled": true,
+        "enableLogDetails": true,
+        "sortLabels": [],
+        "prettifyLogMessage": false,
+        "maxLines": 100
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{job=\"containerlogs\", container=~\"$container\"}",
+          "queryType": "range",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          }
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Logzeilen je Ebene",
+      "description": "Anzahl Logzeilen je erkannter Ebene (detected_level: debug, info, warn, error, unknown) im 1-Minuten-Fenster, gruppiert ueber die gewaehlten Container.",
+      "id": 1041,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 62
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (detected_level) (count_over_time({job=\"containerlogs\", container=~\"$container\"} [1m]))",
+          "legendFormat": "{{detected_level}}",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "title": "Protokoll-Tiefsuche",
+      "id": 1042,
+      "gridPos": {
+        "h": 3,
+        "w": 24,
+        "x": 0,
+        "y": 70
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "Fuer Filter, Zeilenfolgen und Live-Tails: [Protokoll-Suche in Explore oeffnen](/explore?left=%2Fexplore%3Fleft%3D%7B%22datasource%22%3A%22P8E80F9AEF21F6940%22%2C%22queries%22%3A%5B%7B%22expr%22%3A%22%7Bjob%3D%5C%22containerlogs%5C%22%2C%20container%3D~%5C%22.%2A%5C%22%7D%22%2C%22range%22%3Atrue%2C%22stats%22%3A%5B%5D%2C%22refId%22%3A%22A%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-1h%22%2C%22to%22%3A%22now%22%7D%7D) — dort steht der volle LogQL-Editor mit gespeicherten Abfragen zur Verfuegung. (Datenquelle Loki, Job `containerlogs`.)"
+      }
     }
   ],
   "refresh": "30s",
@@ -1413,7 +1537,35 @@
     "agents"
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "name": "container",
+        "label": "Container",
+        "type": "query",
+        "datasource": {
+          "type": "loki",
+          "uid": "P8E80F9AEF21F6940"
+        },
+        "query": "container",
+        "definition": "label_values(container)",
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {
+          "selected": false,
+          "text": [
+            "Alle"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": [],
+        "hide": 0
+      }
+    ]
   },
   "time": {
     "from": "now-6h",

@@ -1,0 +1,2228 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "iconSize": 0,
+        "name": "",
+        "show": true,
+        "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "PBFA97CFB590B2093"
+        },
+        "enable": true,
+        "hide": false,
+        "iconSize": 0,
+        "name": "Alarme (Prometheus)",
+        "show": true,
+        "type": "events"
+      }
+    ]
+  },
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "uid": "llm-sglang-live",
+  "title": "SGLang-Betriebsdaten",
+  "description": "sgtop-Parallele: native sglang:*-Betriebskennzahlen der Runtime (Job vllm).",
+  "tags": [
+    "llm-infra",
+    "sglang",
+    "runtime"
+  ],
+  "timezone": "Europe/Berlin",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "version": 1,
+  "liveNow": false,
+  "fiscalYearStartMonth": 0,
+  "links": [
+    {
+      "title": "LLM-Betrieb",
+      "type": "dashboard",
+      "uid": "llm-infra-runtime",
+      "url": "",
+      "tags": [],
+      "icon": "external link",
+      "asDropdown": false,
+      "includeVars": false,
+      "keepTime": false,
+      "targetBlank": false
+    },
+    {
+      "title": "GPU",
+      "type": "dashboard",
+      "uid": "llm-infra-gpu",
+      "url": "",
+      "tags": [],
+      "icon": "external link",
+      "asDropdown": false,
+      "includeVars": false,
+      "keepTime": false,
+      "targetBlank": false
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "instance",
+        "label": "Instanz",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "PBFA97CFB590B2093"
+        },
+        "query": {
+          "query": "label_values(sglang:num_running_reqs, instance)",
+          "refId": "instance-variable-uid"
+        },
+        "definition": "label_values(sglang:num_running_reqs, instance)",
+        "regexp": "",
+        "sort": 1,
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {
+          "selected": false,
+          "text": [
+            "Alle"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": [],
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "row",
+      "title": "Uebersicht",
+      "id": 900,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "panels": []
+    },
+    {
+      "type": "stat",
+      "title": "Laufende Anfragen",
+      "description": "Aktuell im Batch der Engine (sglang:num_running_reqs).",
+      "id": 1001,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "min": null,
+          "max": null,
+          "noValue": "keine Daten",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(sglang:num_running_reqs{job=\"vllm\",instance=~\"$instance\"})"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Warteschlange",
+      "description": "Wartende Anfragen (sglang:num_queue_reqs).",
+      "id": 1002,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "min": null,
+          "max": null,
+          "noValue": "keine Daten",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(sglang:num_queue_reqs{job=\"vllm\",instance=~\"$instance\"})"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Token pro Sekunde",
+      "description": "Momentane Generierrate (sglang:gen_throughput) ueber alle Instanzen.",
+      "id": 1003,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "decimals": 0,
+          "min": null,
+          "max": null,
+          "noValue": "keine Daten",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 5
+              },
+              {
+                "color": "green",
+                "value": 20
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(sglang:gen_throughput{job=\"vllm\",instance=~\"$instance\"})"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Effektive Nutzung",
+      "description": "sgtop-Wert: real belegte KV-Token ohne loeschbaren Praefix-Cache.",
+      "id": 1004,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 2,
+          "min": 0,
+          "max": 1,
+          "noValue": "keine Daten",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.75
+              },
+              {
+                "color": "red",
+                "value": 0.9
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(sglang:token_usage{job=\"vllm\",instance=~\"$instance\"})"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Cache-Trefferquote",
+      "description": "Anteil der Praefix-Wiederverwendung (sglang:cache_hit_rate).",
+      "id": 1005,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 2,
+          "min": 0,
+          "max": 1,
+          "noValue": "keine Daten",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.3
+              },
+              {
+                "color": "green",
+                "value": 0.6
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(sglang:cache_hit_rate{job=\"vllm\",instance=~\"$instance\"})"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Aktive HTTP-Verbindungen",
+      "description": "Von der Runtime aktuell bediente HTTP-Verbindungen.",
+      "id": 1006,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "min": null,
+          "max": null,
+          "noValue": "keine Daten",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(sglang:http_requests_active{job=\"vllm\",instance=~\"$instance\"})"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Scheduler",
+      "id": 901,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Scheduler-Iterationen je Sekunde",
+      "description": "Abgearbeitete Scheduler-Schritte pro Sekunde; 0 = Charge, Warten auf Arbeit.",
+      "id": 1011,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(sglang:scheduler_iterations_total{job=\"vllm\",instance=~\"$instance\"}[5m])",
+          "legendFormat": "{{instance}}",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Leerlaufanteil des Schedulers",
+      "description": "rate(sglang:scheduler_idle_seconds_total): Anteil der Zeit, in dem der Scheduler auf Arbeit wartet. Nahe 1 = Leerlauf; nahe 0 = Volllast.",
+      "id": 1012,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(sglang:scheduler_idle_seconds_total{job=\"vllm\",instance=~\"$instance\"}[5m])",
+          "legendFormat": "{{instance}}",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Prozess-CPU des Schedulers",
+      "description": "rate(sglang:process_cpu_seconds_total): CPU-Kerne, die der Scheduler-/Engine-Prozess belegt.",
+      "id": 1013,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.8
+              },
+              {
+                "color": "red",
+                "value": 1.5
+              }
+            ]
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(sglang:process_cpu_seconds_total{job=\"vllm\",instance=~\"$instance\"}[5m])",
+          "legendFormat": "{{instance}} CPU-Kerne",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Warteschlangenzeit (Queue-Time)",
+      "description": "Quantile der Verweildauer in der Eingangs-Warteschlange ueber sglang:queue_time_seconds_bucket.",
+      "id": 1014,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 14
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(sglang:queue_time_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m])))",
+          "legendFormat": "P50",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(sglang:queue_time_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m])))",
+          "legendFormat": "P95",
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(sglang:queue_time_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m])))",
+          "legendFormat": "P99",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Auslastung und Ausfuellung der Vorwaertspfade",
+      "description": "sglang:utilization (Kernel-Auslastung) und fwd_occupancy (Ausfuellung der Vorwaertspfade).",
+      "id": 1015,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 14
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sglang:utilization{job=\"vllm\",instance=~\"$instance\"}",
+          "legendFormat": "{{instance}} Auslastung",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "sglang:fwd_occupancy{job=\"vllm\",instance=~\"$instance\"}",
+          "legendFormat": "{{instance}} Vorlaeufigkeit",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Anfragen",
+      "id": 902,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 22
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Anfragen im Scheduler",
+      "description": "laufend, wartend, pausiert, zurueckgezogen; abgebrochen als Rate (zaehlbar pro Sekunde).",
+      "id": 1021,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 23
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sglang:num_running_reqs{job=\"vllm\",instance=~\"$instance\"}",
+          "legendFormat": "laufend {{instance}}",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "sglang:num_queue_reqs{job=\"vllm\",instance=~\"$instance\"}",
+          "legendFormat": "wartend {{instance}}",
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "sglang:num_paused_reqs{job=\"vllm\",instance=~\"$instance\"}",
+          "legendFormat": "pausiert {{instance}}",
+          "instant": false
+        },
+        {
+          "refId": "D",
+          "expr": "sglang:num_retracted_reqs{job=\"vllm\",instance=~\"$instance\"}",
+          "legendFormat": "zurueckgezogen {{instance}}",
+          "instant": false
+        },
+        {
+          "refId": "E",
+          "expr": "rate(sglang:num_aborted_requests_total{job=\"vllm\",instance=~\"$instance\"}[5m])",
+          "legendFormat": "abgebrochen/s {{instance}}",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Aktive HTTP-Anfragen",
+      "description": "Von der HTTP-Ebene gleichzeitig bediente Anfragen (sglang:http_requests_active).",
+      "id": 1022,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 23
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sglang:http_requests_active{job=\"vllm\",instance=~\"$instance\"}",
+          "legendFormat": "{{instance}}",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Anfrage-Rate",
+      "description": "Neue Anfragen je Sekunde ueber den Zaehler sglang:num_requests_total.",
+      "id": 1023,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 23
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(sglang:num_requests_total{job=\"vllm\",instance=~\"$instance\"}[5m]))",
+          "legendFormat": "Anfragen/s",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Token und Cache",
+      "id": 903,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 31
+      },
+      "panels": []
+    },
+    {
+      "type": "text",
+      "title": "Pool gegen effektiv",
+      "id": 1031,
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 32
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "> **Lesart:** `sglang:token_usage` ist der sgtop-Wert (nur real belegte Token). `sglang:kv_pool_usage` (Recording Rule, (genutzt + veraenderbar) / Pool) wirkt dauerhaft ~90 % voll, weil der Praefix-Cache loeschbare Token reserviert haelt — kein Engpass, solange die effektive Nutzung deutlich tiefer liegt und `kv_available_tokens` Luft zeigt."
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Generierrate",
+      "description": "sglang:gen_throughput — geschriebene Token je Sekunde je Engine-Instanz.",
+      "id": 1032,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 34
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sglang:gen_throughput{job=\"vllm\",instance=~\"$instance\"}",
+          "legendFormat": "{{instance}}",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "gauge",
+      "title": "Effektive Nutzung (sgtop)",
+      "description": "Real belegte KV-Token geteilt durch Pool. Vergleichswert zur sgtop-Oberflaeche.",
+      "id": 1033,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 8,
+        "y": 34
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "decimals": 2,
+          "noValue": "keine Daten",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.75
+              },
+              {
+                "color": "red",
+                "value": 0.9
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sglang:token_usage{job=\"vllm\",instance=~\"$instance\"}",
+          "instant": true,
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "type": "gauge",
+      "title": "KV-Pool (inkl. Reserve)",
+      "description": "Pool-Fuellstand inklusive veraenderbarer Cache-Reserve (Recording Rule sglang:kv_pool_usage); ~90 % ist der Normalzustand bei warmem Praefix-Cache.",
+      "id": 1034,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 12,
+        "y": 34
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "decimals": 2,
+          "noValue": "keine Daten",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.85
+              },
+              {
+                "color": "red",
+                "value": 0.97
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sglang:kv_pool_usage{job=\"vllm\",instance=~\"$instance\"}",
+          "instant": true,
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Cache-Trefferquote",
+      "description": "sglang:cache_hit_rate: Anteil wiederverwendeter Praefix-Segmente (kumulativer Gauger).",
+      "id": 1035,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 16,
+        "y": 34
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.3
+              },
+              {
+                "color": "green",
+                "value": 0.6
+              }
+            ]
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sglang:cache_hit_rate{job=\"vllm\",instance=~\"$instance\"}",
+          "legendFormat": "{{instance}}",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Token im KV-Speicher",
+      "description": "Genutzte, verfuegbare und veraenderbare (loeschbare) KV-Token je Instanz.",
+      "id": 1036,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 42
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sglang:num_used_tokens{job=\"vllm\",instance=~\"$instance\"}",
+          "legendFormat": "genutzt {{instance}}",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "sglang:kv_available_tokens{job=\"vllm\",instance=~\"$instance\"}",
+          "legendFormat": "verfuegbar {{instance}}",
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "sglang:kv_evictable_tokens{job=\"vllm\",instance=~\"$instance\"}",
+          "legendFormat": "veraenderbar {{instance}}",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Anteil neuer Token",
+      "description": "sglang:new_token_ratio: Anteil frischer (nicht aus dem Cache stammender) Token am aktuellen Fenster; hohe Werte = kalter Cache, mehr Prefill-Arbeit.",
+      "id": 1037,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 42
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.5
+              },
+              {
+                "color": "red",
+                "value": 0.8
+              }
+            ]
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sglang:new_token_ratio{job=\"vllm\",instance=~\"$instance\"}",
+          "legendFormat": "{{instance}}",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Verworfene Token (Evictions)",
+      "description": "Rate aus sglang:evicted_tokens_total: dauerhaft hohe Werte deuten auf Speicherdruck im KV-Pool.",
+      "id": 1038,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 42
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(sglang:evicted_tokens_total{job=\"vllm\",instance=~\"$instance\"}[10m])",
+          "legendFormat": "verworfen/s {{instance}}",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Prefill-Cache-Treffer nach Ebene",
+      "description": "Verhaeltnis effektiver Prefill-Token aus sglang:prefill_effective_tokens_total nach Modus: Geraet, Host, Speicher; Rest ohne Treffer.",
+      "id": 1039,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 50
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(sglang:prefill_effective_tokens_total{job=\"vllm\",instance=~\"$instance\",mode=\"device_hit\"}[10m])) / clamp_min(sum(rate(sglang:prefill_effective_tokens_total{job=\"vllm\",instance=~\"$instance\",mode=\"input\"}[10m])), 0.001)",
+          "legendFormat": "Geraetetreffer",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "(sum(rate(sglang:prefill_effective_tokens_total{job=\"vllm\",instance=~\"$instance\",mode=\"host_hit\"}[10m])) + sum(rate(sglang:prefill_effective_tokens_total{job=\"vllm\",instance=~\"$instance\",mode=\"storage_hit\"}[10m]))) / clamp_min(sum(rate(sglang:prefill_effective_tokens_total{job=\"vllm\",instance=~\"$instance\",mode=\"input\"}[10m])), 0.001)",
+          "legendFormat": "Host+Speicher",
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "clamp_min(1 - (sum(rate(sglang:prefill_effective_tokens_total{job=\"vllm\",instance=~\"$instance\",mode=\"device_hit\"}[10m])) + sum(rate(sglang:prefill_effective_tokens_total{job=\"vllm\",instance=~\"$instance\",mode=\"host_hit\"}[10m])) + sum(rate(sglang:prefill_effective_tokens_total{job=\"vllm\",instance=~\"$instance\",mode=\"storage_hit\"}[10m]))) / clamp_min(sum(rate(sglang:prefill_effective_tokens_total{job=\"vllm\",instance=~\"$instance\",mode=\"input\"}[10m])), 0.001), 0)",
+          "legendFormat": "ohne Treffer",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Token-Kapazitaet und Belegung",
+      "description": "Pool-Obergrenze sglang:max_total_num_tokens gegen genutzte Token je Instanz.",
+      "id": 1040,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 50
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sglang:max_total_num_tokens{job=\"vllm\",instance=~\"$instance\"}",
+          "legendFormat": "Kapazitaet {{instance}}",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "sglang:num_used_tokens{job=\"vllm\",instance=~\"$instance\"}",
+          "legendFormat": "genutzt {{instance}}",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Latenz",
+      "id": 904,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 58
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Vorlaufzeit bis zum ersten Token (TTFT)",
+      "description": "P50/P95/P99 ueber sglang:time_to_first_token_seconds_bucket; Vorlaufen bedeutet Warten vor dem ersten Zeichen.",
+      "id": 1041,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 59
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 2
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(sglang:time_to_first_token_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m])))",
+          "legendFormat": "P50",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(sglang:time_to_first_token_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m])))",
+          "legendFormat": "P95",
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(sglang:time_to_first_token_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m])))",
+          "legendFormat": "P99",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Gesamtdauer einer Anfrage (E2E)",
+      "description": "P50/P95/P99 ueber sglang:e2e_request_latency_seconds_bucket.",
+      "id": 1042,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 59
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(sglang:e2e_request_latency_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m])))",
+          "legendFormat": "P50",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(sglang:e2e_request_latency_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m])))",
+          "legendFormat": "P95",
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(sglang:e2e_request_latency_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m])))",
+          "legendFormat": "P99",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Zeit zwischen zwei Token",
+      "description": "Schreibtempo pro Token (inter_token_latency); P50/P95 ueber die SGLang-Histogramme.",
+      "id": 1043,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 59
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.05
+              },
+              {
+                "color": "red",
+                "value": 0.1
+              }
+            ]
+          },
+          "decimals": 3
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(sglang:inter_token_latency_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m])))",
+          "legendFormat": "P50",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(sglang:inter_token_latency_seconds_bucket{job=\"vllm\",instance=~\"$instance\"}[10m])))",
+          "legendFormat": "P95",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Speicher",
+      "id": 905,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 67
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "GPU-Speicher der Engine (GB)",
+      "description": "Vom Engine-Prozess gemeldeter Geraetespeicher in GB: Gewichte, KV-Cache und CUDA-Graphen (sglang:*_memory_usage_gb), gestapelt.",
+      "id": 1051,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 68
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 25,
+            "showPoints": "never",
+            "lineWidth": 1.5,
+            "stack": "normal"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sglang:weight_memory_usage_gb{job=\"vllm\",instance=~\"$instance\"}",
+          "legendFormat": "Gewichte {{instance}}",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "sglang:kv_cache_memory_usage_gb{job=\"vllm\",instance=~\"$instance\"}",
+          "legendFormat": "KV-Cache {{instance}}",
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "sglang:graph_memory_usage_gb{job=\"vllm\",instance=~\"$instance\"}",
+          "legendFormat": "CUDA-Graphen {{instance}}",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Spekulative Ausfuehrung",
+      "id": 906,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 76
+      },
+      "panels": []
+    },
+    {
+      "type": "stat",
+      "title": "Akzeptanzrate",
+      "description": "sglang:spec_accept_rate: Anteil der Entwurf-Token, die im Verifikationsschritt akzeptiert wurden.",
+      "id": 1061,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 0,
+        "y": 77
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 2,
+          "min": 0,
+          "max": 1,
+          "noValue": "keine Daten",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.5
+              },
+              {
+                "color": "green",
+                "value": 0.7
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(sglang:spec_accept_rate{job=\"vllm\",instance=~\"$instance\"})"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Akzeptierte Laenge",
+      "description": "sglang:spec_accept_length: mittlere Anzahl akzeptierter Token je Verifikationsschritt (1 = keine Beschleunigung).",
+      "id": 1062,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 4,
+        "y": 77
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 2,
+          "min": null,
+          "max": null,
+          "noValue": "keine Daten",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1.5
+              },
+              {
+                "color": "green",
+                "value": 2
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(sglang:spec_accept_length{job=\"vllm\",instance=~\"$instance\"})"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Spekulative Schritte",
+      "description": "sglang:spec_num_steps: eingestellte Tiefe des Entwurfsmodells (kleinster Modellwert).",
+      "id": 1063,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 8,
+        "y": 77
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "min": null,
+          "max": null,
+          "noValue": "keine Daten",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(sglang:spec_num_steps{job=\"vllm\",instance=~\"$instance\"})"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Verlauf der-spekulativen Kennzahlen",
+      "description": "Akzeptanzrate und akzeptierte Laenge ueber Zeit — sinkende Werte erklaeren langsamere Messungen.",
+      "id": 1064,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 77
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sglang:spec_accept_rate{job=\"vllm\",instance=~\"$instance\"}",
+          "legendFormat": "Akzeptanzrate {{instance}}",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "sglang:spec_accept_length{job=\"vllm\",instance=~\"$instance\"}",
+          "legendFormat": "Akzeptierte Laenge {{instance}}",
+          "instant": false
+        }
+      ]
+    }
+  ]
+}

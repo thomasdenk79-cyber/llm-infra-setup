@@ -323,6 +323,8 @@ cd /srv/work/llm-infra-setup
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:9093/-/ready
 curl -s 'http://127.0.0.1:9090/api/v1/targets' | python3 -c 'import json,sys;[print(t["labels"]["job"],t["health"]) for t in json.load(sys.stdin)["data"]["activeTargets"]]'
 ./scripts/60-install-monitoring.sh --check
+./scripts/80-setup-incident-agent.sh --check    # Vorfallsagent (Status-Seiten)
+make incident-agent-demo                        # Beispielalarm durch die Pipeline
 
 # Laufzeit und Gateway
 podman ps --filter name=flash-next-v3
