@@ -11,6 +11,11 @@ groups:
       - { record: "vllm:num_requests_running", expr: "sglang:num_running_reqs" }
       - { record: "vllm:num_requests_waiting", expr: "sglang:num_queue_reqs" }
       - { record: "vllm:kv_cache_usage_perc", expr: "sglang:token_usage" }
+      # KV-Pool inklusive der veraenderbaren Radix-Cache-Reserve: der Wert, der
+      # dauerhaft bei ~90 % steht (der Radix-Cache haelt Loeschkandidaten, bis
+      # sie gebraucht werden). Komplement zur effektiven Token-Nutzung oben -
+      # beide Serien zusammen erklaeren den Unterschied zum sgtop-Bild.
+      - { record: "sglang:kv_pool_usage", expr: "(sglang:num_used_tokens + sglang:kv_evictable_tokens) / sglang:max_total_num_tokens" }
       - { record: "vllm:prompt_tokens_total", expr: "sglang:prompt_tokens_total" }
       - { record: "vllm:generation_tokens_total", expr: "sglang:generation_tokens_total" }
       - { record: "vllm:prompt_tokens_cached_total", expr: "sglang:cached_tokens_total" }

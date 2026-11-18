@@ -78,6 +78,7 @@ for generator in \
   ./scripts/60-install-wiki.sh \
   ./scripts/63-install-postgres.sh \
   ./scripts/65-install-gpu-exporter.sh \
+  ./scripts/80-setup-incident-agent.sh \
   ./scripts/76-setup-runtime-unit.sh \
   ./scripts/74-setup-local-proxy.sh
 do

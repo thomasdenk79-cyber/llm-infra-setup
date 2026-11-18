@@ -32,6 +32,7 @@ OBSERVABILITY_UNITS=(
   homepage.container
   wiki.container
   llm-proxy.container
+  incident-agent.container
 )
 # Optional units that need operator credentials before they make sense.
 OPTIONAL_UNITS=(llm-autossh.container komodo-periphery.container)

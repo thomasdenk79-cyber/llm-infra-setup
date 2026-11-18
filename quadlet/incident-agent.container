@@ -1,0 +1,25 @@
+# GENERIERT von scripts/80-setup-incident-agent.sh. Aendern im Generator, nicht hier.
+[Unit]
+Description=llm-infra Incident-Agent (KI-Vorfallsanalyse, Demo)
+After=llm-observability-network.service llm-inference-network.service
+
+[Container]
+Image=docker.io/library/python:3.12-alpine@sha256:a61cbd76a882645de7f91423329fe43a67eed60d7da24f9e5331414bb3618b20
+ContainerName=llm-incident-agent
+Network=llm-observability.network
+Network=llm-inference.network
+# Code und Adapterdefinition vom Repo (lesend), Zustand ins Home-Verzeichnis.
+Volume=@CONFIG_ROOT@/scripts/incident-agent:/app:ro
+Volume=@CONFIG_ROOT@/config/monitoring/incident-agent-adapters.json:/etc/incident-agent/adapters.json:ro
+Volume=%h/.local/share/llm-infra/incident:/var/lib/incident-agent:Z,U
+EnvironmentFile=%h/.config/llm-infra/incident-agent.env
+# Kein PublishPort: Gegenstelle ist der Alertmanager im eigenen Netz;
+# Sichtbarkeit nach aussen uebernehmen Grafana und die Kennzahlen.
+Exec=python3 /app/server.py
+
+[Service]
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=default.target

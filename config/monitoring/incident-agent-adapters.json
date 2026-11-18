@@ -1,0 +1,41 @@
+{
+  "beschreibung": "Externe Beweisquellen fuer den Incident-Agenten. Nicht aktivierte Adapter werden in der Analyse als 'nicht aktiv' ausgewiesen - die Demo laeuft ohne sie. Ein echtes Rollout fuehlt url/typ aus und stellt bereit.",
+  "adapter": [
+    {
+      "name": "Splunk",
+      "typ": "splunk-http-event-collector",
+      "url": "",
+      "aktiv": false
+    },
+    {
+      "name": "Oracle-EDI-Protokoll",
+      "typ": "oracle",
+      "url": "",
+      "aktiv": false
+    },
+    {
+      "name": "PostgreSQL (EDB)",
+      "typ": "postgres",
+      "url": "",
+      "aktiv": false
+    },
+    {
+      "name": "OpenShift",
+      "typ": "openshift",
+      "url": "",
+      "aktiv": false
+    },
+    {
+      "name": "Ticketsystem (MCP)",
+      "typ": "mcp",
+      "url": "",
+      "aktiv": false
+    },
+    {
+      "name": "Nagios-CMD",
+      "typ": "nagios",
+      "url": "",
+      "aktiv": false
+    }
+  ]
+}

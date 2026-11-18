@@ -1,0 +1,9 @@
+[Unit]
+Description=llm-infra Stack-Status fuer die Grafana-Seiten sammeln
+Wants=llm-stack-status.service
+
+[Service]
+Type=oneshot
+Nice=10
+IOSchedulingClass=idle
+ExecStart=@CONFIG_ROOT@/scripts/collect-stack-status.sh

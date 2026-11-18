@@ -201,3 +201,22 @@ groups:
         annotations:
           summary: "KV-Cache zu ueber 95 % gefuellt"
           description: "Neue Anfragen muessen warten; Zulaufe im Blick behalten: vllm:num_requests_waiting"
+
+  # Statusseiten-Gruppe: liefert dem Incident-Agenten (scripts/80-setup-incident-agent.sh)
+  # die Zuendung. Messreihe stammt aus scripts/collect-stack-status.sh
+  # (Textfile-Collector des node_exporters). Kunstsprache der Beschreibung
+  # bewusst auf Deutsch, weil KI-Agent und Panels sie direkt anzeigen.
+  - name: status
+    rules:
+      - alert: DienstNichtErreichbar
+        expr: llm_service_up == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "Dienst {{ $labels.name }} ist nicht verfuegbar"
+          description: >-
+            Grund laut Sammler: llm_service_info reason (Panel 'Grund je Dienst'
+            in der Stack-Status-Seite). Vorfallsanalyse laeuft automatisch im
+            Incident-Agenten; Ticket und KI-Befund auf der Seite
+            'Incident-Analyse (KI-Agent)', Kundenmeldung auf 'Service-Status
+            (Kundenansicht)'.

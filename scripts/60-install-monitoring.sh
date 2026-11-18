@@ -26,6 +26,7 @@ if [[ "${check_only}" == 1 ]]; then
     unit_is_active "${unit}" || { printf 'FEHLT: %s laeuft nicht\n' "$(unit_service_name "${unit}")"; missing=1; }
   done
   systemctl --user is-active --quiet llm-infra-collect-facts.timer || { printf 'FEHLT: Kennzahlen-Timer laeuft nicht\n'; missing=1; }
+  systemctl --user is-active --quiet llm-stack-status.timer || { printf 'FEHLT: Stack-Status-Timer laeuft nicht (Status-Seiten bleiben leer)\n'; missing=1; }
   systemctl --user is-active --quiet wiki-rebuild.timer || { printf 'FEHLT: Wiki-Rebuild-Timer laeuft nicht\n'; missing=1; }
   # Anonymes Lesen und Einbettung sind ohne die vier Schluessel nicht erfuellet
   # (Abnahme: d-solo ohne Cookies 200, kein X-Frame-Options: deny).
@@ -90,13 +91,29 @@ if [[ ! -f "${grafana_env}" ]] || ! cmp -s <(printf '%s\n' "${grafana_env_geplan
   log "Grafana-Adresse und anonymes Lesen gesetzt: ${grafana_env}"
 fi
 prune_legacy_units
+# Incident-Agent (Status-Seiten, Vorfallsanalyse): gehuert zur Beobachtungsstufe,
+# braucht aber ein laufendes Gateway fuer die Schluesselvergabe. Ist das Gateway
+# unten, bleibt der Agent diese Runde aussen vor - die Seite bleibt bedienbar.
+if [[ ! -f "${root}/quadlet/incident-agent.container" ]] || ! unit_is_active incident-agent.container; then
+  if curl -s --max-time 3 "${LITELLM_URL:-http://127.0.0.1:4000}/health/liveliness" >/dev/null 2>&1; then
+    run "${root}/scripts/80-setup-incident-agent.sh" \
+      || log 'WARNUNG: Incident-Agent nicht eingerichtet - naechster Befehl: ./scripts/80-setup-incident-agent.sh'
+  else
+    log 'Hinweis: Gateway laeuft nicht - nach dem Start ./scripts/80-setup-incident-agent.sh ausfuehren, sonst bleibt die Vorfallsanalyse der Status-Seiten leer.'
+  fi
+fi
+if [[ ! -f "${root}/quadlet/incident-agent.container" ]]; then
+  OBSERVABILITY_UNITS=( "${OBSERVABILITY_UNITS[@]/incident-agent.container/}" )
+fi
 install_units "${OBSERVABILITY_UNITS[@]}"
-install_systemd_units "${HOME}/.config/systemd/user" llm-infra-collect-facts.service llm-infra-collect-facts.timer wiki-rebuild.service wiki-rebuild.timer
+install_systemd_units "${HOME}/.config/systemd/user" llm-infra-collect-facts.service llm-infra-collect-facts.timer llm-stack-status.service llm-stack-status.timer wiki-rebuild.service wiki-rebuild.timer
 systemd_reload
 start_units llm-observability.network loki.container prometheus.container grafana.container alloy.container dozzle.container llm-node-exporter.container llm-gpu-exporter.container homepage.container wiki.container llm-proxy.container
 systemctl --user enable --now llm-infra-collect-facts.timer
+systemctl --user enable --now llm-stack-status.timer
 systemctl --user enable --now wiki-rebuild.timer
 run "${root}/scripts/collect-host-facts.sh" || log 'WARNUNG: erste Kennzahlensammlung fehlgeschlagen'
+run "${root}/scripts/collect-stack-status.sh" || log 'WARNUNG: erste Stack-Status-Sammlung fehlgeschlagen'
 cat <<'NEXT'
 Naechste Schritte
   1. Browser oeffnen:  https://grafana.localhost/grafana/   (lokal ohne Anmeldung;

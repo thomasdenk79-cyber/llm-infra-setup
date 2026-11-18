@@ -1,0 +1,11 @@
+[Unit]
+Description=llm-infra Stack-Status Intervall (Status-Seiten in Grafana)
+
+[Timer]
+OnBootSec=40s
+OnUnitActiveSec=30s
+AccuracySec=5s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

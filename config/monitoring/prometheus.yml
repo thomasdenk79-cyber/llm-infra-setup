@@ -103,6 +103,12 @@ scrape_configs:
       - targets: ["alertmanager:9093"]
         labels: { service: alerts }
 
+  # Der KI-Incident-Agent (Demo) hoert nur im Beobachtungsnetz; kein PublishPort.
+  - job_name: incident-agent
+    static_configs:
+      - targets: ["llm-incident-agent:9104"]
+        labels: { service: incidents }
+
   # Der LAN-Proxy ist ein eigener Dienst und bekommt deshalb ein eigenes
   # Metrikziel (Regel in AGENTS.md). Scrape gegen den Container-Namen: Prometheus
   # haengt in denselben Podman-Netzen wie llm-proxy, der Host-Loopback waere ihm

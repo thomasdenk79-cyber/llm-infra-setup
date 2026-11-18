@@ -43,5 +43,9 @@ docs_tooling: mkdocs-material==9.8.1
 caddy_wiki: docker.io/library/caddy:2-alpine
 caddy_wiki_digest: sha256:5813f7eb9b94fac4970f9f576695fe1ed1d53d41586fd3eaa350caf7c4627d9c
 caddy_gateway: 2.11.9
+# KI-Incident-Agent (Demo): nur Standardbibliothek, kein Bau zur Laufzeit.
+incident_agent_image: docker.io/library/python:3.12-alpine
+incident_agent_digest: sha256:a61cbd76a882645de7f91423329fe43a67eed60d7da24f9e5331414bb3618b20
+incident_agent_model: qwen3.8-flash-next (ueber Gateway, siehe incident-agent.env)
 gpu_model: NVIDIA RTX PRO 6000 Blackwell Workstation Edition
 driver_family: nvidia-open-dkms (siehe state/host-facts.txt fuer die exakte Version)

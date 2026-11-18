@@ -22,8 +22,23 @@ route:
         - alertname = "RuntimeNichtErreichbar"
       receiver: hinweise
       repeat_interval: 24h
+    # Vorfallsanalyse: dieser Empfanger ist kein Versand nach aussen (der bleibt
+    # bewusst leer - Betreiberentscheidung 2026-11-16), sondern der interne
+    # KI-Agent, der Ticket, Befund und Kundenmeldung erzeugt.
+    - matchers:
+        - alertname = "DienstNichtErreichbar"
+      receiver: incident-agent
+      group_by: [alertname, name]
+      group_wait: 15s
+      repeat_interval: 30m
 
 receivers:
+  - name: incident-agent
+    webhook_configs:
+      # Der Agent haelt sich nur im Beobachtungsnetz auf (kein PublishPort).
+      - url: http://llm-incident-agent:9104/webhook
+        send_resolved: true
+
   - name: hinweise
     # ntfy - ohne Konto, nur ein frei gewaehltes Themenwort auf dem Handy:
     #
