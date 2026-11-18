@@ -53,7 +53,7 @@
     {
       "type": "stat",
       "title": "GPU-Auslastung",
-      "description": "Anteil der Zeit mit aktiven Kernen.",
+      "description": "Anteil der Zeit mit aktiven Kernen (Verhaeltnis 0-1, live verifiziert).",
       "id": 91926,
       "datasource": {
         "type": "prometheus",
@@ -67,7 +67,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "percent",
+          "unit": "percentunit",
           "decimals": 1,
           "thresholds": {
             "mode": "absolute",
@@ -381,7 +381,56 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "A"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "Auslastung 0-1"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "Auslastung 0-1"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "watt"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "Watt"
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "legend": {
@@ -494,7 +543,7 @@
       "type": "timeseries",
       "title": "Temperatur",
       "description": "",
-      "id": 76643,
+      "id": 76644,
       "datasource": {
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
@@ -625,6 +674,18 @@
           "expr": "rate(nvidia_smi_clocks_event_reasons_counters_hw_power_brake_slowdown_seconds[5m])",
           "legendFormat": "Power Brake",
           "instant": false
+        },
+        {
+          "refId": "D",
+          "expr": "rate(nvidia_smi_clocks_event_reasons_counters_sw_thermal_slowdown_seconds[5m])",
+          "legendFormat": "Warme (software)",
+          "instant": false
+        },
+        {
+          "refId": "E",
+          "expr": "rate(nvidia_smi_clocks_event_reasons_counters_sync_boost_seconds[5m])",
+          "legendFormat": "Sync Boost",
+          "instant": false
         }
       ]
     },
@@ -740,6 +801,1182 @@
           }
         }
       ]
+    },
+    {
+      "type": "row",
+      "title": "Beschleuniger-Details",
+      "id": 93001,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 42
+      },
+      "panels": []
+    },
+    {
+      "type": "stat",
+      "title": "VRAM gesamt",
+      "description": "Physischer Grafikspeicher der Karte.",
+      "id": 93002,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 0,
+        "y": 43
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "nvidia_smi_memory_total_bytes"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "VRAM-Auslastung",
+      "description": "Anteil des belegten Grafikspeichers. Nahe 100 % ist Normalbetrieb: die Engine reserviert den KV-Pool vorab.",
+      "id": 93003,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 4,
+        "y": 43
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "nvidia_smi_memory_used_bytes / nvidia_smi_memory_total_bytes"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Leistungsgrenze",
+      "description": "Vom Treiber erzwungenes Limit. Verbrauch gegen Grenze im Panel darunter.",
+      "id": 93004,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 8,
+        "y": 43
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "nvidia_smi_enforced_power_limit_watts"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Luefter",
+      "description": "Drehzahl als Verhaeltnis (0-1).",
+      "id": 93005,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 12,
+        "y": 43
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "nvidia_smi_fan_speed_ratio"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "P-State",
+      "description": "Leistungszustand der Karte (NVML, numerisch).",
+      "id": 93006,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 16,
+        "y": 43
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "nvidia_smi_pstate"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "GPU-Laufzeit",
+      "description": "Seit dem letzten Kartentreiber-Reset (nvidia_smi_gpu_uptime_seconds).",
+      "id": 93007,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 20,
+        "y": 43
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "nvidia_smi_gpu_uptime_seconds"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "VRAM: belegt, frei, gesamt, reserviert",
+      "description": "Reserviert = vom Treiber beiseitegelegt, nicht durch Prozesse belegt.",
+      "id": 93008,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 48
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "nvidia_smi_memory_used_bytes",
+          "legendFormat": "Belegt",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "nvidia_smi_memory_free_bytes",
+          "legendFormat": "Frei",
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "nvidia_smi_memory_total_bytes",
+          "legendFormat": "Gesamt",
+          "instant": false
+        },
+        {
+          "refId": "D",
+          "expr": "nvidia_smi_memory_reserved_bytes",
+          "legendFormat": "Reserviert",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Leistung: Verbrauch gegen Grenzen",
+      "description": "Schenkeln die Kurven zusammen, laeuft die Karte am Limit und der Takt sinkt.",
+      "id": 93009,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 48
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "nvidia_smi_power_draw_watts",
+          "legendFormat": "Verbrauch (Mittel)",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "nvidia_smi_power_draw_instant_watts",
+          "legendFormat": "Verbrauch (Instant)",
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "nvidia_smi_power_limit_watts",
+          "legendFormat": "Limit (angefragt)",
+          "instant": false
+        },
+        {
+          "refId": "D",
+          "expr": "nvidia_smi_enforced_power_limit_watts",
+          "legendFormat": "Limit (erzwungen)",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Codec- und Neben-Core-Auslastung",
+      "description": "Zusertzweige der Karte: Encoder, Decoder, JPEG, OFA. fuer Inferenz meist 0 - steigt hier etwas, arbeitet jemand am Video-Pfad.",
+      "id": 93010,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 56
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "nvidia_smi_utilization_encoder_ratio",
+          "legendFormat": "Encoder",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "nvidia_smi_utilization_decoder_ratio",
+          "legendFormat": "Decoder",
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "nvidia_smi_utilization_jpeg_ratio",
+          "legendFormat": "JPEG",
+          "instant": false
+        },
+        {
+          "refId": "D",
+          "expr": "nvidia_smi_utilization_ofa_ratio",
+          "legendFormat": "OFA",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "PCIe-Link der Host-Seite (Textfile-Sammler)",
+      "description": "lspci-Sicht des Hosts auf die Thunderbolt-Bruecke: Breite 4 von 16, 16 von 32 GT/s. Zusammen mit dem NVML-Panel oben (Geraeteseite) das volle Link-Bild. Eigene Durchsatz-Metrik der GPU existiert nicht - siehe Messluecken unten.",
+      "id": 93011,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 56
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "llm_pcie_link_width",
+          "legendFormat": "Breite Ist {{device}}",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "llm_pcie_link_width_max",
+          "legendFormat": "Breite Max {{device}}",
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "llm_pcie_link_speed_gt",
+          "legendFormat": "GT/s Ist {{device}}",
+          "instant": false
+        },
+        {
+          "refId": "D",
+          "expr": "llm_pcie_link_speed_gt_max",
+          "legendFormat": "GT/s Max {{device}}",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Prozesse auf der GPU (sgTop)",
+      "id": 93021,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 64
+      },
+      "panels": []
+    },
+    {
+      "type": "table",
+      "title": "GPU-Prozesse (Momentaufnahme)",
+      "description": "Direkt aus nvidia-smi --query-compute-apps, eingesammelt von collect-stack-status.sh als llm_gpu_process_info (Textfile-Sammler, job node). Werte in MiB; die Spalte Container nennt den libpod-Container des Prozesses, host = Prozess ausserhalb eines Containers.",
+      "id": 93022,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 14,
+        "x": 0,
+        "y": 65
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "custom": {
+            "align": "auto",
+            "filterable": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "footer": {
+          "show": true,
+          "reducer": [
+            "sum"
+          ],
+          "count": false,
+          "fields": [
+            "VRAM (MiB)"
+          ]
+        },
+        "sortBy": [
+          {
+            "displayName": "VRAM (MiB)",
+            "desc": true
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "llm_gpu_process_info",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "instance": true,
+              "host": true
+            },
+            "renameByName": {
+              "prozess": "Prozess",
+              "container": "Container",
+              "pid": "PID",
+              "Value": "VRAM (MiB)"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "bargauge",
+      "title": "VRAM je Prozess",
+      "description": "Summe der MiB je Prozessname; Prozessdubletten (Container-Umbuchung desselben PID) werden zuerst je PID zusammengefasst. Der Scheduler dominiert, weil der KV-Pool vorab reserviert wird.",
+      "id": 93023,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 10,
+        "x": 14,
+        "y": 65
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "mbytes",
+          "min": 0,
+          "decimals": 1,
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "displayMode": "gradient",
+            "labelPlacement": "right"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 49152
+              },
+              {
+                "color": "red",
+                "value": 81920
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "orientation": "horizontal",
+        "showUnemployed": false,
+        "legend": {
+          "displayMode": "hidden"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (prozess) (max by (pid, prozess) (llm_gpu_process_info))",
+          "legendFormat": "{{prozess}}",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Korrelation",
+      "id": 93041,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 73
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Token/s gegen GPU-Auslastung",
+      "description": "Schriftliche Generierrate (linke Skala) gegen Kernel-Auslastung (rechte Skala, 0-1). Hohe Rate bei niedriger Auslastung = Bottleneck ausserhalb der GPU.",
+      "id": 93042,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 0,
+        "y": 74
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "A"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "auto"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "Token/s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "Auslastung 0-1"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(vllm:generation_tokens_total{job=\"vllm\"}[5m]))",
+          "legendFormat": "Token/s",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "nvidia_smi_utilization_gpu_ratio",
+          "legendFormat": "GPU-Auslastung",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Warteschlange gegen GPU-Saettigung",
+      "description": "Wartende und laufende Anfragen (linke Skala) gegen Kernel-Auslastung (rechte Skala). Warteschlange bei niedriger Auslastung = kein GPU-Engpass; beides hoch = die Karte ist der Grund.",
+      "id": 93043,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 8,
+        "y": 74
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "A"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "auto"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "Anfragen"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "auto"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "Anfragen"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "Auslastung 0-1"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(vllm:num_requests_waiting)",
+          "legendFormat": "Wartend",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "max(vllm:num_requests_running)",
+          "legendFormat": "Laufend",
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "nvidia_smi_utilization_gpu_ratio",
+          "legendFormat": "GPU-Auslastung",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "KV-Druck gegen Durchsatz",
+      "description": "Generierrate (linke Skala) gegen KV-Nutzung (rechte Skala, 0-1). vllm:kv_cache_usage_perc = effektive Nutzung; sglang:kv_pool_usage = Pool inklusive loeschbarer Radix-Reserve (Regel aus config/monitoring/runtime-compat.yml). Permanente ~90+% Pool-Fuellung ist Auslegung, kein Fehler.",
+      "id": 93044,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 16,
+        "y": 74
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": null,
+          "max": null,
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 1.5
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "A"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "auto"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "Token/s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "KV 0-1"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "KV 0-1"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(vllm:generation_tokens_total{job=\"vllm\"}[5m]))",
+          "legendFormat": "Token/s",
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "max(vllm:kv_cache_usage_perc)",
+          "legendFormat": "KV effektiv",
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "max(sglang:kv_pool_usage)",
+          "legendFormat": "KV-Pool inkl. Reserve",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "title": "Messlücken",
+      "id": 93061,
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 83
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "> Geprueft am 2026-11-18 gegen die Label-Werte der Live-Prometheus (`/api/v1/label/__name__/values`, 1950 Serien). Exporter: job gpu = llm-gpu-exporter:9835 (nvidia-smi-Variante), Host-Fakten via Textfile-Sammler an job node.\n\n**Nicht vorhanden - ohne DCGM nicht messbar:**\n- XID-Fehler: keine einzige Serie mit `xid` im Namen. Treiber-Ereignisse bleiben dem Journal und den Protokollpanels oben vorbehalten.\n- PCIe-Durchsatz: keine Sende-/Empfangsbytes-Serien der GPU (tx/rx existiert nur fuer Host-Netzwerke bei Alloy). Die PCIe-Panels zeigen Breite und Geschwindigkeit, nicht uebertragene Bytes.\n- Auslastung in Prozent je Prozess: `llm_gpu_process_info` liefert nur VRAM in MiB je PID (Quelle: nvidia-smi --query-compute-apps in collect-stack-status.sh). Per-Prozent-Werte je PID kann nur DCGM (Profiling-Feldgruppen).\n- node_gpu_*: nicht vorhanden, der node_exporter laeuft ohne GPU-Zweig.\n- DRAM-ECC: keine Zaehler fuer den Grafikkartenspeicher selbst; vorhanden sind nur SRAM-Korrekturzehler (aggregate und volatile) und Remapped Rows.\n\n**Vorhanden, oft uebersehen:** ECC-SRAM-Zaehler, Remapped Rows, vier Leistungsgrenz-Serien, Takt-Maxima, Video-/JPEG-/OFA-Auslastung und die PCIe-Faehigkeiten der Geraeteseite selbst (`nvidia_smi_pcie_link_gen_gpucurrent/gpumax/hostmax` - das Gerat kann Gen5, der Wirt meldet Gen1 ueber die Thunderbolt-Bruecke).\n\n**Erweiterungspunkt fuer Produktion:** `GPU_EXPORTER=dcgm ./scripts/65-install-gpu-exporter.sh` erzeugt die DCGM-Exporter-Unit (Feldgruppen ueber `-a`, Port 127.0.0.1:9400) - das bringt XID, DRAM-ECC und Durchsatzfelder. Hinweis aus dem Skript beachten: DCGM kann bei laufender Inferenz Messueberhead erzeugen, daher erst nach der Baseline aktivieren."
+      }
     }
   ]
 }
