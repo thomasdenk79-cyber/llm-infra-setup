@@ -28,6 +28,8 @@ node_exporter: v1.8.2
 cadvisor_image: ghcr.io/google/cadvisor:v0.61.0
 cadvisor_image_digest: sha256:448ca9b1ce0d3f2eb7563938030908a4b81ddfe959a3fe5e62f691fd4b2cb417
 nvidia_gpu_exporter: 1.4.0
+nvidia_gpu_exporter_image: docker.io/utkuozdemir/nvidia_gpu_exporter:1.4.0
+nvidia_gpu_exporter_image_digest: sha256:01e0fddcf9fb6594154b2c96c04eff99bea441a4840a4e4964a3cbc6fb974003
 grafana: 12.1.1
 grafana_image_digest: sha256:5749a0e982878aedaa2d320ed14d3bdce7a040a938f482258670009d419a597f
 loki: 3.5.2

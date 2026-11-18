@@ -302,6 +302,9 @@ if [[ -r "${STATUS_DATEI}" ]]; then
   [[ "${seit}" =~ ^[0-9]+$ ]] && datei_alter=$(( $(date +%s) - seit ))
 fi
 emit "llm_stack_status_collect_age_seconds ${datei_alter}"
+# Eigener Herzschlag: Textfile-Werte sind sticky - ohne diese Serie koennte
+# ein stehender Timer nie als veraltet erkannt werden (Befund 2026-11-18).
+emit "llm_stack_status_timestamp_seconds $(date +%s)"
 
 # --- Ausgeben -----------------------------------------------------------------
 if (( dry_run )); then
@@ -313,5 +316,5 @@ install -d -m 0755 "${TEXTFILE_DIR}"
 # Container) muss sie lesen koennen, deshalb beim Verschieben auf 0644 setzen.
 chmod 0644 "${raw}"
 mv -f "${raw}" "${TEXTFILE_DIR}/stack-status.prom"
-touch "${TEXTFILE_DIR}/stack-status.prom"   # Zeitstempel fuer den Frische-Alarm
+touch "${TEXTFILE_DIR}/stack-status.prom"   # mtime der Textdatei; Frische-Alarm: llm_stack_status_timestamp_seconds
 log 'Stack-Status geschrieben: '"${TEXTFILE_DIR}/stack-status.prom"

@@ -249,7 +249,7 @@ groups:
           description: "podman logs --tail 120 <container> oder Dozzle; Neustartzaehler im Timer der Plattform-Seite"
 
       - alert: StatussammlungSteht
-        expr: absent(llm_stack_status_collect_age_seconds)
+        expr: 'time() - max(llm_stack_status_timestamp_seconds) > 90 or absent(llm_stack_status_collect_age_seconds)'
         for: 5m
         labels: { severity: warning }
         annotations:

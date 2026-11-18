@@ -50,7 +50,7 @@ HOST_UNITS=(llm-reverse-tunnel llm-vllm-forwarder)
 
 # Timer, deren Ablauf der Betrieb erwartet (Namen ohne .timer).
 MONITOR_TIMERS=(llm-infra-collect-facts llm-runtime-watchdog llm-litellm-watchdog
-                llm-crashguard llm-infra-gitops wiki-rebuild)
+                llm-crashguard llm-infra-gitops wiki-rebuild llm-stack-status)
 
 # --- Inferenz-Laufzeit -------------------------------------------------------
 # Kanonische Ansprache der Laufzeit an einem Ort: API, Metriken, Containername

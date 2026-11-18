@@ -4,7 +4,7 @@ Description=NVIDIA GPU exporter (nvidia-smi)
 After=llm-observability-network.service
 
 [Container]
-Image=docker.io/utkuozdemir/nvidia_gpu_exporter:1.4.0
+Image=docker.io/utkuozdemir/nvidia_gpu_exporter:1.4.0@sha256:01e0fddcf9fb6594154b2c96c04eff99bea441a4840a4e4964a3cbc6fb974003
 ContainerName=llm-gpu-exporter
 Network=llm-observability.network
 PublishPort=127.0.0.1:9835:9835

@@ -720,11 +720,13 @@ title 'Waechter'
 # Beide Waechter gehoeren zum Stapel: der Gateway-Waechter startet nur litellm neu,
 # der Laufzeit-Waechter warnt standardmaessig nur. Ein Timer, der nicht wieder
 # bewaffnet wird, ist schlimmer als gar keiner - er wirkt aktiv und prueft nie wieder.
-for timer in llm-litellm-watchdog.timer llm-runtime-watchdog.timer; do
+for timer in llm-litellm-watchdog.timer llm-runtime-watchdog.timer llm-stack-status.timer llm-infra-collect-facts.timer; do
   fall=''
   case "${timer}" in
     llm-litellm-watchdog.*) fall='./scripts/litellm-watchdog.sh --install' ;;
     llm-runtime-watchdog.*) fall='./scripts/runtime-watchdog.sh --install' ;;
+    llm-stack-status.*) fall='./scripts/collect-stack-status.sh' ;;
+    llm-infra-collect-facts.*) fall='./scripts/collect-host-facts.sh' ;;
   esac
   if ! systemctl --user is-active --quiet "${timer}" 2>/dev/null; then
     warn "Timer ${timer} laeuft nicht; die Ueberwachung faellt still weg." "${fall}"
