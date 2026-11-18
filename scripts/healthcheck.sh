@@ -86,6 +86,10 @@ if [[ "${LITELLM_PORT}" != disabled ]]; then
     warn 'Gateway-Readiness meldet keine verbundene Datenbank' 'systemctl --user status litellm-postgres.service --no-pager'
   fi
 fi
+ow=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:3001/health 2>/dev/null || echo 000)
+if [[ "${ow}" == 200 ]]; then ok 'Chat (Open WebUI) gesund'; else warn "Chat-HTTP ${ow}" 'systemctl --user status open-webui.service --no-pager'; fi
+cv=$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://127.0.0.1:9188/healthz 2>/dev/null || echo 000)
+if [[ "${cv}" == 200 ]]; then ok 'cAdvisor healthz 200'; else warn "cAdvisor-HTTP ${cv}" 'systemctl --user status llm-cadvisor.service --no-pager'; fi
 gh=$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://127.0.0.1:3000/grafana/api/health 2>/dev/null || echo 000)
 if [[ "${gh}" == 200 ]]; then ok 'Grafana-Health 200'; else warn "Grafana-HTTP ${gh}" 'systemctl --user status grafana.service --no-pager'; fi
 

@@ -2,7 +2,11 @@
 set -Eeuo pipefail
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 source "${root}/lib/common.sh"
-: "${POSTGRES_IMAGE:=docker.io/library/postgres:16.4}"
+lock_feld() { awk -F': ' -v f="$1" '$1==f{gsub(/ /,"",$2); print $2; exit}' "${root}/versions.lock" 2>/dev/null || true; }
+: "${POSTGRES_IMAGE:=$(lock_feld postgres_image)}"
+[[ -z "${POSTGRES_IMAGE}" ]] && POSTGRES_IMAGE="docker.io/library/postgres:$(lock_feld postgres)"
+pg_digest="$(lock_feld postgres_image_digest)"
+[[ -n "${pg_digest}" && "${POSTGRES_IMAGE}" != *"@sha256:"* ]] && POSTGRES_IMAGE="${POSTGRES_IMAGE}@${pg_digest}"
 : "${POSTGRES_PORT:=5432}"
 install -d -m 0755 "${root}/quadlet"
 cat > "${root}/quadlet/litellm-postgres.container" <<UNIT

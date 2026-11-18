@@ -322,3 +322,17 @@ Anfragen Platz brauchen - das ist die Recording-Regel `sglang:kv_pool_usage
   oeffentliche Adresse, x509 der Caddy-CA). Behoben 2026-11-16: `metrics_path:
   /grafana/metrics` im Job, damit der Scrape im Containernetz bleibt. Beleg im
   Abschnitt "Prometheus: neue Jobs und zwei bewusst auskommentierte".
+
+## Beschraenkungen des rootless Beobachtungsstapels (Stand 2026-11-18)
+
+* node_exporter sieht rootless keine Host-Netzwerkschnittstellen
+  (`node_network_*` nur Container-veth); dafuer existiert bewusst kein Panel.
+* cAdvisor kann rootless keine Container-Network-Series liefern; die
+  Plattform-Seite zeigt CPU/RAM je Unit. OOM-Ereignisse (`oom_event`) bleiben
+  leer (`/dev/kmsg` nicht zugaenglich) - OOM-Faelle laufen ueber das
+  systemd-Journal und die Vorfallspipeline.
+* Die Runtime `qwen38-rc2` laeuft ausserhalb von Quadlet und erhaelt daher
+  kein `unit`-Label; ihre Kennzahlen kommen aus job `vllm` und gpu-exporter.
+* cAdvisor-Flags `--pid=host --cgroupns=host` erlauben Lesezugriff auf alle
+  Host-Prozessstatistiken; Secret-Werte sind durch `kernel.yama.ptrace_scope=1`
+  abgeschirmt. Bewusst in Kauf genommen, siehe dazu docs/COMPLIANCE.md.

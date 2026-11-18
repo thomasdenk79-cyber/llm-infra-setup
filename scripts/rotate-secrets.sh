@@ -63,12 +63,19 @@ LITELLM_MASTER_KEY=${new_master}
 LITELLM_SALT_KEY=${salt}
 DATABASE_URL=postgresql://${POSTGRES_USER:-litellm}:${new_pg}@litellm-postgres:5432/${POSTGRES_DB:-litellm}
 EOF
+# Schlluessel exakt wie lib/secrets.sh (ensure_webui_env): nach einem webui.db-
+# Verlust greifen diese Werte, und offene Registrierung oder Ollama-Duelle
+# waeren dann ein stiller Rickfall (Befund der Review-Welle 2026-11-18).
 cat > "${SECRETS_DIR}/open-webui.env" <<EOF
 WEBUI_SECRET_KEY=${new_webui}
-ENABLE_SIGNUP=true
+ENABLE_SIGNUP=false
+ENABLE_LOGIN_FORM=true
+WEBUI_URL=http://127.0.0.1:3001
 ENABLE_OPENAI_API=true
 OPENAI_API_BASE_URL=http://litellm:4000/v1
 OPENAI_API_KEY=$(chat_service_key)
+ENABLE_OLLAMA_API=false
+ENABLE_VERSION_UPDATE_CHECK=false
 EOF
 chmod 0600 "${SECRETS_DIR}"/*.env
 
@@ -91,7 +98,7 @@ cat > "${CREDENTIALS_FILE}" <<EOF
 # Stand: $(date -Is)
 Grafana      http://127.0.0.1:3000   Benutzer admin   Passwort ${new_grafana}
 LiteLLM      http://127.0.0.1:4000   Master-Key ${new_master}
-Open WebUI   http://127.0.0.1:3001   Anmeldung wie in den Browsereinstellungen
+Open WebUI   http://127.0.0.1:3001   Konto liegt in webui.db; Anlegen: ./scripts/64-setup-open-webui-account.sh
 PostgreSQL   127.0.0.1:5432          Benutzer ${POSTGRES_USER:-litellm}  Passwort ${new_pg}  DB ${POSTGRES_DB:-litellm}
 Wichtig:  LITELLM_SALT_KEY nach dem ersten Start NICHT mehr ändern, sonst sind
           gespeicherte Virtual-Keys in PostgreSQL nicht mehr lesbar.

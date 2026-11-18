@@ -3,6 +3,8 @@
 #
 #   ./scripts/backup.sh                 Backup in state/backups/
 #   ./scripts/backup.sh /pfad/ziel      anderes Zielverzeichnis
+#   ./scripts/backup.sh --install       taeglichen Timer einrichten (Persistent)
+#   ./scripts/backup.sh --uninstall     Timer wieder entfernen
 #   ./scripts/restore.sh --list         vorhandene Backups zeigen
 #
 # Inhalt:
@@ -14,6 +16,21 @@ set -Eeuo pipefail
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 source "${root}/lib/common.sh"
 [[ -f "${root}/config/host.env" ]] && source "${root}/config/host.env"
+if [[ "${1:-}" == "--install" ]]; then
+  source "${root}/lib/units.sh"
+  install_systemd_units "${HOME}/.config/systemd/user" llm-backup.service llm-backup.timer
+  systemctl --user daemon-reload
+  systemctl --user enable --now llm-backup.timer
+  log 'Backup-Timer aktiv (taeglich 03:10, verpasste Laeufe werden nachgeholt).'
+  exit 0
+fi
+if [[ "${1:-}" == "--uninstall" ]]; then
+  systemctl --user disable --now llm-backup.timer 2>/dev/null || true
+  rm -f "${HOME}/.config/systemd/user/llm-backup.service" "${HOME}/.config/systemd/user/llm-backup.timer"
+  systemctl --user daemon-reload
+  log 'Backup-Timer entfernt.'
+  exit 0
+fi
 dest_base="${1:-${root}/state/backups}"
 ts="$(date -u +%Y%m%dT%H%M%SZ)"
 dest="${dest_base}/${ts}"

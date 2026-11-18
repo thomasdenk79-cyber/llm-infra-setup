@@ -26,9 +26,12 @@ done
 
 anmelden() {
   local code
+  local koerper
+  koerper="$(mktemp)"
+  ( umask 077; MAIL="$1" PW="$2" python3 -c 'import json,os;print(json.dumps({"email":os.environ["MAIL"],"password":os.environ["PW"]}))' > "${koerper}" )
   code="$(curl -s -m 20 -o /dev/null -w '%{http_code}' -X POST "${BASIS}/api/v1/auths/signin" \
-    -H 'content-type: application/json' \
-    -d "{\"email\":\"${1}\",\"password\":\"${2}\"}" 2>/dev/null || echo 000)"
+    -H 'content-type: application/json' --data @"${koerper}" 2>/dev/null || echo 000)"
+  rm -f "${koerper}"
   [[ "$code" == "200" ]]
 }
 
@@ -86,9 +89,12 @@ if [[ -z "$BESTEHEND" ]]; then
   fi
   [[ -n "$EML" ]] || EML="betrieb@llm.lokal"
   PW="$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 24)"
+  local koerper2
+  koerper2="$(mktemp)"
+  ( umask 077; EMLV="$EML" PWV="$PW" python3 -c 'import json,os;print(json.dumps({"name":"Betrieb","email":os.environ["EMLV"],"password":os.environ["PWV"]}))' > "${koerper2}" )
   code="$(curl -s -m 25 -o /dev/null -w '%{http_code}' -X POST "${BASIS}/api/v1/auths/signup" \
-    -H 'content-type: application/json' \
-    -d "{\"name\":\"Betrieb\",\"email\":\"${EML}\",\"password\":\"${PW}\"}" 2>/dev/null || echo 000)"
+    -H 'content-type: application/json' --data @"${koerper2}" 2>/dev/null || echo 000)"
+  rm -f "${koerper2}"
   if [[ "$code" != "200" ]]; then
     echo "Konto konnte nicht angelegt werden (HTTP ${code}). Laeuft Open WebUI? Naechster Befehl: systemctl --user status open-webui.service" >&2
     exit 1

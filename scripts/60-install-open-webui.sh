@@ -37,6 +37,11 @@ source "${root}/lib/secrets.sh"
 # shellcheck disable=SC1091  # Rechnerprofil, absichtlich ausserhalb von Git
 [[ -f "${root}/config/host.env" ]] && source "${root}/config/host.env"
 
+lock_feld() { awk -F': ' -v f="$1" '$1==f{gsub(/ /,"",$2); print $2; exit}' "${root}/versions.lock" 2>/dev/null || true; }
+: "${OWUI_IMAGE:=$(lock_feld open_webui_image)}"
+[[ -z "${OWUI_IMAGE}" ]] && OWUI_IMAGE=ghcr.io/open-webui/open-webui:v0.11.4
+owui_digest="$(lock_feld open_webui_image_digest)"
+[[ -n "${owui_digest}" && "${OWUI_IMAGE}" != *"@sha256:"* ]] && OWUI_IMAGE="${OWUI_IMAGE}@${owui_digest}"
 chat_port=3001                                    # muss zu PublishPort passen
 unit_name=open-webui.container
 chat_base="http://127.0.0.1:${chat_port}"
@@ -49,15 +54,15 @@ ADMIN_TOKEN=''
 # ---------------------------------------------------------------- Einheiten ---
 schreibe_unit() {
   install -d -m 0755 "${root}/quadlet"
-  cat > "${root}/quadlet/open-webui.container" <<'UNIT'
+  cat > "${root}/quadlet/open-webui.container" <<UNIT
 # GENERIERT von scripts/60-install-open-webui.sh - dort ändern, nicht hier.
 [Unit]
 Description=Open WebUI chat and RAG interface
 After=litellm.service
-Wants=llm-inference-network.service
+Wants=llm-inference-network.service litellm.service
 
 [Container]
-Image=ghcr.io/open-webui/open-webui:v0.11.4
+Image=${OWUI_IMAGE}
 ContainerName=open-webui
 Network=llm-inference.network
 PublishPort=127.0.0.1:3001:8080

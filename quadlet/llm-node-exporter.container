@@ -1,19 +1,27 @@
 # Host-Metriken (CPU, RAM, Platte, Netzwerk, ZFS, Temperaturen).
 # Der Exporter läuft rootless in einem Container und liest den Host über die
 # schreibgeschützte /host-Einhängung. Er sieht dadurch die echten Hostwerte und
-# nicht nur die Containersicht. Texte Kennzahlen liefert scripts/collect-host-facts.sh.
+# nicht nur die Containersicht. Netzwerk ist die Ausnahme: rootless loest
+# /host/proc/net ins eigene Namespace auf (Bind-Mounts auf /proc-Symlinks ziehen
+# nicht), node_network_* zeigt daher nur das Container-veth. Host-Netzwerk-
+# Kennzahlen liefert der cgroup-Blick nicht; dafuer ist kein Panel gebaut
+# (docs/monitoring.md, Beschraenkungen).
+# Texte Kennzahlen liefert scripts/collect-host-facts.sh. ZFS ist auf diesem
+# Rechner nicht in Betrieb (docs/status.md); der Collector waere ein No-op und
+# wird erst wieder aufgenommen, wenn ZFS laeuft.
 [Unit]
 Description=Prometheus node exporter (host metrics)
 After=llm-observability-network.service
 
 [Container]
-Image=docker.io/prom/node-exporter:v1.8.2
+Image=docker.io/prom/node-exporter:v1.8.2@sha256:065914c03336590ebed517e7df38520f0efb44465fde4123c3f6b7328f5a9396
 ContainerName=llm-node-exporter
 Network=llm-observability.network
 PublishPort=127.0.0.1:9100:9100
 Volume=/:/host:ro,rslave
 Volume=%h/.local/share/llm-infra/node-exporter/textfile:/var/lib/node_exporter/textfile:ro,Z
-Exec=--path.rootfs=/host --web.listen-address=0.0.0.0:9100 --collector.zfs --collector.textfile.directory=/var/lib/node_exporter/textfile --collector.netdev.device-exclude=^(lo|veth|tap|docker|podman|cni|br-|wg|tun) --collector.filesystem.mount-points-exclude=^/run/user(/.*)?$
+PodmanArgs=--hostname=cachyos-x8664
+Exec=--path.rootfs=/host --web.listen-address=0.0.0.0:9100 --collector.textfile.directory=/var/lib/node_exporter/textfile --collector.netdev.device-exclude=^(lo|veth|tap|docker|podman|cni|br-|wg|tun) --collector.filesystem.mount-points-exclude=^(/run/user|/etc/hostname)(/.*)?$
 
 [Service]
 Restart=on-failure

@@ -31,6 +31,7 @@ ContainerName=llm-cadvisor
 Network=llm-observability.network
 PublishPort=127.0.0.1:9188:8080
 Volume=/sys/fs/cgroup:/sys/fs/cgroup:ro
+Volume=/etc/machine-id:/etc/machine-id:ro
 PodmanArgs=--pid=host --cgroupns=host --security-opt label=disable
 Exec=--housekeeping_interval=15s --docker_only=false --store_container_labels=false
 
@@ -41,4 +42,5 @@ RestartSec=15
 [Install]
 WantedBy=default.target
 UNIT
+systemctl --user daemon-reload
 log 'cAdvisor-Unit erzeugt (Port 127.0.0.1:9188, read-only Cgroup-Blick).'

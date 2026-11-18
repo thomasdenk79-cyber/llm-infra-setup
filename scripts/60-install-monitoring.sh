@@ -130,6 +130,7 @@ if ! podman volume exists alloy-data 2>/dev/null; then
   log "alloy-data Volume mit Eigentuemerschaft 473:473 angelegt"
 fi
 
+systemctl --user daemon-reload
 start_units llm-observability.network loki.container prometheus.container grafana.container alloy.container dozzle.container alertmanager.container llm-node-exporter.container llm-gpu-exporter.container llm-cadvisor.container homepage.container wiki.container llm-proxy.container
 # Alertmanager ueberwacht seine Datei nicht selbst: ohne diesen idempotenten
 # Reload blieb die live gespielte Konfiguration hinter der Repo-Fassung zurueck

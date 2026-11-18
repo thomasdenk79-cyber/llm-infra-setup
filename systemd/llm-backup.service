@@ -1,0 +1,9 @@
+[Unit]
+Description=llm-infra Zustand und Gateway-Datenbank sichern
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Nice=10
+IOSchedulingClass=idle
+ExecStart=@CONFIG_ROOT@/scripts/backup.sh

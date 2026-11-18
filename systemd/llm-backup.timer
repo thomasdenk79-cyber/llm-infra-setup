@@ -1,0 +1,10 @@
+[Unit]
+Description=llm-infra Backup-Intervall (taeglich, verpasste Laeufe nachholen)
+
+[Timer]
+OnCalendar=*-*-* 03:10:00
+AccuracySec=10m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

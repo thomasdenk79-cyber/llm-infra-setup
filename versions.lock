@@ -22,9 +22,17 @@ litellm: v1.105.0
 litellm_image: docker.litellm.ai/berriai/litellm:v1.105.0
 litellm_image_digest: sha256:60947db020b57e204823d3fbc8bb295c85be890d7c9adcc77fb4f5fc2fe410b2
 open_webui: v0.11.4
+open_webui_image: ghcr.io/open-webui/open-webui:v0.11.4
+open_webui_image_digest: sha256:332438e079ad23bb11b0ab278b43e7c98b50e8cec14b0840281644e8a289f49f
 postgres: 16.4
+postgres_image: docker.io/library/postgres:16.4
+postgres_image_digest: sha256:9a70e4d1c03a5066080292db2dd95ee3965d3651316e21989fa0935afb8ce8ca
+# Hinweis: 16.4 ist hinter dem aktuellen 16.x zurueck; Anhebung ist eine
+# Betreiberentscheidung (Neustartfenster noetig), Stand siehe CHANGELOG.
 prometheus: v3.5.0
 node_exporter: v1.8.2
+node_exporter_image: docker.io/prom/node-exporter:v1.8.2
+node_exporter_image_digest: sha256:065914c03336590ebed517e7df38520f0efb44465fde4123c3f6b7328f5a9396
 cadvisor_image: ghcr.io/google/cadvisor:v0.61.0
 cadvisor_image_digest: sha256:448ca9b1ce0d3f2eb7563938030908a4b81ddfe959a3fe5e62f691fd4b2cb417
 nvidia_gpu_exporter: 1.4.0
@@ -51,8 +59,13 @@ autossh_base_image: docker.io/library/alpine:3.20
 docs_tooling: mkdocs-material==9.8.1
 # Wiki-Portal (statischer Auslieferer) und der oeffentliche Zugang auf dem
 # Gateway-Rechner. Der Gateway-Caddy kommt dort vom Distropaket (gemessen 2.11.9).
+caddy_proxy: 2-alpine
+caddy_proxy_image: docker.io/library/caddy:2-alpine
+caddy_proxy_image_digest: sha256:fc9cbc100585871d18d4e451cca7021785c90a7006087427ae5ceb3e4efe6424
 caddy_wiki: docker.io/library/caddy:2-alpine
-caddy_wiki_digest: sha256:5813f7eb9b94fac4970f9f576695fe1ed1d53d41586fd3eaa350caf7c4627d9c
+# Manifest-Digest des laufenden Bildes (Image-Id 5813f7eb ist die Config-Id, kein Pull-Ziel)
+caddy_wiki_digest: sha256:fc9cbc100585871d18d4e451cca7021785c90a7006087427ae5ceb3e4efe6424
+caddy_wiki_image_id: sha256:5813f7eb9b94fac4970f9f576695fe1ed1d53d41586fd3eaa350caf7c4627d9c
 caddy_gateway: 2.11.9
 # KI-Incident-Agent (Demo): nur Standardbibliothek, kein Bau zur Laufzeit.
 incident_agent_image: docker.io/library/python:3.12-alpine

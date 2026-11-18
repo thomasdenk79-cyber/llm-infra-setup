@@ -1,6 +1,5 @@
 [Unit]
 Description=llm-infra Host-Kennzahlen alle 30s sammeln
-Wants=llm-infra-collect-facts.service
 
 [Service]
 Type=oneshot

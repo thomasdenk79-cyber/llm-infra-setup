@@ -335,7 +335,7 @@ else
 fi
 # --- Alarmkette und Protokollpipeline (Befunde der Review-Welle 2026-11-18:
 # genau diese Glieder liess der Doctor unprueft, deren Ausfall still ist) ---
-for probe in "alertmanager|9093|/-/ready" "loki|3100|/ready" "grafana|3000|/grafana/api/health" "llm-node-exporter|9100|/metrics" "llm-gpu-exporter|9835|/metrics"; do
+for probe in "alertmanager|9093|/-/ready" "loki|3100|/ready" "grafana|3000|/grafana/api/health" "llm-node-exporter|9100|/metrics" "llm-gpu-exporter|9835|/metrics" "llm-cadvisor|9188|/healthz"; do
   IFS='|' read -r name port pfad <<< "${probe}"
   if curl -fsS --max-time 5 "http://127.0.0.1:${port}${pfad}" >/dev/null 2>&1; then
     good "${name} antwortet (${pfad})"
@@ -720,13 +720,14 @@ title 'Waechter'
 # Beide Waechter gehoeren zum Stapel: der Gateway-Waechter startet nur litellm neu,
 # der Laufzeit-Waechter warnt standardmaessig nur. Ein Timer, der nicht wieder
 # bewaffnet wird, ist schlimmer als gar keiner - er wirkt aktiv und prueft nie wieder.
-for timer in llm-litellm-watchdog.timer llm-runtime-watchdog.timer llm-stack-status.timer llm-infra-collect-facts.timer; do
+for timer in llm-litellm-watchdog.timer llm-runtime-watchdog.timer llm-stack-status.timer llm-infra-collect-facts.timer llm-backup.timer; do
   fall=''
   case "${timer}" in
     llm-litellm-watchdog.*) fall='./scripts/litellm-watchdog.sh --install' ;;
     llm-runtime-watchdog.*) fall='./scripts/runtime-watchdog.sh --install' ;;
     llm-stack-status.*) fall='./scripts/collect-stack-status.sh' ;;
     llm-infra-collect-facts.*) fall='./scripts/collect-host-facts.sh' ;;
+    llm-backup.*) fall='./scripts/backup.sh --install' ;;
   esac
   if ! systemctl --user is-active --quiet "${timer}" 2>/dev/null; then
     warn "Timer ${timer} laeuft nicht; die Ueberwachung faellt still weg." "${fall}"

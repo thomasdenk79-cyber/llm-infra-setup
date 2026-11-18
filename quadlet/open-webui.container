@@ -2,10 +2,10 @@
 [Unit]
 Description=Open WebUI chat and RAG interface
 After=litellm.service
-Wants=llm-inference-network.service
+Wants=llm-inference-network.service litellm.service
 
 [Container]
-Image=ghcr.io/open-webui/open-webui:v0.11.4
+Image=ghcr.io/open-webui/open-webui:v0.11.4@sha256:332438e079ad23bb11b0ab278b43e7c98b50e8cec14b0840281644e8a289f49f
 ContainerName=open-webui
 Network=llm-inference.network
 PublishPort=127.0.0.1:3001:8080

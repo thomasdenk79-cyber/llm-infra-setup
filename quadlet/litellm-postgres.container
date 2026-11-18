@@ -3,7 +3,7 @@
 Description=PostgreSQL for LiteLLM virtual keys
 Wants=llm-inference-network.service
 [Container]
-Image=docker.io/library/postgres:16.4
+Image=docker.io/library/postgres:16.4@sha256:9a70e4d1c03a5066080292db2dd95ee3965d3651316e21989fa0935afb8ce8ca
 ContainerName=litellm-postgres
 Network=llm-inference.network
 PublishPort=127.0.0.1:5432:5432
