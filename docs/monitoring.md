@@ -235,6 +235,45 @@ braucht ein laufendes Gateway fuer die Schluesselvergabe). Pruefen:
 `make incident-agent-demo`. Der Agent liest und schreibt nichts ausserhalb
 von `~/.local/share/llm-infra/incident`.
 
+### Plattform- und Containersicht (`llm-plattform`, Datei `14-plattform.json`)
+
+Beantwortet die Fragen, die sonst eine Kubernetes-Plattformseite beantwortet - auf
+diesem Rechner als Podman-Entsprechung: **Cluster = Host, Pod = Container, Node =
+entfaellt**. Ein Markdown-Panel oben sagt das ausdruecklich und nennt die Messluecken,
+damit niemand eine Attrappe fuer eine Messung haelt:
+
+| Kubernetes-Signal | Stand auf diesem Host | Ersatz auf der Seite |
+|---|---|---|
+| CPU und Speicher je Container | fehlt - kein cAdvisor installiert | Host-Seite `llm-infra-host`, Speicher `llm-infra-storage` |
+| Neustartgrund je Pod (Event, `LastState`) | fehlt - keine Events | `llm_service_restart_total`, `llm_service_info{reason}` |
+| `OOMKilled` je Container | fehlt - kein Attribut | `llm_oom_events_24h` plus `llm_oom_source_available` (Kernel-Sicht, ohne Containerzuordnung) |
+| Deployment, Replicaset, Replikate | nicht anwendbar - jede Komponente existiert genau einmal | - |
+
+Reihen: Endpunktsonden (`llm_endpoint_up{endpoint,code}`), Zeitachsen je Komponentengruppe
+aus `llm_service_up` (Inferenz; API und Zugang; Chat und Portale; Beobachtung),
+Neustarts (Bargauge auf `llm_service_restart_total` plus `increase(...[6h])` -
+dieselbe Rechnung wie der Alarm `HaeufigeNeustarts`), OOM-Zahler und
+Sichtbarkeitsstatus, Wartungsfenster (`llm_maintenance_info`, gesetzt mit
+`scripts/set-maintenance.sh`) und zwei Loki-Logpanels.
+
+Die gespeicherten Explore-links je Fehlerart (ERROR, WARN, timeout, connection refused,
+OOM) sitzen in der **Kopfzeile** der Seite, nicht als Paneel-links: Grafana 12 stellte
+Paneel-links auf dieser provisionierten Seite nicht dar (im DOM nachweislich null
+Anker, Kopfzeilen-links dagegen vorhanden). Fuer die anonyme Ansicht bleiben sie
+funktionslos, weil diese Instanz `GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer` mit deaktiviertem
+Login-Formular faehrt und schon ein nacktes `/grafana/explore` auf die Startseite
+zurueckleitet (geprueft 2026-11-18) - die Links gehoeren damit an die angemeldete
+Sicht. Rohe Container-Protokolle ohne Anmeldung zeigt Dozzle.
+
+Die Logselektoren sind gegen die laufende Loki-Instanz geprueft (2026-11-18):
+`{job="containerlogs", stack="llm-infra", container=~"$container"}` liefert die
+Containerstroeme, die Variable ladt `label_values({job="containerlogs",
+stack="llm-infra"}, container)`. Bewusst **nicht** benutzt: `detected_level` - Loki
+liefert die Marke zwar in den Abfrageergebnissen, als Label-Selektor gibt der Index
+sie aber nicht her (Versuch lieferte null Stroeme). Die Fehlerfilter sind deshalb
+Zeilen-Regexe (`level=error`, `warn`, `timed out`, `connection refused`,
+`out of memory`). Siehe auch [statusseiten.md](statusseiten.md#telemetrie-inventur-2026-11-18).
+
 ### KV-Cache: warum die Anzeige oft ~90 % sagt und sgtop ~40 %
 
 Beides ist richtig, es sind zwei Messgroessen (gemessen 2026-11-18:

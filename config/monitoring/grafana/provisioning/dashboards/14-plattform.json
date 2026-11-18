@@ -1,0 +1,1700 @@
+{
+ "annotations": {
+  "list": [
+   {
+    "builtIn": 1,
+    "datasource": {
+     "type": "grafana",
+     "uid": "-- Grafana --"
+    },
+    "enable": true,
+    "hide": true,
+    "iconColor": "rgba(0, 211, 255, 1)",
+    "name": "Grafana-Alarm-Annotationen",
+    "type": "dashboard"
+   }
+  ]
+ },
+ "editable": true,
+ "graphTooltip": 1,
+ "id": null,
+ "uid": "llm-plattform",
+ "title": "LUNI - Plattform & Container",
+ "description": "Container-Plattform des rootless-Podman-Hosts: Endpunktsonden, Komponenten in Gruppen, Neustarts, Kernel-OOM, Wartungsfenster und Protokollkorrelation. Kein Kubernetes - Cluster=Host, Pod=Container; CPU/RAM je Container fehlen (kein cAdvisor).",
+ "tags": [
+  "llm-infra",
+  "plattform",
+  "container",
+  "podman",
+  "status"
+ ],
+ "timezone": "Europe/Berlin",
+ "time": {
+  "from": "now-6h",
+  "to": "now"
+ },
+ "refresh": "1m",
+ "schemaVersion": 39,
+ "version": 1,
+ "liveNow": false,
+ "fiscalYearStartMonth": 0,
+ "links": [
+  {
+   "title": "SGLang-Betriebsdaten",
+   "type": "dashboard",
+   "uid": "llm-sglang-live",
+   "url": "",
+   "tags": [
+    "sglang"
+   ],
+   "icon": "external link",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "targetBlank": false
+  },
+  {
+   "title": "Host (CPU, RAM, Platte)",
+   "type": "dashboard",
+   "uid": "llm-infra-host",
+   "url": "",
+   "tags": [
+    "host"
+   ],
+   "icon": "external link",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "targetBlank": false
+  },
+  {
+   "title": "Stack-Status: Up/Down",
+   "type": "dashboard",
+   "uid": "llm-stack-status",
+   "url": "",
+   "tags": [
+    "status"
+   ],
+   "icon": "external link",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "targetBlank": false
+  },
+  {
+   "title": "Incident-Analyse",
+   "type": "dashboard",
+   "uid": "llm-incident-analyse",
+   "url": "",
+   "tags": [
+    "status"
+   ],
+   "icon": "external link",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "targetBlank": false
+  },
+  {
+   "title": "Service-Status (Hotline)",
+   "type": "dashboard",
+   "uid": "llm-hotline-status",
+   "url": "",
+   "tags": [
+    "status"
+   ],
+   "icon": "external link",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "targetBlank": false
+  },
+  {
+   "title": "Logs: alle Zeilen des Containers",
+   "type": "link",
+   "url": "/grafana/explore?left=%7B%22datasource%22%3A%22P8E80F9AEF21F6940%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22expr%22%3A%22%7Bjob%3D%5C%22containerlogs%5C%22%2C%20stack%3D%5C%22llm-infra%5C%22%2C%20container%3D~%5C%22${container:pipe}%5C%22%7D%22%2C%22queryType%22%3A%22range%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-1h%22%2C%22to%22%3A%22now%22%7D%7D",
+   "targetBlank": true,
+   "stopSearch": false
+  },
+  {
+   "title": "Logs: Nur ERROR",
+   "type": "link",
+   "url": "/grafana/explore?left=%7B%22datasource%22%3A%22P8E80F9AEF21F6940%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22expr%22%3A%22%7Bjob%3D%5C%22containerlogs%5C%22%2C%20stack%3D%5C%22llm-infra%5C%22%2C%20container%3D~%5C%22${container:pipe}%5C%22%7D%20%7C~%20%5C%22%28%3Fi%29%28level%3Derror%7C%5C%5Cberror%5C%5Cb%7Cexception%7Ctraceback%29%5C%22%22%2C%22queryType%22%3A%22range%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-1h%22%2C%22to%22%3A%22now%22%7D%7D",
+   "targetBlank": true,
+   "stopSearch": false
+  },
+  {
+   "title": "Logs: Nur WARN",
+   "type": "link",
+   "url": "/grafana/explore?left=%7B%22datasource%22%3A%22P8E80F9AEF21F6940%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22expr%22%3A%22%7Bjob%3D%5C%22containerlogs%5C%22%2C%20stack%3D%5C%22llm-infra%5C%22%2C%20container%3D~%5C%22${container:pipe}%5C%22%7D%20%7C~%20%5C%22%28%3Fi%29%28level%3Dwarn%7C%5C%5Cbwarn%5C%5Cb%7Cwarning%29%5C%22%22%2C%22queryType%22%3A%22range%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-1h%22%2C%22to%22%3A%22now%22%7D%7D",
+   "targetBlank": true,
+   "stopSearch": false
+  },
+  {
+   "title": "Logs: timeout / timed out",
+   "type": "link",
+   "url": "/grafana/explore?left=%7B%22datasource%22%3A%22P8E80F9AEF21F6940%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22expr%22%3A%22%7Bjob%3D%5C%22containerlogs%5C%22%2C%20stack%3D%5C%22llm-infra%5C%22%2C%20container%3D~%5C%22${container:pipe}%5C%22%7D%20%7C~%20%5C%22%28%3Fi%29%28timed%20out%7Ctimeout%20exceeded%7Ccontext%20deadline%20exceeded%7Cconnection%20timeout%29%5C%22%22%2C%22queryType%22%3A%22range%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-1h%22%2C%22to%22%3A%22now%22%7D%7D",
+   "targetBlank": true,
+   "stopSearch": false
+  },
+  {
+   "title": "Logs: connection refused",
+   "type": "link",
+   "url": "/grafana/explore?left=%7B%22datasource%22%3A%22P8E80F9AEF21F6940%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22expr%22%3A%22%7Bjob%3D%5C%22containerlogs%5C%22%2C%20stack%3D%5C%22llm-infra%5C%22%2C%20container%3D~%5C%22${container:pipe}%5C%22%7D%20%7C~%20%5C%22%28%3Fi%29%28connection%20refused%7Cconnect%3A%20connection%20refused%29%5C%22%22%2C%22queryType%22%3A%22range%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-1h%22%2C%22to%22%3A%22now%22%7D%7D",
+   "targetBlank": true,
+   "stopSearch": false
+  },
+  {
+   "title": "Logs: OOM / out of memory",
+   "type": "link",
+   "url": "/grafana/explore?left=%7B%22datasource%22%3A%22P8E80F9AEF21F6940%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22expr%22%3A%22%7Bjob%3D%5C%22containerlogs%5C%22%2C%20stack%3D%5C%22llm-infra%5C%22%2C%20container%3D~%5C%22${container:pipe}%5C%22%7D%20%7C~%20%5C%22%28%3Fi%29%28oom-kill%7Coom_score%7Cout%20of%20memory%7Ckilled%20process%7Cmemory%20cgroup%29%5C%22%22%2C%22queryType%22%3A%22range%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-1h%22%2C%22to%22%3A%22now%22%7D%7D",
+   "targetBlank": true,
+   "stopSearch": false
+  }
+ ],
+ "templating": {
+  "list": [
+   {
+    "name": "container",
+    "label": "Container",
+    "type": "query",
+    "datasource": {
+     "type": "loki",
+     "uid": "P8E80F9AEF21F6940"
+    },
+    "query": "label_values({job=\"containerlogs\", stack=\"llm-infra\"}, container)",
+    "definition": "label_values({job=\"containerlogs\", stack=\"llm-infra\"}, container)",
+    "regexp": "",
+    "sort": 1,
+    "refresh": 2,
+    "multi": true,
+    "includeAll": true,
+    "allValue": ".*",
+    "current": {
+     "selected": false,
+     "text": [
+      "Alle"
+     ],
+     "value": [
+      "$__all"
+     ]
+    },
+    "options": [],
+    "hide": 0
+   }
+  ]
+ },
+ "panels": [
+  {
+   "type": "row",
+   "title": "Plattform: ein Host statt eines Clusters",
+   "collapsed": false,
+   "panels": [],
+   "id": 1401,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 0
+   }
+  },
+  {
+   "type": "text",
+   "title": "Wie diese Seite zu lesen ist",
+   "id": 1402,
+   "description": "Hinweistext ohne Anfrage:ordnet die Begriffe ein und nennt die Messluecken.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "PBFA97CFB590B2093"
+   },
+   "gridPos": {
+    "h": 9,
+    "w": 24,
+    "x": 0,
+    "y": 1
+   },
+   "options": {
+    "mode": "markdown",
+    "content": "## Ein Host, ein Container-Stapel: diese Seite ist die Podman-Entsprechung einer Cluster-Ansicht\n\nHier laeuft **kein Kubernetes und kein OpenShift**, sondern rootless **Podman** mit\nsystemd-Quadlet-Units auf einem CachyOS-Rechner. Die Begriffe dieser Seite deshalb links\nin der Kubernetes-Sprache, rechts das, was hier wirklich existiert:\n\n| Kubernetes-Begriff | Entsprechung auf diesem Host | wo hier sichtbar |\n|---|---|---|\n| Cluster | **ein Host** (`llm-host`, Kennzahlen ueber job `node`) | Zeitachsen und Tabellen unten |\n| Pod | **ein Container** einer Quadlet-Unit (`podman ps`, Name z. B. `systemd-litellm`) | Gruppen-Zeitachsen, Protokolle |\n| Node / NodePressure | entfaellt - alles laeuft auf diesem Rechner | Drilldown: Host-Seite |\n| Deployment / Replicaset / Replikate | **nicht anwendbar**: jede Komponente existiert genau einmal | - |\n| `kubectl get pods -o wide` | `podman ps --format '{{.Names}} {{.State}} {{.RestartCount}}'` | Neustart-Reihe |\n| `kubectl describe pod` (letzter Grund) | `podman inspect` und `systemctl --user status <unit>` | Grund je Dienst auf `llm-stack-status` |\n\n**Woher die Daten kommen:** `scripts/collect-stack-status.sh` schreibt alle 30 s eine\nTextdatei in den Textfile-Ordner des node_exporters (job `node`). Die Serien sind\n`llm_service_up`, `llm_service_info`, `llm_service_restart_total`, `llm_endpoint_up`,\n`llm_oom_events_24h`, `llm_oom_source_available` und `llm_maintenance_info`. Die\nProtokolle liefert Alloy aus dem Journal an Loki (`job=\"containerlogs\"`, Label `container`).\n\n**Was diese Seite bewusst NICHT zeigt** (erfunden wird nichts - Messluecke statt Attrappe,\nderselbe Stand in `docs/statusseiten.md`):\n\n- **CPU und Speicher je Container:** dafuer waere cAdvisor noetig, das ist nicht\n  installiert. Host-Werte zeigt die Seite `llm-infra-host`, Speicher `llm-infra-storage`.\n- **Neustartgruende je Container** (Kubernetes-Event, `LastState.TerminationMessage`):\n  existiert nicht. Vorhanden sind der kumulierte Podman-Zaehler\n  `llm_service_restart_total` und der Kurztext `llm_service_info{reason=...}`; die\n  Beweise liegen in den Protokollen unten.\n- **`OOMKilled` je Container:** kein Attribut vorhanden. Ehrlicher Ersatz ist der\n  Kernel-Zaehler `llm_oom_events_24h` zusammen mit `llm_oom_source_available` (sagt, ob\n  die Journal-Sicht ueberhaupt verfuegbar ist). Der Einzelcontainer-Fall ist der\n  `podman inspect`-Befehl im OOM-Panel.\n- **Deployments, Replicasets, Persistent Volumes, Ingress, Service-Mesh:** hier nicht\n  anwendbar; Rollout und Speicher sind in `docs/` beschrieben.\n"
+   }
+  },
+  {
+   "type": "row",
+   "title": "Endpunktsonden (synthetische Pruefungen alle 30 s)",
+   "collapsed": false,
+   "panels": [],
+   "id": 1410,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 10
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Laufzeit /v1/models",
+   "id": 1411,
+   "description": "HTTP-Pruefung auf :30000/v1/models - das Modell ist geladen und antwortet. Gruen/gelb/rot ueber die Schwelle, number = HTTP-Code steht in der Tabelle.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "PBFA97CFB590B2093"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 0,
+    "y": 11
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 0,
+     "noValue": "keine Daten",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     },
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "color": "red",
+         "text": "down"
+        },
+        "1": {
+         "color": "green",
+         "text": "up"
+        }
+       }
+      }
+     ]
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "auto",
+    "orientation": "auto"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "llm_endpoint_up{endpoint=\"runtime-models\"}",
+     "instant": true,
+     "legendFormat": ""
+    }
+   ]
+  },
+  {
+   "type": "stat",
+   "title": "Gateway /health/liveliness",
+   "id": 1412,
+   "description": "HTTP-Pruefung auf :4000/health/liveliness - das Gateway nimmt Anfragen an. Gruen/gelb/rot ueber die Schwelle, number = HTTP-Code steht in der Tabelle.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "PBFA97CFB590B2093"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 4,
+    "y": 11
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 0,
+     "noValue": "keine Daten",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     },
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "color": "red",
+         "text": "down"
+        },
+        "1": {
+         "color": "green",
+         "text": "up"
+        }
+       }
+      }
+     ]
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "auto",
+    "orientation": "auto"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "llm_endpoint_up{endpoint=\"gateway\"}",
+     "instant": true,
+     "legendFormat": ""
+    }
+   ]
+  },
+  {
+   "type": "stat",
+   "title": "Chat /",
+   "id": 1413,
+   "description": "HTTP-Pruefung auf :3001/ - die Chat-Oberflaeche liefert eine Seite. Gruen/gelb/rot ueber die Schwelle, number = HTTP-Code steht in der Tabelle.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "PBFA97CFB590B2093"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 8,
+    "y": 11
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 0,
+     "noValue": "keine Daten",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     },
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "color": "red",
+         "text": "down"
+        },
+        "1": {
+         "color": "green",
+         "text": "up"
+        }
+       }
+      }
+     ]
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "auto",
+    "orientation": "auto"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "llm_endpoint_up{endpoint=\"chat\"}",
+     "instant": true,
+     "legendFormat": ""
+    }
+   ]
+  },
+  {
+   "type": "stat",
+   "title": "Grafana api/health",
+   "id": 1414,
+   "description": "HTTP-Pruefung auf :3000/grafana/api/health - diese Seite selbst. Gruen/gelb/rot ueber die Schwelle, number = HTTP-Code steht in der Tabelle.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "PBFA97CFB590B2093"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 12,
+    "y": 11
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 0,
+     "noValue": "keine Daten",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     },
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "color": "red",
+         "text": "down"
+        },
+        "1": {
+         "color": "green",
+         "text": "up"
+        }
+       }
+      }
+     ]
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "auto",
+    "orientation": "auto"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "llm_endpoint_up{endpoint=\"grafana\"}",
+     "instant": true,
+     "legendFormat": ""
+    }
+   ]
+  },
+  {
+   "type": "stat",
+   "title": "Prometheus -/healthy",
+   "id": 1415,
+   "description": "HTTP-Pruefung auf :9090/-/healthy. Gruen/gelb/rot ueber die Schwelle, number = HTTP-Code steht in der Tabelle.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "PBFA97CFB590B2093"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 16,
+    "y": 11
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 0,
+     "noValue": "keine Daten",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     },
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "color": "red",
+         "text": "down"
+        },
+        "1": {
+         "color": "green",
+         "text": "up"
+        }
+       }
+      }
+     ]
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "auto",
+    "orientation": "auto"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "llm_endpoint_up{endpoint=\"prometheus\"}",
+     "instant": true,
+     "legendFormat": ""
+    }
+   ]
+  },
+  {
+   "type": "stat",
+   "title": "Loki /ready",
+   "id": 1416,
+   "description": "HTTP-Pruefung auf :3100/ready - Protokollaufnahme bereit. Gruen/gelb/rot ueber die Schwelle, number = HTTP-Code steht in der Tabelle.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "PBFA97CFB590B2093"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 20,
+    "y": 11
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 0,
+     "noValue": "keine Daten",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     },
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "color": "red",
+         "text": "down"
+        },
+        "1": {
+         "color": "green",
+         "text": "up"
+        }
+       }
+      }
+     ]
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "auto",
+    "orientation": "auto"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "llm_endpoint_up{endpoint=\"loki\"}",
+     "instant": true,
+     "legendFormat": ""
+    }
+   ]
+  },
+  {
+   "type": "table",
+   "title": "Pruefpfade mit HTTP-Code",
+   "id": 1417,
+   "description": "llm_endpoint_up{endpoint,code}: pruefender Aufruf, zurueckgegebener HTTP-Code und Erreichbarkeit (1 = 2xx/3xx). Der Code ist ein Label, keine Messgroesse - 000 bedeutet 'kein HTTP-Antwortcode'.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "PBFA97CFB590B2093"
+   },
+   "gridPos": {
+    "h": 5,
+    "w": 18,
+    "x": 0,
+    "y": 15
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "noValue": "keine Daten",
+     "custom": {
+      "align": "auto",
+      "filterable": false
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Erreichbar"
+      },
+      "properties": [
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "0": {
+            "color": "red",
+            "text": "down"
+           },
+           "1": {
+            "color": "green",
+            "text": "up"
+           }
+          }
+         }
+        ]
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "red",
+           "value": null
+          },
+          {
+           "color": "green",
+           "value": 1
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "HTTP-Code"
+      },
+      "properties": [
+       {
+        "id": "custom.align",
+        "value": "center"
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "showHeader": true,
+    "footer": {
+     "show": false,
+     "reducer": [],
+     "count": false
+    }
+   },
+   "transformations": [
+    {
+     "id": "labelsToFields",
+     "options": {}
+    },
+    {
+     "id": "organize",
+     "options": {
+      "excludeByName": {
+       "Time": true,
+       "__name__": true,
+       "job": true,
+       "instance": true,
+       "host": true
+      },
+      "renameByName": {
+       "endpoint": "Endpunkt",
+       "code": "HTTP-Code",
+       "Value": "Erreichbar"
+      }
+     }
+    }
+   ],
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "llm_endpoint_up",
+     "format": "table",
+     "instant": true
+    }
+   ]
+  },
+  {
+   "type": "stat",
+   "title": "Erreichbare Endpunkte",
+   "id": 1418,
+   "description": "sum(llm_endpoint_up) von count(llm_endpoint_up) = 6. Unter 6: mindestens eine Sonde liefert kein 2xx/3xx.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "PBFA97CFB590B2093"
+   },
+   "gridPos": {
+    "h": 5,
+    "w": 6,
+    "x": 18,
+    "y": 15
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 0,
+     "noValue": "keine Daten",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "yellow",
+        "value": 5
+       },
+       {
+        "color": "green",
+        "value": 6
+       }
+      ]
+     },
+     "min": 0,
+     "max": 6
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "auto",
+    "orientation": "auto"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(llm_endpoint_up)",
+     "instant": true,
+     "legendFormat": ""
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "title": "Komponenten in Gruppen (Zeitachse 24 h)",
+   "collapsed": false,
+   "panels": [],
+   "id": 1420,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 20
+   }
+  },
+  {
+   "type": "state-timeline",
+   "title": "Inferenz (llm_service_up)",
+   "id": 1421,
+   "description": "Gruppe Inferenz: runtime. Gemessen am Port 30000/health, nicht an einer Unit - die aktive Laufzeit kann ein unorganisierter Container sein. 24-h-Zeitachse, gruen = erreichbar.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "PBFA97CFB590B2093"
+   },
+   "gridPos": {
+    "h": 7,
+    "w": 12,
+    "x": 0,
+    "y": 21
+   },
+   "timeFrom": "now-24h",
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "min": 0,
+     "max": 1,
+     "color": {
+      "mode": "thresholds"
+     },
+     "custom": {
+      "fillOpacity": 80,
+      "lineWidth": 0,
+      "showValue": "never",
+      "axisPlacement": "auto"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "merge": false,
+    "mergeThreads": false,
+    "showValue": false,
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "llm_service_up{name=~\"runtime\"}",
+     "legendFormat": "{{name}}",
+     "instant": false
+    }
+   ]
+  },
+  {
+   "type": "state-timeline",
+   "title": "API und Zugang (llm_service_up)",
+   "id": 1422,
+   "description": "Gruppe API: litellm (Gateway), litellm-postgres (Gateway-Datenbank), llm-proxy (oeffentlicher Zugang), vllm-forwarder (Weiterleiter ins Inferenz-Netz), reverse-tunnel (Tunnel zur Gateway-VM). reverse-tunnel und vllm-forwarder sind User-Units auf dem Host, keine Container.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "PBFA97CFB590B2093"
+   },
+   "gridPos": {
+    "h": 7,
+    "w": 12,
+    "x": 12,
+    "y": 21
+   },
+   "timeFrom": "now-24h",
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "min": 0,
+     "max": 1,
+     "color": {
+      "mode": "thresholds"
+     },
+     "custom": {
+      "fillOpacity": 80,
+      "lineWidth": 0,
+      "showValue": "never",
+      "axisPlacement": "auto"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "merge": false,
+    "mergeThreads": false,
+    "showValue": false,
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "llm_service_up{name=~\"litellm|litellm-postgres|llm-proxy|vllm-forwarder|reverse-tunnel\"}",
+     "legendFormat": "{{name}}",
+     "instant": false
+    }
+   ]
+  },
+  {
+   "type": "state-timeline",
+   "title": "Chat und Portale (llm_service_up)",
+   "id": 1423,
+   "description": "Gruppe Chat: open-webui (Unterhaltung), homepage (Portal), wiki (Wiki-Portal auf :3003).",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "PBFA97CFB590B2093"
+   },
+   "gridPos": {
+    "h": 7,
+    "w": 12,
+    "x": 0,
+    "y": 28
+   },
+   "timeFrom": "now-24h",
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "min": 0,
+     "max": 1,
+     "color": {
+      "mode": "thresholds"
+     },
+     "custom": {
+      "fillOpacity": 80,
+      "lineWidth": 0,
+      "showValue": "never",
+      "axisPlacement": "auto"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "merge": false,
+    "mergeThreads": false,
+    "showValue": false,
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "llm_service_up{name=~\"open-webui|homepage|wiki\"}",
+     "legendFormat": "{{name}}",
+     "instant": false
+    }
+   ]
+  },
+  {
+   "type": "state-timeline",
+   "title": "Beobachtung (llm_service_up)",
+   "id": 1424,
+   "description": "Gruppe Beobachtung: grafana, prometheus, loki, alloy, alertmanager, dozzle, llm-node-exporter, llm-gpu-exporter, incident-agent. Faellt diese Gruppe aus, sind die anderen Seiten blind - nicht unbedingt kaputt.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "PBFA97CFB590B2093"
+   },
+   "gridPos": {
+    "h": 7,
+    "w": 12,
+    "x": 12,
+    "y": 28
+   },
+   "timeFrom": "now-24h",
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "min": 0,
+     "max": 1,
+     "color": {
+      "mode": "thresholds"
+     },
+     "custom": {
+      "fillOpacity": 80,
+      "lineWidth": 0,
+      "showValue": "never",
+      "axisPlacement": "auto"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "merge": false,
+    "mergeThreads": false,
+    "showValue": false,
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "llm_service_up{name=~\"grafana|prometheus|loki|alloy|alertmanager|dozzle|llm-node-exporter|llm-gpu-exporter|incident-agent\"}",
+     "legendFormat": "{{name}}",
+     "instant": false
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "title": "Neustarts und Zyklen",
+   "collapsed": false,
+   "panels": [],
+   "id": 1430,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 35
+   }
+  },
+  {
+   "type": "bargauge",
+   "title": "Neustartzaehler je Container (kumuliert)",
+   "id": 1431,
+   "description": "llm_service_restart_total: Podman-RestartCount je Container, also Neustarts, die der Restart=on-failure-Mechanismus ausgeloest hat. Der Zaehler setzt sich beim Neuanlegen des Containers zurueck (podman rm/run) - ein Sprung nach unten ist Umbau, kein Fehler. runtime, vllm-forwarder und reverse-tunnel fehlen bewusst: ihre RestartCount existiert nicht (Portmessung bzw. User-Unit).",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "PBFA97CFB590B2093"
+   },
+   "gridPos": {
+    "h": 9,
+    "w": 12,
+    "x": 0,
+    "y": 36
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "min": 0,
+     "decimals": 0,
+     "noValue": "keine Daten",
+     "color": {
+      "mode": "thresholds"
+     },
+     "custom": {
+      "displayMode": "gradient",
+      "labelPlacement": "right"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "yellow",
+        "value": 1
+       },
+       {
+        "color": "red",
+        "value": 3
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "horizontal",
+    "showUnemployed": false,
+    "legend": {
+     "displayMode": "values",
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "single"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "llm_service_restart_total",
+     "legendFormat": "{{name}}",
+     "instant": true
+    }
+   ]
+  },
+  {
+   "type": "timeseries",
+   "title": "Neustartzulaufe (6 h)",
+   "id": 1432,
+   "description": "increase(llm_service_restart_total[6h]) - dieselbe Rechnung wie der Alarm 'HaeufigeNeustarts' in config/monitoring/alerts.yml (dort 30 min, Schwelle 3). Balken = Neustarts im Zeitfenster; keine Spalte heisst: Container hat keinen RestartCount (siehe Panel links).",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "PBFA97CFB590B2093"
+   },
+   "gridPos": {
+    "h": 9,
+    "w": 12,
+    "x": 12,
+    "y": 36
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "min": 0,
+     "decimals": 0,
+     "noValue": "keine Daten",
+     "color": {
+      "mode": "palette-classic"
+     },
+     "custom": {
+      "drawStyle": "bars",
+      "lineWidth": 1,
+      "fillOpacity": 70,
+      "spanNulls": false,
+      "stacking": {
+       "mode": "none"
+      },
+      "axisPlacement": "auto",
+      "axisCenteredZero": false,
+      "hideFrom": {
+       "legend": false,
+       "tooltip": false,
+       "viz": false
+      },
+      "thresholdsStyle": {
+       "mode": "off"
+      }
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "yellow",
+        "value": 1
+       },
+       {
+        "color": "red",
+        "value": 3
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "max",
+      "lastNotNull"
+     ],
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "increase(llm_service_restart_total[6h])",
+     "legendFormat": "{{name}}",
+     "instant": false
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "title": "Speicher-Notfaelle (OOM) - Kernel-Sicht statt OOMKilled",
+   "collapsed": false,
+   "panels": [],
+   "id": 1440,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 45
+   }
+  },
+  {
+   "type": "stat",
+   "title": "OOM-Ereignisse (24 h)",
+   "id": 1441,
+   "description": "llm_oom_events_24h: Zahl der Kernel-Meldungen 'out of memory|oom-killer|killed process' in 24 h. Ohne Container-Zuordnung - der Counter liegt am Host. 0 mit Sicht=aktiv ist ein Freispruch, 0 ohne Sicht nicht.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "PBFA97CFB590B2093"
+   },
+   "gridPos": {
+    "h": 6,
+    "w": 6,
+    "x": 0,
+    "y": 46
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 0,
+     "noValue": "keine Daten",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "yellow",
+        "value": 1
+       },
+       {
+        "color": "red",
+        "value": 5
+       }
+      ]
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "auto",
+    "orientation": "auto"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "llm_oom_events_24h",
+     "instant": true,
+     "legendFormat": ""
+    }
+   ]
+  },
+  {
+   "type": "stat",
+   "title": "OOM-Sicht (Journal)",
+   "id": 1442,
+   "description": "llm_oom_source_available: 1 = journalctl -k war lesbar, die OOM-Zahl ist damit eineechte Messung. 0 = Journal nicht zugaenglich, die OOM-Zahl ist dann nur 'kein Nachweis'.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "PBFA97CFB590B2093"
+   },
+   "gridPos": {
+    "h": 6,
+    "w": 6,
+    "x": 6,
+    "y": 46
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 0,
+     "noValue": "keine Daten",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "orange",
+        "value": null
+       },
+       {
+        "color": "blue",
+        "value": 1
+       }
+      ]
+     },
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "color": "orange",
+         "text": "keine Sicht"
+        },
+        "1": {
+         "color": "blue",
+         "text": "Sicht aktiv"
+        }
+       }
+      }
+     ]
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "auto",
+    "orientation": "auto"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "llm_oom_source_available",
+     "instant": true,
+     "legendFormat": ""
+    }
+   ]
+  },
+  {
+   "type": "text",
+   "title": "Befehle und Grenzen der OOM-Sicht",
+   "id": 1443,
+   "description": "Befehle und Grenzen der OOM-Sicht; reiner Text, damit die Datenlage klar ist.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "PBFA97CFB590B2093"
+   },
+   "gridPos": {
+    "h": 6,
+    "w": 12,
+    "x": 12,
+    "y": 46
+   },
+   "options": {
+    "mode": "markdown",
+    "content": "## OOM: was der Zaehler kann und was nicht\n\n`llm_oom_events_24h` zaehlt Meldungen des **Kernels** aus 24 Stunden (Quelle:\n`scripts/collect-stack-status.sh`). Das ist die ehrliche Ersatzsicht auf `OOMKilled`,\nweil hier weder Kubernetes noch cAdvisor mitzaehlt.\n\nNachpruefen von Hand (read-only):\n\n```bash\n# Kernel-Protokoll, so liest es der Sammler\njournalctl -k --since '24 hours ago' --no-pager \\\n  | grep -ciE 'out of memory|oom-killer|killed process'\n\n# derselbe Blick auf eine einzelne Komponente\npodman inspect --type container <container> \\\n  --format '{{.State.OOMKilled}} {{.State.ExitCode}} {{.RestartCount}}'\nsystemctl --user status <unit>\njournalctl --user-unit=systemd-<container> --since '24 hours ago' | grep -iE 'oom|killed process'\n```\n\n**Zwei Grenzen beim Lesen:**\n\n1. Der Kernel-Zaehler ist **ohne Container-Zuordnung**. Eine 1 heisst \"irgendwo auf dem\n   Host\", nicht \"in diesem Container\". Die Zuordnung leisten die Protokolle unten.\n2. `llm_oom_source_available = 0` heisst: der Sammler kam nicht an das Journal. Dann ist\n   die 0 eine **Aussagelosigkeit**, kein Freispruch - dafuer ist das Statuspanel daneben.\n\nCUDA-\"out of memory\"-Meldungen der Laufzeit sind **keine** Kernel-OOMs und zaehlen nicht\nmit; sie stehen in den Protokollen des Runtime-Containers (`qwen38-rc2`).\n"
+   }
+  },
+  {
+   "type": "row",
+   "title": "Wartungsfenster",
+   "collapsed": false,
+   "panels": [],
+   "id": 1450,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 52
+   }
+  },
+  {
+   "type": "table",
+   "title": "Wartungsfenster (llm_maintenance_info)",
+   "id": 1451,
+   "description": "Geplante Arbeiten je Dienst aus maintenance.json (scripts/set-maintenance.sh start|end), eingesammelt vom Sammler. Keine Zeile = kein Wartungsfenster offen. Spalten: Dienst, Grund, Bis.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "PBFA97CFB590B2093"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 24,
+    "x": 0,
+    "y": 53
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "noValue": "keine Daten",
+     "custom": {
+      "align": "auto",
+      "filterable": false
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "showHeader": true,
+    "footer": {
+     "show": false,
+     "reducer": [],
+     "count": false
+    }
+   },
+   "transformations": [
+    {
+     "id": "labelsToFields",
+     "options": {}
+    },
+    {
+     "id": "organize",
+     "options": {
+      "excludeByName": {
+       "Time": true,
+       "__name__": true,
+       "job": true,
+       "instance": true,
+       "host": true,
+       "Value": true
+      },
+      "renameByName": {
+       "service": "Dienst",
+       "grund": "Grund",
+       "bis": "Bis"
+      }
+     }
+    }
+   ],
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "llm_maintenance_info",
+     "format": "table",
+     "instant": true
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "title": "Protokollkorrelation (Loki, job containerlogs)",
+   "collapsed": false,
+   "panels": [],
+   "id": 1460,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 57
+   }
+  },
+  {
+   "type": "logs",
+   "title": "Rohprotokolle des ausgewaehlten Containers",
+   "id": 1461,
+   "description": "Rohansicht: {job=\"containerlogs\", stack=\"llm-infra\", container=~\"$container\"} - die Variable oben rechts waehlt einen oder mehrere Container, Limit 100 Zeilen. Das Label container ist live gegen Loki geprueft (Alloy -> Journal -> Loki). Die Links unter dem Titel expandieren dieselbe Anfrage in Explore, je Fehlerart eine.",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "gridPos": {
+    "h": 10,
+    "w": 24,
+    "x": 0,
+    "y": 58
+   },
+   "options": {
+    "showTime": true,
+    "wrapLogMessage": true,
+    "dedupEnabled": true,
+    "enableLogDetails": true,
+    "sortLabels": [],
+    "prettifyLogMessage": false,
+    "maxLines": 100,
+    "showLabels": false
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "{job=\"containerlogs\", stack=\"llm-infra\", container=~\"${container:pipe}\"}",
+     "queryType": "range",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     }
+    }
+   ]
+  },
+  {
+   "type": "logs",
+   "title": "Auffaellige Zeilen (Fehler, Warn, timeout, OOM)",
+   "id": 1462,
+   "description": "Dieselbe Quelle, nur Zeilen mit Fehleranzeichen: level=error, error, exception, traceback, warn, timed out, context deadline exceeded, connection refused, oom-kill, out of memory, killed process. Abgeglichen mit Loki (2026-11-18): ERROR, WARN, timeout und OOM liefern Treffer, connection refused derzeit keine - die Zeile fehlt dann, weil nichts abgelehnt wurde, nicht weil das Panel defekt ist. Ein Klick auf die abgeleitete Marke Fehlerart filtert weiter.",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "gridPos": {
+    "h": 10,
+    "w": 24,
+    "x": 0,
+    "y": 68
+   },
+   "options": {
+    "showTime": true,
+    "wrapLogMessage": true,
+    "dedupEnabled": true,
+    "enableLogDetails": true,
+    "sortLabels": [],
+    "prettifyLogMessage": false,
+    "maxLines": 200,
+    "showLabels": false
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "{job=\"containerlogs\", stack=\"llm-infra\", container=~\"${container:pipe}\"} |~ \"(?i)(level=error|\\berror\\b|exception|traceback|level=warn|\\bwarn\\b|warning|timed out|context deadline exceeded|connection refused|oom-kill|out of memory|killed process)\"",
+     "queryType": "range",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "derivedFields": [
+      {
+       "name": "Fehlerart",
+       "matcherRegex": "(?i)(level=error|\\berror\\b|exception|traceback|level=warn|\\bwarn\\b|warning|timed out|context deadline exceeded|connection refused|oom-kill|out of memory|killed process)",
+       "matcherType": "regex"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
