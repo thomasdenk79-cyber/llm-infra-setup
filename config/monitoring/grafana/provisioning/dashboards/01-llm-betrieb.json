@@ -629,7 +629,7 @@
     {
       "type": "stat",
       "title": "Betriebszeit",
-      "description": "Zeit seit dem letzten Start der Runtime (Series vllm:request_success_created; bei SGLang-Runtime ohne native vLLM-Zaehler 'keine Daten').",
+      "description": "Zeit seit dem letzten Start der Laufzeit (process_start_time_seconds des Runtime-Ziels).",
       "id": 1038,
       "datasource": {
         "type": "prometheus",
@@ -673,7 +673,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "time() - min(vllm:request_success_created{instance=~\"$instance\"})"
+          "expr": "time() - min(process_start_time_seconds{job=\"vllm\"})"
         }
       ]
     },
