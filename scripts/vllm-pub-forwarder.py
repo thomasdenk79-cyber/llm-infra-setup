@@ -133,12 +133,17 @@ def bind_addresses():
     return ordered or ["127.0.0.1"]
 
 
-def pipe(src, dst):
+def pipe(src, dst, merk=None):
+    erste = None
     try:
         while True:
             data = src.recv(CHUNK)
             if not data:
                 break
+            if merk is not None and erste is None:
+                # schlanke Zugriffszaehlung: erste Zeile je Verbindung ins Journal
+                erste = data.split(b"\r\n", 1)[0][:120].decode("latin-1", "replace")
+                print(f"zugriff {merk}: {erste}", flush=True)
             dst.sendall(data)
     except OSError:
         pass
@@ -164,7 +169,11 @@ def serve(client, upstream):
         print(f"upstream {upstream} nicht erreichbar: {err}", file=sys.stderr, flush=True)
         return
     threads = [
-        threading.Thread(target=pipe, args=(client, remote), daemon=True),
+        threading.Thread(
+            target=pipe,
+            args=(client, remote, client.getpeername()[0] if client.family == socket.AF_INET else "?"),
+            daemon=True,
+        ),
         threading.Thread(target=pipe, args=(remote, client), daemon=True),
     ]
     for thread in threads:

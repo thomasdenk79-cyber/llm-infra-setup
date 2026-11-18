@@ -173,6 +173,21 @@ print(f'{len(list(pathlib.Path("config/monitoring/grafana/provisioning/dashboard
 sys.exit(bad)
 PY
 
+# Digester contra Bestand: jedes *_image mit passendem *_image_digest muss
+# den Digest in den RepoDigests des lokalen Bildes haben (Config-Ids als Pin
+# waren in zwei Reviews Befund; Manifest-Digeste sind das Pull-Ziel).
+if command -v podman >/dev/null 2>&1; then
+  while read -r base image; do
+    dig="$(awk -F': ' -v f="${base}_image_digest" '$1==f{gsub(/ /,"",$2); print $2; exit}' versions.lock)"
+    [[ -z "${dig}" || "${image}" == localhost/* ]] && continue
+    rd="$(podman image inspect "${image%%@*}" --format '{{range .RepoDigests}}{{.}} {{end}}' 2>/dev/null || true)"
+    if [[ -n "${rd}" && "${rd}" != *"${dig}"* ]]; then
+      echo "FEHLER: ${base}_image_digest ${dig} ist kein RepoDigest von ${image} (Bestand: ${rd})" >&2
+      rc=1
+    fi
+  done < <(awk -F': ' '/^[a-z0-9_]+_image: /{print $1, $2}' versions.lock)
+fi
+
 echo
 if (( rc == 0 )); then
   echo 'Repository-Pruefung: OK'

@@ -43,6 +43,11 @@
 homepage.localhost {
 	tls internal
 	encode zstd gzip
+	header {
+		defer
+		delete X-Powered-By
+		Strict-Transport-Security "max-age=31536000"
+	}
 
 	# Betreiber- und Nutzeranleitung vom Repo (config/proxy/site, siehe
 	# scripts/74-setup-local-proxy.sh als Bind). Beide Blenden schliessen einander
@@ -65,6 +70,11 @@ grafana.localhost {
 	# ~/.config/llm-infra/grafana.env (Generator scripts/60-install-monitoring.sh).
 	tls internal
 	encode zstd gzip
+	header {
+		defer
+		delete X-Powered-By
+		Strict-Transport-Security "max-age=31536000"
+	}
 	reverse_proxy __GRAFANA_UPSTREAM__
 }
 

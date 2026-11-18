@@ -5,11 +5,15 @@ After=llm-observability-network.service
 Wants=llm-observability-network.service
 
 [Container]
-Image=docker.io/library/caddy:2-alpine
+Image=docker.io/library/caddy:2-alpine@sha256:fc9cbc100585871d18d4e451cca7021785c90a7006087427ae5ceb3e4efe6424
 ContainerName=llm-wiki
 Network=llm-observability.network
 PublishPort=127.0.0.1:3003:8000
-Volume=%h/work/hermes-wiki/site:/srv:Z,ro
+HealthCmd=curl -sf http://127.0.0.1:8000/ -o /dev/null
+HealthInterval=30s
+HealthStartPeriod=10s
+HealthRetries=3
+Volume=%h/work/hermes-wiki:/srv:Z,ro
 Volume=@CONFIG_ROOT@/config/wiki/Caddyfile:/etc/caddy/Caddyfile:Z,ro
 
 [Service]

@@ -216,6 +216,16 @@ llm-direct.${LAN_DOMAIN} {
 dozzle.${LAN_DOMAIN} {
 	tls internal
 	encode zstd gzip
+	header {
+		defer
+		delete X-Powered-By
+		Strict-Transport-Security "max-age=31536000"
+	}
+	# rate_limit (geplant): die Caddy-Fassung 2-alpine/v2.11.9 kennt die Richtlinie
+	# in diesem Build nicht - Zugangspruefung bleibt Sache von Firewall und Zugang.
+	log {
+		output stdout
+	}
 	reverse_proxy ${DOZZLE_UPSTREAM}
 }
 
@@ -224,6 +234,16 @@ dozzle.${LAN_DOMAIN} {
 direct-llm.${LAN_DOMAIN} {
 	tls internal
 	encode zstd gzip
+	header {
+		defer
+		delete X-Powered-By
+		Strict-Transport-Security "max-age=31536000"
+	}
+	# rate_limit (geplant): die Caddy-Fassung 2-alpine/v2.11.9 kennt die Richtlinie
+	# in diesem Build nicht - Zugangspruefung bleibt Sache von Firewall und Zugang.
+	log {
+		output stdout
+	}
 	reverse_proxy ${DIRECT_LLM_UPSTREAM}
 }
 
@@ -314,6 +334,10 @@ $(printf '%s\n' "${netze[@]}")
 $(printf '%s\n' "${veroeffentlichungen[@]}")
 Volume=%h/.local/share/llm-infra/caddy/data:/data:Z,U
 Volume=%h/.local/share/llm-infra/caddy/config:/config:Z,U
+HealthCmd=curl -sf http://127.0.0.1:8080/metrics -o /dev/null
+HealthInterval=30s
+HealthStartPeriod=10s
+HealthRetries=3
 Volume=@CONFIG_ROOT@/config/proxy/Caddyfile:/etc/caddy/Caddyfile:Z,ro
 Volume=@CONFIG_ROOT@/config/proxy/site:/srv/llm-proxy/site:Z,ro
 # Nur die oeffentliche Wurzel (kein Schluessel) fuer https://<LAN-IP>/, damit ein

@@ -43,6 +43,11 @@
 homepage.localhost {
 	tls internal
 	encode zstd gzip
+	header {
+		defer
+		delete X-Powered-By
+		Strict-Transport-Security "max-age=31536000"
+	}
 
 	# Betreiber- und Nutzeranleitung vom Repo (config/proxy/site, siehe
 	# scripts/74-setup-local-proxy.sh als Bind). Beide Blenden schliessen einander
@@ -65,6 +70,11 @@ grafana.localhost {
 	# ~/.config/llm-infra/grafana.env (Generator scripts/60-install-monitoring.sh).
 	tls internal
 	encode zstd gzip
+	header {
+		defer
+		delete X-Powered-By
+		Strict-Transport-Security "max-age=31536000"
+	}
 	reverse_proxy grafana:3000
 }
 
@@ -134,6 +144,16 @@ llm-direct.cachyos-x8664 {
 dozzle.cachyos-x8664 {
 	tls internal
 	encode zstd gzip
+	header {
+		defer
+		delete X-Powered-By
+		Strict-Transport-Security "max-age=31536000"
+	}
+	# rate_limit (geplant): die Caddy-Fassung 2-alpine/v2.11.9 kennt die Richtlinie
+	# in diesem Build nicht - Zugangspruefung bleibt Sache von Firewall und Zugang.
+	log {
+		output stdout
+	}
 	reverse_proxy dozzle:8080
 }
 
@@ -142,6 +162,16 @@ dozzle.cachyos-x8664 {
 direct-llm.cachyos-x8664 {
 	tls internal
 	encode zstd gzip
+	header {
+		defer
+		delete X-Powered-By
+		Strict-Transport-Security "max-age=31536000"
+	}
+	# rate_limit (geplant): die Caddy-Fassung 2-alpine/v2.11.9 kennt die Richtlinie
+	# in diesem Build nicht - Zugangspruefung bleibt Sache von Firewall und Zugang.
+	log {
+		output stdout
+	}
 	reverse_proxy host.containers.internal:30001
 }
 

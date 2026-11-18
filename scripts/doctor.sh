@@ -343,6 +343,26 @@ for probe in "alertmanager|9093|/-/ready" "loki|3100|/ready" "grafana|3000|/graf
     bad "${name} nicht erreichbar (${pfad})" "systemctl --user status ${name}.service --no-pager"
   fi
 done
+
+# Wiki-Portal: Auslieferung, Baustempel gegen Git-HEAD, Timer-Ergebnis
+: "${WIKI_DIR:=${HOME}/work/hermes-wiki}"
+if systemctl --user is-active --quiet wiki.service 2>/dev/null || podman ps --format '{{.Names}}' | grep -q '^llm-wiki$'; then
+  wc_http="$(curl -s -o /tmp/llm-wiki-probe.$$ -w '%{http_code}' --max-time 5 http://127.0.0.1:3003/ 2>/dev/null || echo 000)"
+  wc_gross=$([[ $(stat -c %s /tmp/llm-wiki-probe.$$ 2>/dev/null || echo 0) -gt 1000 ]] && echo ja || echo nein)
+  rm -f /tmp/llm-wiki-probe.$$
+  if [[ "${wc_http}" == 200 && "${wc_gross}" == ja ]]; then
+    ok 'Wiki-Portal liefert (>1 kB)'
+  else
+    warn "Wiki-Portal HTTP ${wc_http} bzw. Inhalt ${wc_gross}" 'systemctl --user status llm-wiki.service --no-pager; ./scripts/wiki-rebuild.sh --force'
+  fi
+  stamp_w="$(cat "${WIKI_DIR}/.built-sha" 2>/dev/null || echo -)"
+  head_w="$(git -C "${WIKI_DIR}" rev-parse HEAD 2>/dev/null || echo -)"
+  if [[ -d "${WIKI_DIR}" && "${stamp_w}" != "${head_w}" ]]; then
+    warn 'Wiki-Baustempel hinter Git-HEAD' './scripts/wiki-rebuild.sh --force'
+  fi
+  res_t="$(systemctl --user show wiki-rebuild.service -p ExecMainCode --value 2>/dev/null || echo -)"
+  [[ "${res_t}" != "exited" && "${res_t}" != "-" ]] && warn "Letzter Rebuild endete nicht sauber (${res_t})" 'journalctl --user -u wiki-rebuild.service -n 40'
+fi
 if systemctl --user is-active --quiet alloy.service; then
   good 'Alloy laeuft'
 else

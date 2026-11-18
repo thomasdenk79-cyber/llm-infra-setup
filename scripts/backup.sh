@@ -144,6 +144,7 @@ manifest = {'created': datetime.datetime.now(datetime.timezone.utc).isoformat(),
 print(f'{len(files)} Dateien im Manifest')
 PY
 tar -czf "${dest_base}/llm-infra-backup-${ts}.tar.gz" -C "${dest_base}" "${ts}"
+chmod 0600 "${dest_base}/llm-infra-backup-${ts}.tar.gz"   # enthaelt pg_dump und host.env-Kopie
 rm -rf "${dest}"
 archiv="${dest_base}/llm-infra-backup-${ts}.tar.gz"
 

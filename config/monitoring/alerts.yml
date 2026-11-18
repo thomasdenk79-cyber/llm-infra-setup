@@ -273,4 +273,13 @@ groups:
             journalctl --user -u loki.service --since -30m nach 'write operation failed'
             durchsuchen; loki_discarded_samples_total und loki_write_failures_discarded_total
             ueber http://127.0.0.1:3100/metrics gegenpruefen
-
+      - alert: ProxyZertifikatLaeuftBaldAb
+        expr: llm_caddy_cert_min_expiry_seconds >= 0 and llm_caddy_cert_min_expiry_seconds < 3600
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "Blattzertifikat des Proxies laeuft bald ab (Erneuerung stale?)"
+          description: >-
+            Caddy erneuert 12-h-Blattzertifikate im Betrieb nach acht Stunden; unter
+            einer Stunde Restgueltigkeit steht die Erneuerung still. Gegenprobe:
+            journalctl --user -u llm-proxy.service | grep -i renew

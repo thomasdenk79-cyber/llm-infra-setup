@@ -64,7 +64,8 @@ caddy_proxy_image: docker.io/library/caddy:2-alpine
 caddy_proxy_image_digest: sha256:fc9cbc100585871d18d4e451cca7021785c90a7006087427ae5ceb3e4efe6424
 caddy_wiki: docker.io/library/caddy:2-alpine
 # Manifest-Digest des laufenden Bildes (Image-Id 5813f7eb ist die Config-Id, kein Pull-Ziel)
-caddy_wiki_digest: sha256:fc9cbc100585871d18d4e451cca7021785c90a7006087427ae5ceb3e4efe6424
+caddy_wiki_image_digest: sha256:fc9cbc100585871d18d4e451cca7021785c90a7006087427ae5ceb3e4efe6424
+caddy_wiki_image: docker.io/library/caddy:2-alpine
 caddy_wiki_image_id: sha256:5813f7eb9b94fac4970f9f576695fe1ed1d53d41586fd3eaa350caf7c4627d9c
 caddy_gateway: 2.11.9
 # KI-Incident-Agent (Demo): nur Standardbibliothek, kein Bau zur Laufzeit.

@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
-# Wiki-Portal generieren: statischer Caddy-Server ueber hermes-wiki/site auf :3003
+# Wiki-Portal generieren: statischer Caddy-Server ueber WIKI_DIR/site/current auf :3003
 # plus Rebuild-Timer. Das Wiki selbst lebt in ~/work/hermes-wiki (Git, MkDocs Material).
 #   ./scripts/60-install-wiki.sh            Units generieren
 #   ./scripts/60-install-wiki.sh --first    zusaendlich venv+Build vorbereiten
 set -Eeuo pipefail
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 source "${root}/lib/common.sh"
-wiki="${HOME}/work/hermes-wiki"
+lock_feld() { awk -F': ' -v f="$1" '$1==f{gsub(/ /,"",$2); print $2; exit}' "${root}/versions.lock" 2>/dev/null || true; }
+: "${WIKI_DIR:=${HOME}/work/hermes-wiki}"   # Rechnerprofil: config/host.env
+wiki="${WIKI_DIR}"
+wiki_h="${wiki/#"${HOME}"/%h}"
+caddy_img="$(lock_feld caddy_wiki_image)"; [[ -n "${caddy_img}" ]] || caddy_img=docker.io/library/caddy:2-alpine
+caddy_digest="$(lock_feld caddy_wiki_image_digest)"
+[[ -n "${caddy_digest}" && "${caddy_img}" != *"@sha256:"* ]] && caddy_img="${caddy_img}@${caddy_digest}"
 install -d -m 0755 "${root}/quadlet" "${root}/systemd" "${root}/config/wiki"
 
 cat > "${root}/config/wiki/Caddyfile" <<'CADDY'
@@ -17,9 +23,10 @@ cat > "${root}/config/wiki/Caddyfile" <<'CADDY'
 }
 :8000 {
 	encode gzip
-	root * /srv
+	root * /srv/site/current
 	file_server {
 		index index.html
+		hide "{path}" ".built-sha"
 	}
 	handle_errors {
 		rewrite * /404.html
@@ -28,7 +35,7 @@ cat > "${root}/config/wiki/Caddyfile" <<'CADDY'
 }
 CADDY
 
-sed "s#\${HOME}#%h#g; s#${wiki}#%h/work/hermes-wiki#g" > "${root}/quadlet/wiki.container" <<'UNIT'
+cat > "${root}/quadlet/wiki.container" <<UNIT
 # GENERIERT von scripts/60-install-wiki.sh - dort ändern, nicht hier.
 [Unit]
 Description=LLM Infrastructure Hermes-Wissens-Wiki (statischer Build)
@@ -36,11 +43,15 @@ After=llm-observability-network.service
 Wants=llm-observability-network.service
 
 [Container]
-Image=docker.io/library/caddy:2-alpine
+Image=${caddy_img}
 ContainerName=llm-wiki
 Network=llm-observability.network
 PublishPort=127.0.0.1:3003:8000
-Volume=${HOME}/work/hermes-wiki/site:/srv:Z,ro
+HealthCmd=curl -sf http://127.0.0.1:8000/ -o /dev/null
+HealthInterval=30s
+HealthStartPeriod=10s
+HealthRetries=3
+Volume=${wiki_h}:/srv:Z,ro
 Volume=@CONFIG_ROOT@/config/wiki/Caddyfile:/etc/caddy/Caddyfile:Z,ro
 
 [Service]

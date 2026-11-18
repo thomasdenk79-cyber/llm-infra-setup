@@ -13,6 +13,16 @@
 - **just-Durchreicher:** neues `justfile` delegiert die taeglichen Ziele an das
   Makefile (make bleibt die einzige Zieldefinition).
 
+### 2026-11-18 - Haertungswelle nach der Doppel-Review
+
+* Web-Stufe: HSTS, Headerbereinigung, Access-Log und Health fuer llm-proxy;
+  Digest-Pins fuer beide Caddy-Dienste; Zertifikats-Ablaufalarm.
+* Wiki: atomarer Build (kein halber Stand mehr), Stempel aus der Auslieferung
+  heraus, Diagnosefaelle in Doctor und Healthcheck, WIKI_DIR als Variable.
+* Weiterleiter 30001 schreibt Zugriffszahlen ins Journal.
+* validate.sh prueft zusaetzlich jeden Bild-Digest gegen die RepoDigests.
+* Befundbuch: docs/review-befunde-2026-11-18.md (zwei Agenten je Pod).
+
 ## 2026-11-18 (Status-Seiten, KI-Vorfallsanalyse und sgtop-Spiegel in Grafana)
 
 - **Status-Seiten:** drei neue Grafana-Dashboards - `llm-stack-status`

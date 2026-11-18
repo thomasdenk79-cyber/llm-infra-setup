@@ -226,6 +226,24 @@ if [[ -n "${latest}" ]]; then
   BENCH_FILE="${latest}" python3 "${root}/scripts/lib/bench_metrics.py" >> "${raw}" 2>/dev/null || true
 fi
 
+# --- Caddy-Blattzertifikate: kuerzeste verbleibende Gueltigkeit ------------
+# Caddy erneuert selbst (12 h Blaetter); faellt die Erneuerung still durch,
+# brechen alle benannten HTTPS-Zugaenge binnen Stunden ab (Review 2026-11-18).
+cert_dir="${HOME}/.local/share/llm-infra/caddy/data/caddy/certificates/local"
+min_left=-1
+if [[ -d "${cert_dir}" ]]; then
+  while IFS= read -r crt; do
+    name="$(basename "$(dirname "${crt}")")"
+    [[ "${name}" =~ ^[0-9.]+$ ]] && continue   # Altbestand nach IP-Umstellung
+    end_s="$(openssl x509 -enddate -noout -in "${crt}" 2>/dev/null | cut -d= -f2)"
+    [[ -n "${end_s}" ]] || continue
+    end_epoch="$(date -d "${end_s}" +%s 2>/dev/null)" || continue
+    left=$(( end_epoch - $(date +%s) ))
+    if (( min_left < 0 || left < min_left )); then min_left=${left}; fi
+  done < <(find "${cert_dir}" -name '*.crt' 2>/dev/null)
+fi
+emit "llm_caddy_cert_min_expiry_seconds ${min_left}"
+
 emit "llm_infra_collect_ok 1"
 emit "llm_infra_collect_timestamp_seconds $(date +%s)"
 
