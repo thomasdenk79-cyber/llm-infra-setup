@@ -93,6 +93,67 @@ grafana.localhost {
 	}
 }
 
+
+# --- Weitere Bedienseiten unter Namen (Review 2026-11-18: bisher nur Portal
+# und Grafana). Reine Loopback-Sites; die Netze loesen die Containernamen
+# (llm-proxy haengt an llm-observability und llm-inference).
+dozzle.localhost {
+	tls internal
+	encode zstd gzip
+	header {
+		defer
+		delete X-Powered-By
+		Strict-Transport-Security "max-age=31536000"
+	}
+	reverse_proxy dozzle:8080
+}
+
+wiki.localhost {
+	tls internal
+	encode zstd gzip
+	header {
+		defer
+		delete X-Powered-By
+		Strict-Transport-Security "max-age=31536000"
+	}
+	reverse_proxy llm-wiki:8000
+}
+
+prometheus.localhost {
+	tls internal
+	encode zstd gzip
+	header {
+		defer
+		delete X-Powered-By
+		Strict-Transport-Security "max-age=31536000"
+	}
+	reverse_proxy prometheus:9090
+}
+
+alertmanager.localhost {
+	tls internal
+	encode zstd gzip
+	header {
+		defer
+		delete X-Powered-By
+		Strict-Transport-Security "max-age=31536000"
+	}
+	reverse_proxy alertmanager:9093
+}
+
+litellm.localhost {
+	# Die Gateway-Oberflaeche; API und UI verlangen den persoenlichen
+	# Virtual-Key (./scripts/71-gateway-keys.sh).
+	tls internal
+	encode zstd gzip
+	header {
+		defer
+		delete X-Powered-By
+		Strict-Transport-Security "max-age=31536000"
+	}
+	reverse_proxy litellm:4000
+}
+
 # --- LAN-Zugang ---------------------------------------------------------------
 # Gerendert aus config/proxy/Caddyfile.template durch scripts/74-setup-local-proxy.sh.
 # Alle Namen enden auf den Rechnernamen (cachyos-x8664); Windows-Clients tragen sie in

@@ -23,6 +23,9 @@
 * validate.sh prueft zusaetzlich jeden Bild-Digest gegen die RepoDigests.
 * Befundbuch: docs/review-befunde-2026-11-18.md (zwei Agenten je Pod).
 
+* Ganzer Stapel unter Namen: dozzle, wiki, prometheus, alertmanager
+  und litellm.localhost bedient der Proxy jetzt ebenfalls (HTTPS, HSTS).
+
 ## 2026-11-18 (Status-Seiten, KI-Vorfallsanalyse und sgtop-Spiegel in Grafana)
 
 - **Status-Seiten:** drei neue Grafana-Dashboards - `llm-stack-status`

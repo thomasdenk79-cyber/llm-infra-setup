@@ -93,4 +93,65 @@ grafana.localhost {
 	}
 }
 
+
+# --- Weitere Bedienseiten unter Namen (Review 2026-11-18: bisher nur Portal
+# und Grafana). Reine Loopback-Sites; die Netze loesen die Containernamen
+# (llm-proxy haengt an llm-observability und llm-inference).
+dozzle.localhost {
+	tls internal
+	encode zstd gzip
+	header {
+		defer
+		delete X-Powered-By
+		Strict-Transport-Security "max-age=31536000"
+	}
+	reverse_proxy __DOZZLE_UPSTREAM__
+}
+
+wiki.localhost {
+	tls internal
+	encode zstd gzip
+	header {
+		defer
+		delete X-Powered-By
+		Strict-Transport-Security "max-age=31536000"
+	}
+	reverse_proxy __WIKI_UPSTREAM__
+}
+
+prometheus.localhost {
+	tls internal
+	encode zstd gzip
+	header {
+		defer
+		delete X-Powered-By
+		Strict-Transport-Security "max-age=31536000"
+	}
+	reverse_proxy __PROMETHEUS_UPSTREAM__
+}
+
+alertmanager.localhost {
+	tls internal
+	encode zstd gzip
+	header {
+		defer
+		delete X-Powered-By
+		Strict-Transport-Security "max-age=31536000"
+	}
+	reverse_proxy __ALERTMANAGER_UPSTREAM__
+}
+
+litellm.localhost {
+	# Die Gateway-Oberflaeche; API und UI verlangen den persoenlichen
+	# Virtual-Key (./scripts/71-gateway-keys.sh).
+	tls internal
+	encode zstd gzip
+	header {
+		defer
+		delete X-Powered-By
+		Strict-Transport-Security "max-age=31536000"
+	}
+	reverse_proxy __LITELLM_UPSTREAM__
+}
+
 __LAN_SITES__

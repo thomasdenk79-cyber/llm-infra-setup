@@ -80,6 +80,9 @@ HOMEPAGE_UPSTREAM='llm-homepage:3000'
 GRAFANA_UPSTREAM='grafana:3000'
 DOZZLE_UPSTREAM='dozzle:8080'
 LITELLM_UPSTREAM='litellm:4000'
+WIKI_UPSTREAM='llm-wiki:8000'
+PROMETHEUS_UPSTREAM='prometheus:9090'
+ALERTMANAGER_UPSTREAM='alertmanager:9093'
 # Die Runtime laeuft als unmanaged Container im pasta-Netz und ist von aussen nur
 # ueber den Weiterleiter erreichbar (scripts/73-setup-vllm-forwarder.sh). Die
 # Host-Loopback reicht rootless pasta nicht an Container durch, deshalb der
@@ -287,6 +290,9 @@ render_caddyfile() {
   inhalt="${inhalt//__HOMEPAGE_UPSTREAM__/${HOMEPAGE_UPSTREAM}}"
   inhalt="${inhalt//__GRAFANA_UPSTREAM__/${GRAFANA_UPSTREAM}}"
   inhalt="${inhalt//__DOZZLE_UPSTREAM__/${DOZZLE_UPSTREAM}}"
+  inhalt="${inhalt//__WIKI_UPSTREAM__/${WIKI_UPSTREAM}}"
+  inhalt="${inhalt//__PROMETHEUS_UPSTREAM__/${PROMETHEUS_UPSTREAM}}"
+  inhalt="${inhalt//__ALERTMANAGER_UPSTREAM__/${ALERTMANAGER_UPSTREAM}}"
   inhalt="${inhalt//__LITELLM_UPSTREAM__/${LITELLM_UPSTREAM}}"
   inhalt="${inhalt//__DIRECT_LLM_UPSTREAM__/${DIRECT_LLM_UPSTREAM}}"
   inhalt="${inhalt//__LAN_DOMAIN__/${LAN_DOMAIN}}"
