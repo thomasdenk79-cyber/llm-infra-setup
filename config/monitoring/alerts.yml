@@ -220,3 +220,38 @@ groups:
             Incident-Agenten; Ticket und KI-Befund auf der Seite
             'Incident-Analyse (KI-Agent)', Kundenmeldung auf 'Service-Status
             (Kundenansicht)'.
+
+      - alert: EndpunktAusfall
+        expr: llm_endpoint_up == 0
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "Synthese-Pruefung {{ $labels.endpoint }} antwortet nicht (HTTP {{ $labels.code }})"
+          description: >-
+            Echte Anfrage gegen den Dienstpfad (Sammler collect-stack-status.sh).
+            Pruefen: URL mit curl nachstellen, dann Unit-Status. Die Seite
+            'Plattform & Container' zeigt alle Endpunkte mit ihren Codes.
+
+      - alert: OOMEreignis
+        expr: llm_oom_events_24h > 0 and llm_oom_source_available == 1
+        for: 0m
+        labels: { severity: critical }
+        annotations:
+          summary: "Kernel meldet OOM (Last 24 Stunden)"
+          description: "journalctl -k | grep -iE 'out of memory|oom-killer'; betroffene Dienste auf der Plattform-Seite gegenpruefen"
+
+      - alert: DienstStartetHaefig
+        expr: increase(llm_service_restart_total[30m]) >= 3
+        for: 0m
+        labels: { severity: warning }
+        annotations:
+          summary: "Dienst {{ $labels.name }} laeuft wiederholt an (Crash-Loop-Verdacht)"
+          description: "podman logs --tail 120 <container> oder Dozzle; Neustartzaehler im Timer der Plattform-Seite"
+
+      - alert: StatussammlungSteht
+        expr: absent(llm_stack_status_collect_age_seconds)
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "Statusseiten erhalten keine frischen Kennzahlen mehr"
+          description: "systemctl --user status llm-stack-status.timer --no-pager; dann ./scripts/collect-stack-status.sh --pruefen"

@@ -135,6 +135,129 @@ for paar in "vllm-forwarder:llm-vllm-forwarder" "reverse-tunnel:llm-reverse-tunn
   emit "llm_service_downtime_estimate_seconds{name=\"${dienst}\"} ${schaetzung}"
 done
 
+# --- Synthese-Endpunkte --------------------------------------------------------
+# Echte Anfragen gegen die Dienste: "Unit running" sagt wenig, die Antwort auf
+# dem Servicepfad ist die Aussage. Codes 2xx/3xx gelten als erreichbar.
+ende_punkte=(
+  "runtime-models|http://127.0.0.1:${RUNTIME_PORT}/v1/models"
+  "gateway|http://127.0.0.1:${LLM_GATEWAY_PORT:-4000}/health/liveliness"
+  "chat|http://127.0.0.1:${LLM_CHAT_PORT:-3001}/"
+  "grafana|http://127.0.0.1:${LLM_GRAFANA_PORT:-3000}/grafana/api/health"
+  "prometheus|http://127.0.0.1:9090/-/healthy"
+  "loki|http://127.0.0.1:3100/ready"
+)
+for paar in "${ende_punkte[@]}"; do
+  name="${paar%%|*}"; url="${paar##*|}"
+  code="$(curl -s -o /dev/null -m 3 -w '%{http_code}' "${url}" 2>/dev/null || echo 000)"
+  up=0
+  case "${code}" in [23]*) up=1 ;; esac
+  emit "llm_endpoint_up{endpoint=\"${name}\",code=\"${code}\"} ${up}"
+done
+
+# --- OOM-Sicht und Neustartzaehler ---------------------------------------------
+# Kernel-Protokoll nach OOM-Meldungen (24 h). Ohne Journal-Zugang bleibt die
+# Zahl 0 und llm_oom_source_available sagt, dass die Sicht fehlt.
+oom_an_zahl=0
+if have journalctl; then
+  oom_an_zahl="$(journalctl -k --since '24 hours ago' --no-pager 2>/dev/null \
+    | grep -ciE 'out of memory|oom-killer|killed process' || true)"
+  [[ "${oom_an_zahl}" =~ ^[0-9]+$ ]] || oom_an_zahl=0
+  emit "llm_oom_source_available 1"
+else
+  emit "llm_oom_source_available 0"
+fi
+emit "llm_oom_events_24h ${oom_an_zahl}"
+
+for dienst in "${container_dienste[@]}"; do
+  restarts=0
+  for c in "${dienst}" "systemd-${dienst}" "llm-${dienst}"; do
+    wert="$(podman inspect --type container "${c}" --format '{{.RestartCount}}' 2>/dev/null || true)"
+    if [[ "${wert}" =~ ^[0-9]+$ ]]; then restarts="${wert}"; break; fi
+  done
+  emit "llm_service_restart_total{name=\"${dienst}\"} ${restarts}"
+done
+
+# --- Prozesse, Wartung, Aenderungsspur (ein Python-Schritt) ---------------------
+# GPU-Prozesse im sgTop-Stil mit Containerzuordnung, Wartungsfenster aus
+# maintenance.json und die Git-Spur fuer den Agenten. Scheitert etwas, fehlt
+# nur diese Sicht - die brigen Kennzahlen bleiben erhalten.
+if have python3; then
+  python3 - "$(dirname "${STATUS_DATEI}")" "${root}" <<'PY' >> "${raw}" || true
+import json, os, subprocess, sys
+state_dir, root = sys.argv[1], sys.argv[2]
+os.makedirs(state_dir, exist_ok=True)
+
+def lauf(cmd):
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        return r.stdout if r.returncode == 0 else ""
+    except Exception:
+        return ""
+
+zuordnung = {}
+try:
+    ps = subprocess.run(["podman", "ps", "--no-trunc", "--format", "{{.ID}} {{.Names}}"],
+                        capture_output=True, text=True, timeout=10).stdout
+    for zeile in ps.splitlines():
+        if " " in zeile:
+            kid, kname = zeile.split(" ", 1)
+            if len(kid) >= 12:
+                zuordnung[kid[:12]] = kname.strip().replace('"', "'")
+except Exception:
+    pass
+
+def container_von_pid(pid):
+    """libpod-Scope im Cgroup verrat die Container-ID - hostseitig eindeutig."""
+    try:
+        with open("/proc/%s/cgroup" % pid, encoding="utf-8") as datei:
+            for zeile in datei:
+                kern = zeile.split("libpod-")
+                if len(kern) > 1:
+                    kennung = kern[1].split(".")[0][:12]
+                    return zuordnung.get(kennung, "container-%s" % kennung)
+    except Exception:
+        pass
+    return "host"
+
+apps = lauf(["nvidia-smi", "--query-compute-apps=pid,process_name,used_memory",
+             "--format=csv,noheader,nounits"])
+for zeile in apps.splitlines():
+    teile = [t.strip() for t in zeile.split(",")]
+    if len(teile) < 3 or not teile[0].isdigit():
+        continue
+    prozess = os.path.basename(teile[1]).replace('"', "'")[:60]
+    try:
+        speicher = int(float(teile[2]))
+    except ValueError:
+        speicher = 0
+    ctr = container_von_pid(teile[0]).replace('"', "'")
+    print('llm_gpu_process_info{pid="%s",prozess="%s",container="%s"} %d'
+          % (teile[0], prozess, ctr, speicher))
+
+try:
+    eintraege = json.load(open(os.path.join(state_dir, "maintenance.json"), encoding="utf-8"))
+except Exception:
+    eintraege = []
+for e in eintraege if isinstance(eintraege, list) else [eintraege]:
+    feld = lambda k, d="-": str(e.get(k, d)).replace('"', "'")[:180]
+    print('llm_maintenance_info{service="%s",grund="%s",bis="%s"} 1'
+          % (feld("service", "*"), feld("grund", "geplante Arbeiten"), feld("bis")))
+
+spuren = []
+ausgabe = lauf(["git", "-C", root, "log", "-n", "8", "--date=iso-strict",
+                "--pretty=format:%h\x1f%ad\x1f%s"])
+for zeile in ausgabe.splitlines():
+    teile = zeile.split("\x1f")
+    if len(teile) == 3:
+        spuren.append({"commit": teile[0], "zeit": teile[1], "text": teile[2].replace('"', "'")})
+if spuren:
+    tmp = os.path.join(state_dir, "recent-changes.json.tmp")
+    with open(tmp, "w", encoding="utf-8") as datei:
+        json.dump(spuren, datei, ensure_ascii=False)
+    os.replace(tmp, os.path.join(state_dir, "recent-changes.json"))
+PY
+fi
+
 # --- Kundenstatus und Vorfallsoffenheit --------------------------------------
 # Der Incident-Agent schreibt customer-status.json; ohne ihn (oder ohne
 # Vorfall) gilt die gruene Default-Meldung. Zeitstempel der Datei mitgeben,
@@ -158,6 +281,15 @@ offen = int(status.get("open") or 0)
 if offen > 0:
     schwer = str(status.get("severity") or "warning").replace('"', "'")
     print('llm_incident_open{severity="%s"} 1' % schwer)
+for e in status.get("vorfalle") or []:
+    f = lambda k, d="-": str(e.get(k, d)).replace('"', "'")[:180]
+    print('llm_incident_info{ticket="%s",alertname="%s",service="%s",phase="%s",'
+          'kundenservice="%s",schwergrad="%s",zuversicht="%s",eta_art="%s",eta_text="%s",'
+          'kommunikation="%s",freigabe="%s"} 1'
+          % (f("ticket", "?"), f("alertname"), f("service"), f("phase", "detected"),
+             f("kundenservice", "beobachtung"), f("schwergrad", "warning"),
+             f("zuversicht", "offen").replace(" ", "_"), f("eta_art", "unbekannt"), f("eta_text"),
+             f("kommunikation"), f("freigabe")))
 PY
 else
   emit "llm_customer_status_info{service=\"siemens-edi-oftp\",state=\"ok\",message=\"Alle Systeme betriebsbereit\",eta=\"-\"} 1"
