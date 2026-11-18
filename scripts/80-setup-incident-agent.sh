@@ -59,7 +59,7 @@ print(urllib.request.urlopen(anfrage, timeout=10).read().decode())' \
     cat <<'HINWEIS'
 Beispielalarm uebermittelt. Ergebnisse nach 1-2 Minuten:
   Agent-Journal: podman logs --tail 60 llm-incident-agent
-  Ticket-Auszug:    podman exec llm-incident-agent python3 -c "import sqlite3 as s; print(s.connect('/var/lib/incident-agent/tickets.db').execute('SELECT id,alertname,zustand,eta_minuten FROM tickets ORDER BY id DESC LIMIT 5').fetchall())"
+  Ticket-Auszug:    podman exec llm-incident-agent python3 -c "import sqlite3 as s; print(s.connect('/var/lib/incident-agent/tickets.db').execute('SELECT id,alertname,phase,eta_art FROM tickets ORDER BY id DESC LIMIT 5').fetchall())"
   Grafana: Ordner "LLM Infrastructure" -> Incident-Analyse
 HINWEIS
     exit 0
@@ -148,7 +148,8 @@ if ! grep -q '^APPROVE_TOKEN=' "${umweltdatei}"; then
   chmod 600 "${umweltdatei}"
   log "Freigabe-Token ergaenzt (einmalig in ${umweltdatei}, nicht ausgeben)."
 fi
-install -d -m 0755 "${staedir}"
+install -d -m 0700 "${staedir}"
+chmod 0700 "${staedir}" 2>/dev/null || true
 
 # --- Ausrollen ----------------------------------------------------------------
 install_units incident-agent.container

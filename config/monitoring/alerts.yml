@@ -97,25 +97,25 @@ groups:
           description: "systemctl --user status llm-infra-collect-facts.timer"
 
       - alert: BeobachtungZieltNicht
-        expr: up{job=~"node|gpu|loki|vllm|grafana|alloy|alertmanager|litellm-liveliness"} == 0
+        expr: up{job=~"node|gpu|loki|vllm|grafana|alloy|alertmanager|cadvisor|caddy|incident-agent|prometheus|litellm-liveliness"} == 0
         for: 10m
         labels: { severity: warning }
         annotations: { summary: "Target {{ $labels.job }} wird nicht erreicht" }
 
       - alert: ProtokollsammlungSteht
-        expr: up{job="alloy"} == 0
-        for: 5m
+        expr: (sum(rate(loki_distributor_bytes_received_total{job="loki"}[10m])) == 0) or (up{job="alloy"} == 0)
+        for: 10m
         labels: { severity: warning }
         annotations:
-          summary: "Keine Container-Protokolle in Loki"
-          description: "systemctl --user status alloy.service --no-pager; Alloy braucht die Journal-Bindung, siehe docs/monitoring.md"
+          summary: "Keine frischen Container-Protokolle in Loki (Alloy still oder Pipeline durchgeschnitten)"
+          description: "systemctl --user status alloy.service --no-pager; dann Journal-Quelle und Containernamen der Laufzeit pruefen, siehe docs/monitoring.md"
 
       - alert: AlarmwegFehlt
         expr: up{job="alertmanager"} == 0
         for: 10m
         labels: { severity: warning }
         annotations:
-          summary: "Alertmanager erreicht - Alarme bleiben ungelesen"
+          summary: "Alertmanager nicht erreicht - Alarme bleiben ungelesen"
           description: "systemctl --user status alertmanager.service --no-pager"
 
   - name: gateway

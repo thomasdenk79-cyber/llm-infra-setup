@@ -22,6 +22,13 @@ storage_config:
 limits_config:
   allow_structured_metadata: true
   volume_enabled: true
+  # Nachlaufende Kollektoren (Alloy-Neustart, Journal-Rueckstand bis max_age)
+  # sonst verwirft Loki ihre Eintraege stillschweigend als 'entry too far
+  # behind' - Praxisbefund der Review-Welle 2026-11-18.
+  creation_grace_period: 2h
+  # Compactor loescht nur mit gesetzter Periode; ohne diese Zeile waechst der
+  # Bestand unbounded (retention_enabled ist an, Periode war 0s).
+  retention_period: 30d
 compactor:
   working_directory: /loki/compactor
   retention_enabled: true

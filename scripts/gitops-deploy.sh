@@ -52,7 +52,8 @@ install_units "${OBSERVABILITY_UNITS[@]}"
 install_units llm-inference.network litellm-postgres.container litellm.container open-webui.container
 systemd_reload
 start_units llm-observability.network loki.container prometheus.container grafana.container \
-            alloy.container dozzle.container llm-node-exporter.container llm-gpu-exporter.container \
-            homepage.container wiki.container litellm-postgres.container litellm.container open-webui.container
+            alloy.container dozzle.container alertmanager.container llm-node-exporter.container \
+            llm-gpu-exporter.container llm-cadvisor.container homepage.container wiki.container \
+            litellm-postgres.container litellm.container open-webui.container
 log 'GitOps-Lauf fertig. Runtime-Unit wurde nicht neu gestartet.'
 printf 'Wenn die Runtime eine neue Unit braucht: ./scripts/apply-runtime-unit.sh\n'

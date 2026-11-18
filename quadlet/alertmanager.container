@@ -1,5 +1,5 @@
 # Alertmanager nimmt die Alarmregeln von Prometheus an und hält sie vor, bis ein
-# Kanal eingetragen ist. Ohne ihn laufen die 24 Regeln aus
+# Kanal eingetragen ist. Ohne ihn laufen die Regeln aus
 # config/monitoring/alerts.yml ins Leere (defekter Alarm).
 [Unit]
 Description=Alertmanager for the LLM infrastructure alerts

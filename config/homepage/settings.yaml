@@ -46,6 +46,10 @@ footer:
 # leeren Abschnitt - deshalb prueft ./scripts/validate.sh beide Seiten
 # (make validate), und zwar in beide Richtungen.
 layout:
+  SERVICE-STATUS:
+    tab: BETRIEB
+    style: row
+    columns: 3
   LUNI:
     tab: Dashboard
     style: row

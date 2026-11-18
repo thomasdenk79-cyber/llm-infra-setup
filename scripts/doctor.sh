@@ -333,6 +333,35 @@ PY
 else
   note 'Prometheus laeuft nicht.' 'make monitoring'
 fi
+# --- Alarmkette und Protokollpipeline (Befunde der Review-Welle 2026-11-18:
+# genau diese Glieder liess der Doctor unprueft, deren Ausfall still ist) ---
+for probe in "alertmanager|9093|/-/ready" "loki|3100|/ready" "grafana|3000|/grafana/api/health"; do
+  IFS='|' read -r name port pfad <<< "${probe}"
+  if curl -fsS --max-time 5 "http://127.0.0.1:${port}${pfad}" >/dev/null 2>&1; then
+    good "${name} antwortet (${pfad})"
+  else
+    bad "${name} nicht erreichbar (${pfad})" "systemctl --user status ${name}.service --no-pager"
+  fi
+done
+if systemctl --user is-active --quiet alloy.service; then
+  good 'Alloy laeuft'
+else
+  bad 'Alloy laeuft nicht - Container-Protokolle stehen still' 'systemctl --user status alloy.service --no-pager'
+fi
+nstreams=$(curl -fsS --max-time 8 -G 'http://127.0.0.1:3100/loki/api/v1/query' \
+  --data-urlencode 'query=count by (container) (count_over_time({job="containerlogs"}[10m]))' 2>/dev/null \
+  | python3 -c 'import json,sys; print(len(json.load(sys.stdin)["data"]["result"]))' 2>/dev/null || echo 0)
+if [[ "${nstreams}" -gt 0 ]]; then
+  good "Protokollfluss lebt: ${nstreams} Container-Quellen in 10 min"
+else
+  bad 'Keine frischen Container-Protokolle in Loki (Alloy alive, aber Pipeline durch?)' 'journalctl --user -u alloy.service -n 50 --no-pager'
+fi
+if curl -fsS --max-time 5 'http://127.0.0.1:9090/api/v1/query?query=up%7Bjob%3D%22incident-agent%22%7D' | grep -q ':1"'; then
+  good 'Incident-Agent erreichbar (Target up)'
+else
+  warn 'Incident-Agent-Target nicht up - Vorfallsanalyse ausser Betrieb' 'systemctl --user status incident-agent.service --no-pager'
+fi
+
 if systemctl --user is-active --quiet llm-infra-collect-facts.timer; then
   good 'Kennzahlen-Timer laeuft'
 else

@@ -83,8 +83,13 @@ loki.relabel "vllm_journal" {
 
   rule {
     source_labels = ["__journal_container_name"]
-    regex         = "flash-next-v3"
+    regex         = "qwen38-rc2|flash-next-v3"
     action        = "keep"
+  }
+
+  rule {
+    source_labels = ["__journal_container_name"]
+    target_label  = "container"
   }
 }
 
@@ -92,7 +97,16 @@ loki.source.journal "vllm" {
   forward_to    = [loki.write.local.receiver]
   relabel_rules = loki.relabel.vllm_journal.rules
   path          = "/var/log/journal"
+  matches       = "CONTAINER_NAME=qwen38-rc2"
+  labels        = { job = "containerlogs", stack = "llm-infra" }
+  max_age       = "2h"
+}
+
+loki.source.journal "vllm_alt" {
+  forward_to    = [loki.write.local.receiver]
+  relabel_rules = loki.relabel.vllm_journal.rules
+  path          = "/var/log/journal"
   matches       = "CONTAINER_NAME=flash-next-v3"
-  labels        = { container = "flash-next-v3", job = "containerlogs", stack = "llm-infra" }
-  max_age       = "30m"
+  labels        = { job = "containerlogs", stack = "llm-infra" }
+  max_age       = "2h"
 }

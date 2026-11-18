@@ -217,8 +217,8 @@ und die effektive Nutzung (~40 %, sgtop-Wert) stehen als eigene Panels
 da - Erklaerung in `docs/monitoring.md`.
 
 ```bash
-ls config/monitoring/grafana/provisioning/dashboards/*.json | wc -l    # 9
-curl -s 'http://127.0.0.1:3000/grafana/api/search?type=dash-db' | grep -c title   # 9
+ls config/monitoring/grafana/provisioning/dashboards/*.json | wc -l    # 11
+curl -s 'http://127.0.0.1:3000/grafana/api/search?type=dash-db' | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))'   # 11
 ./scripts/80-setup-incident-agent.sh --check                                     # rc=0
 ./scripts/validate.sh                                                            # rc=0
 ```

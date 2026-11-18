@@ -22,6 +22,9 @@ check_only=0
 if [[ "${check_only}" == 1 ]]; then
   missing=0
   for unit in "${OBSERVABILITY_UNITS[@]}"; do
+    # Der Incident-Agent ist optional: ohne Gateway wird er bewusst nicht
+    # ausgerollt - dann darf --check ihn nicht als Fehlen werten.
+    [[ "${unit}" == "incident-agent.container" && ! -f "${root}/quadlet/incident-agent.container" ]] && continue
     [[ -f "${UNIT_DIR}/${unit}" ]] || { printf 'FEHLT: %s ist nicht installiert\n' "${unit}"; missing=1; }
     unit_is_active "${unit}" || { printf 'FEHLT: %s laeuft nicht\n' "$(unit_service_name "${unit}")"; missing=1; }
   done
@@ -116,7 +119,11 @@ fi
 install_units "${OBSERVABILITY_UNITS[@]}"
 install_systemd_units "${HOME}/.config/systemd/user" llm-infra-collect-facts.service llm-infra-collect-facts.timer llm-stack-status.service llm-stack-status.timer wiki-rebuild.service wiki-rebuild.timer
 systemd_reload
-start_units llm-observability.network loki.container prometheus.container grafana.container alloy.container dozzle.container llm-node-exporter.container llm-gpu-exporter.container llm-cadvisor.container homepage.container wiki.container llm-proxy.container
+start_units llm-observability.network loki.container prometheus.container grafana.container alloy.container dozzle.container alertmanager.container llm-node-exporter.container llm-gpu-exporter.container llm-cadvisor.container homepage.container wiki.container llm-proxy.container
+# Alertmanager ueberwacht seine Datei nicht selbst: ohne diesen idempotenten
+# Reload blieb die live gespielte Konfiguration hinter der Repo-Fassung zurueck
+# (Praxisbefund 2026-11-18: KI-Empfaenger wochenlang nie aktiv).
+curl -sf -o /dev/null -X POST http://127.0.0.1:9093/-/reload || log 'HINWEIS: Alertmanager-Reload nicht moeglich - naechster Schritt: systemctl --user restart alertmanager.service'
 systemctl --user enable --now llm-infra-collect-facts.timer
 systemctl --user enable --now llm-stack-status.timer
 systemctl --user enable --now wiki-rebuild.timer

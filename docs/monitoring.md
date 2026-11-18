@@ -97,15 +97,16 @@ Docker-kompatible API des Podman-Sockets liefert fuer diesen Treiber keinen
 Logstream (`error inspecting Docker container ... no such container` im
 Alloy-Log), deshalb war die vLLM-Ausgabe bisher unsichtbar. In
 `config/monitoring/alloy.alloy` liest jetzt `loki.source.journal` mit
-`matches = "CONTAINER_NAME=flash-next-v3"`, eine relabel-Regel (`keep` auf
+`matches = "CONTAINER_NAME=qwen38-rc2"` (zweiter Block haelt die Fork-Referenz `flash-next-v3`), eine relabel-Regel (`keep` auf
 `__journal_container_name`) sichert ausdruecklich ab, dass kein anderer
 Container mitkommt.
 
-Pruefen (liefert Ziffern pro Container, flash-next-v3 muss dabei sein):
+Pruefen (liefert Ziffern pro Container; die laufende Runtime aus `lib/units.sh`
+(`runtime_identity`) muss dabei sein - hier: `qwen38-rc2`):
 
 ```bash
 curl -sG 'http://127.0.0.1:3100/loki/api/v1/query' \
-  --data-urlencode 'query=count by (container) ({job="containerlogs"})' | head -c 400
+  --data-urlencode 'query=count by (container) (count_over_time({job="containerlogs"}[1h]))' | head -c 400
 ```
 
 ### Prometheus: neue Jobs und zwei bewusst auskommentierte

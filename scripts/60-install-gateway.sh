@@ -31,6 +31,11 @@ secrets_file="${LLM_INFRA_SECRETS_DIR:-${HOME}/.config/llm-infra}/gateway.env"
 # Primaerer lokaler Upstream. Solange die Runtime nicht im Inferenz-Netz laeuft,
 # ist das der Host-Port des Runtime-Forwarders; danach http://llm-runtime:8000/v1.
 : "${FLASH_NEXT_API_BASE:=http://host.containers.internal:30001/v1}"
+# Bonsai-Stufe der Faellkette: eigener Host ist nicht installiert; die Defaults verweisen
+# auf einen unerreicherbaren Namen, damit die Stufe sauber durchfaellt statt an einer
+# fehlenden Umgebungsvariablen zu scheitern (Befund der Review-Welle 2026-11-18).
+: "${BONSAI_BASE_URL:=http://bonsai.unreachable.invalid:8082/v1}"
+: "${BONSAI_API_KEY:=sk-local-bonsai}"
 : "${FLASH_NEXT_API_KEY:=sk-local-vllm}"
 : "${BONSAI_BASE_URL:=http://bonsai:8082/v1}"
 
@@ -49,7 +54,7 @@ fi
 # FLASH_NEXT_* sind keine Geheimnisse (lokale Runtime ohne Authentifizierung),
 # gehoren aber zur selben Datei, damit Container und Clients gleichziehen.
 if [[ -d "$(dirname -- "$secrets_file")" ]]; then
-  for pair in "FLASH_NEXT_API_BASE=${FLASH_NEXT_API_BASE}" "FLASH_NEXT_API_KEY=${FLASH_NEXT_API_KEY}"; do
+  for pair in "FLASH_NEXT_API_BASE=${FLASH_NEXT_API_BASE}" "FLASH_NEXT_API_KEY=${FLASH_NEXT_API_KEY}" "BONSAI_BASE_URL=${BONSAI_BASE_URL}" "BONSAI_API_KEY=${BONSAI_API_KEY}"; do
     key="${pair%%=*}"
     grep -q "^${key}=" "$secrets_file" 2>/dev/null && continue
     printf '%s\n' "$pair" >> "$secrets_file"

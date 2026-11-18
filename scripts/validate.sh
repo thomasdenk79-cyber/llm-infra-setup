@@ -67,6 +67,43 @@ for p in sorted(pathlib.Path('quadlet').iterdir()):
             print(f'QUADLET FEHLER {p}: unbekannte Sektion [{name}]'); bad = 1
     if p.suffix == '.container' and 'Image=' not in p.read_text():
         print(f'QUADLET FEHLER {p}: Image fehlt'); bad = 1
+import yaml, re as _re
+# Bildpin-Dreieck: fuer jedes registancezeigte Image=<name>:<tag> in quadlet/
+# muss das Tag in versions.lock als eigenes Token auftauchen (Befund der
+# Review-Welle 2026-11-18: einseitige Tag-Erhohungen durften durchlaufen).
+# Eigengebaute localhost/-Bilder sind ausgenommen (kein Registry-Pin moeglich).
+lock = pathlib.Path('versions.lock').read_text()
+for p in sorted(pathlib.Path('quadlet').iterdir()):
+    if p.suffix != '.container':
+        continue
+    for zeile in p.read_text().splitlines():
+        if not zeile.startswith('Image='):
+            continue
+        ref = zeile.split('=', 1)[1].split('@')[0]
+        name, _, tag = ref.rpartition(':')
+        if name.startswith('localhost/') or '@' in zeile:
+            continue
+        tag_n = tag[1:] if tag.startswith('v') else tag
+        if not any(_re.search(r'(?<![\d.])' + _re.escape(v) + r'(?![\d.])', lock) for v in (tag, tag_n)):
+            print(f'LOCK FEHLER {p}: Tag {tag} von {name} nicht in versions.lock'); bad = 1
+# Homepage: layout-Schluessel und service-Gruppen muessen deckungsgleich sein
+# (die in settings.yaml versprochene Pruefung existierte bisher nicht).
+try:
+    services = yaml.safe_load(open('config/homepage/services.yaml'))
+    settings = yaml.safe_load(open('config/homepage/settings.yaml'))
+    gruppen = set()
+    # services.yaml ist eine Liste von Gruppenobjekten (Schluessel = Gruppenname)
+    eintraege = services.get('services', []) if isinstance(services, dict) else services
+    for eintrag in eintraege:
+        if isinstance(eintrag, dict):
+            gruppen.update(eintrag.keys())
+    layout = set((settings.get('layout') or {}).keys())
+    for fehl in sorted(gruppen - layout):
+        print(f'HOMEPAGE FEHLER: Gruppe {fehl!r} fehlt im layout von settings.yaml'); bad = 1
+    for verwaist in sorted(layout - gruppen):
+        print(f'HOMEPAGE FEHLER: layout-Schluessel {verwaist!r} ohne Gruppe in services.yaml'); bad = 1
+except FileNotFoundError:
+    pass
 sys.exit(bad)
 PY
 

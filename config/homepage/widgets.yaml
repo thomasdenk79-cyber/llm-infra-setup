@@ -1,11 +1,11 @@
 ---
 # Info-Widgets des Portals - https://gethomepage.dev/configs/info-widgets/
 #
-# Gueltig fuer die gepinnte Version ghcr.io/gethomepage/homepage:v2.4.0. Diese
+# Gueltig fuer die gepinnte Version ghcr.io/gethomepage/homepage:v2.6.0. Diese
 # Version kennt als Info-Widgets ausschliesslich weatherapi, openweathermap,
 # resources, search, greeting, datetime, logo, unifi_console, glances,
 # openmeteo, longhorn, kubernetes und stocks (widgetMappings in
-# src/components/widgets/widget.jsx der Version v2.4.0). Jeder andere Block
+# src/components/widgets/widget.jsx; Versionsstand siehe versions.lock). Jeder andere Block
 # rendert im Portal nur "Missing <name>" - das fruehere "rss:" war deshalb
 # tote Konfiguration. Die Nachrichtenquellen stehen als Lesezeichen in
 # bookmarks.yaml.

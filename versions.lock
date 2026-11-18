@@ -12,12 +12,15 @@ sglang_profile: FR-Spec (NextN spekulativ, NVFP4, fp8 KV, TP1)
 # Aktive Laufzeit auf diesem Rechner: vLLM im Container flash-next-v3, Port nur
 # auf 127.0.0.1:30000. Bild wird lokal gebaut (siehe scripts/50-install-pennyroyal.sh
 # fuer den Referenzweg) - der Digest ist der Stand vom 16.11.2026.
-runtime: vllm
-runtime_image: localhost/qwen38-fp4-tp1:v3
-runtime_image_digest: sha256:882dfe6215e4de04f50aa79c2cfe7773b89ed64dd611d63aab6461e36a37f779
+# Bestand 2026-11-18: die produktive Laufzeit ist SGLang im Container qwen38-rc2
+# (per podman run, ohne Quadlet). Der vLLM-Zweig (flash-next-v3) laeuft nicht; die
+# Referenz-Unit pennyroyal/flash-next bleibt als Rueckfall dokumentiert.
+runtime: sglang
+runtime_image: docker.io/lmsysorg/sglang:nightly-dev-cu13-20261117-25c1c439
+runtime_image_digest: sha256:967bc08446cca2107810c9377a09bf8c1c0e35e55e842447c43c4c40165645a0
 litellm: v1.105.0
 litellm_image: docker.litellm.ai/berriai/litellm:v1.105.0
-litellm_image_digest: sha256:c2eea0ab9754c1d8460fd140c36daa3139020cffa2f671e9f0dc4cc25ee18393
+litellm_image_digest: sha256:60947db020b57e204823d3fbc8bb295c85be890d7c9adcc77fb4f5fc2fe410b2
 open_webui: v0.11.4
 postgres: 16.4
 prometheus: v3.5.0
@@ -25,11 +28,15 @@ node_exporter: v1.8.2
 cadvisor_image: ghcr.io/google/cadvisor:v0.61.0
 nvidia_gpu_exporter: 1.4.0
 grafana: 12.1.1
+grafana_image_digest: sha256:5749a0e982878aedaa2d320ed14d3bdce7a040a938f482258670009d419a597f
 loki: 3.5.2
+loki_image_digest: sha256:d0a95e651bb7d0a5a6468035c5b49c52f4678d90d598f853c06716bca102686b
 alloy: v1.10.2
+alloy_image_digest: sha256:42e29c240f08dc166e1a64c485846f1db810d50d45d3a5c96968fa51e166959e
 alertmanager: v0.27.0
-alertmanager_image_digest: sha256:11f11916f8cdfb17c1da74b20deb2075d778357b4d60474d82453303f8d461f5
+alertmanager_image_digest: sha256:45c3a586d4332d710bef92b06e90380c0b1f588968c00100d4b5e4e44c40ca5f
 dozzle: v8.14.7
+dozzle_image_digest: sha256:86fc4ecb4ea9c58b16ba267b03dd6ae07f1249fa6e554293f6025480fb521c57
 # Portal (gethomepage). 2.6.0 ist die erste Version dieses Setups mit Tabs
 # (layout.<gruppe>.tab) - die gepinnte 2.4.0 kennt keine Tab-Leiste. Digest ist
 # uber die Registry-API gemessen (docker-content-digest von manifest v2.6.0).

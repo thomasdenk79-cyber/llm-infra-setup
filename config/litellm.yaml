@@ -146,7 +146,7 @@ model_list:
     litellm_params:
       model: openai/bonsai-2-27b
       api_base: os.environ/BONSAI_BASE_URL
-      api_key: "sk-local-bonsai"
+      api_key: "os.environ/BONSAI_API_KEY"
       num_retries: 0
       max_retries: 0
       timeout: 300

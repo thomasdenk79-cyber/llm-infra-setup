@@ -9,6 +9,13 @@ NetworkAlias=alloy
 Volume=@CONFIG_ROOT@/config/monitoring/alloy.alloy:/etc/alloy/config.alloy:ro,Z
 Volume=/var/log/journal:/var/log/journal:ro
 Volume=%t/podman/podman.sock:/var/run/docker.sock:ro
+# NamedVolume (nicht Host-Bind): Podman claert beim ersten Anlegen die
+# Eigentuemerschaft, damit der Alloy-Nutzer seine Lese-Positionen schreiben kann.
+# Ohne dieses Volume sind die Lese-Positionen von loki.source.docker und
+# loki.source.journal fluechtig: jeder Neustart liest doppelt oder (wegen
+# max_age) mit Luecken. Praxisbefund 2026-11-18 aus der Review-Welle.
+Volume=alloy-data:/var/lib/alloy/data
+# seine Lese-Positionen nicht ins Host-Verzeichnis schreiben (rootless).
 # --disable-reporting: Alloy meldet aktive Komponenten an stats.grafana.org. Von
 # diesem Rechner gibt es keinen DNS/Egress ins Observability-Netz; der Versuch
 # scheitert Timeout-fuer-Timeout und fuellt das Journal (gemessen 2026-11-18).

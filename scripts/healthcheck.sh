@@ -75,6 +75,20 @@ if [[ "${LITELLM_PORT}" != disabled ]]; then
     warn "Gateway-Liveliness antwortet mit HTTP ${gw_code}" 'journalctl --user -u litellm.service -n 60 --no-pager'
   fi
 fi
+# Kurzpruefungen fuer Portal, Gateway-Readiness und Beobachtungsstapel
+# (Review-Welle 2026-11-18: diese Dienste waren im healthcheck unsichtbar).
+hp=$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://127.0.0.1:3002/ 2>/dev/null || echo 000)
+if [[ "${hp}" == 200 ]]; then ok 'Portal (Homepage) antwortet'; else warn "Portal-HTTP ${hp}" 'systemctl --user status homepage.service --no-pager'; fi
+if [[ "${LITELLM_PORT}" != disabled ]]; then
+  if curl -fsS --max-time 3 "http://127.0.0.1:${LITELLM_PORT}/health/readiness" 2>/dev/null | grep -q '"db"\s*:\s*"connected"'; then
+    ok 'Gateway-Readiness: Datenbank verbunden'
+  else
+    warn 'Gateway-Readiness meldet keine verbundene Datenbank' 'systemctl --user status litellm-postgres.service --no-pager'
+  fi
+fi
+gh=$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://127.0.0.1:3000/grafana/api/health 2>/dev/null || echo 000)
+if [[ "${gh}" == 200 ]]; then ok 'Grafana-Health 200'; else warn "Grafana-HTTP ${gh}" 'systemctl --user status grafana.service --no-pager'; fi
+
 if (( bad == 0 )); then
   echo 'SYSTEM HEALTHY'
 else
