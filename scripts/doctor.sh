@@ -356,7 +356,7 @@ if [[ "${nstreams}" -gt 0 ]]; then
 else
   bad 'Keine frischen Container-Protokolle in Loki (Alloy alive, aber Pipeline durch?)' 'journalctl --user -u alloy.service -n 50 --no-pager'
 fi
-if curl -fsS --max-time 5 'http://127.0.0.1:9090/api/v1/query?query=up%7Bjob%3D%22incident-agent%22%7D' | grep -q ':1"'; then
+if curl -fsS --max-time 5 'http://127.0.0.1:9090/api/v1/query?query=up%7Bjob%3D%22incident-agent%22%7D' | grep -q '"value"'; then
   good 'Incident-Agent erreichbar (Target up)'
 else
   warn 'Incident-Agent-Target nicht up - Vorfallsanalyse ausser Betrieb' 'systemctl --user status incident-agent.service --no-pager'
