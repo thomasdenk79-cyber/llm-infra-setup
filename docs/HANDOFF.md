@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-11-18T10:51:55+01:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-11-18T10:55:03+01:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe (2026-11-17)
 
@@ -606,3 +606,7 @@ Ein-Zeilen-Prompt fuer den Windows-Agenten in der Checkliste
 ## Notiz 2026-11-18T10:51:55+01:00
 
 Alloy: Report-Spam deaktiviert; Doctor-Pruefpunkt 15 auf Dozzle-Sollstand 200 aktualisiert
+
+## Notiz 2026-11-18T10:55:03+01:00
+
+Doku: Alloy no-such-container selbstheilend, gemessenes Retry-Fenster

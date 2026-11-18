@@ -222,6 +222,11 @@ curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3000/grafana/api/healt
   wieder auf: Loki `job="litellm" |= "Malformed"` nach Client-IP durchsuchen
   und docs/troubleshooting.md#gateway-log-voll-401 no api key passed in --malformed-api-key folgen.
 - Alloy meldet nach Container-Recreates kurz "no such container" (selbstheilend).
+  Gemessen 2026-11-18: nach jeder Containertloeschung retryt `loki.source.docker`
+  die tote ID noch bis zur naechsten Discovery-Aktualisierung (Standard 1 Minute,
+  Retry alle 5 Sekunden); der Abbau ist im Journal mit "removing entry from
+  positions file" belegt. Kein Handeln noetig — ausser der Betreiber moechte
+  das Experimentier-Churn der sglang-Container reduzieren.
 - Prometheus-Job `grafana` war nach der Unterpfad-Umstellung down (301 auf die
   oeffentliche Adresse, x509 der Caddy-CA). Behoben 2026-11-16: `metrics_path:
   /grafana/metrics` im Job, damit der Scrape im Containernetz bleibt. Beleg im
