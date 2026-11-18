@@ -335,7 +335,7 @@ else
 fi
 # --- Alarmkette und Protokollpipeline (Befunde der Review-Welle 2026-11-18:
 # genau diese Glieder liess der Doctor unprueft, deren Ausfall still ist) ---
-for probe in "alertmanager|9093|/-/ready" "loki|3100|/ready" "grafana|3000|/grafana/api/health"; do
+for probe in "alertmanager|9093|/-/ready" "loki|3100|/ready" "grafana|3000|/grafana/api/health" "llm-node-exporter|9100|/metrics" "llm-gpu-exporter|9835|/metrics"; do
   IFS='|' read -r name port pfad <<< "${probe}"
   if curl -fsS --max-time 5 "http://127.0.0.1:${port}${pfad}" >/dev/null 2>&1; then
     good "${name} antwortet (${pfad})"

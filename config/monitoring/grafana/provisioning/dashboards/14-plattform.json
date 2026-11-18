@@ -1726,7 +1726,7 @@
   {
    "id": 1470,
    "type": "row",
-   "title": "Auslastung je Container (cAdvisor)",
+   "title": "Auslastung je Container (cAdvisor: CPU und Arbeitsspeicher)",
    "collapsed": false,
    "gridPos": {
     "h": 1,
@@ -1823,7 +1823,8 @@
        "legendFormat": "{{unit}}",
        "refId": "A"
       }
-     ]
+     ],
+     "w": 12
     },
     {
      "type": "timeseries",
@@ -1913,97 +1914,8 @@
        "legendFormat": "{{unit}}",
        "refId": "A"
       }
-     ]
-    },
-    {
-     "type": "timeseries",
-     "title": "Netzwerk je Unit",
-     "id": 1473,
-     "description": "Empfang und Sendung zusammen in MB/s. Da die Container im Netz des Stapels haengen, zeigt dies den Datenweg zwischen den Diensten.",
-     "datasource": {
-      "type": "prometheus",
-      "uid": "PBFA97CFB590B2093"
-     },
-     "gridPos": {
-      "h": 8,
-      "w": 24,
-      "x": 0,
-      "y": 79
-     },
-     "fieldConfig": {
-      "defaults": {
-       "unit": "mbytes",
-       "min": 0,
-       "decimals": 0,
-       "noValue": "keine Daten",
-       "color": {
-        "mode": "palette-classic"
-       },
-       "custom": {
-        "drawStyle": "bars",
-        "lineWidth": 1,
-        "fillOpacity": 70,
-        "spanNulls": false,
-        "stacking": {
-         "mode": "none"
-        },
-        "axisPlacement": "auto",
-        "axisCenteredZero": false,
-        "hideFrom": {
-         "legend": false,
-         "tooltip": false,
-         "viz": false
-        },
-        "thresholdsStyle": {
-         "mode": "off"
-        }
-       },
-       "thresholds": {
-        "mode": "absolute",
-        "steps": [
-         {
-          "color": "green",
-          "value": null
-         },
-         {
-          "color": "yellow",
-          "value": 1
-         },
-         {
-          "color": "red",
-          "value": 3
-         }
-        ]
-       }
-      },
-      "overrides": []
-     },
-     "options": {
-      "legend": {
-       "displayMode": "table",
-       "placement": "bottom",
-       "calcs": [
-        "max",
-        "lastNotNull"
-       ],
-       "showLegend": true
-      },
-      "tooltip": {
-       "mode": "multi",
-       "sort": "desc"
-      }
-     },
-     "targets": [
-      {
-       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-       },
-       "expr": "sum by (unit) (rate(container_network_receive_bytes_total{job=\"cadvisor\", unit=~\"$unit\"}[$__rate_interval]) + rate(container_network_transmit_bytes_total{job=\"cadvisor\", unit=~\"$unit\"}[$__rate_interval])) / 1048576",
-       "legendFormat": "{{unit}}",
-       "refId": "A"
-      }
-     ]
+     ],
+     "w": 12
     }
    ]
   }

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Erzeugt die cAdvisor-Unit: CPU-, Speicher- und Netzwerk-Kennzahlen je Container.
+# Erzeugt die cAdvisor-Unit: CPU- und Arbeitsspeicherkennzahlen je Container (Netz nur je Host - rootless).
 #
 #   Warum: ohne cAdvisor fehlen der Plattform-Seite die Ansichten "wer frisst
 #   was" - Host-Kennzahlen alone zeigen nur das Gesamtbild.
 #   Bildstand: pinned in versions.lock (cadvisor_image). Kein Datenvolume,
-#   nichts beschreibbar, Port nur auf 127.0.0.1:8080.
+#   nichts beschreibbar, Port nur auf 127.0.0.1:9188 (Container intern 8080).
 #
 #   rootless-Hinweis: cAdvisor liest die Cgroup-Datei des Benutzers
 #   (user.slice) - deshalb Cgroupns=host und --pid=host noetig. Die

@@ -12,7 +12,7 @@ Git-Verlauf: `git show HEAD:docs/status.md`. Fortsetzungsanker ist
 
 ### CDI-Beschreibung
 
-Der Arztlauf meldet die CDI-Beschreibung als „38 h alt“. Das ist kein Fehler, sondern
+Der Arztlauf meldet die CDI-Beschreibung als "38 h alt". Das ist kein Fehler, sondern
 ein Hinweis mit Verfallsdatum: die Datei `etc/containers/cdi.d/nvidia.com.yaml` entsteht
 bei `make podman`, und dieses Ziel startet einen GPU-Testcontainer. Die Grafikkarte
 gehoert aber dem Modell (Grundregel 2), deshalb wird sie nicht nebenbei fuer eine
@@ -39,7 +39,7 @@ Zustellung als Defekt bucht. Einzelheiten und Umschaltweg: `docs/monitoring.md#a
 
 `quadlet/pennyroyal.container` ist die eine Datei im Repo, deren committete Fassung
 **bewusst** vom Generatorergebnis abweicht. Committet ist der Betreiber-Fork
-`localhost/flash-next-sm120:serving` (Beschreibung: „FORK sm120, all speed switches,
+`localhost/flash-next-sm120:serving` (Beschreibung: "FORK sm120, all speed switches,
 mamba 19 lazy"); `scripts/50-install-pennyroyal.sh` wuerde das Upstream-Bild
 `ghcr.io/jpezzulli/sglang-rtxpro6000:v2.5.3` schreiben, weil es den Fork nicht kennt.
 
@@ -79,7 +79,7 @@ loeschen und gehoert nicht in eine Anwendung fuer Anwenderinnen und Anwender.
 Ausgestellt wird er von `chat_service_key()` in `lib/secrets.sh`, damit dafuer keine
 zweite Stelle im Repo existiert. Gemessen: Anmeldung und Anfrage ueber die
 Oberflaeche, `POST /api/chat/completions` mit HTTP 200, angezeigte Modellantwort
-(„Paris“), keine Konsolenfehler; `scripts/doctor.sh` Pruefpunkt 16 meldet drei OK und
+("Paris"), keine Konsolenfehler; `scripts/doctor.sh` Pruefpunkt 16 meldet drei OK und
 schlaegt fehl, wenn der Master doch wieder im Chat steht (gegentestet).
 
 Gateway-Eigenmetriken (`litellm_*`) fehlen in Prometheus **bewusst**: das

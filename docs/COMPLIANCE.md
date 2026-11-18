@@ -42,7 +42,7 @@ dokumentierter Luecke, **zurueckgestellt** = bewusst spaeter.
 | 29 | Makefile | erfuellt | Selbsthilfe ueber `make`, alle Ablaeufe als Ziel |
 | 30 | Healthchecks | teilweise | menschenlesbare Kurzpruefung plus grindlicher `doctor.sh`; ein echter Container-Healthcheck in der Unit ist vorbereitet, wirkt aber erst nach dem naechsten Runtime-Neustart |
 | 31 | Benchmark | erfuellt | Vorlaufzeit und Schreibrate getrennt, Warmup, echte Parallelitaet, GPU-Kontext, Verlaufsdatei, Sollwert-Pruefung |
-| 32 | Alarme | erfuellt | 22 Regeln in `config/monitoring/alerts.yml`; kein Alarm fuer kurze Einzelspitzen (alles mit `for`-Zeit) |
+| 32 | Alarme | erfuellt | Regeln in `config/monitoring/alerts.yml` (`make validate` zaehlt); Einzelspitzen alarmieren erst nach `for`-Zeit, nur Zustandspaare wie `DienstStartetHaefig` und `ProtokollverlustBeiLoki` reagieren absichtlich sofort (`for: 0m`) |
 | 33 | README | erfuellt | Schnellstart, Tabellen, Grundregel |
 | 34 | Versionspinnen | teilweise | alle Images mit fester Version, Runtime zusaetzlich mit Digest; kein signaturpruefender Download (cosign) |
 | 35 | Sicherheit | teilweise | localhost-Bindung, rootless, Secret-Guard; LAN-HTTPS ist umgesetzt und gemessen (Caddy `llm-proxy`, 403-Fallback, Loopback-Pruefung der Backend-Ports - Belege in `docs/security.md`, Abschnitt LAN-Zugang); Dozzle und direct-llm sind ohne Anmeldung auf das vertrauenswuerdige Kabel-LAN begrenzt; offene Punkte: eigenes Seccomp-Profil |

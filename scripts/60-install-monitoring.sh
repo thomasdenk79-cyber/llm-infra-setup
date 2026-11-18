@@ -119,6 +119,17 @@ fi
 install_units "${OBSERVABILITY_UNITS[@]}"
 install_systemd_units "${HOME}/.config/systemd/user" llm-infra-collect-facts.service llm-infra-collect-facts.timer llm-stack-status.service llm-stack-status.timer wiki-rebuild.service wiki-rebuild.timer
 systemd_reload
+# Alloy faellt auf Benutzer 473 zurueck; ein frisch angelegtes Named-Volume
+# gehoert root und der erste Start scheitert dann an "mkdir data-alloy:
+# permission denied" (Praxisbefund 2026-11-18). Volume einmalig vorbestücken.
+if ! podman volume exists alloy-data 2>/dev/null; then
+  alloy_bild="docker.io/grafana/alloy:$(awk -F': ' '/^alloy: /{gsub(/ /, "", $2); print $2}' "${root}/versions.lock")"
+  podman volume create alloy-data >/dev/null
+  podman run --rm --entrypoint sh -v alloy-data:/d "${alloy_bild}" \
+    -c 'mkdir -p /d/data-alloy /d/positions && chown -R 473:473 /d' >/dev/null 2>&1 || true
+  log "alloy-data Volume mit Eigentuemerschaft 473:473 angelegt"
+fi
+
 start_units llm-observability.network loki.container prometheus.container grafana.container alloy.container dozzle.container alertmanager.container llm-node-exporter.container llm-gpu-exporter.container llm-cadvisor.container homepage.container wiki.container llm-proxy.container
 # Alertmanager ueberwacht seine Datei nicht selbst: ohne diesen idempotenten
 # Reload blieb die live gespielte Konfiguration hinter der Repo-Fassung zurueck
