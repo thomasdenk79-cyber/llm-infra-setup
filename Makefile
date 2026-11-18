@@ -6,7 +6,7 @@
 #
 # Alle Ablaeufe sind Skripte im Ordner scripts/ - nichts muss von Hand getippt
 # werden. Details in README.md und docs/.
-.PHONY: help setup setup-check preflight install tools nvidia-driver kwin-egpu podman zfs model model-verify pennyroyal ple-nvme verify-ple gateway litellm open-webui homepage wiki portal autossh komodo postgres monitoring gpu-exporter collector watchdog watchdog-off watchdog-gateway watchdog-gateway-off failover-drill incident-agent incident-agent-check incident-agent-demo status-collector gitops gitops-auto gitops-off local-dns tune tune-plan tune-conservative tune-sweet tune-sweet-an tune-c6 tune-c6-an tune-maxkv tune-maxkv-an tune-c16 tune-c16-an tune-rollback ple-native ple-copy ple-check ple-cache ple-warm gpu-frei gpu-frei-an gpu-frei-aus quality quality-lang quality-vergleich deploy deploy-all deploy-non-gpu deploy-ready apply-units wait healthcheck health backup restore doctor bench bench-normal bench-long validate drift local-proxy windows-client-package ci status docs docs-build pre-commit-install checkpoint ungesichert tui rotate-secrets show-credentials install-llmlogs llmlogs setup-agents
+.PHONY: help setup setup-check preflight install tools nvidia-driver kwin-egpu podman zfs model model-verify pennyroyal ple-nvme verify-ple gateway litellm open-webui homepage wiki portal autossh komodo postgres monitoring gpu-exporter collector watchdog watchdog-off watchdog-gateway watchdog-gateway-off failover-drill incident-agent incident-agent-check incident-agent-demo status-collector status-qualitaet gitops gitops-auto gitops-off local-dns tune tune-plan tune-conservative tune-sweet tune-sweet-an tune-c6 tune-c6-an tune-maxkv tune-maxkv-an tune-c16 tune-c16-an tune-rollback ple-native ple-copy ple-check ple-cache ple-warm gpu-frei gpu-frei-an gpu-frei-aus quality quality-lang quality-vergleich deploy deploy-all deploy-non-gpu deploy-ready apply-units wait healthcheck health backup restore doctor bench bench-normal bench-long validate drift local-proxy windows-client-package ci status docs docs-build pre-commit-install checkpoint ungesichert tui rotate-secrets show-credentials install-llmlogs llmlogs setup-agents
 
 help:
 	@echo 'llm-infra-setup - verfuegbare Befehle'
@@ -39,6 +39,7 @@ help:
 	@echo '  make incident-agent     KI-Vorfallsanalyse (Demo) einrichten'
 	@echo '  make incident-agent-demo Beispielalarm durch die Pipeline jagen'
 	@echo '  make status-collector   Stack-Status-Kennzahlen (Timer alle 30 s)'
+	@echo '  make status-qualitaet   Abnahme: Screenshot + DOM-Pruefung aller Dashboards'
 	@echo '  make collector         Host-Kennzahlen (Timer alle 30 s)'
 	@echo '  make watchdog          Runtime-Waechter aktivieren (warnt nur)'
 	@echo '  make watchdog-gateway  Gateway-Waechter aktivieren (Timer 5 min)'
@@ -158,6 +159,8 @@ status-collector:
 	./scripts/collect-stack-status.sh
 	systemctl --user daemon-reload
 	systemctl --user enable --now llm-stack-status.timer
+status-qualitaet:
+	bun scripts/grafana-dashboard-qualitaet.mjs llm-infra-runtime llm-infra-gpu llm-infra-host llm-infra-storage llm-infra-agent-observatorium llm-sglang-live llm-stack-status llm-hotline-status llm-incident-analyse llm-kunden-status llm-plattform
 collector:
 	./scripts/collect-host-facts.sh
 	systemctl --user daemon-reload

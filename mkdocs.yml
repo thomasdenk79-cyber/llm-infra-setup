@@ -27,6 +27,7 @@ nav:
   - Oeffentlicher Zugang: gateway-proxy.md
   - Geschwindigkeit: performance.md
   - Beobachtung: monitoring.md
+  - Statusseiten und Vorfaelle: statusseiten.md
   - Sicherheit: security.md
   - Sicherung und Rueckgabe: backup-restore.md
   - Fehlerbilder: troubleshooting.md

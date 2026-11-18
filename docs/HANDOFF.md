@@ -18,6 +18,15 @@ Das Repository ist das Backup.
   Pruefpunkt 15 erwartet fuer die Dozzle-LAN-Route jetzt 200 statt 401 - die
   Anmeldungsfreiheit ist Betreiberentscheidung vom 2026-11-17, die Pruefung war
   veraltet. Doctor meldet danach 0 Fehler.
+* Zweite Welle Observability (2026-11-18): drei Statusseiten (Betrieb,
+  Hotline, Kunde), Plattform-Seite, sgtop-Spiegel und GPU-Deep-Dive sind
+  provisioniert; Vorfallsagent mit Zustandsmaschine (Meldefrist statt
+  erfundener ETA, KI nur mit Zuversichtsstufe, Problemrecord-Entwurf mit
+  Freigabe) laeuft als `llm-incident-agent`; 29 Alarmregeln inkl.
+  Endpunkt-/OOM-/Neustart-Alarme. Runbook und Telemetrie-Inventur:
+  `docs/statusseiten.md`. Abnahme: `make status-qualitaet`
+  (Screenshots nach `docs/screenshots/`). Wartungsfenster:
+  `./scripts/set-maintenance.sh start|end`.
 * Repo-Wurzel ist `/srv/work/llm-infra-setup` (nicht mehr `~/work/...`).
   Die Arbeiten des Tages sind in Themen-Commits gesichert (`git log --oneline -8`);
   der Fortschritt liegt damit in Git und ist nicht nur lokal vorhanden.

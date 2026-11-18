@@ -27,6 +27,23 @@
   Neu als Recording-Regel `sglang:kv_pool_usage`; die drei Panels der Reihe
   'Speicher und Cache' zeigen beide Seiten. Erklaerung in
   `docs/monitoring.md#kv-cache-warum-die-anzeige-oft-90--sagt-und-sgtop-40-`.
+- **Zweite Welle (Auftrag Observability):** Vorfallsagent auf Zustandsmaschine
+  umgebaut (`detected` bis `resolved`, Meldefrist statt erfundener ETA,
+  KI-Aussagen nur mit Zuversichtsstufe, Problemrecord-Entwurf mit
+  Freigabe-Token, Zeitachse mit Quellenangabe, Beobachtungsphase mit
+  Automatik-Abschluss). Sammler erweitert: Endpunkt-Proben
+  (`llm_endpoint_up`), OOM-Sicht (`llm_oom_events_24h` +
+  `llm_oom_source_available`), Neustartzaehler (`llm_service_restart_total`),
+  GPU-Prozesse mit Containerzuordnung (`llm_gpu_process_info`),
+  Wartungsfenster (`llm_maintenance_info`) und Git-Spur
+  (`recent-changes.json`) fuer den Agenten. Neue Alarme: `EndpunktAusfall`,
+  `OOMEreignis`, `DienstStartetHaefig`, `StatussammlungSteht` (29 Regeln).
+  `scripts/set-maintenance.sh` plant Wartungsfenster ein; die Hotline-Seite
+  (`llm-hotline-status`), Plattform-Seite (`llm-plattform`) und der
+  GPU-Deep-Dive ergänzen die Seitenfamilie; Homepage-Tab SERVICE-STATUS
+  fuehrt hin. Runbook und Telemetrie-Inventur: `docs/statusseiten.md`;
+  Abnahme mit `bun scripts/grafana-dashboard-qualitaet.mjs` (Screenshots nach
+  `docs/screenshots/`).
 
 ## 2026-11-17 (Windows-Launcher fuer verwaltete PowerShell-Richtlinien)
 

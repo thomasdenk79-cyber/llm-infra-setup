@@ -102,6 +102,9 @@ Das Repository ist das einzige Backup dieser Arbeit. Deshalb gilt fuer jeden Sch
 | `scripts/74-setup-local-proxy.sh` | lokales HTTPS unter Namen (Loopback: `homepage.localhost`, `grafana.localhost`; LAN ueber `LAN_BIND_IPS`: sechs Namen unter `.<LAN_DOMAIN>`), `--plan\|--check\|--status\|--ca-import\|--ca-export\|--print-hosts\|--windows-setup` |
 | `scripts/75-setup-local-dns.sh` | Namensaufloesung fuer die LAN-Namen im Netz (dnsmasq-Zone `*.<LAN_DOMAIN>`, keine Weiterleitung, nur auf `LAN_BIND_IPS`), `--plan\|--render\|--check\|--remove`; Clients brauchen damit keine hosts-Datei |
 | `scripts/76-setup-runtime-unit.sh` | Laufzeit-Unit aus dem laufenden Container aufnehmen (`--import-from-container`) und bauen, `--check` |
+| `scripts/incident-agent/server.py` | Vorfallsagent: Webhook, Tickets (SQLite), Beweise, KI-Hypothese mit Zuversicht, Kunden-/Hotline-/Betriebsstatus |
+| `scripts/set-maintenance.sh` | Wartungsfenster ein-/ausplanen (Statusseiten melden dann MAINTENANCE) |
+| `scripts/grafana-dashboard-qualitaet.mjs` | Abnahme: Screenshot + DOM-Pruefung je Dashboard nach `docs/screenshots/` |
 | `scripts/collect-host-facts.sh` | Host-Kennzahlen als Textdatei fuer den node_exporter |
 | `scripts/runtime-watchdog.sh` | wacht ueber die Runtime, `--install`/`--uninstall` |
 | `scripts/litellm-watchdog.sh` | wacht ueber den Gateway (Liveliness+Smoke), `--install`/`--uninstall`/`--reset` |

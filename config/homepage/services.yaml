@@ -518,6 +518,39 @@
           src: https://grafana.localhost/grafana/d-solo/llm-infra-agent-observatorium?kiosk&theme=dark&panelId=1017&from=now-6h&to=now
           allowScrolling: "no"
           classes: h-64
+- SERVICE-STATUS:
+    # Die drei Status-Seiten (Auftrag 2026-11-18): Betrieb frueher Einsatz,
+    # Hotline fuer die Annahme, Kunde ruehig. Daten: Sammler
+    # scripts/collect-stack-status.sh plus Incident-Agent; Tiefe bleibt Grafana.
+    - Service-Status Kunde:
+        icon: /icons/homepage.svg
+        href: https://grafana.localhost/grafana/d/llm-kunden-status
+        description: Ruehige Kundenansicht - Dienste, Vorfall, naechste Meldung
+    - Service-Status Hotline:
+        icon: /icons/chat.svg
+        href: https://grafana.localhost/grafana/d/llm-hotline-status
+        description: Annahme - gibt es einen bekannten Vorfall, wer arbeitet, wann die naechste Meldung kommt
+    - Service-Status Betrieb:
+        icon: /icons/grafana.svg
+        href: https://grafana.localhost/grafana/d/llm-stack-status
+        siteMonitor: http://grafana:3000/grafana/api/health
+        description: Einsatzansicht - Gesamtzustand, Zeitachse je Komponente, Grund und Schaetzung
+    - Plattform und Container:
+        icon: /icons/podman.png
+        href: https://grafana.localhost/grafana/d/llm-plattform
+        description: Endpunkt-Proben, Neustarts, OOM-Sicht, Wartungsfenster, Protokolle
+    - Incident-Analyse:
+        icon: /icons/alertmanager.svg
+        href: https://grafana.localhost/grafana/d/llm-incident-analyse
+        description: Zeitachse, KI-Hypothese mit Zuversicht, Problemrecord-Entwurf
+    - SGLang live (sgTop):
+        icon: /icons/sglang.svg
+        href: https://grafana.localhost/grafana/d/llm-sglang-live
+        description: Alle Betriebsgroessen der Laufzeit wie im Terminal
+    - Protokolle und Explore:
+        icon: /icons/loki.svg
+        href: https://grafana.localhost/grafana/explore?left=%7B%22datasource%22:%22loki%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22expr%22:%22%7Bjob%3D%5C%22containerlogs%5C%22%7D%22%7D%5D%7D
+        description: Loki-Explore mit allen Container-Protokollen
 - TOOLS:
     - Agent-Anleitung:
         # Auslieferung ueber den lokalen HTTPS-Proxy (scripts/74-setup-local-proxy.sh):
