@@ -96,6 +96,7 @@ Das Repository ist das einzige Backup dieser Arbeit. Deshalb gilt fuer jeden Sch
 | `scripts/64-setup-open-webui-account.sh` | erstes Chat-Konto anlegen, Zugangswert nach `~/.config/llm-infra/`, `--check` |
 | `scripts/65-configure-siemens-api.sh` | Siemens-API-Schluessel in der Gateway-Umgebung, ohne ihn auszugeben |
 | `scripts/65-install-gpu-exporter.sh` | GPU-Metriken (nvidia-smi oder dcgm) |
+| `scripts/66-install-cadvisor.sh` | cAdvisor-Unit (CPU/RAM/Netz je Container, Port 127.0.0.1:9188) |
 | `scripts/70-setup-gateway-proxy.sh` | oeffentlicher Zugang: Reverse-Tunnel zur Azure-Gateway-VM, Caddy mit TLS an 443 |
 | `scripts/71-gateway-keys.sh` | persoenliche Virtual-Keys ausgeben und widerrufen |
 | `scripts/73-setup-vllm-forwarder.sh` | Weiterleiter der vLLM-Runtime ins Inferenz-Netz (Gateway versteht vLLM nicht direkt) |

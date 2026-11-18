@@ -20,7 +20,8 @@ allgemeine Beobachtungsstufe (Prometheus, Loki, Grafana, Alloy) ist in
 
 Messluecken (bewusst nicht erfunden):
 
-* **cAdvisor fehlt** - daher keine CPU-/Speicherzeit je Container; Plattform-Seite
+* **cAdvisor liefert CPU-/Speicherzeit je Container** (job `cadvisor`, Unit-Label);
+  Plattform-Seite
   zeigt Zustand, Neustartzaehler und OOM-Zaehler stattdessen.
 * **DCGM fehlt** - daher keine XID-Fehler, kein ECC-Detail, keine
   PCIe-Geraetebreite, kein Prozessnutzungsanteil (nur Prozess-Speicher).
@@ -115,7 +116,7 @@ haelt abgeschlossen Prompt-Blocke als "evictable" fest - der Pool ist damit
 dauerhaft voll, obwohl die effektive Nutzung (sgtop-Anzeige) bei etwa 40 %
 lag (gemessen 2026-11-18: Pool 0,91, effektiv 0,43). Die Betriebspanels zeigen
 deshalb drei Werte: effektive Nutzung, Pool inklusive Cache, freier Kopf.
-Details und Formel in [monitoring.md](monitoring.md#kv-cache-warum-die-anzeige-oft-90--sagt-und-sgtop-40-).
+Details und Formel in [monitoring.md](monitoring.md#kvcache).
 
 ## Abnahme (Vision-Kontrolle)
 

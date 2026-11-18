@@ -20,7 +20,7 @@
  "id": null,
  "uid": "llm-plattform",
  "title": "LUNI - Plattform & Container",
- "description": "Container-Plattform des rootless-Podman-Hosts: Endpunktsonden, Komponenten in Gruppen, Neustarts, Kernel-OOM, Wartungsfenster und Protokollkorrelation. Kein Kubernetes - Cluster=Host, Pod=Container; CPU/RAM je Container fehlen (kein cAdvisor).",
+ "description": "Container-Plattform des rootless-Podman-Hosts: Endpunktsonden, Komponenten in Gruppen, Neustarts, Kernel-OOM, Wartungsfenster und Protokollkorrelation. Kein Kubernetes - Cluster=Host, Pod=Container; CPU/RAM/Netz je Container aus cAdvisor.",
  "tags": [
   "llm-infra",
   "plattform",
@@ -174,6 +174,33 @@
      "selected": false,
      "text": [
       "Alle"
+     ],
+     "value": [
+      "$__all"
+     ]
+    },
+    "options": [],
+    "hide": 0
+   },
+   {
+    "name": "unit",
+    "label": "Unit",
+    "type": "query",
+    "datasource": {
+     "type": "prometheus",
+     "uid": "PBFA97CFB590B2093"
+    },
+    "query": "label_values(container_cpu_usage_seconds_total{job=\"cadvisor\"}, unit)",
+    "definition": "label_values(container_cpu_usage_seconds_total{job=\"cadvisor\"}, unit)",
+    "regexp": "",
+    "sort": 1,
+    "refresh": 2,
+    "multi": true,
+    "includeAll": true,
+    "allValue": ".*",
+    "current": {
+     "text": [
+      "All"
      ],
      "value": [
       "$__all"
@@ -1507,7 +1534,7 @@
    },
    "options": {
     "mode": "markdown",
-    "content": "## OOM: was der Zaehler kann und was nicht\n\n`llm_oom_events_24h` zaehlt Meldungen des **Kernels** aus 24 Stunden (Quelle:\n`scripts/collect-stack-status.sh`). Das ist die ehrliche Ersatzsicht auf `OOMKilled`,\nweil hier weder Kubernetes noch cAdvisor mitzaehlt.\n\nNachpruefen von Hand (read-only):\n\n```bash\n# Kernel-Protokoll, so liest es der Sammler\njournalctl -k --since '24 hours ago' --no-pager \\\n  | grep -ciE 'out of memory|oom-killer|killed process'\n\n# derselbe Blick auf eine einzelne Komponente\npodman inspect --type container <container> \\\n  --format '{{.State.OOMKilled}} {{.State.ExitCode}} {{.RestartCount}}'\nsystemctl --user status <unit>\njournalctl --user-unit=systemd-<container> --since '24 hours ago' | grep -iE 'oom|killed process'\n```\n\n**Zwei Grenzen beim Lesen:**\n\n1. Der Kernel-Zaehler ist **ohne Container-Zuordnung**. Eine 1 heisst \"irgendwo auf dem\n   Host\", nicht \"in diesem Container\". Die Zuordnung leisten die Protokolle unten.\n2. `llm_oom_source_available = 0` heisst: der Sammler kam nicht an das Journal. Dann ist\n   die 0 eine **Aussagelosigkeit**, kein Freispruch - dafuer ist das Statuspanel daneben.\n\nCUDA-\"out of memory\"-Meldungen der Laufzeit sind **keine** Kernel-OOMs und zaehlen nicht\nmit; sie stehen in den Protokollen des Runtime-Containers (`qwen38-rc2`).\n"
+    "content": "## OOM: was der Zaehler kann und was nicht\n\n`llm_oom_events_24h` zaehlt Meldungen des **Kernels** aus 24 Stunden (Quelle:\n`scripts/collect-stack-status.sh`). Das ist die ehrliche Ersatzsicht auf `OOMKilled`,\nweil hier kein Kubernetes mitzaehlt; cAdvisor erfaesst zusaetzlich die Container-Ebene (Auslastung, Neustarts der Systeme), der Kernel bleibt die Beweislage fuer den OOM-Fall selbst.\n\nNachpruefen von Hand (read-only):\n\n```bash\n# Kernel-Protokoll, so liest es der Sammler\njournalctl -k --since '24 hours ago' --no-pager \\\n  | grep -ciE 'out of memory|oom-killer|killed process'\n\n# derselbe Blick auf eine einzelne Komponente\npodman inspect --type container <container> \\\n  --format '{{.State.OOMKilled}} {{.State.ExitCode}} {{.RestartCount}}'\nsystemctl --user status <unit>\njournalctl --user-unit=systemd-<container> --since '24 hours ago' | grep -iE 'oom|killed process'\n```\n\n**Zwei Grenzen beim Lesen:**\n\n1. Der Kernel-Zaehler ist **ohne Container-Zuordnung**. Eine 1 heisst \"irgendwo auf dem\n   Host\", nicht \"in diesem Container\". Die Zuordnung leisten die Protokolle unten.\n2. `llm_oom_source_available = 0` heisst: der Sammler kam nicht an das Journal. Dann ist\n   die 0 eine **Aussagelosigkeit**, kein Freispruch - dafuer ist das Statuspanel daneben.\n\nCUDA-\"out of memory\"-Meldungen der Laufzeit sind **keine** Kernel-OOMs und zaehlen nicht\nmit; sie stehen in den Protokollen des Runtime-Containers (`qwen38-rc2`).\n"
    }
   },
   {
@@ -1691,6 +1718,290 @@
        "name": "Fehlerart",
        "matcherRegex": "(?i)(level=error|\\berror\\b|exception|traceback|level=warn|\\bwarn\\b|warning|timed out|context deadline exceeded|connection refused|oom-kill|out of memory|killed process)",
        "matcherType": "regex"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 1470,
+   "type": "row",
+   "title": "Auslastung je Container (cAdvisor)",
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 78
+   },
+   "panels": [
+    {
+     "type": "timeseries",
+     "title": "CPU-Kerne je Unit",
+     "id": 1471,
+     "description": "Schwankender Verbrauch: zeigt die letzten Minuten; fuer Fragen wie 'seit wann' ist die 24-h-Ansicht der Seite zu waehlen.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "PBFA97CFB590B2093"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 79
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "short",
+       "min": 0,
+       "decimals": 0,
+       "noValue": "keine Daten",
+       "color": {
+        "mode": "palette-classic"
+       },
+       "custom": {
+        "drawStyle": "bars",
+        "lineWidth": 1,
+        "fillOpacity": 70,
+        "spanNulls": false,
+        "stacking": {
+         "mode": "none"
+        },
+        "axisPlacement": "auto",
+        "axisCenteredZero": false,
+        "hideFrom": {
+         "legend": false,
+         "tooltip": false,
+         "viz": false
+        },
+        "thresholdsStyle": {
+         "mode": "off"
+        }
+       },
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "green",
+          "value": null
+         },
+         {
+          "color": "yellow",
+          "value": 1
+         },
+         {
+          "color": "red",
+          "value": 3
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "table",
+       "placement": "bottom",
+       "calcs": [
+        "max",
+        "lastNotNull"
+       ],
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+       },
+       "expr": "sum by (unit) (rate(container_cpu_usage_seconds_total{job=\"cadvisor\", unit=~\"$unit\"}[$__rate_interval]))",
+       "legendFormat": "{{unit}}",
+       "refId": "A"
+      }
+     ]
+    },
+    {
+     "type": "timeseries",
+     "title": "Arbeitsspeicher je Unit",
+     "id": 1472,
+     "description": "Working Set in MB. Spruenge nach oben kurz vor einem OOM-Fall erklaeren die Kernel-Zeilen der OOM-Zeile.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "PBFA97CFB590B2093"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 79
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "mbytes",
+       "min": 0,
+       "decimals": 0,
+       "noValue": "keine Daten",
+       "color": {
+        "mode": "palette-classic"
+       },
+       "custom": {
+        "drawStyle": "bars",
+        "lineWidth": 1,
+        "fillOpacity": 70,
+        "spanNulls": false,
+        "stacking": {
+         "mode": "none"
+        },
+        "axisPlacement": "auto",
+        "axisCenteredZero": false,
+        "hideFrom": {
+         "legend": false,
+         "tooltip": false,
+         "viz": false
+        },
+        "thresholdsStyle": {
+         "mode": "off"
+        }
+       },
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "green",
+          "value": null
+         },
+         {
+          "color": "yellow",
+          "value": 1
+         },
+         {
+          "color": "red",
+          "value": 3
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "table",
+       "placement": "bottom",
+       "calcs": [
+        "max",
+        "lastNotNull"
+       ],
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+       },
+       "expr": "sum by (unit) (container_memory_working_set_bytes{job=\"cadvisor\", unit=~\"$unit\"}) / 1048576",
+       "legendFormat": "{{unit}}",
+       "refId": "A"
+      }
+     ]
+    },
+    {
+     "type": "timeseries",
+     "title": "Netzwerk je Unit",
+     "id": 1473,
+     "description": "Empfang und Sendung zusammen in MB/s. Da die Container im Netz des Stapels haengen, zeigt dies den Datenweg zwischen den Diensten.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "PBFA97CFB590B2093"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 24,
+      "x": 0,
+      "y": 79
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "mbytes",
+       "min": 0,
+       "decimals": 0,
+       "noValue": "keine Daten",
+       "color": {
+        "mode": "palette-classic"
+       },
+       "custom": {
+        "drawStyle": "bars",
+        "lineWidth": 1,
+        "fillOpacity": 70,
+        "spanNulls": false,
+        "stacking": {
+         "mode": "none"
+        },
+        "axisPlacement": "auto",
+        "axisCenteredZero": false,
+        "hideFrom": {
+         "legend": false,
+         "tooltip": false,
+         "viz": false
+        },
+        "thresholdsStyle": {
+         "mode": "off"
+        }
+       },
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "green",
+          "value": null
+         },
+         {
+          "color": "yellow",
+          "value": 1
+         },
+         {
+          "color": "red",
+          "value": 3
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "table",
+       "placement": "bottom",
+       "calcs": [
+        "max",
+        "lastNotNull"
+       ],
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+       },
+       "expr": "sum by (unit) (rate(container_network_receive_bytes_total{job=\"cadvisor\", unit=~\"$unit\"}[$__rate_interval]) + rate(container_network_transmit_bytes_total{job=\"cadvisor\", unit=~\"$unit\"}[$__rate_interval])) / 1048576",
+       "legendFormat": "{{unit}}",
+       "refId": "A"
       }
      ]
     }

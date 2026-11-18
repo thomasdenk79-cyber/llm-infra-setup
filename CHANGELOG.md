@@ -1,4 +1,18 @@
 # Aenderungsprotokoll
+## 2026-11-18 (zweite Runde: cAdvisor, Explore-Freigabe, just-Durchreicher)
+
+- **cAdvisor:** `scripts/66-install-cadvisor.sh` erzeugt die Quadlet-Unit
+  `llm-cadvisor.container` (Bild `ghcr.io/google/cadvisor:v0.61.0`, in
+  `versions.lock` gepinnt; Port nur 127.0.0.1:9188, da 8080/8081 belegt sind).
+  Prometheus-Job `cadvisor` extrahiert das `unit`-Label aus dem Cgroup-Pfad
+  `app.slice/<unit>.service/libpod-payload-*` und verwirft die Desktop-Rohsicht;
+  die Plattform-Seite fuehrt jetzt CPU, Arbeitsspeicher und Netz je Container.
+- **Explore fuer Zuschauer:** `GF_USERS_VIEWERS_CAN_EDIT=true` in
+  `grafana.env` (Betreiberfreigabe); Pruefpunkt im `--check` des
+  Monitoring-Installers.
+- **just-Durchreicher:** neues `justfile` delegiert die taeglichen Ziele an das
+  Makefile (make bleibt die einzige Zieldefinition).
+
 ## 2026-11-18 (Status-Seiten, KI-Vorfallsanalyse und sgtop-Spiegel in Grafana)
 
 - **Status-Seiten:** drei neue Grafana-Dashboards - `llm-stack-status`

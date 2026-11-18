@@ -32,6 +32,7 @@ if [[ "${check_only}" == 1 ]]; then
   # (Abnahme: d-solo ohne Cookies 200, kein X-Frame-Options: deny).
   if [[ -f "${SECRETS_DIR}/grafana.env" ]]; then
     for schluessel in GF_AUTH_ANONYMOUS_ENABLED=true GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer \
+                      GF_USERS_VIEWERS_CAN_EDIT=true \
                       GF_AUTH_DISABLE_LOGIN_FORM=true GF_SECURITY_ALLOW_EMBEDDING=true; do
       grep -Fxq "${schluessel}" "${SECRETS_DIR}/grafana.env" \
         || { printf 'FEHLT: grafana.env enthaelt nicht %s\n' "${schluessel}"; missing=1; }
@@ -56,6 +57,9 @@ fi
 if [[ ! -f "${root}/quadlet/llm-gpu-exporter.container" ]]; then
   run "${root}/scripts/65-install-gpu-exporter.sh"
 fi
+if [[ ! -f "${root}/quadlet/llm-cadvisor.container" ]]; then
+  run "${root}/scripts/66-install-cadvisor.sh"
+fi
 # Grafana laeuft im Unterpfad /grafana/ und ohne Anmeldung fuer den lokalen
 # Zugang. Ohne root_url mit Pfad und serve_from_sub_path bricht die Seite
 # sowohl ueber den lokalen Proxy (scripts/74-setup-local-proxy.sh) als auch
@@ -76,6 +80,10 @@ GF_SERVER_ROOT_URL=https://grafana.localhost/grafana/
 GF_SERVER_SERVE_FROM_SUB_PATH=true
 GF_AUTH_ANONYMOUS_ENABLED=true
 GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+# Explore fuer Zuschauer: ohne diesen Schluessel bleibt /grafana/explore fuer
+# anonyme Besucher verschlossen (Freigabe vom Betreiber 2026-11-18). Editieren
+# kann der Zuschauer damit nicht - dafuer ist die Organisation ordnergeschuetzt.
+GF_USERS_VIEWERS_CAN_EDIT=true
 GF_AUTH_DISABLE_LOGIN_FORM=true
 GF_SECURITY_ALLOW_EMBEDDING=true
 GRAFANA
@@ -108,7 +116,7 @@ fi
 install_units "${OBSERVABILITY_UNITS[@]}"
 install_systemd_units "${HOME}/.config/systemd/user" llm-infra-collect-facts.service llm-infra-collect-facts.timer llm-stack-status.service llm-stack-status.timer wiki-rebuild.service wiki-rebuild.timer
 systemd_reload
-start_units llm-observability.network loki.container prometheus.container grafana.container alloy.container dozzle.container llm-node-exporter.container llm-gpu-exporter.container homepage.container wiki.container llm-proxy.container
+start_units llm-observability.network loki.container prometheus.container grafana.container alloy.container dozzle.container llm-node-exporter.container llm-gpu-exporter.container llm-cadvisor.container homepage.container wiki.container llm-proxy.container
 systemctl --user enable --now llm-infra-collect-facts.timer
 systemctl --user enable --now llm-stack-status.timer
 systemctl --user enable --now wiki-rebuild.timer

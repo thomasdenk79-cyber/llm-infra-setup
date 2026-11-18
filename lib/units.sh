@@ -29,6 +29,7 @@ OBSERVABILITY_UNITS=(
   dozzle.container
   llm-gpu-exporter.container
   llm-node-exporter.container
+  llm-cadvisor.container
   homepage.container
   wiki.container
   llm-proxy.container

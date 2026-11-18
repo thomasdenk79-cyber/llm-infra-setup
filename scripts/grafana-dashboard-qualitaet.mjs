@@ -57,8 +57,14 @@ const abnahme = `(function(){
     var rect = el.getBoundingClientRect();
     var text = (el.innerText || "");
     var zustand = "ok";
-    if (/No data|Keine Daten/i.test(text)) zustand = "leer";
-    if (/Failed to query|query failed|exec\\w+ protocol error|Datasource Error|parse error/i.test(text)) zustand = "fehler";
+    // Log-Panels zeigen Zeilentext - darin stehen "error"/"failed" ganz normal.
+    // Fehler erkennt man dort nur an der Panel-Fehlerbox, nicht am Text.
+    var logPanel = el.querySelector('[data-testid="logrows"], [class*="logs-row"], [data-testid="data-testid NoDataContainer"]') !== null;
+    if (/No data|Keine Daten/i.test(text) && !logPanel) zustand = "leer";
+    var fehlerBeleg = logPanel
+      ? (el.querySelector('[role="alert"], [class*="panel-error"]') || {}).innerText || ""
+      : text;
+    if (/Failed to query|query failed|exec\\w+ protocol error|Datasource Error|parse error/i.test(fehlerBeleg)) zustand = "fehler";
     out.panel.push({id: el.getAttribute('data-panelid') || String(idx), titel: t ? t.textContent.trim() : "",
                     zustand: zustand, x: Math.round(rect.left), y: Math.round(rect.top),
                     b: Math.round(rect.right), h: Math.round(rect.height)});

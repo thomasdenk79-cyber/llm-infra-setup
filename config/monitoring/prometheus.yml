@@ -34,6 +34,21 @@ scrape_configs:
       - targets: ["llm-gpu-exporter:9835"]
         labels: { gpu: rtx-pro-6000 }
 
+  # cAdvisor liefert CPU/RAM/Netz je Container. Die Roh-Cgroup-Sicht enthaelt
+  # auch den Desktop des Rechners; behalten wird nur die Podman-Ebene
+  # (<unit>.service/libpod-payload-...), daraus entsteht das unit-Label.
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["llm-cadvisor:8080"]
+        labels: { host: llm-host }
+    metric_relabel_configs:
+      - source_labels: [id]
+        regex: '.*/app\.slice/([^/]+)\.service/libpod-payload-[^/]+$'
+        target_label: unit
+      - source_labels: [unit]
+        regex: '.+'
+        action: keep
+
   # Pennyroyal ist auf diesem Rechner nicht im Einsatz: die Inferenz-Laufzeit
   # ist vLLM (job "vllm" unten). Der Block bleibt fuer Rechner mit Pennyroyal
   # erhalten und wird dort wieder ausgkommentiert; als totes Target wurde er

@@ -244,7 +244,7 @@ damit niemand eine Attrappe fuer eine Messung haelt:
 
 | Kubernetes-Signal | Stand auf diesem Host | Ersatz auf der Seite |
 |---|---|---|
-| CPU und Speicher je Container | fehlt - kein cAdvisor installiert | Host-Seite `llm-infra-host`, Speicher `llm-infra-storage` |
+| CPU, Speicher und Netz je Container | cAdvisor im Stapel (job `cadvisor`, Unit-Label aus dem Cgroup-Pfad) | Plattform-Seite `llm-plattform`, Zeile Auslastung |
 | Neustartgrund je Pod (Event, `LastState`) | fehlt - keine Events | `llm_service_restart_total`, `llm_service_info{reason}` |
 | `OOMKilled` je Container | fehlt - kein Attribut | `llm_oom_events_24h` plus `llm_oom_source_available` (Kernel-Sicht, ohne Containerzuordnung) |
 | Deployment, Replicaset, Replikate | nicht anwendbar - jede Komponente existiert genau einmal | - |
@@ -274,7 +274,7 @@ sie aber nicht her (Versuch lieferte null Stroeme). Die Fehlerfilter sind deshal
 Zeilen-Regexe (`level=error`, `warn`, `timed out`, `connection refused`,
 `out of memory`). Siehe auch [statusseiten.md](statusseiten.md#telemetrie-inventur-2026-11-18).
 
-### KV-Cache: warum die Anzeige oft ~90 % sagt und sgtop ~40 %
+### KV-Cache: warum die Anzeige oft ~90 % sagt und sgtop ~40 % { #kvcache }
 
 Beides ist richtig, es sind zwei Messgroessen (gemessen 2026-11-18:
 Pool 0.91, effektiv 0.43): `sglang:token_usage` zaehlt nur tatsaechlich

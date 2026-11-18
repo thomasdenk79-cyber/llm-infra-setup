@@ -22,6 +22,7 @@ open_webui: v0.11.4
 postgres: 16.4
 prometheus: v3.5.0
 node_exporter: v1.8.2
+cadvisor_image: ghcr.io/google/cadvisor:v0.61.0
 nvidia_gpu_exporter: 1.4.0
 grafana: 12.1.1
 loki: 3.5.2
