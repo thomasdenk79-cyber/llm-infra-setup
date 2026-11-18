@@ -325,7 +325,8 @@ PROMPT_SYSTEM = (
     "lokalen LLM-Stack (Podman, Prometheus, Loki, LiteLLM). Regeln: Erfinde "
     "niemals Ursachen oder Reparaturzeiten; unterscheide gemessene Fakten von "
     "Vermutungen; wenn die Beweise nicht tragen, antworte mit niedriger "
-    "Zuversicht. Antworte AUSSCHLIESSLICH mit einem JSON-Objekt: "
+    "Zuversicht. Gib ZUERST das JSON aus, ohne Vorrede, ohne Codeblock. "
+    "Antworte AUSSCHLIESSLICH mit einem JSON-Objekt: "
     "{\"symptome\": [..], \"hypothese\": \"<max 2 Saetze>\", \"konfidenz\": <0..1>, "
     "\"korrelationen\": [..], \"letzte_aenderungen_erkannt\": [..], "
     "\"massnahme\": \"<Empfehlung>\", \"workaround\": \"<optional>\", "
@@ -338,26 +339,26 @@ def ki_analyse(reihe, beweise):
     COUNTERS["llm_calls"] += 1
     prompt = "Alarm: %s\nDienst: %s\nSchwergrad: %s\nBeweislage:\n%s" % (
         reihe["alertname"], reihe["service"], reihe["schwergrad"],
-        json.dumps(beweise, ensure_ascii=False)[:6500])
+        json.dumps(beweise, ensure_ascii=False)[:4500])
     # Unter Last liefert das Denke-Model vereinzelt einen Text ohne JSON
-    # (Kommentarzeilen, leeres Ergebnis). Ein Wiederholungsversuch ist
-    # verbrieft erfolgreich; danach gilt "KI nicht erreichbar".
-    for versuch in (1, 2):
-        ergebnis = _ki_versuch(prompt, versuch)
+    # (komplettes Tokenbudget im Denkteil, leere Antwort). Drei Versuche mit
+    # sinkender Temperatur und wachsendem Budget sind verbrieft erfolgreich.
+    for versuch, (budget, temp) in enumerate(((1600, 0.2), (2400, 0.0), (4000, 0.0)), 1):
+        ergebnis = _ki_versuch(prompt, versuch, budget, temp)
         if ergebnis is not None:
             return ergebnis
     return None
 
 
-def _ki_versuch(prompt, versuch):
+def _ki_versuch(prompt, versuch, budget, temp):
     try:
         antwort = http_json(
             GATEWAY_URL.rstrip("/") + "/v1/chat/completions",
             {"model": AGENT_MODEL,
              "messages": [{"role": "system", "content": PROMPT_SYSTEM},
                           {"role": "user", "content": prompt}],
-             "max_tokens": 1600, "temperature": 0.2 if versuch == 1 else 0.0},
-            timeout=150, headers={"Authorization": "Bearer " + GATEWAY_KEY})
+             "max_tokens": budget, "temperature": temp},
+            timeout=240, headers={"Authorization": "Bearer " + GATEWAY_KEY})
         nachricht = antwort["choices"][0]["message"]
         # Denke-Modelle liefern den Text teils nur in reasoning_content.
         text = (nachricht.get("content") or nachricht.get("reasoning_content") or "")
@@ -476,7 +477,13 @@ def vorfall_bearbeiten(alert, wer="alertmanager"):
         ursache += " | Gegentest: Messreihe zeigt Dienst durchgehend erreichbar."
     kunde = (ki.get("kunde_kurzmeldung") or ki.get("customer_message")
              or "Stoerung erkannt und in Bearbeitung")
-    kundenservice = ki.get("kundenservice") if ki.get("kundenservice") in KUNDEN_LABEL or ki.get("kundenservice") == "beobachtung" else kundenservice
+    # Die Zuordnung folgt der Dienst-Tabelle; die KI darf nur bei unbekannten
+    # Diensten vorschlagen, nie bei erfassten (sonst verschwindet ein
+    # Kundenservice aus der Kundenansicht, weil ein Modell "beobachtung" sagt).
+    if service not in SPIELPLAN:
+        ks = ki.get("kundenservice")
+        if ks in KUNDEN_LABEL or ks == "beobachtung":
+            kundenservice = ks
     reihe_alt = ticket_lesen(ticket_id)
     feld_setzen(ticket_id, phase=phase, symptome=json.dumps(ki.get("symptome", []), ensure_ascii=False),
                 ursache=ursache, zuversicht=stufe,

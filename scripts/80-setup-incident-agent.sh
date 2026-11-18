@@ -140,6 +140,14 @@ ENV
 else
   log "Zugangsdatei vorhanden, bleibt unangetastet: ${umweltdatei}"
 fi
+# Freigabe-Token fuer den Problemrecord-Entwurf (POST /approve). Wer freigeben
+# will, braucht dieses Geheimnis - es liegt bewusst nur auf dem Host.
+if ! grep -q '^APPROVE_TOKEN=' "${umweltdatei}"; then
+  token="$(openssl rand -hex 16)"
+  printf 'APPROVE_TOKEN=%s\n' "${token}" >> "${umweltdatei}"
+  chmod 600 "${umweltdatei}"
+  log "Freigabe-Token ergaenzt (einmalig in ${umweltdatei}, nicht ausgeben)."
+fi
 install -d -m 0755 "${staedir}"
 
 # --- Ausrollen ----------------------------------------------------------------
