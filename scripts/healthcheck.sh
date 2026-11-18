@@ -88,6 +88,11 @@ if [[ "${LITELLM_PORT}" != disabled ]]; then
 fi
 ow=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:3001/health 2>/dev/null || echo 000)
 if [[ "${ow}" == 200 ]]; then ok 'Chat (Open WebUI) gesund'; else warn "Chat-HTTP ${ow}" 'systemctl --user status open-webui.service --no-pager'; fi
+pxy=000
+if systemctl --user is-active --quiet llm-proxy.service; then
+  pxy=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 5 --resolve homepage.localhost:443:127.0.0.1 https://homepage.localhost/ 2>/dev/null || echo 000)
+fi
+if [[ "${pxy}" == 200 ]]; then ok 'Proxy bedient benannten HTTPS-Zugang'; else warn "Proxy-HTTPS ${pxy}" './scripts/74-setup-local-proxy.sh --check'; fi
 wk=$(curl -s -o /dev/null -w '%{http_code}' --max-time 4 http://127.0.0.1:3003/ 2>/dev/null || echo 000)
 if [[ "${wk}" == 200 ]]; then ok 'Wiki-Portal antwortet'; else warn "Wiki-HTTP ${wk}" 'systemctl --user status llm-wiki.service --no-pager'; fi
 cv=$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://127.0.0.1:9188/healthz 2>/dev/null || echo 000)
