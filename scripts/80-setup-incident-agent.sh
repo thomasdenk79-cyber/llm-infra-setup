@@ -68,19 +68,19 @@ HINWEIS
   *) die "Unbekanntes Kommando '${1}'. Naechster Befehl: $0 --help" ;;
 esac
 
-# --- Bild vorbereiten ---------------------------------------------------------
+# --- Bild vorbereiten --------------------------------------------------------
 # Der Digest wird mitgeschrieben, damit ein Nachbau exakt dasselbe Bild nimmt.
+# Im Prueflauf (LLM_DRIFT) wird nichts gezogen, aber der Digest des lokalen
+# Bildes gelesen - sonst erzeugte der Generator eine andere Unit als committet.
 if [[ "${LLM_DRIFT:-0}" != 1 ]]; then
   podman image exists "${INCIDENT_AGENT_IMAGE}" || {
     log "Bild wird gezogen: ${INCIDENT_AGENT_IMAGE}"
     podman pull -q "${INCIDENT_AGENT_IMAGE}" >/dev/null
   }
-  digest="$(podman image inspect "${INCIDENT_AGENT_IMAGE}" --format '{{.Digest}}' 2>/dev/null || true)"
-  [[ "${digest}" == sha256:* ]] || digest=''
-  bild="${INCIDENT_AGENT_IMAGE}${digest:+@${digest}}"
-else
-  bild="${INCIDENT_AGENT_IMAGE}"
 fi
+digest="$(podman image inspect "${INCIDENT_AGENT_IMAGE}" --format '{{.Digest}}' 2>/dev/null || true)"
+[[ "${digest}" == sha256:* ]] || digest=''
+bild="${INCIDENT_AGENT_IMAGE}${digest:+@${digest}}"
 
 install -d -m 0755 "${root}/quadlet"
 cat > "${root}/quadlet/incident-agent.container" <<UNIT
