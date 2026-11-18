@@ -9,7 +9,11 @@ NetworkAlias=alloy
 Volume=@CONFIG_ROOT@/config/monitoring/alloy.alloy:/etc/alloy/config.alloy:ro,Z
 Volume=/var/log/journal:/var/log/journal:ro
 Volume=%t/podman/podman.sock:/var/run/docker.sock:ro
-Exec=run /etc/alloy/config.alloy --server.http.listen-addr=0.0.0.0:12345
+# --disable-reporting: Alloy meldet aktive Komponenten an stats.grafana.org. Von
+# diesem Rechner gibt es keinen DNS/Egress ins Observability-Netz; der Versuch
+# scheitert Timeout-fuer-Timeout und fuellt das Journal (gemessen 2026-11-18).
+# Die Flagge existiert im gepinnten Bild v1.10.2 (alloy run --help).
+Exec=run /etc/alloy/config.alloy --server.http.listen-addr=0.0.0.0:12345 --disable-reporting
 
 [Service]
 Restart=on-failure

@@ -1,4 +1,4 @@
-Zuletzt gesichert: 2026-11-17T10:34:14+01:00 durch `scripts/session-checkpoint.sh`
+Zuletzt gesichert: 2026-11-18T10:51:55+01:00 durch `scripts/session-checkpoint.sh`
 
 # Arbeitsstand und Uebergabe (2026-11-17)
 
@@ -10,6 +10,14 @@ Das Repository ist das Backup.
 
 ## 1. Was gilt jetzt (Stand 2026-11-17, Beweis-Befehle am 2026-11-17 erneut bestaetigt)
 
+* Gesamtpruefung des Beobachtungsstapels am 2026-11-18: alle 14 Einheiten aktiv
+  und autostart-faehig, alle Prometheus-Ziele up, Dozzle- und Alloy-Pipeline
+  live belegt, Gateway- und Portal-Checks gruen. Zwei Korrekturen: Alloy erhaelt
+  `--disable-reporting` im Exec (kein DNS/Egress zu stats.grafana.org, das Bild
+  spamte das Journal; Begruendung in `docs/monitoring.md`), und `scripts/doctor.sh`
+  Pruefpunkt 15 erwartet fuer die Dozzle-LAN-Route jetzt 200 statt 401 - die
+  Anmeldungsfreiheit ist Betreiberentscheidung vom 2026-11-17, die Pruefung war
+  veraltet. Doctor meldet danach 0 Fehler.
 * Repo-Wurzel ist `/srv/work/llm-infra-setup` (nicht mehr `~/work/...`).
   Die Arbeiten des Tages sind in Themen-Commits gesichert (`git log --oneline -8`);
   der Fortschritt liegt damit in Git und ist nicht nur lokal vorhanden.
@@ -594,3 +602,7 @@ Cache-Gegenprobe auch in der englischen LAN-Deckung
 ## Notiz 2026-11-17T10:34:14+01:00
 
 Ein-Zeilen-Prompt fuer den Windows-Agenten in der Checkliste
+
+## Notiz 2026-11-18T10:51:55+01:00
+
+Alloy: Report-Spam deaktiviert; Doctor-Pruefpunkt 15 auf Dozzle-Sollstand 200 aktualisiert

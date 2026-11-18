@@ -84,6 +84,12 @@ Zwei Aenderungen an `quadlet/alloy.container` waren noetig; ohne sie lieferte
   lauscht Alloy nur auf `127.0.0.1` seines Containers; ohne die Bindung auf
   `0.0.0.0` ist er im Containernetz unter seinem Alias nicht ansprechbar und
   der Prometheus-Job `alloy` bleibt down.
+- `--disable-reporting` im Exec - ohne die Flagge meldet Alloy alle paar
+  Minuten die aktiven Komponenten an `stats.grafana.org`. Von diesem Rechner
+  gibt es aus dem Observability-Netz keinen DNS/Egress dorthin; jeder Versuch
+  scheitert nach Timeout und fuellt das Journal (gemessen 2026-11-18, drei
+  Fehlserien je Minute). Die Flagge ist reine Protokollhygiene - Sammlung und
+  Zustellung der Logs haengen nicht daran.
 
 Warum ueberhaupt Journal statt Docker-API: `flash-next-v3` wurde mit
 `podman run` gestartet und schreibt mit Logtreiber journald. Die

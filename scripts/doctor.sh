@@ -487,13 +487,15 @@ if [[ -n "${LAN_BIND_IPS//[[:space:],]/}" ]]; then
     else
       bad "LAN-Zugang antwortet nicht (${code}): https://homepage.${lan_dom}/" './scripts/74-setup-local-proxy.sh --check'
     fi
-    # Die Log-Route muss ohne Zugangswerte abweisen, sonst haengt jemand im Netz
-    # in den Container-Protokollen.
+    # Die Log-Route ist Betreiberentscheidung vom 2026-11-17 bewusst ohne
+    # Proxy-Anmeldung (docs/status.md, Abschnitt LAN-Zugang): Dozzle haengt im
+    # vertrauenswuerdigen privaten LAN. 74 --check prueft die Rolle gegen den
+    # Generator; hier ist 200 der Soll-Wert, alles andere ein echter Defekt.
     code="$(http_code "https://dozzle.${lan_dom}/" --max-time 8 -k --resolve "dozzle.${lan_dom}:443:${lan_ip}")"
-    if [[ "${code}" == '401' ]]; then
-      good "LAN-Log-Route weist ohne Zugangswerte ab (401)"
+    if [[ "${code}" == '200' ]]; then
+      good "LAN-Log-Route liefert ohne Anmeldung 200 (privates LAN, Betreiberentscheidung)"
     else
-      bad "LAN-Log-Route antwortet mit ${code} statt 401 - Zugangswerte pruefen" './scripts/74-setup-local-proxy.sh --check'
+      bad "LAN-Log-Route antwortet mit ${code} statt 200 - Generatorstand pruefen" './scripts/74-setup-local-proxy.sh --check'
     fi
     # Namensaufloesung: ohne Zone braucht jedes Geraet hosts-Eintraege, und
     # "Name laedt auf dem Notebook nicht auf" ist der haufigste Betreiberfall.
