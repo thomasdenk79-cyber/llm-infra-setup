@@ -31,6 +31,21 @@ discovery.relabel "containers" {
     target_label = "job"
     replacement  = "containerlogs"
   }
+
+  // GPU-Rauchmelder aussortieren: die llm-infra-Pruefskripte
+  // scripts/30-nvidia-podman.sh und scripts/44-isolate-blackwell.sh starten
+  // je Lauf zwei anonyme "podman run --rm docker.io/nvidia/cuda ... nvidia-smi -L"
+  // Container. Sie sind in kuerzester Zeit weg, aber loki.source.docker behaelt
+  // das Ziel und inspectet es auf ewig weiter ("error inspecting Docker
+  // container ... no such container") — Upstream-Fehler grafana/alloy#3054,
+  // gepinnte Version v1.10.2 kennt den Fix (PR #6309) noch nicht.
+  // Smoke-Test-Logs werden in Loki nicht gebraucht; drop vor dem Tailing
+  // haelt die Targets sauber. Akte: 2026-11-18-fleet-journal-error-burst.
+  rule {
+    source_labels = ["__meta_docker_container_image"]
+    regex         = "docker.io/nvidia/cuda(:.*)?"
+    action        = "drop"
+  }
 }
 
 loki.source.docker "containers" {
