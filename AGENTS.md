@@ -82,6 +82,7 @@ Das Repository ist das einzige Backup dieser Arbeit. Deshalb gilt fuer jeden Sch
 | `scripts/40-download-model.sh` | Modell laden, fortsetzbar |
 | `scripts/42-verify-model.sh` | Index- und Shard-Pruefung, Revision in `versions.lock` |
 | `scripts/45-configure-kwin-egpu.sh` | KWin-Grafikauswahl L15 (prueft Geraetename) |
+| `scripts/46-ensure-swap.sh` | Ausweich-Auslagerung auf der NVMe (32G-Datei, Pruefung mit `--check`) |
 | `scripts/47-setup-ple-storage.sh` | ext4-Loop oder echte Partition, `--verify` prueft fstab |
 | `scripts/48-prepare-ple-nvme.sh` | PLE-Tabelle erzeugen (atomar, tmp-Ordner) |
 | `scripts/50-install-pennyroyal.sh` | Bild ziehen, Digest pinnen, Runtime-Unit erzeugen |

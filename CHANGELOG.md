@@ -34,6 +34,9 @@
 * Der Arztlauf prueft alle Namenszugaenge selbst; die Timer-Pruefung des
   Wiki-Rebuilds liest jetzt das zuverlaessige Ergebnisfeld.
 
+* Neues Skript 46-ensure-swap.sh: Ausweich-Auslagerung auf 32 GiB ge-
+  bracht (faengt Ueberlauf von zram auf der NVMe ab).
+
 ## 2026-11-18 (Status-Seiten, KI-Vorfallsanalyse und sgtop-Spiegel in Grafana)
 
 - **Status-Seiten:** drei neue Grafana-Dashboards - `llm-stack-status`
