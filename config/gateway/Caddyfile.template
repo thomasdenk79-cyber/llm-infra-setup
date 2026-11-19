@@ -29,6 +29,13 @@ __SITE_ADDRESSES__ {
 	__TLS_BLOCK__ __LE_EMAIL__
 	encode zstd gzip
 
+	# Statische Kollegen-Anleitung (Markdown -> HTML, von scripts/70 nach
+	# /var/www/anleitung/ gerollt). Oeffentlich, enthaelt keine Secrets.
+	handle /anleitung* {
+		root * /var/www
+		file_server
+	}
+
 	@litellm path /v1 /v1/* /health/liveliness /health/readiness
 	handle @litellm {
 		reverse_proxy 127.0.0.1:__LITELLM_PORT__
