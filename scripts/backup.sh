@@ -151,7 +151,7 @@ archiv="${dest_base}/llm-infra-backup-${ts}.tar.gz"
 # Selbstpruefung: 'fertig' soll heissen, dass das Archiv sich selbst und seine
 # Pruefsummen hat - nicht nur, dass tar mit 0 endete (genau da hatte ein frueherer
 # Lauf drei Grafana-Ordner stillschweigend weggelassen).
-if ./scripts/restore.sh --check "${archiv}" >"${STATE_DIR}/backup-check.log" 2>&1; then
+if "${root}/scripts/restore.sh" --check "${archiv}" >"${STATE_DIR}/backup-check.log" 2>&1; then
   log 'Archiv selbst geprueft: Manifest und Pruefsummen stimmen.'
 else
   teile_fehlend+=('Selbstpruefung des Archivs')
