@@ -34,6 +34,7 @@ import select
 import socket
 import sys
 import threading
+import time
 
 CHUNK = 65536
 POLL = 1.0
@@ -98,7 +99,7 @@ def default_route_addresses():
     return found
 
 
-def bind_addresses():
+def bind_addresses(quiet=False):
     """Adressen, an denen Container in den Podman-Netzen und Hosttools die Runtime erreichen.
 
     'auto' (Standard) bindet Loopback, die Adresse der Standard-Route und die
@@ -116,8 +117,9 @@ def bind_addresses():
         if len(candidates) == 1 + len(gateway_addresses()) + 1:
             # Keine Standard-Route gefunden (Sonderfall beim Hochfahren): lieber
             # zu viel erreichbar als ein Stillstand der ganzen Kette.
-            print("keine Standard-Route erkannt, es werden alle Schnittstellen versucht",
-                  file=sys.stderr, flush=True)
+            if not quiet:
+                print("keine Standard-Route erkannt, es werden alle Schnittstellen versucht",
+                      file=sys.stderr, flush=True)
             candidates = ["127.0.0.1"] + local_addresses() + gateway_addresses() + ["10.88.0.1"]
     ordered = []
     for addr in candidates:
@@ -131,6 +133,9 @@ def bind_addresses():
         if addr not in ordered:
             ordered.append(addr)
     return ordered or ["127.0.0.1"]
+
+
+REBIND_CHECK_S = 30
 
 
 def pipe(src, dst, merk=None):
@@ -205,8 +210,18 @@ def main():
         print(f"kein Listener auf Port {port} moeglich", file=sys.stderr, flush=True)
         return 1
     print(f"weiterleiter {','.join(bind_list)}:{port} -> {upstream[0]}:{upstream[1]}", flush=True)
+    # Beim Hochfahren fehlen Standard-Route und Podman-Gateways oft noch
+    # (2026-11-23: nur Loopback gebunden, LiteLLM 5 h ohne Runtime). Kommen
+    # Adressen hinzu, endet der Prozess; systemd (Restart=on-failure) bindet neu.
+    naechste_pruefung = time.monotonic() + REBIND_CHECK_S
     while True:
-        ready, _, _ = select.select(listeners, [], [], None)
+        ready, _, _ = select.select(listeners, [], [], REBIND_CHECK_S)
+        if time.monotonic() >= naechste_pruefung:
+            naechste_pruefung = time.monotonic() + REBIND_CHECK_S
+            neu = sorted(set(bind_addresses(quiet=True)) - set(bind_list))
+            if neu:
+                print(f"neue Adressen {','.join(neu)}: Neustart zum Neubinden", flush=True)
+                return 75
         for listener in ready:
             client, _ = listener.accept()
             threading.Thread(target=serve, args=(client, upstream), daemon=True).start()
