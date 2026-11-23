@@ -60,6 +60,13 @@ smoke() {
     "http://127.0.0.1:${LITELLM_PORT}/v1/chat/completions" >/dev/null 2>&1
 }
 
+runtime_direct_ok() { curl -fsS --max-time 10 "http://127.0.0.1:${RUNTIME_PORT:-30000}/health" >/dev/null 2>&1; }
+
+container_path_ok() {
+  # Der Weg, den LiteLLM wirklich nimmt: aus dem Container ueber den Weiterleiter.
+  podman exec litellm python3 -c 'import os,urllib.request;b=os.environ["FLASH_NEXT_API_BASE"].rstrip("/");b=b[:-3] if b.endswith("/v1") else b;urllib.request.urlopen(b+"/health",timeout=8)' >/dev/null 2>&1
+}
+
 running_requests() {
   # Zahl der laufenden Anfragen. Erst der Weiterleiter (vLLM-Metriken), dann die
   # Runtime selbst: auf diesem Rechner laeuft vLLM, das sglang-Muster bleibt fuer
@@ -121,6 +128,14 @@ case "${1:-check}" in
     say "FEHLER: Gateway-Pruefung fehlgeschlagen (Versuch ${fails}; liveliness+smoke)."
     say '  Erste Hilfe: journalctl --user -u litellm.service -n 120 --no-pager'
     say '  Dann:        ./scripts/doctor.sh'
+    # 2026-11-23: 89 Fehlschlaege, weil der Weiterleiter nach dem Boot nur auf
+    # Loopback lauschte; ein LiteLLM-Neustart heilt das nicht. Erst die Kette pruefen.
+    if liveliness && runtime_direct_ok && ! container_path_ok; then
+      say 'DIAGNOSE: Runtime direkt gesund, aus dem LiteLLM-Container nicht erreichbar -> Neustart llm-vllm-forwarder.'
+      systemctl --user restart llm-vllm-forwarder.service || say 'Weiterleiter-Neustart fehlgeschlagen.'
+      sleep 3
+      container_path_ok && { say 'Weiterleiter-Pfad wieder erreichbar.'; exit 0; }
+    fi
     if (( restarts >= LITELLM_WATCHDOG_MAX_RESTARTS )); then
       say 'LOOPSPERRE: bereits '"${restarts}"' Neustarts ohne Gesundheit - keine Automatik mehr.'
       say '  Manuell pruefen und dann freigeben: ./scripts/litellm-watchdog.sh --reset'
