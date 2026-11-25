@@ -20,11 +20,6 @@ Volume=alloy-data:/var/lib/alloy/data
 # diesem Rechner gibt es keinen DNS/Egress ins Observability-Netz; der Versuch
 # scheitert Timeout-fuer-Timeout und fuellt das Journal (gemessen 2026-11-18).
 # Die Flagge existiert im gepinnten Bild v1.10.2 (alloy run --help).
-# Host-Veroffentlichung nur auf Loopback: der Pruefstand (Operator-Repo
-# config/fleet.yaml) braucht einen lebenden Endpunkt am Sammler; die Alloy-API
-# kann Configs neu laden — sie darf nie im Netz haengen.
-# Akte 2026-11-18-fleet-journal-error-burst (Betreiber-Pruefpflicht 2026-10-26).
-PublishPort=127.0.0.1:12345:12345
 Exec=run /etc/alloy/config.alloy --server.http.listen-addr=0.0.0.0:12345 --disable-reporting
 
 [Service]

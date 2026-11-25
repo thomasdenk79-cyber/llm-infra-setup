@@ -144,3 +144,21 @@ scrape_configs:
     scrape_interval: 15s
     static_configs:
       - targets: ["host.containers.internal:30000"]
+
+  # P16 CachyOS LAB: Host- und DB-Metriken aus eigenen Exportern. Die Ports
+  # sind in der P16-UFW nur fuer 192.168.0.198 (diesen Host) freigegeben.
+  # Betreiber und Secrets: ora2pg-cachyos-infra-setup/scripts/db-exporters.sh.
+  - job_name: p16-node
+    static_configs:
+      - targets: ["192.168.0.123:9100"]
+        labels: { host: p16-cachyos, service: host }
+
+  - job_name: p16-postgres
+    static_configs:
+      - targets: ["192.168.0.123:9187"]
+        labels: { host: p16-cachyos, service: postgres-lab }
+
+  - job_name: p16-oracle
+    static_configs:
+      - targets: ["192.168.0.123:9161"]
+        labels: { host: p16-cachyos, service: oracle-lab }
